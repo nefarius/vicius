@@ -11,7 +11,7 @@
 #include "imgui.h"
 #include "imgui-SFML.h"
 #include "imgui_markdown.h"
-#include "IconsFontAwesome5.h"
+#include "IconsForkAwesome.h"
 
 // SFML
 #include <SFML/Graphics/RenderWindow.hpp>

@@ -114,8 +114,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		             ImGuiWindowFlags_NoResize |
 		             ImGuiWindowFlags_NoTitleBar);
 
-		ImGui::Button(ICON_FA_SEARCH " Search");
-		ImGui::Button(ICON_FA_ARROW_LEFT);
+		ImGui::Button(ICON_FK_SEARCH " Search");
+		ImGui::Button(ICON_FK_ARROW_LEFT);
 
 		// example markdown
 		const auto markdownText = u8R"(

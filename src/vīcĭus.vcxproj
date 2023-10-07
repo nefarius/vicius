@@ -179,7 +179,7 @@
     <ClCompile Include="ui.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IconsFontAwesome5.h" />
+    <ClInclude Include="IconsForkAwesome.h" />
     <ClInclude Include="imgui_markdown.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="UniUtil.h" />

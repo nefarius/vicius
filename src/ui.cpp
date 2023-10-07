@@ -102,21 +102,21 @@ void LoadFonts(HINSTANCE hInstance, const float sizePixels)
 	const int ruda_regular_size = static_cast<int>(SizeofResource(hInstance, ruda_regular_res));
 	const LPVOID ruda_regular_data = LockResource(LoadResource(hInstance, ruda_regular_res));
 
-	// Font Awesome Regular
-	const HRSRC far_res = FindResource(hInstance, MAKEINTRESOURCE(IDR_FONT_FAR), RT_FONT);
-	const int far_size = static_cast<int>(SizeofResource(hInstance, far_res));
-	const LPVOID far_data = LockResource(LoadResource(hInstance, far_res));
+	// Fork Awesome
+	const HRSRC fk_res = FindResource(hInstance, MAKEINTRESOURCE(IDR_FONT_FK), RT_FONT);
+	const int fk_size = static_cast<int>(SizeofResource(hInstance, fk_res));
+	const LPVOID fk_data = LockResource(LoadResource(hInstance, fk_res));
 
 	// Base font
 	io.Fonts->AddFontFromMemoryTTF(ruda_regular_data, ruda_regular_size, sizePixels, &font_cfg);
 
-	// Font Awesome Regular
+	// Fork Awesome
 	ImFontConfig far_cfg;
 	far_cfg.FontDataOwnedByAtlas = false;
 	far_cfg.MergeMode = true; // merge with default font
-	far_cfg.GlyphMinAdvanceX = 13.0f;
-	static const ImWchar icon_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
-	io.Fonts->AddFontFromMemoryTTF(far_data, far_size, 13.0f, &far_cfg, icon_ranges);
+	far_cfg.GlyphMinAdvanceX = sizePixels;
+	static const ImWchar icon_ranges[] = { ICON_MIN_FK, ICON_MAX_FK, 0 };
+	io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels, &far_cfg, icon_ranges);
 
 	// Bold headings H2 and H3
 	H2 = io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels, &font_cfg);

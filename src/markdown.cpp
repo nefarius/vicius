@@ -74,7 +74,7 @@ void RenderChangelog(const std::string& markdown)
 	mdConfig.linkCallback = LinkClickedCallback;
 	mdConfig.tooltipCallback = nullptr;
 	mdConfig.imageCallback = ImageCallback;
-	mdConfig.linkIcon = ICON_FA_LINK;
+	mdConfig.linkIcon = ICON_FK_LINK;
 	mdConfig.headingFormats[0] = {H1, true};
 	mdConfig.headingFormats[1] = {H2, true};
 	mdConfig.headingFormats[2] = {H3, false};

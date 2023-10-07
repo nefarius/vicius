@@ -52,8 +52,7 @@ END
 
 IDR_FONT_RUDA_BOLD      FONT                    "fonts\\Ruda-Bold.ttf"
 IDR_FONT_RUDA_REGULAR   FONT                    "fonts\\Ruda-Regular.ttf"
-IDR_FONT_FAR            FONT                    "fonts\\fa-regular-400.ttf"
-IDR_FONT_FAS            FONT                    "fonts\\fa-solid-900.ttf"
+IDR_FONT_FK             FONT                    "fonts\\forkawesome-webfont.ttf"
 
 #endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
