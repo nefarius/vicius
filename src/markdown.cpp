@@ -17,18 +17,18 @@ void LinkClickedCallback(ImGui::MarkdownLinkCallbackData data_)
 	}
 }
 
-void FormatChangelogCallback(const ImGui::MarkdownFormatInfo& markdownFormatInfo_, bool start_)
+void FormatChangelogCallback(const ImGui::MarkdownFormatInfo& markdownFormatInfo, bool start)
 {
-	defaultMarkdownFormatCallback(markdownFormatInfo_, start_);
+	defaultMarkdownFormatCallback(markdownFormatInfo, start);
 
-	switch (markdownFormatInfo_.type)
+	switch (markdownFormatInfo.type)
 	{
 	// example: change the colour of heading level 2
 	case ImGui::MarkdownFormatType::HEADING:
 		{
-			if (markdownFormatInfo_.level == 2)
+			if (markdownFormatInfo.level == 2)
 			{
-				if (start_)
+				if (start)
 				{
 					ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyle().Colors[ImGuiCol_TextDisabled]);
 				}
@@ -46,7 +46,7 @@ void FormatChangelogCallback(const ImGui::MarkdownFormatInfo& markdownFormatInfo
 	}
 }
 
-inline ImGui::MarkdownImageData ImageCallback(ImGui::MarkdownLinkCallbackData data_)
+inline ImGui::MarkdownImageData ImageCallback(ImGui::MarkdownLinkCallbackData data)
 {
 	// In your application you would load an image based on data_ input. Here we just use the imgui font texture.
 	ImTextureID image = ImGui::GetIO().Fonts->TexID;
