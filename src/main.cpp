@@ -75,15 +75,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	io.IniFilename = nullptr;
 	io.LogFilename = nullptr;
 
+	LoadFonts(hInstance);
+	//ApplyImGuiStyleDark();
+
 	// Set window icon
 	if (auto hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)))
 	{
 		SendMessage(window.getSystemHandle(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
 	}
-
-	LoadFonts(hInstance);
-
-	ApplyImGuiStyleDark();
 
 	sf::Clock deltaClock;
 	while (window.isOpen())
@@ -104,8 +103,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		//ImGui::ShowDemoWindow();
 
 		bool open = true;
-		ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight));
-		ImGui::SetNextWindowPos(ImVec2(0, 0));
+		// fakes a little window border/margin
+		const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 5, main_viewport->WorkPos.y + 5));
+		ImGui::SetNextWindowSize(ImVec2(windowWidth - 10, windowHeight - 10));
 		ImGui::Begin("Main", &open,
 		             ImGuiWindowFlags_NoCollapse |
 		             ImGuiWindowFlags_NoMove |
