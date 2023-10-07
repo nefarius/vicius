@@ -13,9 +13,18 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\3rd">
+      <UniqueIdentifier>{b984c4fb-c3e1-4ed9-95b8-41e714e99caf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="markdown.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -26,9 +35,21 @@
     <ClInclude Include="UniUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CustomizeMe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Updater.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IconsForkAwesome.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_markdown.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="MAccel.rc">
+    <ResourceCompile Include="vīcĭus.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
@@ -39,5 +60,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="vcpkg.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="fonts\Ruda-Black.ttf" />
+    <Font Include="fonts\Ruda-Bold.ttf" />
+    <Font Include="fonts\Ruda-ExtraBold.ttf" />
+    <Font Include="fonts\Ruda-Medium.ttf" />
+    <Font Include="fonts\Ruda-Regular.ttf" />
+    <Font Include="fonts\Ruda-SemiBold.ttf" />
   </ItemGroup>
 </Project>
