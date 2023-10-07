@@ -1,0 +1,15 @@
+{
+  "name": "vicius",
+  "version": "1.0.0",
+  "description": "vicius",
+  "license": "MIT",
+  "supports": "!(arm | uwp)",
+  "dependencies": [
+    "sfml",
+    "imgui",
+    "imgui-sfml",
+    "argh",
+    "restclient-cpp",
+    "jsoncpp"
+  ]
+}
