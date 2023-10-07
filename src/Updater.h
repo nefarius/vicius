@@ -18,14 +18,10 @@
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 
-
-
 // CLI parser
 #include <argh.h>
 
-//
 // Custom
-// 
 #include "UniUtil.h"
 #include "resource.h"
 #include "CustomizeMe.h"

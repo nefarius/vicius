@@ -7,6 +7,8 @@
 #include <filesystem>
 #include <regex>
 
+#include <restclient-cpp/restclient.h>
+
 
 //
 // Enable visual styles
@@ -20,7 +22,7 @@ EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
 static std::filesystem::path GetImageBasePathW()
 {
-	wchar_t myPath[MAX_PATH + 1] = {0};
+	wchar_t myPath[MAX_PATH + 1] = { 0 };
 
 	GetModuleFileNameW(
 		reinterpret_cast<HINSTANCE>(&__ImageBase),
@@ -83,7 +85,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	auto appPath = GetImageBasePathW();
 	auto fileName = appPath.stem().string();
 
-	std::regex product_regex(NV_FILENAME_REGEX);
+	std::regex product_regex(NV_FILENAME_REGEX, std::regex_constants::icase);
 	auto matches_begin = std::sregex_iterator(fileName.begin(), fileName.end(), product_regex);
 	auto matches_end = std::sregex_iterator();
 
@@ -97,6 +99,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			username = match[1];
 			repository = match[2];
 		}
+	}
+
+	if (!username.empty() && !repository.empty())
+	{
+		auto url = std::format(NV_API_URL_TEMPLATE, username, repository);
+		RestClient::Response r = RestClient::get(url);
 	}
 
 #pragma endregion
@@ -148,10 +156,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 5, main_viewport->WorkPos.y + 5));
 		ImGui::SetNextWindowSize(ImVec2(windowWidth - 10, windowHeight - 10));
 		ImGui::Begin("Main", &open,
-		             ImGuiWindowFlags_NoCollapse |
-		             ImGuiWindowFlags_NoMove |
-		             ImGuiWindowFlags_NoResize |
-		             ImGuiWindowFlags_NoTitleBar);
+			ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoTitleBar);
 
 		ImGui::Button(ICON_FK_SEARCH " Search");
 		ImGui::Button(ICON_FK_ARROW_LEFT);
