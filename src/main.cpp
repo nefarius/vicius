@@ -9,6 +9,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
+
 static std::wstring GetImageBasePathW()
 {
 	wchar_t myPath[MAX_PATH + 1] = {0};
@@ -112,7 +113,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		             ImGuiWindowFlags_NoMove |
 		             ImGuiWindowFlags_NoResize |
 		             ImGuiWindowFlags_NoTitleBar);
-		ImGui::Button("Look at this pretty button");
+
+		ImGui::Button(ICON_FA_SEARCH " Search");
+		ImGui::Button(ICON_FA_ARROW_LEFT);
 
 		// example markdown
 		const auto markdownText = u8R"(

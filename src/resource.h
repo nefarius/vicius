@@ -5,6 +5,8 @@
 #define IDI_ICON_MAIN                   101
 #define IDR_FONT_RUDA_BOLD              102
 #define IDR_FONT_RUDA_REGULAR           103
+#define IDR_FONT_FAR                    104
+#define IDR_FONT_FAS                    105
 
 // Next default values for new objects
 // 
