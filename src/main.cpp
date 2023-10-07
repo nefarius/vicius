@@ -1,6 +1,14 @@
 #include "Updater.h"
 
 //
+// STL
+// 
+#include <format>
+#include <filesystem>
+#include <regex>
+
+
+//
 // Enable visual styles
 // 
 #pragma comment(linker,"\"/manifestdependency:type='win32' \
@@ -10,7 +18,7 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
 
-static std::wstring GetImageBasePathW()
+static std::filesystem::path GetImageBasePathW()
 {
 	wchar_t myPath[MAX_PATH + 1] = {0};
 
@@ -66,8 +74,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 #pragma endregion
 
+#pragma region Filename analysis
+
+	//
+	// See if we can parse the product name from the process file name
+	// 
+
+	auto appPath = GetImageBasePathW();
+	auto fileName = appPath.stem().string();
+
+	std::regex product_regex(NV_FILENAME_REGEX);
+	auto matches_begin = std::sregex_iterator(fileName.begin(), fileName.end(), product_regex);
+	auto matches_end = std::sregex_iterator();
+
+	std::string username;
+	std::string repository;
+
+	if (matches_begin != matches_end)
+	{
+		if (const std::smatch& match = *matches_begin; match.size() == 3)
+		{
+			username = match[1];
+			repository = match[2];
+		}
+	}
+
+#pragma endregion
+
 	const int windowWidth = 640, windowHeight = 512;
-	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), "Nefarius' Updater", sf::Style::Titlebar);
+	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), NV_WINDOW_TITLE, sf::Style::Titlebar);
 
 	window.setFramerateLimit(60);
 	ImGui::SFML::Init(window, false);
