@@ -16,6 +16,9 @@
     <Filter Include="Header Files\3rd">
       <UniqueIdentifier>{b984c4fb-c3e1-4ed9-95b8-41e714e99caf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Fonts">
+      <UniqueIdentifier>{1de30b69-55df-4e2f-babe-2b3e039da5a5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -62,11 +65,23 @@
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
-    <Font Include="fonts\Ruda-Black.ttf" />
-    <Font Include="fonts\Ruda-Bold.ttf" />
-    <Font Include="fonts\Ruda-ExtraBold.ttf" />
-    <Font Include="fonts\Ruda-Medium.ttf" />
-    <Font Include="fonts\Ruda-Regular.ttf" />
-    <Font Include="fonts\Ruda-SemiBold.ttf" />
+    <Font Include="fonts\Ruda-Black.ttf">
+      <Filter>Fonts</Filter>
+    </Font>
+    <Font Include="fonts\Ruda-Bold.ttf">
+      <Filter>Fonts</Filter>
+    </Font>
+    <Font Include="fonts\Ruda-ExtraBold.ttf">
+      <Filter>Fonts</Filter>
+    </Font>
+    <Font Include="fonts\Ruda-Medium.ttf">
+      <Filter>Fonts</Filter>
+    </Font>
+    <Font Include="fonts\Ruda-Regular.ttf">
+      <Filter>Fonts</Filter>
+    </Font>
+    <Font Include="fonts\Ruda-SemiBold.ttf">
+      <Filter>Fonts</Filter>
+    </Font>
   </ItemGroup>
 </Project>
