@@ -10,7 +10,9 @@ nŏvīcĭus
 
 TBD
 
-## 3rd party credits
+## Sources & 3rd party credits
+
+This library benefits from these awesome projects ❤ (appearance in no special order):
 
 - [Dear ImGui](https://github.com/ocornut/imgui)
 - [Simple and Fast Multimedia Library](https://www.sfml-dev.org/)
