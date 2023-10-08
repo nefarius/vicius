@@ -112,7 +112,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		SendMessage(window.getSystemHandle(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
 	}
 
-	// Enable dark titlebar
+	// Enable dark titlebar (this depends on the Windows version to support it)
 	int32_t preference = 1;
 	DwmSetWindowAttribute(window.getSystemHandle(), DWMWA_USE_IMMERSIVE_DARK_MODE, &preference, sizeof(int32_t));
 
@@ -145,6 +145,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGuiWindowFlags_NoResize |
 			ImGuiWindowFlags_NoTitleBar);
 
+		// icons example
 		ImGui::Button(ICON_FK_SEARCH " Search");
 		ImGui::Button(ICON_FK_ARROW_LEFT);
 
