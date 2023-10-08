@@ -198,6 +198,7 @@
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
+    <Font Include="fonts\forkawesome-webfont.ttf" />
     <Font Include="fonts\Ruda-Black.ttf" />
     <Font Include="fonts\Ruda-Bold.ttf" />
     <Font Include="fonts\Ruda-ExtraBold.ttf" />

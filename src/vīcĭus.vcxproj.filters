@@ -89,5 +89,8 @@
     <Font Include="fonts\Ruda-SemiBold.ttf">
       <Filter>Fonts</Filter>
     </Font>
+    <Font Include="fonts\forkawesome-webfont.ttf">
+      <Filter>Fonts</Filter>
+    </Font>
   </ItemGroup>
 </Project>

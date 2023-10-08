@@ -23,8 +23,6 @@ extern ImFont* G_Font_H2;
 extern ImFont* G_Font_H3;
 
 
-
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
