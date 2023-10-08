@@ -62,8 +62,8 @@
     <ClInclude Include="InstanceConfig.hpp">
       <Filter>Header Files\Models</Filter>
     </ClInclude>
-    <ClInclude Include="Misc.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="UpdateResponse.hpp">
+      <Filter>Header Files\Models</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

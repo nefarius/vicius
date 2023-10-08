@@ -5,6 +5,7 @@
 // Models
 // 
 #include "InstanceConfig.hpp"
+#include "UpdateResponse.hpp"
 
 //
 // STL
@@ -12,12 +13,11 @@
 #include <format>
 #include <regex>
 #include <fstream>
+#include <iostream>
 
 #include <restclient-cpp/restclient.h>
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
-
-#include "Misc.h"
 
 
 //
@@ -108,11 +108,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		{
 			json data = json::parse(configFileStream);
 
-			local.serverUrlTemplate = get_value(
-				data,
-				NAMEOF(local.serverUrlTemplate),
-				local.serverUrlTemplate
-			);
+			local.serverUrlTemplate = data.value("/instance/serverUrlTemplate"_json_pointer, local.serverUrlTemplate);
+			local.filenameRegex = data.value("/instance/filenameRegex"_json_pointer, local.filenameRegex);
 		}
 		catch (...)
 		{
@@ -146,7 +143,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	auto requestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
 
-	RestClient::Response r = RestClient::get(requestUrl);
+	RestClient::Response response = RestClient::get(requestUrl);
+
+	// TODO: error checking!
+
+	models::UpdateResponse updateConfig;
+
+	try
+	{
+		json reply = json::parse(response.body);
+		updateConfig = reply.get<models::UpdateResponse>();
+	}
+	catch (...)
+	{
+		updateConfig = models::UpdateResponse();
+	}
+
+
 
 
 	constexpr int windowWidth = 640, windowHeight = 512;

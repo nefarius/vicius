@@ -184,10 +184,10 @@
     <ClInclude Include="IconsForkAwesome.h" />
     <ClInclude Include="imgui_markdown.h" />
     <ClInclude Include="InstanceConfig.hpp" />
-    <ClInclude Include="Misc.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="UniUtil.h" />
     <ClInclude Include="Updater.h" />
+    <ClInclude Include="UpdateResponse.hpp" />
     <ClInclude Include="WizardPage.h" />
   </ItemGroup>
   <ItemGroup>
