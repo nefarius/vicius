@@ -12,6 +12,6 @@
 //
 // Default window title
 // 
-#define NV_WINDOW_TITLE			""
+#define NV_WINDOW_TITLE			"Nefarius' Updater"
 
 #define NV_API_URL_TEMPLATE		"https://aiu.api.nefarius.systems/api/github/{}/{}/updates?asJson=true"

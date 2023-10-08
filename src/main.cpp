@@ -94,7 +94,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma endregion
 
 	const int windowWidth = 640, windowHeight = 512;
-	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), NV_WINDOW_TITLE, sf::Style::Titlebar);
+	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), NV_WINDOW_TITLE, sf::Style::None);
 
 	window.setFramerateLimit(60);
 	ImGui::SFML::Init(window, false);
@@ -111,12 +111,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	{
 		SendMessage(window.getSystemHandle(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
 	}
-
-	// Enable dark titlebar (this depends on the Windows version to support it)
-	BOOL preference = 1;
-	DwmSetWindowAttribute(window.getSystemHandle(), DWMWA_USE_IMMERSIVE_DARK_MODE, &preference, sizeof(BOOL));
-	ActivateWindow(window.getSystemHandle());
-
+	
 	sf::Clock deltaClock;
 	while (window.isOpen())
 	{
@@ -132,7 +127,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		}
 
 		ImGui::SFML::Update(window, deltaClock.restart());
-		
+
 		//ImGui::ShowDemoWindow();
 
 		bool open = true;
