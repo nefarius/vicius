@@ -194,8 +194,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 		ImGui::SetCursorPosY(460);
 		ImGui::Separator();
+
 		ImGui::SetCursorPos(ImVec2(570, 470));
-		if (ImGui::Button("Cancel"))
+		if (ImGui::Button(currentPage == WizardPage::End ? "Finish" : "Cancel"))
 		{
 			window.close();
 		}
