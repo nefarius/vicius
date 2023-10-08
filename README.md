@@ -8,14 +8,14 @@ Nefarius' [nŏvīcĭus](https://latinitium.com/latin-dictionaries/?t=lsn31290) u
 
 ## About
 
-TBD
+vīcĭus is a self-contained C++20 executable acting as a software update agent. It can be deployed alongside your product and will take care of periodically checking for newer versions online and notifying the user of pending updates. Its goal is to require the least amount of configuration to get it up and running while providing enough flexibility to be customized for various environments, if desired. It doesn't require any prerequisites being present on the target system and should be able to run on any recent Windows version.
 
 ## Sources & 3rd party credits
 
-This library benefits from these awesome projects ❤ (appearance in no special order):
+This tool benefits from these awesome projects ❤ (appearance in no special order):
 
 - [Dear ImGui](https://github.com/ocornut/imgui)
-  - [ImGui - Using Icon Fonts](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-icon-fonts)
+- [Using Icon Fonts](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-icon-fonts)
 - [Simple and Fast Multimedia Library](https://www.sfml-dev.org/)
 - [ImGui-SFML](https://github.com/SFML/imgui-sfml)
 - [Argh! A minimalist argument handler](https://github.com/adishavit/argh)
