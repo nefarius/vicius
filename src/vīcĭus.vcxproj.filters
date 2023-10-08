@@ -19,6 +19,9 @@
     <Filter Include="Fonts">
       <UniqueIdentifier>{1de30b69-55df-4e2f-babe-2b3e039da5a5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Models">
+      <UniqueIdentifier>{5fd3e4b1-3c23-41e2-8e85-68cbcf63c68f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -55,6 +58,9 @@
     </ClInclude>
     <ClInclude Include="WizardPage.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="InstanceConfig.hpp">
+      <Filter>Header Files\Models</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

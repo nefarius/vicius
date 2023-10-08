@@ -2,12 +2,20 @@
 #include "WizardPage.h"
 
 //
+// Models
+// 
+#include "InstanceConfig.hpp"
+
+//
 // STL
 // 
 #include <format>
 #include <regex>
+#include <fstream>
 
 #include <restclient-cpp/restclient.h>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 
 //
@@ -79,7 +87,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		serverUrlTemplate = NV_API_URL_TEMPLATE;
 	}
 
-#pragma region Filename analysis
+	// updater configuration and defaults
+	models::InstanceConfig configuration(serverUrlTemplate);
 
 	//
 	// See if we can parse the product name from the process file name
@@ -88,7 +97,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	auto appPath = GetImageBasePathW();
 	auto fileName = appPath.stem().string();
 
-	std::regex product_regex(NV_FILENAME_REGEX, std::regex_constants::icase);
+	// we have a config file, attempt reading
+	if (auto configFile = appPath.parent_path() / std::format("{}.json", fileName); exists(configFile))
+	{
+		std::ifstream configFileStream(configFile);
+
+		try
+		{
+			// attempt deserialization
+			json data = json::parse(configFileStream);
+			// TODO: figure out if we can do partial merges too
+			auto cfg = data.get<models::InstanceConfig>();
+			configuration = cfg;
+		}
+		catch (...)
+		{
+			// invalid config, too bad
+		}
+
+		configFileStream.close();
+	}
+
+	std::regex product_regex(configuration.GetFilenameRegex(), std::regex_constants::icase);
 	auto matches_begin = std::sregex_iterator(fileName.begin(), fileName.end(), product_regex);
 	auto matches_end = std::sregex_iterator();
 
@@ -109,10 +139,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	std::string tenantSubPath = (!username.empty() && !repository.empty())
 		                            ? std::format("{}/{}", username, repository)
 		                            : fileName;
-	
+
 	auto requestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
-	
-#pragma endregion
 
 	RestClient::Response r = RestClient::get(requestUrl);
 

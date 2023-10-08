@@ -34,3 +34,4 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [Fork Awesome](https://forkaweso.me/Fork-Awesome/)
 - [REST client for C++](https://github.com/mrtazz/restclient-cpp)
   - [libcurl](https://curl.se/libcurl/)
+- [JSON for Modern C++](https://github.com/nlohmann/json)
