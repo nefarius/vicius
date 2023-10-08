@@ -17,6 +17,11 @@ name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 
+extern ImFont* G_Font_H1;
+extern ImFont* G_Font_H2;
+extern ImFont* G_Font_H3;
+
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
 	UNREFERENCED_PARAMETER(hPrevInstance);
@@ -104,14 +109,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	io.LogFilename = nullptr;
 
 	LoadFonts(hInstance);
-	//ApplyImGuiStyleDark();
+	ApplyImGuiStyleDark();
 
 	// Set window icon
 	if (auto hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)))
 	{
 		SendMessage(window.getSystemHandle(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
 	}
-	
+
 	sf::Clock deltaClock;
 	while (window.isOpen())
 	{
@@ -130,17 +135,49 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 		//ImGui::ShowDemoWindow();
 
-		bool open = true;
+		ImGuiWindowFlags flags =
+			ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoMove |
+			ImGuiWindowFlags_NoResize |
+			ImGuiWindowFlags_NoTitleBar;
+
+		bool firstPage = true;
+
 		// fakes a little window border/margin
 		const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 5, main_viewport->WorkPos.y + 5));
 		ImGui::SetNextWindowSize(ImVec2(windowWidth - 10, windowHeight - 10));
-		ImGui::Begin("Main", &open,
-			ImGuiWindowFlags_NoCollapse |
-			ImGuiWindowFlags_NoMove |
-			ImGuiWindowFlags_NoResize |
-			ImGuiWindowFlags_NoTitleBar);
 
+		ImGui::Begin("FoundUpdatesActionsPage", &firstPage, flags);
+
+		ImGui::Text(ICON_FK_ARROW_LEFT);
+		ImGui::SameLine();
+		ImGui::Text("Found Updates for %s", "HidHide");
+
+		ImGui::Indent(40);
+		ImGui::PushFont(G_Font_H1);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+		ImGui::Text("Updates for %s are available", "HidHide");
+		ImGui::PopFont();
+
+		ImGui::Indent(40);
+		ImGui::PushFont(G_Font_H2);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+		ImGui::Button(ICON_FK_DOWNLOAD " Download and install now");
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
+		ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow");
+		ImGui::PopFont();
+		ImGui::Unindent(80);
+
+		ImGui::SetCursorPosY(460);
+		ImGui::Separator();
+		ImGui::SetCursorPosX(560);
+		if (ImGui::Button("Cancel"))
+		{
+			window.close();
+		}
+
+		/*
 		// icons example
 		ImGui::Button(ICON_FK_SEARCH " Search");
 		ImGui::Button(ICON_FK_ARROW_LEFT);
@@ -156,14 +193,15 @@ ___
 *Emphasis* and **strong emphasis** change the appearance of the text.
 ## H2 Header: indented text.
   This text has an indent (two leading spaces).
-    This one has two.
+	This one has two.
 ### H3 Header: Lists
   * Unordered lists
-    * Lists can be indented with two extra spaces.
+	* Lists can be indented with two extra spaces.
   * Lists can have [links like this one to Avoyd](https://www.avoyd.com/) and *emphasized text*
 )";
 
 		RenderChangelog(std::string((const char*)markdownText));
+		*/
 
 		ImGui::End();
 

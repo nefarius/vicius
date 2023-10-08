@@ -1,9 +1,9 @@
 #include "Updater.h"
 
 
-extern ImFont* H1;
-extern ImFont* H2;
-extern ImFont* H3;
+extern ImFont* G_Font_H1;
+extern ImFont* G_Font_H2;
+extern ImFont* G_Font_H3;
 
 extern ImGui::MarkdownConfig mdConfig;
 
@@ -93,11 +93,12 @@ void LoadFonts(HINSTANCE hInstance, const float sizePixels)
 	const ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->Clear();
 
-	// get embedded fonts
+	// Ruda bold
 	const HRSRC ruda_bold_res = FindResource(hInstance, MAKEINTRESOURCE(IDR_FONT_RUDA_BOLD), RT_FONT);
 	const int ruda_bold_size = static_cast<int>(SizeofResource(hInstance, ruda_bold_res));
 	const LPVOID ruda_bold_data = LockResource(LoadResource(hInstance, ruda_bold_res));
 
+	// Ruda Regular
 	const HRSRC ruda_regular_res = FindResource(hInstance, MAKEINTRESOURCE(IDR_FONT_RUDA_REGULAR), RT_FONT);
 	const int ruda_regular_size = static_cast<int>(SizeofResource(hInstance, ruda_regular_res));
 	const LPVOID ruda_regular_data = LockResource(LoadResource(hInstance, ruda_regular_res));
@@ -110,20 +111,27 @@ void LoadFonts(HINSTANCE hInstance, const float sizePixels)
 	// Base font
 	io.Fonts->AddFontFromMemoryTTF(ruda_regular_data, ruda_regular_size, sizePixels, &font_cfg);
 
-	// Fork Awesome
-	ImFontConfig far_cfg;
-	far_cfg.FontDataOwnedByAtlas = false;
-	far_cfg.MergeMode = true; // merge with default font
-	far_cfg.GlyphMinAdvanceX = sizePixels;
-	static const ImWchar icon_ranges[] = { ICON_MIN_FK, ICON_MAX_FK, 0 };
-	io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels, &far_cfg, icon_ranges);
+	// Fork Awesome merge config
+	static constexpr ImWchar icon_ranges[] = { ICON_MIN_FK, ICON_MAX_FK, 0 };
+	ImFontConfig fk_cfg;
+	fk_cfg.FontDataOwnedByAtlas = false;
+	fk_cfg.MergeMode = true; // merge with default font
+	fk_cfg.GlyphMinAdvanceX = sizePixels;
 
-	// Bold headings H2 and H3
-	H2 = io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels, &font_cfg);
-	H3 = mdConfig.headingFormats[1].font;
+	// Base font + Fork Awesome merged (default font)
+	io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels, &fk_cfg, icon_ranges);
+
+	// Bold headings H2
+	io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.2f, &font_cfg);
+	G_Font_H2 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.2f, &fk_cfg, icon_ranges);
+
+	// Bold H3 (smaller)
+	io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.0f, &font_cfg);
+	G_Font_H3 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.0f, &fk_cfg, icon_ranges);
+
 	// bold heading H1
-	const float pixelsH1 = sizePixels * 1.1f;
-	H1 = io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, pixelsH1, &font_cfg);
+	io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.5f, &font_cfg);
+	G_Font_H1 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.5f, &fk_cfg, icon_ranges);
 	
 	ImGui::SFML::UpdateFontTexture();
 }

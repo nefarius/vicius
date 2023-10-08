@@ -1,9 +1,9 @@
 #include "Updater.h"
 
 
-ImFont* H1 = nullptr;
-ImFont* H2 = nullptr;
-ImFont* H3 = nullptr;
+ImFont* G_Font_H1 = nullptr;
+ImFont* G_Font_H2 = nullptr;
+ImFont* G_Font_H3 = nullptr;
 
 ImGui::MarkdownConfig mdConfig;
 
@@ -75,9 +75,9 @@ void RenderChangelog(const std::string& markdown)
 	mdConfig.tooltipCallback = nullptr;
 	mdConfig.imageCallback = ImageCallback;
 	mdConfig.linkIcon = ICON_FK_LINK;
-	mdConfig.headingFormats[0] = {H1, true};
-	mdConfig.headingFormats[1] = {H2, true};
-	mdConfig.headingFormats[2] = {H3, false};
+	mdConfig.headingFormats[0] = {G_Font_H1, true};
+	mdConfig.headingFormats[1] = {G_Font_H2, true};
+	mdConfig.headingFormats[2] = {G_Font_H3, false};
 	mdConfig.userData = nullptr;
 	mdConfig.formatCallback = FormatChangelogCallback;
 	Markdown(markdown.c_str(), markdown.length(), mdConfig);
