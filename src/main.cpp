@@ -140,15 +140,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGuiWindowFlags_NoMove |
 			ImGuiWindowFlags_NoResize |
 			ImGuiWindowFlags_NoTitleBar;
-
-		bool firstPage = true;
-
+				
 		// fakes a little window border/margin
 		const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
 		ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 5, main_viewport->WorkPos.y + 5));
 		ImGui::SetNextWindowSize(ImVec2(windowWidth - 10, windowHeight - 10));
 
-		ImGui::Begin("FoundUpdatesActionsPage", &firstPage, flags);
+		ImGui::Begin("FoundUpdatesActionsPage", NULL, flags);
 
 		ImGui::Text(ICON_FK_ARROW_LEFT);
 		ImGui::SameLine();
