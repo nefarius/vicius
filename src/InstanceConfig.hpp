@@ -17,7 +17,7 @@ namespace models
 		{
 		}
 
-		InstanceConfig(std::string url) : serverUrlTemplate(std::move(url))
+		explicit InstanceConfig(std::string url) : serverUrlTemplate(std::move(url))
 		{
 			filenameRegex = NV_FILENAME_REGEX;
 		}
