@@ -62,6 +62,9 @@
     <ClInclude Include="InstanceConfig.hpp">
       <Filter>Header Files\Models</Filter>
     </ClInclude>
+    <ClInclude Include="Misc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="vīcĭus.rc">

@@ -4,24 +4,9 @@
 
 namespace models
 {
-	class InstanceConfig
+	struct InstanceConfig
 	{
-	private:
 		std::string serverUrlTemplate;
-		std::string filenameRegex;
-
-	public:
-		NLOHMANN_DEFINE_TYPE_INTRUSIVE(InstanceConfig, serverUrlTemplate, filenameRegex)
-
-		InstanceConfig()
-		{
-		}
-
-		explicit InstanceConfig(std::string url) : serverUrlTemplate(std::move(url))
-		{
-			filenameRegex = NV_FILENAME_REGEX;
-		}
-
-		const std::string& GetFilenameRegex() const { return filenameRegex; }
+		std::string filenameRegex;		
 	};
 }

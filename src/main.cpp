@@ -17,6 +17,8 @@
 #include <nlohmann/json.hpp>
 using json = nlohmann::json;
 
+#include "Misc.h"
+
 
 //
 // Enable visual styles
@@ -88,7 +90,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	}
 
 	// updater configuration and defaults
-	models::InstanceConfig configuration(serverUrlTemplate);
+	models::InstanceConfig local(serverUrlTemplate, NV_FILENAME_REGEX);
 
 	//
 	// See if we can parse the product name from the process file name
@@ -104,11 +106,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 		try
 		{
-			// attempt deserialization
 			json data = json::parse(configFileStream);
-			// TODO: figure out if we can do partial merges too
-			auto cfg = data.get<models::InstanceConfig>();
-			configuration = cfg;
+
+			local.serverUrlTemplate = get_value(
+				data,
+				NAMEOF(local.serverUrlTemplate),
+				local.serverUrlTemplate
+			);
 		}
 		catch (...)
 		{
@@ -118,7 +122,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		configFileStream.close();
 	}
 
-	std::regex productRegex(configuration.GetFilenameRegex(), std::regex_constants::icase);
+	std::regex productRegex(local.filenameRegex, std::regex_constants::icase);
 	auto matchesBegin = std::sregex_iterator(fileName.begin(), fileName.end(), productRegex);
 	auto matchesEnd = std::sregex_iterator();
 
