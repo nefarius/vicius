@@ -111,9 +111,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		                            : fileName;
 	
 	auto requestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
-	RestClient::Response r = RestClient::get(requestUrl);
-
+	
 #pragma endregion
+
+	RestClient::Response r = RestClient::get(requestUrl);
 
 	constexpr int windowWidth = 640, windowHeight = 512;
 	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), NV_WINDOW_TITLE, sf::Style::None);
