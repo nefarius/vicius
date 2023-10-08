@@ -24,7 +24,7 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
 This tool benefits from these awesome projects ❤ (appearance in no special order):
 
 - [Dear ImGui](https://github.com/ocornut/imgui)
-- [Using Icon Fonts](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-icon-fonts)
+  - [Using Icon Fonts](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-icon-fonts)
 - [Simple and Fast Multimedia Library](https://www.sfml-dev.org/)
 - [ImGui-SFML](https://github.com/SFML/imgui-sfml)
 - [Argh! A minimalist argument handler](https://github.com/adishavit/argh)
@@ -32,3 +32,5 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [IconFontCppHeaders](https://github.com/juliettef/IconFontCppHeaders)
 - [Ruda Font](https://fonts.google.com/specimen/Ruda)
 - [Fork Awesome](https://forkaweso.me/Fork-Awesome/)
+- [REST client for C++](https://github.com/mrtazz/restclient-cpp)
+  - [libcurl](https://curl.se/libcurl/)
