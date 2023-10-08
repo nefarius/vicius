@@ -87,7 +87,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	if (!username.empty() && !repository.empty())
 	{
-		auto url = std::format(NV_API_URL_TEMPLATE, username, repository);
+		auto url = std::format("http://localhost:5200/api/{}/{}/updates.json", username, repository);
 		RestClient::Response r = RestClient::get(url);
 	}
 

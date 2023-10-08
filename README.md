@@ -4,7 +4,7 @@
 
 [![MSBuild](https://github.com/nefarius/vicius/actions/workflows/msbuild.yml/badge.svg)](https://github.com/nefarius/vicius/actions/workflows/msbuild.yml) ![GitHub all releases](https://img.shields.io/github/downloads/nefarius/vicius/total)
 
-nŏvīcĭus
+Nefarius' [nŏvīcĭus](https://latinitium.com/latin-dictionaries/?t=lsn31290) universal software updater agent.
 
 ## About
 
@@ -15,6 +15,7 @@ TBD
 This library benefits from these awesome projects ❤ (appearance in no special order):
 
 - [Dear ImGui](https://github.com/ocornut/imgui)
+  - [ImGui - Using Icon Fonts](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-icon-fonts)
 - [Simple and Fast Multimedia Library](https://www.sfml-dev.org/)
 - [ImGui-SFML](https://github.com/SFML/imgui-sfml)
 - [Argh! A minimalist argument handler](https://github.com/adishavit/argh)
@@ -22,4 +23,3 @@ This library benefits from these awesome projects ❤ (appearance in no special 
 - [IconFontCppHeaders](https://github.com/juliettef/IconFontCppHeaders)
 - [Ruda Font](https://fonts.google.com/specimen/Ruda)
 - [Fork Awesome](https://forkaweso.me/Fork-Awesome/)
-- [ImGui - Using Icon Fonts](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-icon-fonts)
