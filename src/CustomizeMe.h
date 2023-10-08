@@ -14,4 +14,6 @@
 // 
 #define NV_WINDOW_TITLE			"Nefarius' Updater"
 
+#define NV_API_URL_MAX_CHARS	2000
+
 #define NV_API_URL_TEMPLATE		"https://aiu.api.nefarius.systems/api/github/{}/{}/updates?asJson=true"

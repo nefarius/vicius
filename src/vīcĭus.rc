@@ -64,7 +64,7 @@ IDR_FONT_FK             FONT                    "fonts\\forkawesome-webfont.ttf"
 
 STRINGTABLE
 BEGIN
-    IDS_STRING_SERVER_URL   "https://example.org/updates.json"
+    IDS_STRING_SERVER_URL   "http://localhost:5200/api/{}/updates.json"
 END
 
 #endif    // English (United States) resources

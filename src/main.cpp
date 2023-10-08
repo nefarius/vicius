@@ -66,6 +66,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 #pragma endregion
 
+	// grab our backend URL from string resource
+	std::string serverUrlTemplate(NV_API_URL_MAX_CHARS, '\0');
+	if (!LoadStringA(
+		hInstance,
+		IDS_STRING_SERVER_URL,
+		serverUrlTemplate.data(),
+		NV_API_URL_MAX_CHARS - 1
+	))
+	{
+		// fallback value
+		serverUrlTemplate = NV_API_URL_TEMPLATE;
+	}
+
 #pragma region Filename analysis
 
 	//
@@ -91,11 +104,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		}
 	}
 
-	if (!username.empty() && !repository.empty())
-	{
-		auto url = std::format("http://localhost:5200/api/{}/{}/updates.json", username, repository);
-		RestClient::Response r = RestClient::get(url);
-	}
+	// first try to build "manufacturer/product" and use filename as 
+	// fallback if extraction via regex didn't yield any results
+	std::string tenantSubPath = (!username.empty() && !repository.empty())
+		                            ? std::format("{}/{}", username, repository)
+		                            : fileName;
+	
+	auto requestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
+	RestClient::Response r = RestClient::get(requestUrl);
 
 #pragma endregion
 
@@ -118,7 +134,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		SendMessage(window.getSystemHandle(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
 	}
 
-	WizardPage currentPage = WizardPage::Start;
+	auto currentPage = WizardPage::Start;
 
 	sf::Clock deltaClock;
 	while (window.isOpen())
