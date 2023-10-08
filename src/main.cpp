@@ -4,7 +4,6 @@
 // STL
 // 
 #include <format>
-#include <filesystem>
 #include <regex>
 
 #include <restclient-cpp/restclient.h>
@@ -17,21 +16,6 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-EXTERN_C IMAGE_DOS_HEADER __ImageBase;
-
-
-static std::filesystem::path GetImageBasePathW()
-{
-	wchar_t myPath[MAX_PATH + 1] = { 0 };
-
-	GetModuleFileNameW(
-		reinterpret_cast<HINSTANCE>(&__ImageBase),
-		myPath,
-		MAX_PATH + 1
-	);
-
-	return std::wstring(myPath);
-}
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
