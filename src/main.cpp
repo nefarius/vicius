@@ -118,16 +118,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		configFileStream.close();
 	}
 
-	std::regex product_regex(configuration.GetFilenameRegex(), std::regex_constants::icase);
-	auto matches_begin = std::sregex_iterator(fileName.begin(), fileName.end(), product_regex);
-	auto matches_end = std::sregex_iterator();
+	std::regex productRegex(configuration.GetFilenameRegex(), std::regex_constants::icase);
+	auto matchesBegin = std::sregex_iterator(fileName.begin(), fileName.end(), productRegex);
+	auto matchesEnd = std::sregex_iterator();
 
 	std::string username;
 	std::string repository;
 
-	if (matches_begin != matches_end)
+	if (matchesBegin != matchesEnd)
 	{
-		if (const std::smatch& match = *matches_begin; match.size() == 3)
+		if (const std::smatch& match = *matchesBegin; match.size() == 3)
 		{
 			username = match[1];
 			repository = match[2];
@@ -143,6 +143,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	auto requestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
 
 	RestClient::Response r = RestClient::get(requestUrl);
+
 
 	constexpr int windowWidth = 640, windowHeight = 512;
 	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), NV_WINDOW_TITLE, sf::Style::None);
