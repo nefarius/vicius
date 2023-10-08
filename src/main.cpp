@@ -113,8 +113,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	}
 
 	// Enable dark titlebar (this depends on the Windows version to support it)
-	int32_t preference = 1;
-	DwmSetWindowAttribute(window.getSystemHandle(), DWMWA_USE_IMMERSIVE_DARK_MODE, &preference, sizeof(int32_t));
+	BOOL preference = 1;
+	DwmSetWindowAttribute(window.getSystemHandle(), DWMWA_USE_IMMERSIVE_DARK_MODE, &preference, sizeof(BOOL));
 
 	sf::Clock deltaClock;
 	while (window.isOpen())
