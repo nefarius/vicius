@@ -169,7 +169,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 		ImGui::SetCursorPosY(460);
 		ImGui::Separator();
-		ImGui::SetCursorPosX(560);
+		ImGui::SetCursorPos(ImVec2(570, 470));
 		if (ImGui::Button("Cancel"))
 		{
 			window.close();
