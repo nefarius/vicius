@@ -10,6 +10,7 @@
     "imgui-sfml",
     "argh",
     "restclient-cpp",
-    "jsoncpp"
+    "jsoncpp",
+    "magic-enum"
   ]
 }

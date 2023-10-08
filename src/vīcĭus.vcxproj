@@ -186,6 +186,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="UniUtil.h" />
     <ClInclude Include="Updater.h" />
+    <ClInclude Include="WizardPage.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="vīcĭus.rc" />

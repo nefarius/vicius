@@ -1,4 +1,5 @@
 #include "Updater.h"
+#include "WizardPage.h"
 
 //
 // STL
@@ -20,6 +21,8 @@ processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 extern ImFont* G_Font_H1;
 extern ImFont* G_Font_H2;
 extern ImFont* G_Font_H3;
+
+
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
@@ -98,7 +101,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 #pragma endregion
 
-	const int windowWidth = 640, windowHeight = 512;
+	constexpr int windowWidth = 640, windowHeight = 512;
 	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), NV_WINDOW_TITLE, sf::Style::None);
 
 	window.setFramerateLimit(60);
@@ -116,6 +119,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	{
 		SendMessage(window.getSystemHandle(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
 	}
+
+	WizardPage currentPage = WizardPage::Start;
 
 	sf::Clock deltaClock;
 	while (window.isOpen())
@@ -140,15 +145,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGuiWindowFlags_NoMove |
 			ImGuiWindowFlags_NoResize |
 			ImGuiWindowFlags_NoTitleBar;
-				
+
 		// fakes a little window border/margin
-		const ImGuiViewport* main_viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(ImVec2(main_viewport->WorkPos.x + 5, main_viewport->WorkPos.y + 5));
+		const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x + 5, mainViewport->WorkPos.y + 5));
 		ImGui::SetNextWindowSize(ImVec2(windowWidth - 10, windowHeight - 10));
 
-		ImGui::Begin("FoundUpdatesActionsPage", NULL, flags);
+		ImGui::Begin("MainWindow", nullptr, flags);
 
-		ImGui::Text(ICON_FK_ARROW_LEFT);
+		if (currentPage == WizardPage::Start)
+		{
+			ImGui::Text(ICON_FK_ARROW_LEFT);
+		}
+		else
+		{
+			if (ImGui::SmallButton(ICON_FK_ARROW_LEFT))
+			{
+				--currentPage;
+			}
+		}
 		ImGui::SameLine();
 		ImGui::Text("Found Updates for %s", "HidHide");
 
@@ -160,10 +175,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 		ImGui::Indent(40);
 		ImGui::PushFont(G_Font_H2);
+
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
-		ImGui::Button(ICON_FK_DOWNLOAD " Download and install now");
+		if (ImGui::Button(ICON_FK_DOWNLOAD " Download and install now"))
+		{
+			currentPage = WizardPage::DownloadAndInstall;
+		}
+
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
-		ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow");
+		if (ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow"))
+		{
+			// TODO: implement me
+			window.close();
+		}
+
 		ImGui::PopFont();
 		ImGui::Unindent(80);
 

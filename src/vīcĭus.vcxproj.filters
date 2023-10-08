@@ -53,6 +53,9 @@
     <ClInclude Include="imgui_markdown.h">
       <Filter>Header Files\3rd</Filter>
     </ClInclude>
+    <ClInclude Include="WizardPage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="vīcĭus.rc">
