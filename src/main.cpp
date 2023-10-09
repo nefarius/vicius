@@ -13,7 +13,7 @@
 #include <format>
 #include <regex>
 #include <fstream>
-#include <iostream>
+#include <ranges>
 
 #include <restclient-cpp/restclient.h>
 #include <nlohmann/json.hpp>
@@ -154,14 +154,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	{
 		json reply = json::parse(response.body);
 		updateConfig = reply.get<models::UpdateResponse>();
+
+		// top release is always latest by version, even if the response wasn't the right order
+		std::ranges::sort(updateConfig.releases, [](const models::UpdateRelease& lhs, const models::UpdateRelease& rhs)
+		{
+			return lhs.GetSemVersion() > rhs.GetSemVersion();
+		});
 	}
 	catch (...)
 	{
 		updateConfig = models::UpdateResponse();
 	}
 
-	auto latest = updateConfig.releases[0].GetSemVersion();
 
+	auto latest = updateConfig.releases[0].GetSemVersion();
 
 
 	constexpr int windowWidth = 640, windowHeight = 512;
