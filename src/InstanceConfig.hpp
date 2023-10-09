@@ -40,7 +40,7 @@ namespace models
 		 * \param response The deserialized server response.
 		 * \return True on success, false otherwise.
 		 */
-		bool RequestUpdateInfo(UpdateResponse& response) const
+		[[nodiscard]] bool RequestUpdateInfo(UpdateResponse& response) const
 		{
 			auto [code, body, headers] = RestClient::get(updateRequestUrl);
 
