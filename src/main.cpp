@@ -84,7 +84,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 
 	constexpr int windowWidth = 640, windowHeight = 512;
-	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), NV_WINDOW_TITLE, sf::Style::None);
+	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), NV_TASKBAR_TITLE, sf::Style::None);
 
 	window.setFramerateLimit(60);
 	ImGui::SFML::Init(window, false);
