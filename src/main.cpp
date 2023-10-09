@@ -79,28 +79,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	// updater configuration, defaults and app state
 	models::InstanceConfig local(hInstance);
 
-	RestClient::Response response = RestClient::get(local.GetUpdateRequestUrl());
-
-	// TODO: error checking!
-
 	models::UpdateResponse updateConfig;
 
-	try
-	{
-		json reply = json::parse(response.body);
-		updateConfig = reply.get<models::UpdateResponse>();
-
-		// top release is always latest by version, even if the response wasn't the right order
-		std::ranges::sort(updateConfig.releases, [](const auto& lhs, const auto& rhs)
-		{
-			return lhs.GetSemVersion() > rhs.GetSemVersion();
-		});
-	}
-	catch (...)
-	{
-		updateConfig = models::UpdateResponse();
-	}
-
+	local.RequestUpdateInfo(updateConfig);
 
 	auto latest = updateConfig.releases[0].GetSemVersion();
 

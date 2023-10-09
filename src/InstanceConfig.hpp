@@ -2,7 +2,12 @@
 #include <string>
 #include <fstream>
 #include <regex>
+
 #include <nlohmann/json.hpp>
+#include <restclient-cpp/restclient.h>
+
+#include "UpdateResponse.hpp"
+
 using json = nlohmann::json;
 
 namespace models
@@ -29,6 +34,40 @@ namespace models
 		semver::version GetAppVersion() const { return appVersion; }
 		std::string GetAppFilename() const { return appFilename; }
 		std::string GetUpdateRequestUrl() const { return updateRequestUrl; }
+
+		/**
+		 * \brief Requests the update configuration from the remote server.
+		 * \param response The deserialized server response.
+		 * \return True on success, false otherwise.
+		 */
+		bool RequestUpdateInfo(UpdateResponse& response) const
+		{
+			auto [code, body, headers] = RestClient::get(updateRequestUrl);
+
+			if (code != 200)
+			{
+				// TODO: add retry logic or similar
+				return false;
+			}
+
+			try
+			{
+				const json reply = json::parse(body);
+				response = reply.get<UpdateResponse>();
+
+				// top release is always latest by version, even if the response wasn't the right order
+				std::ranges::sort(response.releases, [](const auto& lhs, const auto& rhs)
+				{
+					return lhs.GetSemVersion() > rhs.GetSemVersion();
+				});
+
+				return true;
+			}
+			catch (...)
+			{
+				return false;
+			}
+		}
 
 		InstanceConfig()
 		{
@@ -105,8 +144,8 @@ namespace models
 			// first try to build "manufacturer/product" and use filename as 
 			// fallback if extraction via regex didn't yield any results
 			tenantSubPath = (!username.empty() && !repository.empty())
-				? std::format("{}/{}", username, repository)
-				: appFilename;
+				                ? std::format("{}/{}", username, repository)
+				                : appFilename;
 
 			updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
 		}
