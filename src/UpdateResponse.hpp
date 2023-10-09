@@ -17,9 +17,11 @@ namespace models
 		std::string version;
 		/** The update summary/changelog, supports Markdown */
 		std::string summary;
+		/** The publishing timestamp as a UTC ISO-8601 string */
+		std::string publishedAt;
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateRelease, name, version, summary)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateRelease, name, version, summary, publishedAt)
 
 	/**
 	 * \brief Update instance configuration. Parameters applying to the entire product/tenant.

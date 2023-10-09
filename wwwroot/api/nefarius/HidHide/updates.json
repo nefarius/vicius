@@ -1,7 +1,8 @@
 {
     "releases":[
         {
-            "name": "test1"
+            "name": "test1",
+            "publishedAt": "2023-09-20T13:05:40Z"
         },
         {
             "name": "test2"

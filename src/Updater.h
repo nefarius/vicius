@@ -49,5 +49,10 @@
 void RenderChangelog(const std::string& markdown);
 void ApplyImGuiStyleDark();
 void LoadFonts(HINSTANCE hInstance, const float sizePixels = 16.0f);
-std::filesystem::path GetImageBasePathW();
 void ActivateWindow(HWND hwnd);
+
+namespace util
+{
+	std::filesystem::path GetImageBasePathW();
+	std::string GetVersionFromFile(const std::filesystem::path& filePath);
+}

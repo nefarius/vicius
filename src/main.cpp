@@ -96,7 +96,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	// See if we can parse the product name from the process file name
 	// 
 
-	auto appPath = GetImageBasePathW();
+	auto appPath = util::GetImageBasePathW();
 	auto fileName = appPath.stem().string();
 
 	// we have a config file, attempt reading

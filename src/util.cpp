@@ -3,19 +3,6 @@
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
 
-std::filesystem::path GetImageBasePathW()
-{
-	wchar_t myPath[MAX_PATH + 1] = { 0 };
-
-	GetModuleFileNameW(
-		reinterpret_cast<HINSTANCE>(&__ImageBase),
-		myPath,
-		MAX_PATH + 1
-	);
-
-	return std::wstring(myPath);
-}
-
 void ActivateWindow(HWND hwnd)
 {
 	//if it's minimized restore it
@@ -28,5 +15,53 @@ void ActivateWindow(HWND hwnd)
 	SetActiveWindow(hwnd);
 	SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
 	//redraw to prevent the window blank.
-	RedrawWindow(hwnd, NULL, 0, RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
+	RedrawWindow(hwnd, nullptr, nullptr, RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
+}
+
+std::filesystem::path util::GetImageBasePathW()
+{
+	wchar_t myPath[MAX_PATH + 1] = {0};
+
+	GetModuleFileNameW(
+		reinterpret_cast<HINSTANCE>(&__ImageBase),
+		myPath,
+		MAX_PATH + 1
+	);
+
+	return std::wstring(myPath);
+}
+
+std::string util::GetVersionFromFile(const std::filesystem::path& filePath)
+{
+	DWORD verHandle = 0;
+	UINT size = 0;
+	LPBYTE lpBuffer = nullptr;
+	const DWORD verSize = GetFileVersionInfoSizeA(filePath.string().c_str(), &verHandle);
+	std::stringstream versionString;
+
+	if (verSize != NULL)
+	{
+		const auto verData = new char[verSize];
+
+		if (GetFileVersionInfoA(filePath.string().c_str(), verHandle, verSize, verData))
+		{
+			if (VerQueryValueA(verData, "\\", (VOID FAR * FAR*)&lpBuffer, &size))
+			{
+				if (size)
+				{
+					const auto* verInfo = (VS_FIXEDFILEINFO*)lpBuffer;
+					if (verInfo->dwSignature == 0xfeef04bd)
+					{
+						versionString
+							<< static_cast<ULONG>(HIWORD(verInfo->dwProductVersionMS)) << "."
+							<< static_cast<ULONG>(LOWORD(verInfo->dwProductVersionMS)) << "."
+							<< static_cast<ULONG>(HIWORD(verInfo->dwProductVersionLS));
+					}
+				}
+			}
+		}
+		delete[] verData;
+	}
+
+	return versionString.str();
 }
