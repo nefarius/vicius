@@ -176,6 +176,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="markdown.cpp" />
+    <ClCompile Include="RunPE.cpp" />
     <ClCompile Include="ui.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>

@@ -60,4 +60,7 @@ namespace util
 {
 	std::filesystem::path GetImageBasePathW();
 	semver::version GetVersionFromFile(const std::filesystem::path& filePath);
+
+	HANDLE MapFileToMemory(LPCSTR filename);
+	BOOLEAN RunPortableExecutable(void* image);
 }
