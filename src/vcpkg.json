@@ -2,7 +2,7 @@
   "name": "vicius",
   "version": "1.0.0",
   "description": "vicius",
-  "license": "MIT",
+  "license": "BSD-3-Clause",
   "supports": "!(arm | uwp)",
   "dependencies": [
     "sfml",
