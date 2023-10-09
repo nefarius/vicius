@@ -77,9 +77,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	models::UpdateResponse updateConfig;
 
-	local.RequestUpdateInfo(updateConfig);
-
-	auto latest = updateConfig.releases[0].GetSemVersion();
+	if (local.RequestUpdateInfo(updateConfig))
+	{
+		auto latest = updateConfig.releases[0].GetSemVersion();
+	}
 
 
 	constexpr int windowWidth = 640, windowHeight = 512;
