@@ -85,7 +85,7 @@ namespace models
 		{
 		}
 
-		InstanceConfig(HINSTANCE hInstance) : appInstance(hInstance)
+		explicit InstanceConfig(HINSTANCE hInstance) : appInstance(hInstance)
 		{
 			RestClient::init();
 
