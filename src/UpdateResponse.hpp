@@ -29,21 +29,21 @@ namespace models
 		{
 			try
 			{
-				return semver::version{ version };
+				return semver::version{version};
 			}
 			catch (...)
 			{
-				return semver::version{ 0, 0, 0 };
+				return semver::version{0, 0, 0};
 			}
 		}
 	};
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateRelease, name, version, summary, publishedAt)
 
-		/**
-		 * \brief Update instance configuration. Parameters applying to the entire product/tenant.
-		 */
-		class UpdateConfig
+	/**
+	 * \brief Update instance configuration. Parameters applying to the entire product/tenant.
+	 */
+	class UpdateConfig
 	{
 	public:
 		/** True to disable, false to enable the updates globally */
@@ -52,10 +52,10 @@ namespace models
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateConfig, updatesDisabled)
 
-		/**
-		 * \brief An instance returned by the remote update API.
-		 */
-		class UpdateResponse
+	/**
+	 * \brief An instance returned by the remote update API.
+	 */
+	class UpdateResponse
 	{
 	public:
 		/** The global settings instance */
