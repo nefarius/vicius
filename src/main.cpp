@@ -90,7 +90,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	}
 
 	// updater configuration and defaults
-	models::InstanceConfig local(serverUrlTemplate, NV_FILENAME_REGEX);
+	models::InstanceConfig local(hInstance);
 
 	//
 	// See if we can parse the product name from the process file name
