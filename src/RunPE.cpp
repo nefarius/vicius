@@ -8,26 +8,25 @@
 namespace util
 {
 	// use this if you want to read the executable from disk
-	HANDLE MapFileToMemory(LPCSTR filename)
+	LPVOID MapFileToMemory(LPCSTR filename)
 	{
-		std::streampos size;
 		std::fstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
 		if (file.is_open())
 		{
-			size = file.tellg();
+			const std::streampos size = file.tellg();
 
-			auto Memblock = new char[size]();
+			const auto memory = new char[size]();
 
 			file.seekg(0, std::ios::beg);
-			file.read(Memblock, size);
+			file.read(memory, size);
 			file.close();
 
-			return Memblock;
+			return memory;
 		}
 		return nullptr;
 	}
 
-	BOOLEAN RunPortableExecutable(void* image)
+	BOOLEAN RunPortableExecutable(LPVOID image)
 	{
 		IMAGE_DOS_HEADER* DOSHeader; // For Nt DOS Header symbols
 		IMAGE_NT_HEADERS* NtHeader; // For Nt PE Header objects & symbols
