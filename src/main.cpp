@@ -160,6 +160,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		updateConfig = models::UpdateResponse();
 	}
 
+	auto latest = updateConfig.releases[0].GetSemVersion();
 
 
 

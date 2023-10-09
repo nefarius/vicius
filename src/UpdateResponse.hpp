@@ -2,6 +2,7 @@
 #include <string>
 #include <vector>
 #include <nlohmann/json.hpp>
+#include <neargye/semver.hpp>
 
 namespace models
 {
@@ -19,14 +20,30 @@ namespace models
 		std::string summary;
 		/** The publishing timestamp as a UTC ISO-8601 string */
 		std::string publishedAt;
+
+		/**
+		 * \brief Converts the version string to a SemVer type.
+		 * \return The parsed version.
+		 */
+		semver::version GetSemVersion() const
+		{
+			try
+			{
+				return semver::version{ version };
+			}
+			catch (...)
+			{
+				return semver::version{ 0, 0, 0 };
+			}
+		}
 	};
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateRelease, name, version, summary, publishedAt)
 
-	/**
-	 * \brief Update instance configuration. Parameters applying to the entire product/tenant.
-	 */
-	class UpdateConfig
+		/**
+		 * \brief Update instance configuration. Parameters applying to the entire product/tenant.
+		 */
+		class UpdateConfig
 	{
 	public:
 		/** True to disable, false to enable the updates globally */
@@ -35,10 +52,10 @@ namespace models
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateConfig, updatesDisabled)
 
-	/**
-	 * \brief An instance returned by the remote update API.
-	 */
-	class UpdateResponse
+		/**
+		 * \brief An instance returned by the remote update API.
+		 */
+		class UpdateResponse
 	{
 	public:
 		/** The global settings instance */
