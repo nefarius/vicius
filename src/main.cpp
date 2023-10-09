@@ -76,75 +76,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 #pragma endregion
 
-	// grab our backend URL from string resource
-	std::string serverUrlTemplate(NV_API_URL_MAX_CHARS, '\0');
-	if (!LoadStringA(
-		hInstance,
-		IDS_STRING_SERVER_URL,
-		serverUrlTemplate.data(),
-		NV_API_URL_MAX_CHARS - 1
-	))
-	{
-		// fallback value
-		serverUrlTemplate = NV_API_URL_TEMPLATE;
-	}
-
-	// updater configuration and defaults
+	// updater configuration, defaults and app state
 	models::InstanceConfig local(hInstance);
 
-	//
-	// See if we can parse the product name from the process file name
-	// 
-
-	auto appPath = util::GetImageBasePathW();
-	auto appVersion = util::GetVersionFromFile(appPath);
-	auto fileName = appPath.stem().string();
-
-	// we have a config file, attempt reading
-	if (auto configFile = appPath.parent_path() / std::format("{}.json", fileName); exists(configFile))
-	{
-		std::ifstream configFileStream(configFile);
-
-		try
-		{
-			json data = json::parse(configFileStream);
-
-			local.serverUrlTemplate = data.value("/instance/serverUrlTemplate"_json_pointer, local.serverUrlTemplate);
-			local.filenameRegex = data.value("/instance/filenameRegex"_json_pointer, local.filenameRegex);
-		}
-		catch (...)
-		{
-			// invalid config, too bad
-		}
-
-		configFileStream.close();
-	}
-
-	std::regex productRegex(local.filenameRegex, std::regex_constants::icase);
-	auto matchesBegin = std::sregex_iterator(fileName.begin(), fileName.end(), productRegex);
-	auto matchesEnd = std::sregex_iterator();
-
-	std::string username;
-	std::string repository;
-
-	if (matchesBegin != matchesEnd)
-	{
-		if (const std::smatch& match = *matchesBegin; match.size() == 3)
-		{
-			username = match[1];
-			repository = match[2];
-		}
-	}
-
-	// first try to build "manufacturer/product" and use filename as 
-	// fallback if extraction via regex didn't yield any results
-	std::string tenantSubPath = (!username.empty() && !repository.empty())
-		                            ? std::format("{}/{}", username, repository)
-		                            : fileName;
-
-	auto requestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
-
-	RestClient::Response response = RestClient::get(requestUrl);
+	RestClient::Response response = RestClient::get(local.GetUpdateRequestUrl());
 
 	// TODO: error checking!
 
