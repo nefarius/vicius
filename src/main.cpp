@@ -156,7 +156,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		updateConfig = reply.get<models::UpdateResponse>();
 
 		// top release is always latest by version, even if the response wasn't the right order
-		std::ranges::sort(updateConfig.releases, [](const models::UpdateRelease& lhs, const models::UpdateRelease& rhs)
+		std::ranges::sort(updateConfig.releases, [](const auto& lhs, const auto& rhs)
 		{
 			return lhs.GetSemVersion() > rhs.GetSemVersion();
 		});
