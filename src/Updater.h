@@ -34,6 +34,11 @@
 // 
 #include <argh.h>
 
+//
+// Util
+// 
+#include <neargye/semver.hpp>
+
 // 
 // Custom
 // 
@@ -54,5 +59,5 @@ void ActivateWindow(HWND hwnd);
 namespace util
 {
 	std::filesystem::path GetImageBasePathW();
-	std::string GetVersionFromFile(const std::filesystem::path& filePath);
+	semver::version GetVersionFromFile(const std::filesystem::path& filePath);
 }

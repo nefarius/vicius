@@ -20,7 +20,7 @@ void ActivateWindow(HWND hwnd)
 
 std::filesystem::path util::GetImageBasePathW()
 {
-	wchar_t myPath[MAX_PATH + 1] = {0};
+	wchar_t myPath[MAX_PATH + 1] = { 0 };
 
 	GetModuleFileNameW(
 		reinterpret_cast<HINSTANCE>(&__ImageBase),
@@ -31,7 +31,7 @@ std::filesystem::path util::GetImageBasePathW()
 	return std::wstring(myPath);
 }
 
-std::string util::GetVersionFromFile(const std::filesystem::path& filePath)
+semver::version util::GetVersionFromFile(const std::filesystem::path& filePath)
 {
 	DWORD verHandle = 0;
 	UINT size = 0;
@@ -45,7 +45,7 @@ std::string util::GetVersionFromFile(const std::filesystem::path& filePath)
 
 		if (GetFileVersionInfoA(filePath.string().c_str(), verHandle, verSize, verData))
 		{
-			if (VerQueryValueA(verData, "\\", (VOID FAR * FAR*)&lpBuffer, &size))
+			if (VerQueryValueA(verData, "\\", (VOID FAR * FAR*) & lpBuffer, &size))
 			{
 				if (size)
 				{
@@ -63,5 +63,5 @@ std::string util::GetVersionFromFile(const std::filesystem::path& filePath)
 		delete[] verData;
 	}
 
-	return versionString.str();
+	return semver::version{ versionString.str() };
 }

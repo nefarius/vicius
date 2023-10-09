@@ -35,3 +35,5 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [REST client for C++](https://github.com/mrtazz/restclient-cpp)
   - [libcurl](https://curl.se/libcurl/)
 - [JSON for Modern C++](https://github.com/nlohmann/json)
+- [Magic Enum C++](https://github.com/Neargye/magic_enum)
+- [Semantic Versioning for modern C++](https://github.com/Neargye/semver)

@@ -97,6 +97,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	// 
 
 	auto appPath = util::GetImageBasePathW();
+	auto appVersion = util::GetVersionFromFile(appPath);
 	auto fileName = appPath.stem().string();
 
 	// we have a config file, attempt reading

@@ -11,6 +11,7 @@
     "argh",
     "restclient-cpp",
     "nlohmann-json",
-    "magic-enum"
+    "magic-enum",
+    "neargye-semver"
   ]
 }
