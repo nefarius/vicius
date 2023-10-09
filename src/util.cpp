@@ -18,50 +18,53 @@ void ActivateWindow(HWND hwnd)
 	RedrawWindow(hwnd, nullptr, nullptr, RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
 }
 
-std::filesystem::path util::GetImageBasePathW()
+namespace util
 {
-	wchar_t myPath[MAX_PATH + 1] = { 0 };
-
-	GetModuleFileNameW(
-		reinterpret_cast<HINSTANCE>(&__ImageBase),
-		myPath,
-		MAX_PATH + 1
-	);
-
-	return std::wstring(myPath);
-}
-
-semver::version util::GetVersionFromFile(const std::filesystem::path& filePath)
-{
-	DWORD verHandle = 0;
-	UINT size = 0;
-	LPBYTE lpBuffer = nullptr;
-	const DWORD verSize = GetFileVersionInfoSizeA(filePath.string().c_str(), &verHandle);
-	std::stringstream versionString;
-
-	if (verSize != NULL)
+	std::filesystem::path GetImageBasePathW()
 	{
-		const auto verData = new char[verSize];
+		wchar_t myPath[MAX_PATH + 1] = { 0 };
 
-		if (GetFileVersionInfoA(filePath.string().c_str(), verHandle, verSize, verData))
+		GetModuleFileNameW(
+			reinterpret_cast<HINSTANCE>(&__ImageBase),
+			myPath,
+			MAX_PATH + 1
+		);
+
+		return std::wstring(myPath);
+	}
+
+	semver::version GetVersionFromFile(const std::filesystem::path& filePath)
+	{
+		DWORD verHandle = 0;
+		UINT size = 0;
+		LPBYTE lpBuffer = nullptr;
+		const DWORD verSize = GetFileVersionInfoSizeA(filePath.string().c_str(), &verHandle);
+		std::stringstream versionString;
+
+		if (verSize != NULL)
 		{
-			if (VerQueryValueA(verData, "\\", (VOID FAR * FAR*) & lpBuffer, &size))
+			const auto verData = new char[verSize];
+
+			if (GetFileVersionInfoA(filePath.string().c_str(), verHandle, verSize, verData))
 			{
-				if (size)
+				if (VerQueryValueA(verData, "\\", (VOID FAR * FAR*) & lpBuffer, &size))
 				{
-					const auto* verInfo = (VS_FIXEDFILEINFO*)lpBuffer;
-					if (verInfo->dwSignature == 0xfeef04bd)
+					if (size)
 					{
-						versionString
-							<< static_cast<ULONG>(HIWORD(verInfo->dwProductVersionMS)) << "."
-							<< static_cast<ULONG>(LOWORD(verInfo->dwProductVersionMS)) << "."
-							<< static_cast<ULONG>(HIWORD(verInfo->dwProductVersionLS));
+						const auto* verInfo = (VS_FIXEDFILEINFO*)lpBuffer;
+						if (verInfo->dwSignature == 0xfeef04bd)
+						{
+							versionString
+								<< static_cast<ULONG>(HIWORD(verInfo->dwProductVersionMS)) << "."
+								<< static_cast<ULONG>(LOWORD(verInfo->dwProductVersionMS)) << "."
+								<< static_cast<ULONG>(HIWORD(verInfo->dwProductVersionLS));
+						}
 					}
 				}
 			}
+			delete[] verData;
 		}
-		delete[] verData;
-	}
 
-	return semver::version{ versionString.str() };
+		return semver::version{ versionString.str() };
+	}
 }
