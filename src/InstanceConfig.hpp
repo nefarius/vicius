@@ -5,6 +5,7 @@
 
 #include <nlohmann/json.hpp>
 #include <restclient-cpp/restclient.h>
+#include <restclient-cpp/connection.h>
 
 #include "UpdateResponse.hpp"
 
@@ -42,7 +43,18 @@ namespace models
 		 */
 		[[nodiscard]] bool RequestUpdateInfo(UpdateResponse& response) const
 		{
-			auto [code, body, headers] = RestClient::get(updateRequestUrl);
+			const auto conn = new RestClient::Connection("");
+
+			conn->SetTimeout(5);
+			conn->SetUserAgent(std::format("{}/{}", appFilename, appVersion.to_string()));
+			conn->FollowRedirects(true);
+			conn->FollowRedirects(true, 5);
+
+			RestClient::HeaderFields headers;
+			headers["Accept"] = "application/json";
+			conn->SetHeaders(headers);
+
+			auto [code, body, _] = conn->get(updateRequestUrl);
 
 			if (code != 200)
 			{
@@ -75,6 +87,8 @@ namespace models
 
 		InstanceConfig(HINSTANCE hInstance) : appInstance(hInstance)
 		{
+			RestClient::init();
+
 			//
 			// Defaults and embedded stuff
 			// 
@@ -148,6 +162,11 @@ namespace models
 				                : appFilename;
 
 			updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
+		}
+
+		~InstanceConfig()
+		{
+			RestClient::disable();
 		}
 	};
 
