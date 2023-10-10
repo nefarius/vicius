@@ -37,6 +37,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Documentation
 - [ ] Finalize UI design
 - [ ] Design Beta-Release support
+- [ ] Specify supported Command Line Arguments
 
 ## Sources & 3rd party credits
 
