@@ -53,10 +53,10 @@ namespace models
 
 		std::optional<std::future<bool>> downloadTask;
 
-		bool DownloadReleaseAsync(curl_progress_callback progressFn)
-		{
-			//Sleep(10000);
+		std::filesystem::path localReleaseTempFilePath;
 
+		bool DownloadReleaseAsync(curl_progress_callback progressFn, const int releaseIndex)
+		{
 			const auto conn = new RestClient::Connection("");
 
 			conn->SetTimeout(5);
@@ -65,12 +65,55 @@ namespace models
 			conn->FollowRedirects(true, 5);
 			conn->SetFileProgressCallback(progressFn);
 
-			auto [code, body, _] = conn->get(
-				"https://download.visualstudio.microsoft.com/download/pr/f9ea536d-8e1f-4247-88b8-e79e33fa0873/c06e39f73a3bb1ec8833bb1cde98fce3/windowsdesktop-runtime-7.0.12-win-x64.exe");
+			SetCommonHeaders(conn);
+
+			std::string tempPath(MAX_PATH, '\0');
+			std::string tempFile(MAX_PATH, '\0');
+
+			// TODO: error handling
+
+			GetTempPathA(MAX_PATH, tempPath.data());
+			GetTempFileNameA(tempPath.c_str(), "VICIUS", 0, tempFile.data());
+
+			localReleaseTempFilePath = tempFile;
+
+			static std::ofstream outStream(localReleaseTempFilePath.string(), std::ios::binary);
+
+			// write to file as we download it
+			auto writeCallback = [](void* data, size_t size, size_t nmemb, void* userdata) -> size_t
+			{
+				UNREFERENCED_PARAMETER(userdata);
+
+				const auto bytes = size * nmemb;
+				
+				outStream.write(static_cast<char*>(data), bytes);
+
+				return bytes;
+			};
+
+			conn->SetWriteFunction(writeCallback);
+
+			const auto& release = remote.releases[releaseIndex];
+
+			auto [code, body, _] = conn->get(release.downloadUrl);
+
+			outStream.close();
 
 			// TODO: implement me
 
 			return code == 200;
+		}
+
+		void SetCommonHeaders(RestClient::Connection* conn) const
+		{
+			//
+			// If a backend server is used, it can alter the response based on 
+			// these header values, classic web servers will just ignore them
+			// 
+
+			conn->AppendHeader("X-Vicius-Manufacturer", manufacturer);
+			conn->AppendHeader("X-Vicius-Product", product);
+			conn->AppendHeader("X-Vicius-Version", appVersion.to_string());
 		}
 
 	public:
@@ -84,6 +127,7 @@ namespace models
 
 		std::string GetTaskBarTitle() const { return shared.taskBarTitle; }
 		std::string GetProductName() const { return shared.productName; }
+		std::filesystem::path GetLocalReleaseTempFilePath() const { return localReleaseTempFilePath; }
 
 		UpdateRelease& GetLatestRelease()
 		{
@@ -107,13 +151,7 @@ namespace models
 			headers["Accept"] = "application/json";
 			conn->SetHeaders(headers);
 
-			//
-			// If a backend server is used, it can alter the response based on 
-			// these header values, classic web servers will just ignore them
-			// 
-			conn->AppendHeader("X-Vicius-Manufacturer", manufacturer);
-			conn->AppendHeader("X-Vicius-Product", product);
-			conn->AppendHeader("X-Vicius-Version", appVersion.to_string());
+			SetCommonHeaders(conn);
 
 			auto [code, body, _] = conn->get(updateRequestUrl);
 
@@ -200,11 +238,18 @@ namespace models
 
 		/**
 		 * \brief Starts the update release download.
+		 * \param releaseIndex Zero-based release index.
 		 * \param progressFn The download progress callback.
 		 */
-		void DownloadRelease(curl_progress_callback progressFn)
+		void DownloadRelease(int releaseIndex, curl_progress_callback progressFn)
 		{
-			downloadTask = std::async(std::launch::async, &InstanceConfig::DownloadReleaseAsync, this, progressFn);
+			downloadTask = std::async(
+				std::launch::async,
+				&InstanceConfig::DownloadReleaseAsync,
+				this,
+				progressFn,
+				releaseIndex
+			);
 		}
 
 		bool GetReleaseDownloadStatus(bool& isDownloading, bool& isFinished) const

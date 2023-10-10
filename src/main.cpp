@@ -85,6 +85,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	auto currentPage = WizardPage::Start;
 	bool isBackDisabled = false;
 	bool isCancelDisabled = false;
+	int selectedReleaseId;
 
 	sf::Vector2i grabbedOffset;
 	auto grabbedWindow = false;
@@ -208,6 +209,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 			{
 				const auto& release = cfg.GetLatestRelease();
+				selectedReleaseId = 0;
 				ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
 				ImGui::BeginChild(
 					"Summary",
@@ -252,24 +254,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 				bool isDownloading = false;
 				bool isFinished = false;
-				
+
 				if (!cfg.GetReleaseDownloadStatus(isDownloading, isFinished))
 				{
 					totalToDownload = 0;
 					totalDownloaded = 0;
 
 					// start download
-					cfg.DownloadRelease([](void* pData, double downloadTotal, double downloaded, double uploadTotal,
-					                       double uploaded) -> int
-					{
-						UNREFERENCED_PARAMETER(pData);
-						UNREFERENCED_PARAMETER(uploadTotal);
-						UNREFERENCED_PARAMETER(uploaded);
+					cfg.DownloadRelease(
+						selectedReleaseId,
+						[](void* pData, double downloadTotal, double downloaded, double uploadTotal,
+						   double uploaded) -> int
+						{
+							UNREFERENCED_PARAMETER(pData);
+							UNREFERENCED_PARAMETER(uploadTotal);
+							UNREFERENCED_PARAMETER(uploaded);
 
-						totalToDownload = downloadTotal;
-						totalDownloaded = downloaded;
-						return 0;
-					});
+							totalToDownload = downloadTotal;
+							totalDownloaded = downloaded;
+							return 0;
+						});
 				}
 
 				if (isDownloading)
