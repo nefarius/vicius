@@ -63,6 +63,11 @@ namespace models
 		/** The available releases */
 		std::vector<UpdateRelease> releases;
 
+		/**
+		 * \brief Checks if a newer release than the local version is available.
+		 * \param currentVersion The local version to check against.
+		 * \return True if a newer version is available, false otherwise.
+		 */
 		[[nodiscard]] bool IsUpdateAvailable(const semver::version& currentVersion) const
 		{
 			if (releases.empty())
