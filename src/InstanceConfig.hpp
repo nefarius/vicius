@@ -51,7 +51,7 @@ namespace models
 		SharedConfig shared;
 		UpdateResponse remote;
 
-		std::optional<std::future<bool>> downloadTask;
+		std::optional<std::shared_future<bool>> downloadTask;
 
 		bool DownloadReleaseAsync(curl_progress_callback progressFn, const int releaseIndex)
 		{
@@ -255,7 +255,7 @@ namespace models
 			);
 		}
 
-		bool GetReleaseDownloadStatus(bool& isDownloading, bool& isFinished) const
+		bool GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, bool& hasSucceeded) const
 		{
 			if (!downloadTask)
 			{
@@ -265,7 +265,12 @@ namespace models
 			const std::future_status status = (*downloadTask).wait_for(std::chrono::milliseconds(1));
 
 			isDownloading = status == std::future_status::timeout;
-			isFinished = status == std::future_status::ready;
+			hasFinished = status == std::future_status::ready;
+
+			if (hasFinished)
+			{
+				hasSucceeded = (*downloadTask).get();
+			}
 
 			return true;
 		}

@@ -253,10 +253,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				static double totalDownloaded = 0;
 
 				bool isDownloading = false;
-				bool isFinished = false;
+				bool hasFinished = false;
+				bool hasSucceeded = false;
 
 				// checks if a download is currently running or has been invoked
-				if (!cfg.GetReleaseDownloadStatus(isDownloading, isFinished))
+				if (!cfg.GetReleaseDownloadStatus(isDownloading, hasFinished, hasSucceeded))
 				{
 					totalToDownload = 0;
 					totalDownloaded = 0;
@@ -287,8 +288,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 					);
 				}
 
+				if (hasFinished && hasSucceeded)
+				{
+					// TODO: implement me
+
+					ImGui::Text("Yay");
+				}
+
+				/*
 				static bool setupHasLaunched = false;
-				if (isFinished && !setupHasLaunched)
+				if (hasFinished && !setupHasLaunched)
 				{
 					const auto tempFile = cfg.GetLocalReleaseTempFilePath();
 					STARTUPINFOA info = {sizeof(info)};
@@ -315,6 +324,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 						CloseHandle(processInfo.hThread);
 					}
 				}
+				*/
 
 				ImGui::Unindent(leftBorderIndent);
 
