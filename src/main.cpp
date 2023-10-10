@@ -1,6 +1,8 @@
 #include "Updater.h"
 #include "WizardPage.h"
 
+#include <winhttp.h>
+
 //
 // Models
 // 
@@ -38,7 +40,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma region CLI parsing
 
 	argh::parser cmdl;
-	
+
 	if (!util::ParseCommandLineArguments(cmdl))
 	{
 		return EXIT_FAILURE;
@@ -57,13 +59,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	models::UpdateResponse updateConfig;
 
-	if (local.RequestUpdateInfo(updateConfig))
+	if (!local.RequestUpdateInfo(updateConfig))
 	{
-		if (updateConfig.IsNewerUpdaterAvailable(local.GetAppVersion()))
-		{
-			auto t = 0;
-		}
+		// TODO: add fallback actions
+		return ERROR_WINHTTP_INVALID_SERVER_RESPONSE;
 	}
+
+	if (updateConfig.IsNewerUpdaterAvailable(local.GetAppVersion()))
+	{
+		// TODO: implement self-updating logic here
+	}
+
 
 
 

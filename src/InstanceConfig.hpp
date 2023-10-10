@@ -97,6 +97,11 @@ namespace models
 		{
 		}
 
+		InstanceConfig(const InstanceConfig&) = delete;
+		InstanceConfig(InstanceConfig&&) = delete;
+		InstanceConfig& operator=(const InstanceConfig&) = delete;
+		InstanceConfig& operator=(InstanceConfig&&) = delete;
+
 		explicit InstanceConfig(HINSTANCE hInstance) : appInstance(hInstance)
 		{
 			RestClient::init();
