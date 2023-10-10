@@ -51,9 +51,9 @@ namespace models
 		SharedConfig shared;
 		UpdateResponse remote;
 
-		std::optional<std::shared_future<bool>> downloadTask;
+		std::optional<std::shared_future<int>> downloadTask;
 
-		bool DownloadReleaseAsync(curl_progress_callback progressFn, const int releaseIndex)
+		int DownloadReleaseAsync(curl_progress_callback progressFn, const int releaseIndex)
 		{
 			const auto conn = new RestClient::Connection("");
 
@@ -100,7 +100,7 @@ namespace models
 
 			// TODO: error handling
 
-			return code == 200;
+			return code;
 		}
 
 		void SetCommonHeaders(RestClient::Connection* conn) const
@@ -255,7 +255,14 @@ namespace models
 			);
 		}
 
-		[[nodiscard]] bool GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, bool& hasSucceeded) const
+		/**
+		 * \brief Checks the current download status.
+		 * \param isDownloading True if a download is currently running in the background.
+		 * \param hasFinished True if the download has finished (either with error or successful).
+		 * \param statusCode The HTTP status code (set when hasFinished is true).
+		 * \return True if a download has been invoked, false otherwise.
+		 */
+		[[nodiscard]] bool GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, int& statusCode) const
 		{
 			if (!downloadTask)
 			{
@@ -269,7 +276,7 @@ namespace models
 
 			if (hasFinished)
 			{
-				hasSucceeded = (*downloadTask).get();
+				statusCode = (*downloadTask).get();
 			}
 
 			return true;

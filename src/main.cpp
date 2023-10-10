@@ -259,10 +259,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 				bool isDownloading = false;
 				bool hasFinished = false;
-				bool hasSucceeded = false;
+				int statusCode = -1;
 
 				// checks if a download is currently running or has been invoked
-				if (!cfg.GetReleaseDownloadStatus(isDownloading, hasFinished, hasSucceeded))
+				if (!cfg.GetReleaseDownloadStatus(isDownloading, hasFinished, statusCode))
 				{
 					totalToDownload = 0;
 					totalDownloaded = 0;
@@ -293,17 +293,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 					);
 				}
 
-				if (hasFinished && hasSucceeded)
+				if (hasFinished && statusCode == 200)
 				{
 					ImGui::Text("Installing...");
 					ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
 
 					// TODO: implement me
 				}
-
-				if (hasFinished && !hasSucceeded)
+				else if (hasFinished)
 				{
-					ImGui::Text("Error!");
+					ImGui::Text("Error! Code: %d", statusCode);
 
 					// TODO: implement me
 				}
