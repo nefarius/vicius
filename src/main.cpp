@@ -253,7 +253,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				bool isDownloading = false;
 				bool isFinished = false;
 				
-				if (!cfg.GetDownloadReleaseStatus(isDownloading, isFinished))
+				if (!cfg.GetReleaseDownloadStatus(isDownloading, isFinished))
 				{
 					totalToDownload = 0;
 					totalDownloaded = 0;

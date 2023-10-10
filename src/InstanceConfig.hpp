@@ -194,7 +194,7 @@ namespace models
 			downloadTask = std::async(std::launch::async, &InstanceConfig::DownloadReleaseAsync, this, progressFn);
 		}
 
-		bool GetDownloadReleaseStatus(bool& isDownloading, bool& isFinished) const
+		bool GetReleaseDownloadStatus(bool& isDownloading, bool& isFinished) const
 		{
 			if (!downloadTask)
 			{
