@@ -56,9 +56,12 @@ namespace markdown
 	void RenderChangelog(const std::string& markdown);
 }
 
-void ApplyImGuiStyleDark();
-void LoadFonts(HINSTANCE hInstance, const float sizePixels = 16.0f);
-void ActivateWindow(HWND hwnd);
+namespace ui
+{
+	void ApplyImGuiStyleDark();
+	void LoadFonts(HINSTANCE hInstance, const float sizePixels = 16.0f);
+	void IndeterminateProgressBar(const ImVec2& size_arg);
+}
 
 namespace util
 {

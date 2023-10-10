@@ -5,21 +5,6 @@
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
 
-void ActivateWindow(HWND hwnd)
-{
-	//if it's minimized restore it
-	if (IsIconic(hwnd))
-	{
-		SendMessage(hwnd, WM_SYSCOMMAND, SC_RESTORE, 0);
-	}
-	//bring the window to the top and activate it
-	SetForegroundWindow(hwnd);
-	SetActiveWindow(hwnd);
-	SetWindowPos(hwnd, HWND_TOP, 0, 0, 0, 0, SWP_SHOWWINDOW | SWP_NOMOVE | SWP_NOSIZE);
-	//redraw to prevent the window blank.
-	RedrawWindow(hwnd, nullptr, nullptr, RDW_FRAME | RDW_INVALIDATE | RDW_ALLCHILDREN);
-}
-
 namespace util
 {
 	std::filesystem::path GetImageBasePathW()

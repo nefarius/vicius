@@ -73,8 +73,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	io.IniFilename = nullptr;
 	io.LogFilename = nullptr;
 
-	LoadFonts(hInstance);
-	ApplyImGuiStyleDark();
+	ui::LoadFonts(hInstance);
+	ui::ApplyImGuiStyleDark();
 
 	// Set window icon
 	if (auto hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)))
@@ -289,10 +289,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				}
 
 				if (hasFinished && hasSucceeded)
-				{
-					// TODO: implement me
+				{					
+					ImGui::Text("Installing...");
+					ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
 
-					ImGui::Text("Yay");
+					// TODO: implement me
 				}
 
 				/*
