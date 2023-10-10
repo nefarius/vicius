@@ -144,7 +144,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 		if (currentPage == WizardPage::Start)
 		{
-			ImGui::Text(ICON_FK_ARROW_LEFT);
+			ImGui::Text(" " ICON_FK_ARROW_LEFT);
 		}
 		else
 		{
