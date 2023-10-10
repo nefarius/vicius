@@ -236,7 +236,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGui::Indent(40);
 			ImGui::PushFont(G_Font_H1);
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
-			ImGui::Text("Installing updates");
+			ImGui::Text("Installing Updates");
 			ImGui::PopFont();
 
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
