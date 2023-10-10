@@ -79,7 +79,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	if (local.RequestUpdateInfo(updateConfig))
 	{
-		auto latest = updateConfig.releases[0].GetSemVersion();
+		if (updateConfig.IsUpdateAvailable(local.GetAppVersion()))
+		{
+			auto t = 0;
+		}
 	}
 
 

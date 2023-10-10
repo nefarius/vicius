@@ -62,6 +62,18 @@ namespace models
 		UpdateConfig instance;
 		/** The available releases */
 		std::vector<UpdateRelease> releases;
+
+		[[nodiscard]] bool IsUpdateAvailable(const semver::version& currentVersion) const
+		{
+			if (releases.empty())
+			{
+				return false;
+			}
+
+			const auto latest = releases[0].GetSemVersion();
+
+			return latest > currentVersion;
+		}
 	};
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateResponse, instance, releases)
