@@ -167,9 +167,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGui::PopFont();
 
 			{
+				const auto& release = cfg.GetLatestRelease();
 				ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
-				ImGui::BeginChild("Summary", ImVec2(ImGui::GetContentRegionAvail().x, 360), false, window_flags);
-				markdown::RenderChangelog(cfg.GetLatestRelease().summary);
+				ImGui::BeginChild(
+					"Summary",
+					ImVec2(ImGui::GetContentRegionAvail().x, 360),
+					false,
+					window_flags
+				);
+				markdown::RenderChangelog(release.summary);
 				ImGui::EndChild();
 			}
 
