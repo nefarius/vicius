@@ -17,6 +17,7 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
+#define AS_MB	(1024 * 1024)
 
 extern ImFont* G_Font_H1;
 extern ImFont* G_Font_H2;
@@ -255,6 +256,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				std::future_status stat;
 				if (!cfg.GetDownloadReleaseStatus(stat))
 				{
+					totalToDownload = 0;
+					totalDownloaded = 0;
+
 					// start download
 					cfg.DownloadRelease([](void* pData, double downloadTotal, double downloaded, double uploadTotal,
 					                       double uploaded) -> int
@@ -273,7 +277,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				if (isDownloading)
 				{
 					ImGui::Text("Downloading (%.2f MB of %.2f MB)",
-					            totalDownloaded / (1024 * 1024), totalToDownload / (1024 * 1024));
+					            totalDownloaded / AS_MB, totalToDownload / AS_MB);
 					ImGui::ProgressBar(
 						(static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
 						ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f)
