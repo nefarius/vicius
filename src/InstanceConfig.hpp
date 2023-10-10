@@ -29,15 +29,15 @@ namespace models
 	};
 
 	NLOHMANN_JSON_SERIALIZE_ENUM(Authority, {
-								 {Invalid, nullptr},
-								 {Local, "Local"},
-								 {Remote, "Remote"},
-		})
+	                             {Invalid, nullptr},
+	                             {Local, "Local"},
+	                             {Remote, "Remote"},
+	                             })
 
-		/**
-		 * \brief Local configuration file model.
-		 */
-		class InstanceConfig
+	/**
+	 * \brief Local configuration file model.
+	 */
+	class InstanceConfig
 	{
 		HINSTANCE appInstance{};
 		std::filesystem::path appPath;
@@ -63,9 +63,10 @@ namespace models
 			conn->SetUserAgent(std::format("{}/{}", appFilename, appVersion.to_string()));
 			conn->FollowRedirects(true);
 			conn->FollowRedirects(true, 5);
-			conn->SetFileProgressCallback(progressFn)			;
+			conn->SetFileProgressCallback(progressFn);
 
-			auto [code, body, _] = conn->get("https://download.visualstudio.microsoft.com/download/pr/f9ea536d-8e1f-4247-88b8-e79e33fa0873/c06e39f73a3bb1ec8833bb1cde98fce3/windowsdesktop-runtime-7.0.12-win-x64.exe");
+			auto [code, body, _] = conn->get(
+				"https://download.visualstudio.microsoft.com/download/pr/f9ea536d-8e1f-4247-88b8-e79e33fa0873/c06e39f73a3bb1ec8833bb1cde98fce3/windowsdesktop-runtime-7.0.12-win-x64.exe");
 
 			// TODO: implement me
 
@@ -129,9 +130,9 @@ namespace models
 
 				// top release is always latest by version, even if the response wasn't the right order
 				std::ranges::sort(remote.releases, [](const auto& lhs, const auto& rhs)
-					{
-						return lhs.GetSemVersion() > rhs.GetSemVersion();
-					});
+				{
+					return lhs.GetSemVersion() > rhs.GetSemVersion();
+				});
 
 				// bail out now if we are not supposed to obey the server settings
 				if (authority == Local || !reply.contains("shared"))
@@ -315,8 +316,8 @@ namespace models
 			// first try to build "manufacturer/product" and use filename as 
 			// fallback if extraction via regex didn't yield any results
 			tenantSubPath = (!manufacturer.empty() && !product.empty())
-				? std::format("{}/{}", manufacturer, product)
-				: appFilename;
+				                ? std::format("{}/{}", manufacturer, product)
+				                : appFilename;
 
 			updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
 		}
