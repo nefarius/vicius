@@ -255,7 +255,7 @@ namespace models
 			);
 		}
 
-		bool GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, bool& hasSucceeded) const
+		[[nodiscard]] bool GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, bool& hasSucceeded) const
 		{
 			if (!downloadTask)
 			{
