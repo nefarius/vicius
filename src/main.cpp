@@ -255,6 +255,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				bool isDownloading = false;
 				bool isFinished = false;
 
+				// checks if a download is currently running or has been invoked
 				if (!cfg.GetReleaseDownloadStatus(isDownloading, isFinished))
 				{
 					totalToDownload = 0;
@@ -284,6 +285,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 						(static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
 						ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f)
 					);
+				}
+
+				static bool setupHasLaunched = false;
+				if (isFinished && !setupHasLaunched)
+				{
+					const auto tempFile = cfg.GetLocalReleaseTempFilePath();
+					STARTUPINFOA info = {sizeof(info)};
+					PROCESS_INFORMATION processInfo;
+
+					// TODO: make non-blocking
+
+					if (CreateProcessA(tempFile.string().c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &info,
+					                   &processInfo))
+					{
+						setupHasLaunched = true;
+						WaitForSingleObject(processInfo.hProcess, INFINITE);
+						CloseHandle(processInfo.hProcess);
+						CloseHandle(processInfo.hThread);
+					}
 				}
 
 				ImGui::Unindent(leftBorderIndent);
