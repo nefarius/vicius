@@ -21,24 +21,15 @@ namespace models
 		///< The local config file (if any) gets priority
 		Local,
 		///< The server-side instructions get priority
-		Remote
+		Remote,
+		Invalid = -1
 	};
 
-	/**
-	 * \brief Parameters that might be provided by both the server and the local configuration.
-	 */
-	class SharedConfig
-	{
-	public:
-		std::string taskBarTitle;
-		std::string productName;
-
-		SharedConfig() : taskBarTitle(NV_TASKBAR_TITLE), productName(NV_PRODUCT_NAME)
-		{
-		}
-	};
-
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SharedConfig, taskBarTitle, productName)
+	NLOHMANN_JSON_SERIALIZE_ENUM(Authority, {
+	                             {Invalid, nullptr},
+	                             {Local, "Local"},
+	                             {Remote, "Remote"},
+	                             })
 
 	/**
 	 * \brief Local configuration file model.
@@ -106,7 +97,15 @@ namespace models
 					return lhs.GetSemVersion() > rhs.GetSemVersion();
 				});
 
+				// bail out now if we are not supposed to obey the server settings
+				if (authority == Local || !reply.contains("shared"))
+				{
+					return true;
+				}
+
 				// TODO: implement merging remote shared config
+
+				shared = remote.shared;
 
 				return true;
 			}

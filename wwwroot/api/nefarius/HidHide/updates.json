@@ -4,6 +4,9 @@
         "latestVersion": "2.0.0",
         "latestUrl": "http://localhost:5200/api/nefarius/HidHide/nefarius_HidHide_Updater.exe"
     },
+    "shared":{
+        "productName": "BthPS3"
+    },
     "releases":[
         {
             "name": "test1",

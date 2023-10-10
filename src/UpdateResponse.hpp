@@ -7,6 +7,22 @@
 namespace models
 {
 	/**
+	 * \brief Parameters that might be provided by both the server and the local configuration.
+	 */
+	class SharedConfig
+	{
+	public:
+		std::string taskBarTitle;
+		std::string productName;
+
+		SharedConfig() : taskBarTitle(NV_TASKBAR_TITLE), productName(NV_PRODUCT_NAME)
+		{
+		}
+	};
+
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SharedConfig, taskBarTitle, productName)
+
+	/**
 	 * \brief Represents an update release.
 	 */
 	class UpdateRelease
@@ -80,9 +96,11 @@ namespace models
 	public:
 		/** The global settings instance */
 		UpdateConfig instance;
+		/** The (optional) shared settings */
+		SharedConfig shared;
 		/** The available releases */
 		std::vector<UpdateRelease> releases;
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateResponse, instance, releases)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateResponse, instance, shared, releases)
 }
