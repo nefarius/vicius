@@ -106,6 +106,14 @@ namespace models
 			headers["Accept"] = "application/json";
 			conn->SetHeaders(headers);
 
+			//
+			// If a backend server is used, it can alter the response based on 
+			// these header values, classic web servers will just ignore them
+			// 
+			conn->AppendHeader("X-Vicius-Manufacturer", manufacturer);
+			conn->AppendHeader("X-Vicius-Product", product);
+			conn->AppendHeader("X-Vicius-Version", appVersion.to_string());
+
 			auto [code, body, _] = conn->get(updateRequestUrl);
 
 			if (code != 200)
@@ -189,6 +197,10 @@ namespace models
 			return remote.releases.size() > 1;
 		}
 
+		/**
+		 * \brief Starts the update release download.
+		 * \param progressFn The download progress callback.
+		 */
 		void DownloadRelease(curl_progress_callback progressFn)
 		{
 			downloadTask = std::async(std::launch::async, &InstanceConfig::DownloadReleaseAsync, this, progressFn);
