@@ -86,6 +86,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	bool isBackDisabled = false;
 	bool isCancelDisabled = false;
 	int selectedReleaseId;
+	STARTUPINFOA info = {sizeof(STARTUPINFOA)};
+	PROCESS_INFORMATION updateProcessInfo{};
+	bool updateInstalled = false;
 
 	sf::Vector2i grabbedOffset;
 	auto grabbedWindow = false;
@@ -293,31 +296,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 					);
 				}
 
-				if (hasFinished && statusCode == 200)
-				{
-					ImGui::Text("Installing...");
-					ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
-
-					// TODO: implement me
-				}
-				else if (hasFinished)
+				if (hasFinished && statusCode != 200)
 				{
 					ImGui::Text("Error! Code: %d", statusCode);
 
 					// TODO: implement me
+					break;
 				}
 
-				/*
-				static bool setupHasLaunched = false;
-				if (hasFinished && !setupHasLaunched)
+				// prepare setup process launch
+				if (!updateInstalled && updateProcessInfo.dwProcessId == 0)
 				{
-					const auto tempFile = cfg.GetLocalReleaseTempFilePath();
-					STARTUPINFOA info = {sizeof(info)};
-					PROCESS_INFORMATION processInfo;
-	
-					// TODO: make non-blocking
-	
-					if (CreateProcessA(
+					if (const auto tempFile = cfg.GetLocalReleaseTempFilePath(); !CreateProcessA(
 						tempFile.string().c_str(),
 						nullptr,
 						nullptr,
@@ -327,17 +317,38 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 						nullptr,
 						nullptr,
 						&info,
-						&processInfo
+						&updateProcessInfo
 					))
 					{
-						setupHasLaunched = true;
-						WaitForSingleObject(processInfo.hProcess, INFINITE);
-						CloseHandle(processInfo.hProcess);
-						CloseHandle(processInfo.hThread);
+						// TODO: handle error
 					}
 				}
-				*/
+				else
+				{
+					// process running
+					if (auto waitResult = WaitForSingleObject(updateProcessInfo.hProcess, 1); waitResult == WAIT_TIMEOUT)
+					{
+						ImGui::Text("Installing...");
+						ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
+					}
+					else if (waitResult == WAIT_OBJECT_0)
+					{
+						CloseHandle(updateProcessInfo.hProcess);
+						CloseHandle(updateProcessInfo.hThread);
+						RtlZeroMemory(&updateProcessInfo, sizeof(updateProcessInfo));
+						updateInstalled = true;
 
+						DeleteFileA(cfg.GetLocalReleaseTempFilePath().string().c_str());
+					}
+				}
+
+				if (updateInstalled)
+				{
+					// TODO: implement me
+
+					ImGui::Text("Done!");
+				}
+				
 				ImGui::Unindent(leftBorderIndent);
 
 				break;
