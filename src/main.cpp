@@ -262,6 +262,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 					cfg.DownloadRelease([](void* pData, double downloadTotal, double downloaded, double uploadTotal,
 					                       double uploaded) -> int
 					{
+						UNREFERENCED_PARAMETER(pData);
+						UNREFERENCED_PARAMETER(uploadTotal);
+						UNREFERENCED_PARAMETER(uploaded);
+
 						totalToDownload = downloadTotal;
 						totalDownloaded = downloaded;
 						return 0;
