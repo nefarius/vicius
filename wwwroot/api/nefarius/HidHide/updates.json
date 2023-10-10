@@ -11,12 +11,8 @@
         {
             "name": "test1",
             "publishedAt": "2023-09-20T13:05:40Z",
-            "version": "2.4.6"
-        },
-        {
-            "name": "test2",
-            "publishedAt": "2023-09-20T13:05:40Z",
-            "version": "4.4.4"
+            "version": "2.4.6",
+            "summary": "## Hi from Markdown"
         }
     ]
 }

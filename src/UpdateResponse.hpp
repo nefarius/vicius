@@ -38,6 +38,8 @@ namespace models
 		std::string publishedAt;
 		/** URL of the new setup/release download */
 		std::string downloadUrl;
+		/** Size of the remote file */
+		size_t downloadSize;
 
 		/**
 		 * \brief Converts the version string to a SemVer type.
@@ -56,7 +58,7 @@ namespace models
 		}
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateRelease, name, version, summary, publishedAt, downloadUrl)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateRelease, name, version, summary, publishedAt, downloadUrl, downloadSize)
 
 	/**
 	 * \brief Update instance configuration. Parameters applying to the entire product/tenant.

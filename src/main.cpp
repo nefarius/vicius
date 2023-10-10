@@ -141,7 +141,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
 		if (ImGui::Button(ICON_FK_DOWNLOAD " Download and install now"))
 		{
-			currentPage = WizardPage::DownloadAndInstall;
+			currentPage = cfg.HasSingleRelease()
+				? WizardPage::SingleVersionSummary
+				: WizardPage::MultipleVersionsOverview;
 		}
 
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);

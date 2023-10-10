@@ -142,6 +142,24 @@ namespace models
 			return latest > appVersion;
 		}
 
+		/**
+		 * \brief Checks if we have one single update release.
+		 * \return True if single update release, false otherwise.
+		 */
+		[[nodiscard]] bool HasSingleRelease() const
+		{
+			return remote.releases.size() == 1;
+		}
+
+		/**
+		 * \brief Checks if we have multiple update releases.
+		 * \return True if multiple update releases, false otherwise.
+		 */
+		[[nodiscard]] bool HasMultipleReleases() const
+		{
+			return remote.releases.size() > 1;
+		}
+
 		InstanceConfig() : authority(Remote)
 		{
 		}

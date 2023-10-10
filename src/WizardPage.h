@@ -9,7 +9,7 @@ enum class WizardPage
 	/**
 	 * \brief USer agreed to download and install right now.
 	 */
-	DownloadAndInstall,
+	//DownloadAndInstall,
 	/**
 	 * \brief Single update available, displays single summary.
 	 */
