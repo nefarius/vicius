@@ -69,14 +69,14 @@ inline ImGui::MarkdownImageData ImageCallback(ImGui::MarkdownLinkCallbackData da
 	return imageData;
 }
 
-void RenderChangelog(const std::string& markdown)
+void markdown::RenderChangelog(const std::string& markdown)
 {
 	mdConfig.linkCallback = LinkClickedCallback;
 	mdConfig.tooltipCallback = nullptr;
 	mdConfig.imageCallback = ImageCallback;
 	mdConfig.linkIcon = ICON_FK_LINK;
-	mdConfig.headingFormats[0] = {G_Font_H1, true};
-	mdConfig.headingFormats[1] = {G_Font_H2, true};
+	mdConfig.headingFormats[0] = {G_Font_H1, false};
+	mdConfig.headingFormats[1] = {G_Font_H2, false};
 	mdConfig.headingFormats[2] = {G_Font_H3, false};
 	mdConfig.userData = nullptr;
 	mdConfig.formatCallback = FormatChangelogCallback;

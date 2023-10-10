@@ -60,6 +60,11 @@ namespace models
 		std::string GetTaskBarTitle() const { return shared.taskBarTitle; }
 		std::string GetProductName() const { return shared.productName; }
 
+		UpdateRelease& GetLatestRelease()
+		{
+			return remote.releases[0];
+		}
+
 		/**
 		 * \brief Requests the update configuration from the remote server.
 		 * \return True on success, false otherwise.

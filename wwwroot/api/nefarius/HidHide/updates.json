@@ -12,7 +12,7 @@
             "name": "test1",
             "publishedAt": "2023-09-20T13:05:40Z",
             "version": "2.4.6",
-            "summary": "## Hi from Markdown"
+            "summary": "## Features\n* Awesome new thing\n* Also this\n* And that\n\n## Bugfixes\n* Removed bug I put there\n* Ooopsie, that wasn't supposed to happen\n## Nonsense\n* Need to see\n* What happens...\n* If we need scroll bars\n* Vertically"
         }
     ]
 }

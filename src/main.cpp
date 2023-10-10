@@ -159,6 +159,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGui::PopFont();
 			ImGui::Unindent(80);
 			break;
+		case WizardPage::SingleVersionSummary:
+			ImGui::Indent(40);
+			ImGui::PushFont(G_Font_H1);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+			ImGui::Text("Update Summary");
+			ImGui::PopFont();
+
+			{
+				ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
+				ImGui::BeginChild("Summary", ImVec2(ImGui::GetContentRegionAvail().x, 360), false, window_flags);
+				markdown::RenderChangelog(cfg.GetLatestRelease().summary);
+				ImGui::EndChild();
+			}
+
+			break;
+		case WizardPage::MultipleVersionsOverview:
+			// TODO: implement me
+			break;
+		case WizardPage::End:
+			break;
 		}
 
 		ImGui::SetCursorPosY(460);

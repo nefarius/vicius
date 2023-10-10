@@ -51,7 +51,11 @@
 // Functions
 // 
 
-void RenderChangelog(const std::string& markdown);
+namespace markdown
+{
+	void RenderChangelog(const std::string& markdown);
+}
+
 void ApplyImGuiStyleDark();
 void LoadFonts(HINSTANCE hInstance, const float sizePixels = 16.0f);
 void ActivateWindow(HWND hwnd);
