@@ -83,6 +83,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	}
 
 	auto currentPage = WizardPage::Start;
+	bool isBackDisabled = false;
+	bool isCloseDisabled = false;
 
 	sf::Vector2i grabbedOffset;
 	auto grabbedWindow = false;
@@ -144,7 +146,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 		ImGui::Begin("MainWindow", nullptr, flags);
 
-		if (currentPage == WizardPage::Start)
+		if (currentPage == WizardPage::Start || isBackDisabled)
 		{
 			ImGui::Text(" " ICON_FK_ARROW_LEFT);
 		}
@@ -228,7 +230,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			// TODO: implement me
 			break;
 		case WizardPage::DownloadAndInstall:
+			isBackDisabled = true;
+			isCloseDisabled = true;
+
+			ImGui::Indent(40);
+			ImGui::PushFont(G_Font_H1);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+			ImGui::Text("Installing updates");
+			ImGui::PopFont();
+
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+
 			// TODO: implement me
+			ImGui::ProgressBar(sinf((float)ImGui::GetTime()) * 0.5f + 0.5f, ImVec2(ImGui::GetFontSize() * 25, 0.0f));
+
+			ImGui::Unindent(40);
+			
 			break;
 		case WizardPage::End:
 			// TODO: implement me
@@ -239,7 +256,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		ImGui::Separator();
 
 		ImGui::SetCursorPos(ImVec2(570, navigateButtonOffsetY));
-		if (ImGui::Button(currentPage == WizardPage::End ? "Finish" : "Cancel"))
+		if (!isCloseDisabled && ImGui::Button(currentPage == WizardPage::End ? "Finish" : "Cancel"))
 		{
 			window.close();
 		}
