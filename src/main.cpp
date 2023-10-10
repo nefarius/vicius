@@ -202,12 +202,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 			{
 				const auto& release = cfg.GetLatestRelease();
-				ImGuiWindowFlags window_flags = ImGuiWindowFlags_HorizontalScrollbar;
+				ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
 				ImGui::BeginChild(
 					"Summary",
 					ImVec2(ImGui::GetContentRegionAvail().x, 360),
 					false,
-					window_flags
+					windowFlags
 				);
 				markdown::RenderChangelog(release.summary);
 				ImGui::EndChild();
