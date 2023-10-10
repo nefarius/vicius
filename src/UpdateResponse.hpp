@@ -40,6 +40,8 @@ namespace models
 		std::string downloadUrl;
 		/** Size of the remote file */
 		size_t downloadSize;
+		/** The launch arguments (CLI arguments) if any */
+		std::string launchArguments;
 
 		/**
 		 * \brief Converts the version string to a SemVer type.
@@ -58,7 +60,16 @@ namespace models
 		}
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateRelease, name, version, summary, publishedAt, downloadUrl, downloadSize)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+		UpdateRelease,
+		name, 
+		version,
+		summary, 
+		publishedAt,
+		downloadUrl, 
+		downloadSize,
+		launchArguments
+	)
 
 	/**
 	 * \brief Update instance configuration. Parameters applying to the entire product/tenant.
@@ -90,7 +101,12 @@ namespace models
 		}
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateConfig, updatesDisabled, latestVersion, latestUrl)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+		UpdateConfig,
+		updatesDisabled,
+		latestVersion, 
+		latestUrl
+	)
 
 	/**
 	 * \brief An instance returned by the remote update API.
@@ -106,5 +122,10 @@ namespace models
 		std::vector<UpdateRelease> releases;
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateResponse, instance, shared, releases)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+		UpdateResponse, 
+		instance, 
+		shared, 
+		releases
+	)
 }
