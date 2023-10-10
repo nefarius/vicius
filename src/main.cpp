@@ -151,6 +151,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			if (ImGui::SmallButton(ICON_FK_ARROW_LEFT))
 			{
 				--currentPage;
+
+				if (currentPage == WizardPage::MultipleVersionsOverview && cfg.HasSingleRelease())
+				{
+					--currentPage;
+				}
 			}
 		}
 		ImGui::SameLine();
@@ -204,13 +209,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				);
 				markdown::RenderChangelog(release.summary);
 				ImGui::EndChild();
+
+				ImGui::SetCursorPos(ImVec2(530, 470));
+				if (ImGui::Button("Next"))
+				{
+					currentPage = WizardPage::DownloadAndInstall;
+				}
 			}
 
 			break;
 		case WizardPage::MultipleVersionsOverview:
 			// TODO: implement me
 			break;
+		case WizardPage::DownloadAndInstall:
+			// TODO: implement me
+			break;
 		case WizardPage::End:
+			// TODO: implement me
 			break;
 		}
 

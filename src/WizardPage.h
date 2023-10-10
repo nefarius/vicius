@@ -5,11 +5,7 @@ enum class WizardPage
 	/**
 	 * \brief The first page with basic actions the user can choose.
 	 */
-	Start = 0,
-	/**
-	 * \brief USer agreed to download and install right now.
-	 */
-	//DownloadAndInstall,
+	Start = 0,	
 	/**
 	 * \brief Single update available, displays single summary.
 	 */
@@ -18,6 +14,10 @@ enum class WizardPage
 	 * \brief Multiple new version available, display list and details.
 	 */
 	MultipleVersionsOverview,
+	/**
+	 * \brief Download and install right now.
+	 */
+	DownloadAndInstall,
 	/**
 	 * \brief The last possible wizard page.
 	 */
