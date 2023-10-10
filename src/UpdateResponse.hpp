@@ -34,8 +34,10 @@ namespace models
 		std::string version;
 		/** The update summary/changelog, supports Markdown */
 		std::string summary;
-		/** The publishing timestamp as a UTC ISO-8601 string */
+		/** The publishing timestamp as UTC ISO 8601 string */
 		std::string publishedAt;
+		/** URL of the new setup/release download */
+		std::string downloadUrl;
 
 		/**
 		 * \brief Converts the version string to a SemVer type.
@@ -54,7 +56,7 @@ namespace models
 		}
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateRelease, name, version, summary, publishedAt)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateRelease, name, version, summary, publishedAt, downloadUrl)
 
 	/**
 	 * \brief Update instance configuration. Parameters applying to the entire product/tenant.

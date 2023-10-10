@@ -1,0 +1,9 @@
+{
+	"instance": {
+		"serverUrlTemplate": "http://localhost:5200/api/{}/updates.json",
+		"authority": "Remote"
+	},
+	"shared":{
+		"productName": "HidHide"
+	}
+}

@@ -105,4 +105,7 @@
       <Filter>Fonts</Filter>
     </Font>
   </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="nefarius_HidHide_Updater.json" />
+  </ItemGroup>
 </Project>

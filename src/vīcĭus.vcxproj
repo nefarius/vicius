@@ -198,6 +198,9 @@
     <Image Include="favicon.ico" />
   </ItemGroup>
   <ItemGroup>
+    <CopyFileToFolders Include="nefarius_HidHide_Updater.json">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
