@@ -137,6 +137,9 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels)
 	ImGui::SFML::UpdateFontTexture();
 }
 
+/**
+ * \brief https://github.com/ocornut/imgui/issues/5370#issuecomment-1145917633
+ */
 void ui::IndeterminateProgressBar(const ImVec2& size_arg)
 {
     using namespace ImGui;
