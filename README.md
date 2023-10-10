@@ -27,6 +27,16 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
 - Self-updater  
   Sometimes just the updater process needs an update (e.g. security patches), not the entire product it is watching over. It can update itself if the server-provided instance version is higher than the locally running one.
 
+## TODOs
+
+Non-exhaustive list of things open or in-progress...
+
+- [ ] Finalize REST API design
+- [ ] Finalize local updater config JSON format
+- [ ] Add self-updater logic
+- [ ] Documentation
+- [ ] Finalize UI design
+
 ## Sources & 3rd party credits
 
 This tool benefits from these awesome projects ❤ (appearance in no special order):
