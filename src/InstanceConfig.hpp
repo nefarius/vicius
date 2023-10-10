@@ -117,7 +117,7 @@ namespace models
 
 		/**
 		 * \brief Checks if a newer release than the local version is available.
-		 * \param currentVersion The local version to check against.
+		 * \param currentVersion The local product version to check against.
 		 * \return True if a newer version is available, false otherwise.
 		 */
 		[[nodiscard]] bool IsProductUpdateAvailable(const semver::version& currentVersion) const
