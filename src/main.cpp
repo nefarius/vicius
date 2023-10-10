@@ -129,32 +129,37 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		ImGui::SameLine();
 		ImGui::Text("Found Updates for %s", cfg.GetProductName().c_str());
 
-		ImGui::Indent(40);
-		ImGui::PushFont(G_Font_H1);
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
-		ImGui::Text("Updates for %s are available", cfg.GetProductName().c_str());
-		ImGui::PopFont();
-
-		ImGui::Indent(40);
-		ImGui::PushFont(G_Font_H2);
-
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
-		if (ImGui::Button(ICON_FK_DOWNLOAD " Download and install now"))
+		switch (currentPage)
 		{
-			currentPage = cfg.HasSingleRelease()
-				? WizardPage::SingleVersionSummary
-				: WizardPage::MultipleVersionsOverview;
-		}
+		case WizardPage::Start:
+			ImGui::Indent(40);
+			ImGui::PushFont(G_Font_H1);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+			ImGui::Text("Updates for %s are available", cfg.GetProductName().c_str());
+			ImGui::PopFont();
 
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
-		if (ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow"))
-		{
-			// TODO: implement me
-			window.close();
-		}
+			ImGui::Indent(40);
+			ImGui::PushFont(G_Font_H2);
 
-		ImGui::PopFont();
-		ImGui::Unindent(80);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+			if (ImGui::Button(ICON_FK_DOWNLOAD " Download and install now"))
+			{
+				currentPage = cfg.HasSingleRelease()
+					? WizardPage::SingleVersionSummary
+					: WizardPage::MultipleVersionsOverview;
+			}
+
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
+			if (ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow"))
+			{
+				// TODO: implement me
+				window.close();
+			}
+
+			ImGui::PopFont();
+			ImGui::Unindent(80);
+			break;
+		}
 
 		ImGui::SetCursorPosY(460);
 		ImGui::Separator();
