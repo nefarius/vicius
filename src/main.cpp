@@ -3,6 +3,7 @@
 
 #include <winhttp.h>
 
+
 //
 // Models
 // 
@@ -59,8 +60,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	{
 		// TODO: implement self-updating logic here
 	}
-
-
 
 
 	constexpr int windowWidth = 640, windowHeight = 512;
@@ -166,25 +165,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		ImGui::Text("Found Updates for %s", cfg.GetProductName().c_str());
 
 		float navigateButtonOffsetY = 470.0;
+		float leftBorderIndent = 40.0;
 
 		switch (currentPage)
 		{
 		case WizardPage::Start:
-			ImGui::Indent(40);
+			ImGui::Indent(leftBorderIndent);
 			ImGui::PushFont(G_Font_H1);
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
 			ImGui::Text("Updates for %s are available", cfg.GetProductName().c_str());
 			ImGui::PopFont();
 
-			ImGui::Indent(40);
+			ImGui::Indent(leftBorderIndent);
 			ImGui::PushFont(G_Font_H2);
 
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
 			if (ImGui::Button(ICON_FK_DOWNLOAD " Download and install now"))
 			{
 				currentPage = cfg.HasSingleRelease()
-					? WizardPage::SingleVersionSummary
-					: WizardPage::MultipleVersionsOverview;
+					              ? WizardPage::SingleVersionSummary
+					              : WizardPage::MultipleVersionsOverview;
 			}
 
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
@@ -195,10 +195,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			}
 
 			ImGui::PopFont();
-			ImGui::Unindent(80);
+			ImGui::Unindent(leftBorderIndent);
+			ImGui::Unindent(leftBorderIndent);
 			break;
 		case WizardPage::SingleVersionSummary:
-			ImGui::Indent(40);
+			ImGui::Indent(leftBorderIndent);
 			ImGui::PushFont(G_Font_H1);
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
 			ImGui::Text("Update Summary");
@@ -223,35 +224,66 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				}
 			}
 
-			ImGui::Unindent(40);
+			ImGui::Unindent(leftBorderIndent);
 
 			break;
 		case WizardPage::MultipleVersionsOverview:
 			// TODO: implement me
 			break;
 		case WizardPage::DownloadAndInstall:
-			isBackDisabled = true;
-			isCancelDisabled = true;
+			{
+				isBackDisabled = true;
+				isCancelDisabled = true;
 
-			ImGui::Indent(40);
-			ImGui::PushFont(G_Font_H1);
-			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
-			ImGui::Text("Installing Updates");
-			ImGui::PopFont();
+				ImGui::Indent(leftBorderIndent);
+				ImGui::PushFont(G_Font_H1);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+				ImGui::Text("Installing Updates");
+				ImGui::PopFont();
 
-			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
 
-			// TODO: implement me
+				// TODO: implement me
 
-			ImGui::Text("Downloading (%.2f MB of %.2f MB)", 10.f, 50.f);
-			ImGui::ProgressBar(
-				sinf((float)ImGui::GetTime()) * 0.5f + 0.5f,
-				ImVec2(ImGui::GetContentRegionAvail().x - 40, 0.0f)
-			);
 
-			ImGui::Unindent(40);
+				static double totalToDownload = 0;
+				static double totalDownloaded = 0;
 
-			break;
+				bool isDownloading = false;
+				bool isFinished = false;
+
+				std::future_status stat;
+				if (!cfg.GetDownloadReleaseStatus(stat))
+				{
+					// start download
+					cfg.DownloadRelease([](void* pData, double downloadTotal, double downloaded, double uploadTotal,
+					                       double uploaded) -> int
+					{
+						totalToDownload = downloadTotal;
+						totalDownloaded = downloaded;
+						return 0;
+					});
+				}
+				else
+				{
+					isDownloading = stat == std::future_status::timeout;
+					isFinished = stat == std::future_status::ready;
+				}
+
+				if (isDownloading)
+				{
+					ImGui::Text("Downloading (%.2f MB of %.2f MB)",
+					            totalDownloaded / (1024 * 1024), totalToDownload / (1024 * 1024));
+					ImGui::ProgressBar(
+						(static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
+						ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f)
+					);
+				}
+
+				ImGui::Unindent(leftBorderIndent);
+
+				break;
+			}
 		case WizardPage::End:
 			// TODO: implement me
 			break;
