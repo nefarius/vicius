@@ -1,4 +1,9 @@
 {
+    "instance":{
+        "updatesDisabled": false,
+        "latestVersion": "2.0.0",
+        "latestUrl": "http://localhost:5200/api/nefarius/HidHide/nefarius_HidHide_Updater.exe"
+    },
     "releases":[
         {
             "name": "test1",

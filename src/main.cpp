@@ -59,7 +59,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	if (local.RequestUpdateInfo(updateConfig))
 	{
-		if (updateConfig.IsUpdateAvailable(local.GetAppVersion()))
+		if (updateConfig.IsNewerUpdaterAvailable(local.GetAppVersion()))
 		{
 			auto t = 0;
 		}

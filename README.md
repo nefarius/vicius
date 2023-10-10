@@ -36,6 +36,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Add self-updater logic
 - [ ] Documentation
 - [ ] Finalize UI design
+- [ ] Design Beta-Release support
 
 ## Sources & 3rd party credits
 

@@ -48,9 +48,29 @@ namespace models
 	public:
 		/** True to disable, false to enable the updates globally */
 		bool updatesDisabled;
+		/** The latest updater version available */
+		std::string latestVersion;
+		/** URL of the latest updater binary */
+		std::string latestUrl;
+
+		/**
+		 * \brief Converts the version string to a SemVer type.
+		 * \return The parsed version.
+		 */
+		semver::version GetSemVersion() const
+		{
+			try
+			{
+				return semver::version{latestVersion};
+			}
+			catch (...)
+			{
+				return semver::version{0, 0, 0};
+			}
+		}
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateConfig, updatesDisabled)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateConfig, updatesDisabled, latestVersion, latestUrl)
 
 	/**
 	 * \brief An instance returned by the remote update API.
@@ -68,7 +88,7 @@ namespace models
 		 * \param currentVersion The local version to check against.
 		 * \return True if a newer version is available, false otherwise.
 		 */
-		[[nodiscard]] bool IsUpdateAvailable(const semver::version& currentVersion) const
+		[[nodiscard]] bool IsProductUpdateAvailable(const semver::version& currentVersion) const
 		{
 			if (releases.empty())
 			{
@@ -76,6 +96,18 @@ namespace models
 			}
 
 			const auto latest = releases[0].GetSemVersion();
+
+			return latest > currentVersion;
+		}
+
+		/**
+		 * \brief Checks if a newer updater than the local version is available.
+		 * \param currentVersion The local version to check against.
+		 * \return True if a newer version is available, false otherwise.
+		 */
+		[[nodiscard]] bool IsNewerUpdaterAvailable(const semver::version& currentVersion) const
+		{
+			const auto latest = instance.GetSemVersion();
 
 			return latest > currentVersion;
 		}
