@@ -62,7 +62,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	argv.push_back(nullptr);
 
-	cmdl.parse(nArgs, &argv[0]);
+	cmdl.parse(nArgs, argv.data());
 
 #pragma endregion
 
