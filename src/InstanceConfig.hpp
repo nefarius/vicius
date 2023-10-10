@@ -194,14 +194,17 @@ namespace models
 			downloadTask = std::async(std::launch::async, &InstanceConfig::DownloadReleaseAsync, this, progressFn);
 		}
 
-		bool GetDownloadReleaseStatus(std::future_status& status) const
+		bool GetDownloadReleaseStatus(bool& isDownloading, bool& isFinished) const
 		{
 			if (!downloadTask)
 			{
 				return false;
 			}
 
-			status = (*downloadTask).wait_for(std::chrono::milliseconds(1));
+			const std::future_status status = (*downloadTask).wait_for(std::chrono::milliseconds(1));
+
+			isDownloading = status == std::future_status::timeout;
+			isFinished = status == std::future_status::ready;
 
 			return true;
 		}

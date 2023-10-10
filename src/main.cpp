@@ -252,9 +252,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 				bool isDownloading = false;
 				bool isFinished = false;
-
-				std::future_status status;
-				if (!cfg.GetDownloadReleaseStatus(status))
+				
+				if (!cfg.GetDownloadReleaseStatus(isDownloading, isFinished))
 				{
 					totalToDownload = 0;
 					totalDownloaded = 0;
@@ -267,11 +266,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 						totalDownloaded = downloaded;
 						return 0;
 					});
-				}
-				else
-				{
-					isDownloading = status == std::future_status::timeout;
-					isFinished = status == std::future_status::ready;
 				}
 
 				if (isDownloading)
