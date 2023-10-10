@@ -39,6 +39,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Design Beta-Release support
 - [ ] Specify supported Command Line Arguments
 - [ ] Make app icon customizable
+- [ ] Add "Light" theme
 
 ## Sources & 3rd party credits
 
