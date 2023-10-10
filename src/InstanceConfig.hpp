@@ -53,8 +53,6 @@ namespace models
 
 		std::optional<std::future<bool>> downloadTask;
 
-		std::filesystem::path localReleaseTempFilePath;
-
 		bool DownloadReleaseAsync(curl_progress_callback progressFn, const int releaseIndex)
 		{
 			const auto conn = new RestClient::Connection("");
@@ -75,9 +73,10 @@ namespace models
 			GetTempPathA(MAX_PATH, tempPath.data());
 			GetTempFileNameA(tempPath.c_str(), "VICIUS", 0, tempFile.data());
 
-			localReleaseTempFilePath = tempFile;
+			auto& release = remote.releases[releaseIndex];
+			release.localTempFilePath = tempFile;
 
-			static std::ofstream outStream(localReleaseTempFilePath.string(), std::ios::binary);
+			static std::ofstream outStream(release.localTempFilePath.string(), std::ios::binary);
 
 			// write to file as we download it
 			auto writeCallback = [](void* data, size_t size, size_t nmemb, void* userdata) -> size_t
@@ -85,7 +84,9 @@ namespace models
 				UNREFERENCED_PARAMETER(userdata);
 
 				const auto bytes = size * nmemb;
-				
+
+				// TODO: error handling
+
 				outStream.write(static_cast<char*>(data), bytes);
 
 				return bytes;
@@ -93,13 +94,11 @@ namespace models
 
 			conn->SetWriteFunction(writeCallback);
 
-			const auto& release = remote.releases[releaseIndex];
-
 			auto [code, body, _] = conn->get(release.downloadUrl);
 
 			outStream.close();
 
-			// TODO: implement me
+			// TODO: error handling
 
 			return code == 200;
 		}
@@ -127,7 +126,11 @@ namespace models
 
 		std::string GetTaskBarTitle() const { return shared.taskBarTitle; }
 		std::string GetProductName() const { return shared.productName; }
-		std::filesystem::path GetLocalReleaseTempFilePath() const { return localReleaseTempFilePath; }
+
+		std::filesystem::path GetLocalReleaseTempFilePath(const int releaseId = 0) const
+		{
+			return remote.releases[releaseId].localTempFilePath;
+		}
 
 		UpdateRelease& GetLatestRelease()
 		{

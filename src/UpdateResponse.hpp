@@ -43,6 +43,9 @@ namespace models
 		/** The launch arguments (CLI arguments) if any */
 		std::string launchArguments;
 
+		/** Full pathname of the local temporary file */
+		std::filesystem::path localTempFilePath;
+
 		/**
 		 * \brief Converts the version string to a SemVer type.
 		 * \return The parsed version.
