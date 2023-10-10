@@ -1,4 +1,6 @@
 #include "Updater.h"
+#include <algorithm>
+#include <argh.h>
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
 
@@ -66,5 +68,34 @@ namespace util
 		}
 
 		return semver::version{ versionString.str() };
+	}
+
+	bool ParseCommandLineArguments(argh::parser& cmdl)
+	{
+		int nArgs;
+
+		const LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+		// even with no arguments passed, this is expected to succeed
+		if (nullptr == szArglist)
+		{
+			return false;
+		}
+
+		std::vector<const char*> argv;
+		std::vector<std::string> narrow;
+
+		for (int i = 0; i < nArgs; i++)
+		{
+			narrow.push_back(ConvertWideToANSI(std::wstring(szArglist[i])));
+		}
+
+		argv.resize(nArgs);
+		std::ranges::transform(narrow, argv.begin(), [](const std::string& arg) { return arg.c_str(); });
+
+		argv.push_back(nullptr);
+
+		cmdl.parse(nArgs, argv.data());
+
+		return true;
 	}
 }

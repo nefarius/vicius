@@ -60,4 +60,5 @@ namespace util
 {
 	std::filesystem::path GetImageBasePathW();
 	semver::version GetVersionFromFile(const std::filesystem::path& filePath);
+	bool ParseCommandLineArguments(argh::parser& cmdl);
 }

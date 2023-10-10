@@ -38,32 +38,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma region CLI parsing
 
 	argh::parser cmdl;
-
-	LPWSTR* szArglist;
-	int nArgs;
-	int i;
-
-	szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
-	// even with no arguments passed, this is expected to succeed
-	if (nullptr == szArglist)
+	
+	if (!util::ParseCommandLineArguments(cmdl))
 	{
 		return EXIT_FAILURE;
 	}
-
-	std::vector<const char*> argv;
-	std::vector<std::string> narrow;
-
-	for (i = 0; i < nArgs; i++)
-	{
-		narrow.push_back(ConvertWideToANSI(std::wstring(szArglist[i])));
-	}
-
-	argv.resize(nArgs);
-	std::ranges::transform(narrow, argv.begin(), [](const std::string& arg) { return arg.c_str(); });
-
-	argv.push_back(nullptr);
-
-	cmdl.parse(nArgs, argv.data());
 
 #pragma endregion
 
