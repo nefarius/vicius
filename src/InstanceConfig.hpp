@@ -25,6 +25,22 @@ namespace models
 	};
 
 	/**
+	 * \brief Parameters that might be provided by both the server and the local configuration.
+	 */
+	class SharedConfig
+	{
+	public:
+		std::string taskBarTitle;
+		std::string productName;
+
+		SharedConfig() : taskBarTitle(NV_TASKBAR_TITLE), productName(NV_PRODUCT_NAME)
+		{
+		}
+	};
+
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SharedConfig, taskBarTitle, productName)
+
+	/**
 	 * \brief Local configuration file model.
 	 */
 	class InstanceConfig
@@ -38,6 +54,9 @@ namespace models
 		std::string tenantSubPath;
 		std::string updateRequestUrl;
 
+		SharedConfig shared;
+		UpdateResponse remote;
+
 	public:
 		std::string serverUrlTemplate;
 		std::string filenameRegex;
@@ -48,12 +67,15 @@ namespace models
 		std::string GetAppFilename() const { return appFilename; }
 		std::string GetUpdateRequestUrl() const { return updateRequestUrl; }
 
+		std::string GetTaskBarTitle() const { return shared.taskBarTitle; }
+		std::string GetProductName() const { return shared.productName; }
+
 		/**
 		 * \brief Requests the update configuration from the remote server.
 		 * \param response The deserialized server response.
 		 * \return True on success, false otherwise.
 		 */
-		[[nodiscard]] bool RequestUpdateInfo(UpdateResponse& response) const
+		[[nodiscard]] bool RequestUpdateInfo()
 		{
 			const auto conn = new RestClient::Connection("");
 
@@ -77,13 +99,15 @@ namespace models
 			try
 			{
 				const json reply = json::parse(body);
-				response = reply.get<UpdateResponse>();
+				remote = reply.get<UpdateResponse>();
 
 				// top release is always latest by version, even if the response wasn't the right order
-				std::ranges::sort(response.releases, [](const auto& lhs, const auto& rhs)
+				std::ranges::sort(remote.releases, [](const auto& lhs, const auto& rhs)
 				{
 					return lhs.GetSemVersion() > rhs.GetSemVersion();
 				});
+
+				// TODO: implement merging remote shared config
 
 				return true;
 			}
@@ -93,7 +117,35 @@ namespace models
 			}
 		}
 
-		InstanceConfig(): authority(Remote)
+		/**
+		 * \brief Checks if a newer release than the local version is available.
+		 * \param currentVersion The local version to check against.
+		 * \return True if a newer version is available, false otherwise.
+		 */
+		[[nodiscard]] bool IsProductUpdateAvailable(const semver::version& currentVersion) const
+		{
+			if (remote.releases.empty())
+			{
+				return false;
+			}
+
+			const auto latest = remote.releases[0].GetSemVersion();
+
+			return latest > currentVersion;
+		}
+
+		/**
+		 * \brief Checks if a newer updater than the local version is available.
+		 * \return True if a newer version is available, false otherwise.
+		 */
+		[[nodiscard]] bool IsNewerUpdaterAvailable() const
+		{
+			const auto latest = remote.instance.GetSemVersion();
+
+			return latest > appVersion;
+		}
+
+		InstanceConfig() : authority(Remote)
 		{
 		}
 
@@ -152,6 +204,12 @@ namespace models
 					serverUrlTemplate = data.value("/instance/serverUrlTemplate"_json_pointer, serverUrlTemplate);
 					filenameRegex = data.value("/instance/filenameRegex"_json_pointer, filenameRegex);
 					authority = data.value("/instance/authority"_json_pointer, authority);
+
+					// populate shared config first either from JSON file or with built-in defaults
+					if (data.contains("shared"))
+					{
+						shared = data["shared"].get<SharedConfig>();
+					}
 				}
 				catch (...)
 				{

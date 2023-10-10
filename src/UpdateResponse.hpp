@@ -82,35 +82,6 @@ namespace models
 		UpdateConfig instance;
 		/** The available releases */
 		std::vector<UpdateRelease> releases;
-
-		/**
-		 * \brief Checks if a newer release than the local version is available.
-		 * \param currentVersion The local version to check against.
-		 * \return True if a newer version is available, false otherwise.
-		 */
-		[[nodiscard]] bool IsProductUpdateAvailable(const semver::version& currentVersion) const
-		{
-			if (releases.empty())
-			{
-				return false;
-			}
-
-			const auto latest = releases[0].GetSemVersion();
-
-			return latest > currentVersion;
-		}
-
-		/**
-		 * \brief Checks if a newer updater than the local version is available.
-		 * \param currentVersion The local version to check against.
-		 * \return True if a newer version is available, false otherwise.
-		 */
-		[[nodiscard]] bool IsNewerUpdaterAvailable(const semver::version& currentVersion) const
-		{
-			const auto latest = instance.GetSemVersion();
-
-			return latest > currentVersion;
-		}
 	};
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateResponse, instance, releases)

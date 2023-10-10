@@ -55,17 +55,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma endregion
 
 	// updater configuration, defaults and app state
-	models::InstanceConfig local(hInstance);
+	models::InstanceConfig cfg(hInstance);
 
-	models::UpdateResponse updateConfig;
-
-	if (!local.RequestUpdateInfo(updateConfig))
+	if (!cfg.RequestUpdateInfo())
 	{
 		// TODO: add fallback actions
 		return ERROR_WINHTTP_INVALID_SERVER_RESPONSE;
 	}
 
-	if (updateConfig.IsNewerUpdaterAvailable(local.GetAppVersion()))
+	if (cfg.IsNewerUpdaterAvailable())
 	{
 		// TODO: implement self-updating logic here
 	}
@@ -74,7 +72,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 
 	constexpr int windowWidth = 640, windowHeight = 512;
-	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), NV_TASKBAR_TITLE, sf::Style::None);
+	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetTaskBarTitle(), sf::Style::None);
 
 	window.setFramerateLimit(60);
 	ImGui::SFML::Init(window, false);
@@ -137,12 +135,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			}
 		}
 		ImGui::SameLine();
-		ImGui::Text("Found Updates for %s", "HidHide");
+		ImGui::Text("Found Updates for %s", cfg.GetProductName().c_str());
 
 		ImGui::Indent(40);
 		ImGui::PushFont(G_Font_H1);
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
-		ImGui::Text("Updates for %s are available", "HidHide");
+		ImGui::Text("Updates for %s are available", cfg.GetProductName().c_str());
 		ImGui::PopFont();
 
 		ImGui::Indent(40);
