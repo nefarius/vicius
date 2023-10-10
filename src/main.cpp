@@ -111,13 +111,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			else if (event.type == sf::Event::MouseButtonReleased)
 			{
 				if (event.mouseButton.button == sf::Mouse::Left)
+				{
 					grabbedWindow = false;
+				}
 			}
 			// Mouse events used to react to dragging
 			else if (event.type == sf::Event::MouseMoved)
 			{
 				if (grabbedWindow)
+				{
 					window.setPosition(sf::Mouse::getPosition() + grabbedOffset);
+				}
 			}
 		}
 
