@@ -14,6 +14,17 @@ using json = nlohmann::json;
 namespace models
 {
 	/**
+	 * \brief If hitting duplicate instructions, which configuration gets the priority.
+	 */
+	enum Authority
+	{
+		///< The local config file (if any) gets priority
+		Local,
+		///< The server-side instructions get priority
+		Remote
+	};
+
+	/**
 	 * \brief Local configuration file model.
 	 */
 	class InstanceConfig
@@ -22,14 +33,15 @@ namespace models
 		std::filesystem::path appPath;
 		semver::version appVersion;
 		std::string appFilename;
-		std::string username;
-		std::string repository;
+		std::string manufacturer;
+		std::string product;
 		std::string tenantSubPath;
 		std::string updateRequestUrl;
 
 	public:
 		std::string serverUrlTemplate;
 		std::string filenameRegex;
+		Authority authority;
 
 		std::filesystem::path GetAppPath() const { return appPath; }
 		semver::version GetAppVersion() const { return appVersion; }
@@ -114,6 +126,7 @@ namespace models
 			appVersion = util::GetVersionFromFile(appPath);
 			appFilename = appPath.stem().string();
 			filenameRegex = NV_FILENAME_REGEX;
+			authority = Remote;
 
 			//
 			// Merge from config file, if available
@@ -127,8 +140,13 @@ namespace models
 				{
 					json data = json::parse(configFileStream);
 
+					//
+					// Override defaults, if specified
+					// 
+
 					serverUrlTemplate = data.value("/instance/serverUrlTemplate"_json_pointer, serverUrlTemplate);
 					filenameRegex = data.value("/instance/filenameRegex"_json_pointer, filenameRegex);
+					authority = data.value("/instance/authority"_json_pointer, authority);
 				}
 				catch (...)
 				{
@@ -150,15 +168,15 @@ namespace models
 			{
 				if (const std::smatch& match = *matchesBegin; match.size() == 3)
 				{
-					username = match[1];
-					repository = match[2];
+					manufacturer = match[1];
+					product = match[2];
 				}
 			}
 
 			// first try to build "manufacturer/product" and use filename as 
 			// fallback if extraction via regex didn't yield any results
-			tenantSubPath = (!username.empty() && !repository.empty())
-				                ? std::format("{}/{}", username, repository)
+			tenantSubPath = (!manufacturer.empty() && !product.empty())
+				                ? std::format("{}/{}", manufacturer, product)
 				                : appFilename;
 
 			updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
@@ -170,5 +188,5 @@ namespace models
 		}
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InstanceConfig, serverUrlTemplate, filenameRegex)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InstanceConfig, serverUrlTemplate, filenameRegex, authority)
 }
