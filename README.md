@@ -38,6 +38,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Finalize UI design
 - [ ] Design Beta-Release support
 - [ ] Specify supported Command Line Arguments
+- [ ] Make app icon customizable
 
 ## Sources & 3rd party credits
 
