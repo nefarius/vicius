@@ -93,7 +93,7 @@ namespace models
 			}
 		}
 
-		InstanceConfig()
+		InstanceConfig(): authority(Remote)
 		{
 		}
 
