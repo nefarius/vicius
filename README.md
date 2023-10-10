@@ -34,6 +34,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Finalize REST API design
 - [ ] Finalize local updater config JSON format
 - [ ] Add self-updater logic
+  - [libPeConv](https://github.com/hasherezade/libpeconv) maybe?
 - [ ] Documentation
 - [ ] Finalize UI design
 - [ ] Design Beta-Release support
