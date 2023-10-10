@@ -7,15 +7,6 @@
 // Models
 // 
 #include "InstanceConfig.hpp"
-#include "UpdateResponse.hpp"
-
-//
-// STL
-// 
-#include <regex>
-
-#include <nlohmann/json.hpp>
-using json = nlohmann::json;
 
 
 //
@@ -43,6 +34,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	if (!util::ParseCommandLineArguments(cmdl))
 	{
+		// TODO: better fallback action?
 		return EXIT_FAILURE;
 	}
 
