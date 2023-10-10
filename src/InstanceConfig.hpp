@@ -72,7 +72,6 @@ namespace models
 
 		/**
 		 * \brief Requests the update configuration from the remote server.
-		 * \param response The deserialized server response.
 		 * \return True on success, false otherwise.
 		 */
 		[[nodiscard]] bool RequestUpdateInfo()
