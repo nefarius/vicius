@@ -84,6 +84,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	auto currentPage = WizardPage::Start;
 
+	sf::Vector2i grabbedOffset;
+	auto grabbedWindow = false;
 	sf::Clock deltaClock;
 	while (window.isOpen())
 	{
@@ -95,6 +97,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			if (event.type == sf::Event::Closed)
 			{
 				window.close();
+			}
+			// Mouse events used to react to dragging
+			else if (event.type == sf::Event::MouseButtonPressed)
+			{
+				if (event.mouseButton.button == sf::Mouse::Left)
+				{
+					grabbedOffset = window.getPosition() - sf::Mouse::getPosition();
+					grabbedWindow = true;
+				}
+			}
+			// Mouse events used to react to dragging
+			else if (event.type == sf::Event::MouseButtonReleased)
+			{
+				if (event.mouseButton.button == sf::Mouse::Left)
+					grabbedWindow = false;
+			}
+			// Mouse events used to react to dragging
+			else if (event.type == sf::Event::MouseMoved)
+			{
+				if (grabbedWindow)
+					window.setPosition(sf::Mouse::getPosition() + grabbedOffset);
 			}
 		}
 
