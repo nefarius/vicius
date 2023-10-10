@@ -118,7 +118,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			// Mouse events used to react to dragging
 			else if (event.type == sf::Event::MouseMoved)
 			{
-				if (grabbedWindow)
+				const auto offset = sf::Mouse::getPosition() - window.getPosition();
+				// fake a titlebar and only drag when cursor is in that area
+				if (grabbedWindow && offset.y < 30)
 				{
 					window.setPosition(sf::Mouse::getPosition() + grabbedOffset);
 				}
