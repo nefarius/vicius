@@ -40,6 +40,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Specify supported Command Line Arguments
 - [ ] Make app icon customizable
 - [ ] Add "Light" theme
+- [ ] Implement Product Version detection
 
 ## Sources & 3rd party credits
 
