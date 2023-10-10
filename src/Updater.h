@@ -60,7 +60,4 @@ namespace util
 {
 	std::filesystem::path GetImageBasePathW();
 	semver::version GetVersionFromFile(const std::filesystem::path& filePath);
-
-	LPVOID MapFileToMemory(LPCSTR filename);
-	BOOLEAN RunPortableExecutable(LPVOID image);
 }

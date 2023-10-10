@@ -82,9 +82,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		auto latest = updateConfig.releases[0].GetSemVersion();
 	}
 
-	auto eppt = util::MapFileToMemory(R"(D:\Development\GitHub\vicius\x64\Debug\EPPT.exe)");
 
-	auto ret = util::RunPortableExecutable(eppt);
 
 	constexpr int windowWidth = 640, windowHeight = 512;
 	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), NV_TASKBAR_TITLE, sf::Style::None);
