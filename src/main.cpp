@@ -221,6 +221,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				}
 			}
 
+			ImGui::Unindent(40);
+
 			break;
 		case WizardPage::MultipleVersionsOverview:
 			// TODO: implement me
