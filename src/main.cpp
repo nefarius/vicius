@@ -147,22 +147,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 		ImGui::Begin("MainWindow", nullptr, flags);
 
-		if (currentPage == WizardPage::Start || isBackDisabled)
+		if (currentPage == WizardPage::Start)
 		{
-			ImGui::Text(" " ICON_FK_ARROW_LEFT);
+			isBackDisabled = true;
 		}
-		else
+
+		ImGui::BeginDisabled(isBackDisabled);
+		if (ImGui::SmallButton(ICON_FK_ARROW_LEFT))
 		{
-			if (ImGui::SmallButton(ICON_FK_ARROW_LEFT))
+			--currentPage;
+
+			if (currentPage == WizardPage::MultipleVersionsOverview && cfg.HasSingleRelease())
 			{
 				--currentPage;
-
-				if (currentPage == WizardPage::MultipleVersionsOverview && cfg.HasSingleRelease())
-				{
-					--currentPage;
-				}
 			}
 		}
+		ImGui::EndDisabled();
+
 		ImGui::SameLine();
 		ImGui::Text("Found Updates for %s", cfg.GetProductName().c_str());
 
@@ -201,6 +202,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGui::Unindent(leftBorderIndent);
 			break;
 		case WizardPage::SingleVersionSummary:
+			isBackDisabled = false;
+
 			ImGui::Indent(leftBorderIndent);
 			ImGui::PushFont(G_Font_H1);
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
@@ -231,7 +234,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 			break;
 		case WizardPage::MultipleVersionsOverview:
-			// TODO: implement me
+			isBackDisabled = false;
+
+		// TODO: implement me
 			break;
 		case WizardPage::DownloadAndInstall:
 			{
@@ -289,9 +294,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				}
 
 				if (hasFinished && hasSucceeded)
-				{					
+				{
 					ImGui::Text("Installing...");
 					ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
+
+					// TODO: implement me
+				}
+
+				if (hasFinished && !hasSucceeded)
+				{
+					ImGui::Text("Error!");
 
 					// TODO: implement me
 				}
@@ -303,9 +315,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 					const auto tempFile = cfg.GetLocalReleaseTempFilePath();
 					STARTUPINFOA info = {sizeof(info)};
 					PROCESS_INFORMATION processInfo;
-
+	
 					// TODO: make non-blocking
-
+	
 					if (CreateProcessA(
 						tempFile.string().c_str(),
 						nullptr,
@@ -340,10 +352,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		ImGui::Separator();
 
 		ImGui::SetCursorPos(ImVec2(570, navigateButtonOffsetY));
-		if (!isCancelDisabled && ImGui::Button(currentPage == WizardPage::End ? "Finish" : "Cancel"))
+		ImGui::BeginDisabled(isCancelDisabled);
+		if (ImGui::Button(currentPage == WizardPage::End ? "Finish" : "Cancel"))
 		{
 			window.close();
 		}
+		ImGui::EndDisabled();
 
 		ImGui::End();
 
