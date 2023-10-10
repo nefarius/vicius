@@ -84,7 +84,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	auto currentPage = WizardPage::Start;
 	bool isBackDisabled = false;
-	bool isCloseDisabled = false;
+	bool isCancelDisabled = false;
 
 	sf::Vector2i grabbedOffset;
 	auto grabbedWindow = false;
@@ -231,7 +231,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			break;
 		case WizardPage::DownloadAndInstall:
 			isBackDisabled = true;
-			isCloseDisabled = true;
+			isCancelDisabled = true;
 
 			ImGui::Indent(40);
 			ImGui::PushFont(G_Font_H1);
@@ -242,10 +242,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
 
 			// TODO: implement me
-			ImGui::ProgressBar(sinf((float)ImGui::GetTime()) * 0.5f + 0.5f, ImVec2(ImGui::GetFontSize() * 25, 0.0f));
+
+			ImGui::Text("Downloading (%.2f MB of %.2f MB)", 10.f, 50.f);
+			ImGui::ProgressBar(
+				sinf((float)ImGui::GetTime()) * 0.5f + 0.5f,
+				ImVec2(ImGui::GetContentRegionAvail().x - 40, 0.0f)
+			);
 
 			ImGui::Unindent(40);
-			
+
 			break;
 		case WizardPage::End:
 			// TODO: implement me
@@ -256,7 +261,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		ImGui::Separator();
 
 		ImGui::SetCursorPos(ImVec2(570, navigateButtonOffsetY));
-		if (!isCloseDisabled && ImGui::Button(currentPage == WizardPage::End ? "Finish" : "Cancel"))
+		if (!isCancelDisabled && ImGui::Button(currentPage == WizardPage::End ? "Finish" : "Cancel"))
 		{
 			window.close();
 		}
