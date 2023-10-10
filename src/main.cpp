@@ -296,8 +296,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 					// TODO: make non-blocking
 
-					if (CreateProcessA(tempFile.string().c_str(), NULL, NULL, NULL, TRUE, 0, NULL, NULL, &info,
-					                   &processInfo))
+					if (CreateProcessA(
+						tempFile.string().c_str(),
+						nullptr,
+						nullptr,
+						nullptr,
+						TRUE,
+						0,
+						nullptr,
+						nullptr,
+						&info,
+						&processInfo
+					))
 					{
 						setupHasLaunched = true;
 						WaitForSingleObject(processInfo.hProcess, INFINITE);
