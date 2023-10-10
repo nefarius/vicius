@@ -86,6 +86,7 @@ namespace util
 
 		for (int i = 0; i < nArgs; i++)
 		{
+			// Windows gives us wide only, convert each to narrow
 			narrow.push_back(ConvertWideToANSI(std::wstring(szArglist[i])));
 		}
 
@@ -94,6 +95,7 @@ namespace util
 
 		argv.push_back(nullptr);
 
+		// we now have the same format as a classic main argv to parse
 		cmdl.parse(nArgs, argv.data());
 
 		return true;
