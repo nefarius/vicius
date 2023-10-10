@@ -163,6 +163,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		ImGui::SameLine();
 		ImGui::Text("Found Updates for %s", cfg.GetProductName().c_str());
 
+		float navigateButtonOffsetY = 470.0;
+
 		switch (currentPage)
 		{
 		case WizardPage::Start:
@@ -212,7 +214,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				markdown::RenderChangelog(release.summary);
 				ImGui::EndChild();
 
-				ImGui::SetCursorPos(ImVec2(530, 470));
+				ImGui::SetCursorPos(ImVec2(530, navigateButtonOffsetY));
 				if (ImGui::Button("Next"))
 				{
 					currentPage = WizardPage::DownloadAndInstall;
@@ -234,7 +236,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		ImGui::SetCursorPosY(460);
 		ImGui::Separator();
 
-		ImGui::SetCursorPos(ImVec2(570, 470));
+		ImGui::SetCursorPos(ImVec2(570, navigateButtonOffsetY));
 		if (ImGui::Button(currentPage == WizardPage::End ? "Finish" : "Cancel"))
 		{
 			window.close();
