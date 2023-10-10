@@ -44,6 +44,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	int i;
 
 	szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+	// even with no arguments passed, this is expected to succeed
 	if (nullptr == szArglist)
 	{
 		return EXIT_FAILURE;
