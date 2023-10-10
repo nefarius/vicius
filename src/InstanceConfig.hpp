@@ -56,7 +56,6 @@ namespace models
 		std::filesystem::path GetAppPath() const { return appPath; }
 		semver::version GetAppVersion() const { return appVersion; }
 		std::string GetAppFilename() const { return appFilename; }
-		std::string GetUpdateRequestUrl() const { return updateRequestUrl; }
 
 		std::string GetTaskBarTitle() const { return shared.taskBarTitle; }
 		std::string GetProductName() const { return shared.productName; }
