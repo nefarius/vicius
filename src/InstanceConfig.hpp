@@ -181,10 +181,15 @@ namespace models
 
 			if (hasFinished)
 			{
-				statusCode = (*downloadTask).get();
+				statusCode = (*downloadTask).get();				
 			}
 
 			return true;
+		}
+
+		void ResetReleaseDownloadState()
+		{
+			downloadTask.reset();
 		}
 
 		InstanceConfig() : remote(), authority(Remote)
