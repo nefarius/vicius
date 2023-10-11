@@ -271,7 +271,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 					totalDownloaded = 0;
 
 					// start download
-					cfg.DownloadRelease(
+					cfg.DownloadReleaseAsync(
 						selectedReleaseId,
 						[](void* pData, double downloadTotal, double downloaded, double uploadTotal,
 						   double uploaded) -> int

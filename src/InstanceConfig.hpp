@@ -54,7 +54,7 @@ namespace models
 		std::optional<std::shared_future<int>> downloadTask;
 		int selectedRelease{0};
 
-		int DownloadReleaseAsync(curl_progress_callback progressFn, int releaseIndex);
+		int DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
 
 		void SetCommonHeaders(RestClient::Connection* conn) const;
 
@@ -149,11 +149,11 @@ namespace models
 		 * \param releaseIndex Zero-based release index.
 		 * \param progressFn The download progress callback.
 		 */
-		void DownloadRelease(int releaseIndex, curl_progress_callback progressFn)
+		void DownloadReleaseAsync(int releaseIndex, curl_progress_callback progressFn)
 		{
 			downloadTask = std::async(
 				std::launch::async,
-				&InstanceConfig::DownloadReleaseAsync,
+				&InstanceConfig::DownloadRelease,
 				this,
 				progressFn,
 				releaseIndex

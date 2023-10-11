@@ -14,7 +14,7 @@ void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) cons
 	conn->AppendHeader("X-Vicius-Version", appVersion.to_string());
 }
 
-int models::InstanceConfig::DownloadReleaseAsync(curl_progress_callback progressFn, const int releaseIndex)
+int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, const int releaseIndex)
 {
 	const auto conn = new RestClient::Connection("");
 
