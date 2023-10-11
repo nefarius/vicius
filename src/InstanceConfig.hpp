@@ -19,7 +19,7 @@ namespace models
 	/**
 	 * \brief If hitting duplicate instructions, which configuration gets the priority.
 	 */
-	enum Authority
+	enum class Authority
 	{
 		///< The local config file (if any) gets priority
 		Local,
@@ -29,9 +29,9 @@ namespace models
 	};
 
 	NLOHMANN_JSON_SERIALIZE_ENUM(Authority, {
-	                             {Invalid, nullptr},
-	                             {Local, "Local"},
-	                             {Remote, "Remote"},
+	                             {Authority::Invalid, nullptr},
+	                             {Authority::Local, "Local"},
+	                             {Authority::Remote, "Remote"},
 	                             })
 
 	/**
@@ -200,7 +200,7 @@ namespace models
 			downloadTask.reset();
 		}
 
-		InstanceConfig() : remote(), authority(Remote)
+		InstanceConfig() : remote(), authority(Authority::Remote)
 		{
 		}
 

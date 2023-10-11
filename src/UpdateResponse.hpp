@@ -6,6 +6,38 @@
 
 namespace models
 {
+	enum class ChecksumAlgorithm
+	{
+		MD5,
+		SHA1,
+		SHA256,
+		SHA512,
+		Invalid = -1
+	};
+
+	NLOHMANN_JSON_SERIALIZE_ENUM(ChecksumAlgorithm, {
+	                             {ChecksumAlgorithm::Invalid, nullptr},
+	                             {ChecksumAlgorithm::MD5, "MD5"},
+	                             {ChecksumAlgorithm::SHA1, "SHA-1"},
+	                             {ChecksumAlgorithm::SHA256, "SHA-256"},
+	                             {ChecksumAlgorithm::SHA512, "SHA-512"},
+	                             })
+
+	enum class ProductVersionDetectionMethod
+	{
+		RegistryValue,
+		FileVersion,
+		FileSize,
+		Invalid = -1
+	};
+
+	NLOHMANN_JSON_SERIALIZE_ENUM(ProductVersionDetectionMethod, {
+	                             {ProductVersionDetectionMethod::Invalid, nullptr},
+	                             {ProductVersionDetectionMethod::RegistryValue, "RegistryValue"},
+	                             {ProductVersionDetectionMethod::FileVersion, "FileVersion"},
+	                             {ProductVersionDetectionMethod::FileSize, "FileSize"},
+	                             })
+
 	/**
 	 * \brief Parameters that might be provided by both the server and the local configuration.
 	 */
@@ -46,6 +78,12 @@ namespace models
 		std::vector<int> successExitCodes;
 		/** True to skip exit code check */
 		bool skipExitCodeCheck;
+		/** The (optional) checksum of the remote setup */
+		std::string checksum;
+		/** The checksum algorithm */
+		ChecksumAlgorithm checksumAlg;
+		/** The detection method */
+		ProductVersionDetectionMethod detectionMethod;
 
 		/** Full pathname of the local temporary file */
 		std::filesystem::path localTempFilePath;
@@ -77,7 +115,10 @@ namespace models
 		downloadSize,
 		launchArguments,
 		successExitCodes,
-		skipExitCodeCheck
+		skipExitCodeCheck,
+		checksum,
+		checksumAlg,
+		detectionMethod
 	)
 
 	/**

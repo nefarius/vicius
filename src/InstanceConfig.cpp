@@ -31,7 +31,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInsta
 	appVersion = util::GetVersionFromFile(appPath);
 	appFilename = appPath.stem().string();
 	filenameRegex = NV_FILENAME_REGEX;
-	authority = Remote;
+	authority = Authority::Remote;
 
 	//
 	// Merge from config file, if available

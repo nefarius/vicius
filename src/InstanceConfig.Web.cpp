@@ -99,7 +99,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 		});
 
 		// bail out now if we are not supposed to obey the server settings
-		if (authority == Local || !reply.contains("shared"))
+		if (authority == Authority::Local || !reply.contains("shared"))
 		{
 			return true;
 		}
