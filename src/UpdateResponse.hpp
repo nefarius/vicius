@@ -4,6 +4,8 @@
 #include <nlohmann/json.hpp>
 #include <neargye/semver.hpp>
 
+#include "Updater.h"
+
 namespace models
 {
 	enum class ChecksumAlgorithm
@@ -96,7 +98,8 @@ namespace models
 		{
 			try
 			{
-				return semver::version{version};
+				// trim whitespaces and potential "v" prefix
+				return semver::version{ util::trim(version, "v \t")};
 			}
 			catch (...)
 			{

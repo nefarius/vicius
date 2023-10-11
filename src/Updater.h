@@ -68,4 +68,5 @@ namespace util
 	std::filesystem::path GetImageBasePathW();
 	semver::version GetVersionFromFile(const std::filesystem::path& filePath);
 	bool ParseCommandLineArguments(argh::parser& cmdl);
+	std::string trim(const std::string& str, const std::string& whitespace = " \t");
 }
