@@ -149,8 +149,14 @@ namespace models
 		 * \param releaseIndex Zero-based release index.
 		 * \param progressFn The download progress callback.
 		 */
-		void DownloadReleaseAsync(int releaseIndex, curl_progress_callback progressFn)
+		bool DownloadReleaseAsync(int releaseIndex, curl_progress_callback progressFn)
 		{
+			// fail if already in-progress
+			if (downloadTask.has_value())
+			{
+				return false;
+			}
+
 			downloadTask = std::async(
 				std::launch::async,
 				&InstanceConfig::DownloadRelease,
@@ -158,6 +164,8 @@ namespace models
 				progressFn,
 				releaseIndex
 			);
+
+			return true;
 		}
 
 		/**
