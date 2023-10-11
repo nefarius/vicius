@@ -169,7 +169,7 @@ namespace models
 		 */
 		[[nodiscard]] bool GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, int& statusCode) const
 		{
-			if (!downloadTask)
+			if (!downloadTask.has_value())
 			{
 				return false;
 			}
