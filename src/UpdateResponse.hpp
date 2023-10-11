@@ -3,6 +3,7 @@
 #include <vector>
 #include <nlohmann/json.hpp>
 #include <neargye/semver.hpp>
+#include <magic_enum.hpp>
 
 #include "Updater.h"
 
@@ -128,7 +129,7 @@ namespace models
 			try
 			{
 				// trim whitespaces and potential "v" prefix
-				return semver::version{ util::trim(version, "v \t")};
+				return semver::version{util::trim(version, "v \t")};
 			}
 			catch (...)
 			{
@@ -138,27 +139,29 @@ namespace models
 
 		RegistryValueConfig GetRegistryValueConfig() const
 		{
-			return detection["RegistryValue"].get<RegistryValueConfig>();
+			return detection[magic_enum::enum_name(ProductVersionDetectionMethod::RegistryValue)].get<
+				RegistryValueConfig>();
 		}
 
 		FileVersionConfig GetFileVersionConfig() const
 		{
-			return detection["FileVersion"].get<FileVersionConfig>();
+			return detection[magic_enum::enum_name(ProductVersionDetectionMethod::FileVersion)].get<
+				FileVersionConfig>();
 		}
 
 		FileSizeConfig GetFileSizeConfig() const
 		{
-			return detection["FileSize"].get<FileSizeConfig>();
+			return detection[magic_enum::enum_name(ProductVersionDetectionMethod::FileSize)].get<FileSizeConfig>();
 		}
 	};
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 		UpdateRelease,
-		name, 
+		name,
 		version,
-		summary, 
+		summary,
 		publishedAt,
-		downloadUrl, 
+		downloadUrl,
 		downloadSize,
 		launchArguments,
 		successExitCodes,
@@ -202,7 +205,7 @@ namespace models
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 		UpdateConfig,
 		updatesDisabled,
-		latestVersion, 
+		latestVersion,
 		latestUrl
 	)
 
@@ -221,9 +224,9 @@ namespace models
 	};
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-		UpdateResponse, 
-		instance, 
-		shared, 
+		UpdateResponse,
+		instance,
+		shared,
 		releases
 	)
 }
