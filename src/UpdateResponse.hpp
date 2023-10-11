@@ -139,19 +139,17 @@ namespace models
 
 		RegistryValueConfig GetRegistryValueConfig() const
 		{
-			return detection[magic_enum::enum_name(ProductVersionDetectionMethod::RegistryValue)].get<
-				RegistryValueConfig>();
+			return detection.get<RegistryValueConfig>();
 		}
 
 		FileVersionConfig GetFileVersionConfig() const
 		{
-			return detection[magic_enum::enum_name(ProductVersionDetectionMethod::FileVersion)].get<
-				FileVersionConfig>();
+			return detection.get<FileVersionConfig>();
 		}
 
 		FileSizeConfig GetFileSizeConfig() const
 		{
-			return detection[magic_enum::enum_name(ProductVersionDetectionMethod::FileSize)].get<FileSizeConfig>();
+			return detection.get<FileSizeConfig>();
 		}
 	};
 

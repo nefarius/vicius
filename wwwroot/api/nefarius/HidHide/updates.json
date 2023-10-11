@@ -1,13 +1,13 @@
 {
-    "instance":{
+    "instance": {
         "updatesDisabled": false,
         "latestVersion": "2.0.0",
         "latestUrl": "http://localhost:5200/api/nefarius/HidHide/nefarius_HidHide_Updater.exe"
     },
-    "shared":{
+    "shared": {
         "productName": "BthPS3"
     },
-    "releases":[
+    "releases": [
         {
             "name": "test1",
             "publishedAt": "2023-09-20T13:05:40Z",
@@ -21,11 +21,9 @@
             ],
             "skipExitCodeCheck": false,
             "detectionMethod": "RegistryValue",
-            "detection":{
-                "RegistryValue": {
-                    "key": "HKLM\\...",
-                    "value": "Version"
-                }
+            "detection": {
+                "key": "HKLM\\...",
+                "value": "Version"
             }
         }
     ]
