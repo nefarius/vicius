@@ -19,7 +19,14 @@
                 0,
                 3010
             ],
-            "skipExitCodeCheck": false
+            "skipExitCodeCheck": false,
+            "detectionMethod": "RegistryValue",
+            "detection":{
+                "RegistryValue": {
+                    "key": "HKLM\\...",
+                    "value": "Version"
+                }
+            }
         }
     ]
 }

@@ -6,6 +6,8 @@
 
 #include "Updater.h"
 
+using json = nlohmann::json;
+
 namespace models
 {
 	enum class ChecksumAlgorithm
@@ -39,6 +41,31 @@ namespace models
 	                             {ProductVersionDetectionMethod::FileVersion, "FileVersion"},
 	                             {ProductVersionDetectionMethod::FileSize, "FileSize"},
 	                             })
+
+	class RegistryValueConfig
+	{
+	public:
+		std::string key;
+		std::string value;
+	};
+
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RegistryValueConfig, key, value)
+
+	class FileVersionConfig
+	{
+	public:
+		std::string version;
+	};
+
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileVersionConfig, version)
+
+	class FileSizeConfig
+	{
+	public:
+		size_t size;
+	};
+
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileSizeConfig, size)
 
 	/**
 	 * \brief Parameters that might be provided by both the server and the local configuration.
@@ -86,6 +113,8 @@ namespace models
 		ChecksumAlgorithm checksumAlg;
 		/** The detection method */
 		ProductVersionDetectionMethod detectionMethod;
+		/** The detection method for the installed software version */
+		json detection;
 
 		/** Full pathname of the local temporary file */
 		std::filesystem::path localTempFilePath;
@@ -106,6 +135,21 @@ namespace models
 				return semver::version{0, 0, 0};
 			}
 		}
+
+		RegistryValueConfig GetRegistryValueConfig() const
+		{
+			return detection["RegistryValue"].get<RegistryValueConfig>();
+		}
+
+		FileVersionConfig GetFileVersionConfig() const
+		{
+			return detection["FileVersion"].get<FileVersionConfig>();
+		}
+
+		FileSizeConfig GetFileSizeConfig() const
+		{
+			return detection["FileSize"].get<FileSizeConfig>();
+		}
 	};
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
@@ -121,7 +165,8 @@ namespace models
 		skipExitCodeCheck,
 		checksum,
 		checksumAlg,
-		detectionMethod
+		detectionMethod,
+		detection
 	)
 
 	/**
