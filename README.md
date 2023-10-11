@@ -61,3 +61,4 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [JSON for Modern C++](https://github.com/nlohmann/json)
 - [Magic Enum C++](https://github.com/Neargye/magic_enum)
 - [Semantic Versioning for modern C++](https://github.com/Neargye/semver)
+- [WinReg](https://github.com/GiovanniDicanio/WinReg)

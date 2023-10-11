@@ -12,6 +12,7 @@
     "restclient-cpp",
     "nlohmann-json",
     "magic-enum",
-    "neargye-semver"
+    "neargye-semver",
+    "winreg"
   ]
 }
