@@ -42,6 +42,10 @@ namespace models
 		size_t downloadSize;
 		/** The launch arguments (CLI arguments) if any */
 		std::string launchArguments;
+		/** The setup exit codes treated as success */
+		std::vector<int> successExitCodes;
+		/** True to skip exit code check */
+		bool skipExitCodeCheck;
 
 		/** Full pathname of the local temporary file */
 		std::filesystem::path localTempFilePath;
@@ -71,7 +75,9 @@ namespace models
 		publishedAt,
 		downloadUrl, 
 		downloadSize,
-		launchArguments
+		launchArguments,
+		successExitCodes,
+		skipExitCodeCheck
 	)
 
 	/**
