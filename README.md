@@ -10,7 +10,7 @@ Nefarius' [nŏvīcĭus](https://latinitium.com/latin-dictionaries/?t=lsn31290) u
 
 ---
 
-*Very* work in progress, do not use 🔥
+*Very* work in progress, do not use 🔥 Star ⭐ it instead to show interest 🤟
 
 ---
 
