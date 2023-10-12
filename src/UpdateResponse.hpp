@@ -11,6 +11,9 @@ using json = nlohmann::json;
 
 namespace models
 {
+	/**
+	 * \brief Possible hashing algorithms for file checksums.
+	 */
 	enum class ChecksumAlgorithm
 	{
 		MD5,
@@ -22,12 +25,19 @@ namespace models
 
 	NLOHMANN_JSON_SERIALIZE_ENUM(ChecksumAlgorithm, {
 	                             {ChecksumAlgorithm::Invalid, nullptr},
-	                             {ChecksumAlgorithm::MD5, "MD5"},
-	                             {ChecksumAlgorithm::SHA1, "SHA-1"},
-	                             {ChecksumAlgorithm::SHA256, "SHA-256"},
-	                             {ChecksumAlgorithm::SHA512, "SHA-512"},
+	                             {ChecksumAlgorithm::MD5,
+	                             magic_enum::enum_name(ChecksumAlgorithm::MD5)},
+	                             {ChecksumAlgorithm::SHA1,
+	                             magic_enum::enum_name(ChecksumAlgorithm::SHA1)},
+	                             {ChecksumAlgorithm::SHA256,
+	                             magic_enum::enum_name(ChecksumAlgorithm::SHA256)},
+	                             {ChecksumAlgorithm::SHA512,
+	                             magic_enum::enum_name(ChecksumAlgorithm::SHA512)},
 	                             })
 
+	/**
+	 * \brief Possible installed product detection mechanisms.
+	 */
 	enum class ProductVersionDetectionMethod
 	{
 		RegistryValue,
@@ -38,19 +48,41 @@ namespace models
 
 	NLOHMANN_JSON_SERIALIZE_ENUM(ProductVersionDetectionMethod, {
 	                             {ProductVersionDetectionMethod::Invalid, nullptr},
-	                             {ProductVersionDetectionMethod::RegistryValue, "RegistryValue"},
-	                             {ProductVersionDetectionMethod::FileVersion, "FileVersion"},
-	                             {ProductVersionDetectionMethod::FileSize, "FileSize"},
+	                             {ProductVersionDetectionMethod::RegistryValue,
+	                             magic_enum::enum_name(ProductVersionDetectionMethod::RegistryValue)},
+	                             {ProductVersionDetectionMethod::FileVersion,
+	                             magic_enum::enum_name(ProductVersionDetectionMethod::FileVersion)},
+	                             {ProductVersionDetectionMethod::FileSize,
+	                             magic_enum::enum_name(ProductVersionDetectionMethod::FileSize)},
+	                             })
+
+	/**
+	 * \brief Possible registry hives.
+	 */
+	enum class RegistryHive
+	{
+		HKCU = reinterpret_cast<ULONG_PTR>(HKEY_CURRENT_USER),
+		HKLM = reinterpret_cast<ULONG_PTR>(HKEY_LOCAL_MACHINE),
+		HKCR = reinterpret_cast<ULONG_PTR>(HKEY_CLASSES_ROOT),
+		Invalid = -1
+	};
+
+	NLOHMANN_JSON_SERIALIZE_ENUM(RegistryHive, {
+	                             {RegistryHive::Invalid, nullptr},
+	                             {RegistryHive::HKCU, magic_enum::enum_name(RegistryHive::HKCU)},
+	                             {RegistryHive::HKLM, magic_enum::enum_name(RegistryHive::HKLM)},
+	                             {RegistryHive::HKCR, magic_enum::enum_name(RegistryHive::HKCR)},
 	                             })
 
 	class RegistryValueConfig
 	{
 	public:
+		RegistryHive hive;
 		std::string key;
 		std::string value;
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RegistryValueConfig, key, value)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RegistryValueConfig, hive, key, value)
 
 	class FileVersionConfig
 	{
