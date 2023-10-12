@@ -6,7 +6,6 @@
 #include <optional>
 
 #include <nlohmann/json.hpp>
-#include <restclient-cpp/restclient.h>
 #include <restclient-cpp/connection.h>
 #include <curl/curl.h>
 #include <magic_enum.hpp>
