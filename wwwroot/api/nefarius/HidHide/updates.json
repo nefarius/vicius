@@ -17,7 +17,8 @@
             "launchArguments": "/norestart",
             "successExitCodes": [
                 0,
-                3010
+                3010,
+                1602
             ],
             "skipExitCodeCheck": false,
             "detectionMethod": "RegistryValue",
