@@ -83,12 +83,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	}
 
 	auto currentPage = WizardPage::Start;
+	auto instStep = DownloadAndInstallStep::Begin;
 	bool isBackDisabled = false;
 	bool isCancelDisabled = false;
 	int selectedReleaseId;
-	STARTUPINFOA info = {sizeof(STARTUPINFOA)};
+	STARTUPINFOA info = { sizeof(STARTUPINFOA) };
 	PROCESS_INFORMATION updateProcessInfo{};
-	bool updateInstalled = false;
 
 	sf::Vector2i grabbedOffset;
 	auto grabbedWindow = false;
@@ -176,6 +176,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		switch (currentPage)
 		{
 		case WizardPage::Start:
+		{
 			ImGui::Indent(leftBorderIndent);
 			ImGui::PushFont(G_Font_H1);
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
@@ -189,8 +190,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			if (ImGui::Button(ICON_FK_DOWNLOAD " Download and install now"))
 			{
 				currentPage = cfg.HasSingleRelease()
-					              ? WizardPage::SingleVersionSummary
-					              : WizardPage::MultipleVersionsOverview;
+					? WizardPage::SingleVersionSummary
+					: WizardPage::MultipleVersionsOverview;
 			}
 
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
@@ -204,7 +205,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGui::Unindent(leftBorderIndent);
 			ImGui::Unindent(leftBorderIndent);
 			break;
+		}
 		case WizardPage::SingleVersionSummary:
+		{
 			isBackDisabled = false;
 
 			ImGui::Indent(leftBorderIndent);
@@ -213,149 +216,188 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGui::Text("Update Summary");
 			ImGui::PopFont();
 
-			{
-				const auto& release = cfg.GetLatestRelease();
-				selectedReleaseId = 0;
-				ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
-				ImGui::BeginChild(
-					"Summary",
-					ImVec2(ImGui::GetContentRegionAvail().x, 360),
-					false,
-					windowFlags
-				);
-				markdown::RenderChangelog(release.summary);
-				ImGui::EndChild();
 
-				ImGui::SetCursorPos(ImVec2(530, navigateButtonOffsetY));
-				if (ImGui::Button("Next"))
+			const auto& release = cfg.GetLatestRelease();
+			selectedReleaseId = 0;
+			ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
+			ImGui::BeginChild(
+				"Summary",
+				ImVec2(ImGui::GetContentRegionAvail().x, 360),
+				false,
+				windowFlags
+			);
+			markdown::RenderChangelog(release.summary);
+			ImGui::EndChild();
+
+			ImGui::SetCursorPos(ImVec2(530, navigateButtonOffsetY));
+			if (ImGui::Button("Next"))
+			{
+				currentPage = WizardPage::DownloadAndInstall;
+			}
+
+
+			ImGui::Unindent(leftBorderIndent);
+
+			break;
+		}
+		case WizardPage::MultipleVersionsOverview:
+		{
+			isBackDisabled = false;
+
+			// TODO: implement me
+			break;
+		}
+		case WizardPage::DownloadAndInstall:
+		{
+			isBackDisabled = true;
+			isCancelDisabled = true;
+
+			ImGui::Indent(leftBorderIndent);
+			ImGui::PushFont(G_Font_H1);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+			ImGui::Text("Installing Updates");
+			ImGui::PopFont();
+
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+
+			static double totalToDownload = 0;
+			static double totalDownloaded = 0;
+
+			bool isDownloading = false;
+			bool hasFinished = false;
+			int statusCode = -1;
+
+			// checks if a download is currently running or has been invoked
+			if (!cfg.GetReleaseDownloadStatus(isDownloading, hasFinished, statusCode))
+			{
+				totalToDownload = 0;
+				totalDownloaded = 0;
+
+				// start download
+				cfg.DownloadReleaseAsync(
+					selectedReleaseId,
+					[](void* pData, double downloadTotal, double downloaded, double uploadTotal,
+						double uploaded) -> int
+					{
+						UNREFERENCED_PARAMETER(pData);
+						UNREFERENCED_PARAMETER(uploadTotal);
+						UNREFERENCED_PARAMETER(uploaded);
+
+						totalToDownload = downloadTotal;
+						totalDownloaded = downloaded;
+
+						return CURLE_OK;
+					});
+
+				instStep = DownloadAndInstallStep::Downloading;
+			}
+
+			if (instStep == DownloadAndInstallStep::Downloading && hasFinished)
+			{
+				instStep = statusCode == 200
+					? DownloadAndInstallStep::DownloadSucceeded
+					: DownloadAndInstallStep::DownloadFailed;
+			}
+
+			switch (instStep)
+			{
+			case DownloadAndInstallStep::Downloading:
+
+				ImGui::Text("Downloading (%.2f MB of %.2f MB)",
+					totalDownloaded / AS_MB, totalToDownload / AS_MB);
+				ImGui::ProgressBar(
+					(static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
+					ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f)
+				);
+
+				break;
+			case DownloadAndInstallStep::DownloadSucceeded:
+
+				instStep = DownloadAndInstallStep::PrepareInstall;
+
+				break;
+			case DownloadAndInstallStep::DownloadFailed:
+
+				ImGui::Text("Error! Code: %d", statusCode);
+
+				// TODO: implement me
+
+				break;
+			case DownloadAndInstallStep::PrepareInstall:
+
+				if (const auto tempFile = cfg.GetLocalReleaseTempFilePath(); !CreateProcessA(
+					tempFile.string().c_str(),
+					nullptr,
+					nullptr,
+					nullptr,
+					TRUE,
+					0,
+					nullptr,
+					nullptr,
+					&info,
+					&updateProcessInfo
+				))
 				{
-					currentPage = WizardPage::DownloadAndInstall;
+					instStep = DownloadAndInstallStep::InstallLaunchFailed;
 				}
+				else
+				{
+					instStep = DownloadAndInstallStep::InstallRunning;
+				}
+
+				break;
+			case DownloadAndInstallStep::InstallLaunchFailed:
+
+				ImGui::Text("Error! Failed to launch setup");
+
+				// TODO: handle error
+
+				break;
+			case DownloadAndInstallStep::InstallRunning:
+
+				if (auto waitResult = WaitForSingleObject(updateProcessInfo.hProcess, 1); waitResult == WAIT_TIMEOUT)
+				{
+					ImGui::Text("Installing...");
+					ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
+				}
+				else if (waitResult == WAIT_OBJECT_0)
+				{
+					CloseHandle(updateProcessInfo.hProcess);
+					CloseHandle(updateProcessInfo.hThread);
+					RtlZeroMemory(&updateProcessInfo, sizeof(updateProcessInfo));
+
+					// TODO: check exit code and set status accordingly
+					instStep = DownloadAndInstallStep::InstallSucceeded;
+
+					DeleteFileA(cfg.GetLocalReleaseTempFilePath().string().c_str());
+				}
+
+				break;
+			case DownloadAndInstallStep::InstallFailed:
+
+				ImGui::Text("Error! Installation failed");
+
+				// TODO: handle error
+
+				break;
+			case DownloadAndInstallStep::InstallSucceeded:
+
+				ImGui::Text("Done!");
+
+				// TODO: implement me
+
+				break;
 			}
 
 			ImGui::Unindent(leftBorderIndent);
 
 			break;
-		case WizardPage::MultipleVersionsOverview:
-			isBackDisabled = false;
-
-		// TODO: implement me
-			break;
-		case WizardPage::DownloadAndInstall:
-			{
-				isBackDisabled = true;
-				isCancelDisabled = true;
-
-				ImGui::Indent(leftBorderIndent);
-				ImGui::PushFont(G_Font_H1);
-				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
-				ImGui::Text("Installing Updates");
-				ImGui::PopFont();
-
-				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
-
-				// TODO: implement me
-
-
-				static double totalToDownload = 0;
-				static double totalDownloaded = 0;
-
-				bool isDownloading = false;
-				bool hasFinished = false;
-				int statusCode = -1;
-
-				// checks if a download is currently running or has been invoked
-				if (!cfg.GetReleaseDownloadStatus(isDownloading, hasFinished, statusCode))
-				{
-					totalToDownload = 0;
-					totalDownloaded = 0;
-
-					// start download
-					cfg.DownloadReleaseAsync(
-						selectedReleaseId,
-						[](void* pData, double downloadTotal, double downloaded, double uploadTotal,
-						   double uploaded) -> int
-						{
-							UNREFERENCED_PARAMETER(pData);
-							UNREFERENCED_PARAMETER(uploadTotal);
-							UNREFERENCED_PARAMETER(uploaded);
-
-							totalToDownload = downloadTotal;
-							totalDownloaded = downloaded;
-							return 0;
-						});
-				}
-
-				if (isDownloading)
-				{
-					ImGui::Text("Downloading (%.2f MB of %.2f MB)",
-					            totalDownloaded / AS_MB, totalToDownload / AS_MB);
-					ImGui::ProgressBar(
-						(static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
-						ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f)
-					);
-				}
-
-				if (hasFinished && statusCode != 200)
-				{
-					ImGui::Text("Error! Code: %d", statusCode);
-
-					// TODO: implement me
-					break;
-				}
-
-				// prepare setup process launch
-				if (!updateInstalled && updateProcessInfo.dwProcessId == 0)
-				{
-					if (const auto tempFile = cfg.GetLocalReleaseTempFilePath(); !CreateProcessA(
-						tempFile.string().c_str(),
-						nullptr,
-						nullptr,
-						nullptr,
-						TRUE,
-						0,
-						nullptr,
-						nullptr,
-						&info,
-						&updateProcessInfo
-					))
-					{
-						// TODO: handle error
-					}
-				}
-				else
-				{
-					// process running
-					if (auto waitResult = WaitForSingleObject(updateProcessInfo.hProcess, 1); waitResult == WAIT_TIMEOUT)
-					{
-						ImGui::Text("Installing...");
-						ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
-					}
-					else if (waitResult == WAIT_OBJECT_0)
-					{
-						CloseHandle(updateProcessInfo.hProcess);
-						CloseHandle(updateProcessInfo.hThread);
-						RtlZeroMemory(&updateProcessInfo, sizeof(updateProcessInfo));
-						updateInstalled = true;
-
-						DeleteFileA(cfg.GetLocalReleaseTempFilePath().string().c_str());
-					}
-				}
-
-				if (updateInstalled)
-				{
-					// TODO: implement me
-
-					ImGui::Text("Done!");
-				}
-				
-				ImGui::Unindent(leftBorderIndent);
-
-				break;
-			}
+		}
 		case WizardPage::Finish:
+		{
 			// TODO: implement me
 			break;
+		}
 		}
 
 		ImGui::SetCursorPosY(460);

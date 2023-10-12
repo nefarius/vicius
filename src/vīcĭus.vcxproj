@@ -184,6 +184,7 @@
   <ItemGroup>
     <ClInclude Include="ADL.hpp" />
     <ClInclude Include="CustomizeMe.h" />
+    <ClInclude Include="DownloadAndInstall.hpp" />
     <ClInclude Include="IconsForkAwesome.h" />
     <ClInclude Include="imgui_markdown.h" />
     <ClInclude Include="InstanceConfig.hpp" />

@@ -45,6 +45,7 @@
 #include "UniUtil.h"
 #include "resource.h"
 #include "CustomizeMe.h"
+#include "DownloadAndInstall.hpp"
 
 
 //
