@@ -37,6 +37,8 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 	auto& release = remote.releases[releaseIndex];
 	release.localTempFilePath = tempFile;
 
+	// this is ugly but only one download can run in parallel so we're fine :)
+	// TODO: error handling
 	static std::ofstream outStream(release.localTempFilePath.string(), std::ios::binary);
 
 	// write to file as we download it
