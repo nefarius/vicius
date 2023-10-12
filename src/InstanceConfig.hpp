@@ -43,15 +43,24 @@ namespace models
 	class InstanceConfig
 	{
 		HINSTANCE appInstance{};
+		/** Full pathname of the updater process file */
 		std::filesystem::path appPath;
+		/** The updater application version */
 		semver::version appVersion;
+		/** Filename of the updater file without extension */
 		std::string appFilename;
+		/** The manufacturer name */
 		std::string manufacturer;
+		/** The product name */
 		std::string product;
+		/** The tenant sub-path */
 		std::string tenantSubPath;
+		/** URL of the update request */
 		std::string updateRequestUrl;
 
+		/** The local and remote shared configuration */
 		SharedConfig shared;
+		/** The remote API response */
 		UpdateResponse remote;
 
 		std::optional<std::shared_future<int>> downloadTask;
