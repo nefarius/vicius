@@ -42,7 +42,6 @@ Non-exhaustive list of things open or in-progress...
   - [ ] `WizardPage::MultipleVersionsOverview`
   - [ ] `WizardPage::DownloadAndInstall`
   - [ ] ...
-
 - [ ] Design Beta-Release support
 - [ ] Specify supported Command Line Arguments
 - [ ] Make app icon customizable
