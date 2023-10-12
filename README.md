@@ -37,6 +37,12 @@ Non-exhaustive list of things open or in-progress...
   - With [libPeConv](https://github.com/hasherezade/libpeconv) maybe? Would be cool if we can avoid writing a temporary EXE somewhere
 - [ ] Documentation
 - [ ] Finalize UI design
+  - [x] `WizardPage::Start`
+  - [x] `WizardPage::SingleVersionSummary`
+  - [ ] `WizardPage::MultipleVersionsOverview`
+  - [ ] `WizardPage::DownloadAndInstall`
+  - ...
+
 - [ ] Design Beta-Release support
 - [ ] Specify supported Command Line Arguments
 - [ ] Make app icon customizable
