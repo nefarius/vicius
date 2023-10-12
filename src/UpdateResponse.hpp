@@ -137,7 +137,7 @@ namespace models
 		/** Size of the remote file */
 		size_t downloadSize;
 		/** The launch arguments (CLI arguments) if any */
-		std::string launchArguments;
+		std::string launchArguments{};
 		/** The setup exit codes treated as success */
 		std::vector<int> successExitCodes;
 		/** True to skip exit code check */
@@ -152,7 +152,7 @@ namespace models
 		json detection;
 
 		/** Full pathname of the local temporary file */
-		std::filesystem::path localTempFilePath;
+		std::filesystem::path localTempFilePath{};
 
 		/**
 		 * \brief Converts the version string to a SemVer type.

@@ -98,9 +98,14 @@ namespace models
 			return remote.releases[releaseId].localTempFilePath;
 		}
 
-		UpdateRelease& GetLatestRelease()
+		UpdateRelease& GetSelectedRelease()
 		{
-			return remote.releases[0];
+			return remote.releases[selectedRelease];
+		}
+
+		int GetSelectedReleaseId() const
+		{
+			return selectedRelease;
 		}
 
 		/**

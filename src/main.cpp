@@ -86,7 +86,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	auto instStep = DownloadAndInstallStep::Begin;
 	bool isBackDisabled = false;
 	bool isCancelDisabled = false;
-	int selectedReleaseId;
 	STARTUPINFOA info = { sizeof(STARTUPINFOA) };
 	PROCESS_INFORMATION updateProcessInfo{};
 
@@ -216,9 +215,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGui::Text("Update Summary");
 			ImGui::PopFont();
 
-
-			const auto& release = cfg.GetLatestRelease();
-			selectedReleaseId = 0;
+			const auto& release = cfg.GetSelectedRelease();
 			ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
 			ImGui::BeginChild(
 				"Summary",
@@ -284,7 +281,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 				// start download
 				cfg.DownloadReleaseAsync(
-					selectedReleaseId,
+					cfg.GetSelectedReleaseId(),
 					[](void* pData, double downloadTotal, double downloaded, double uploadTotal,
 						double uploaded) -> int
 					{
@@ -335,10 +332,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 				break;
 			case DownloadAndInstallStep::PrepareInstall:
+			{
+				const auto& release = cfg.GetSelectedRelease();
 
 				if (const auto tempFile = cfg.GetLocalReleaseTempFilePath(); !CreateProcessA(
 					tempFile.string().c_str(),
-					nullptr,
+					const_cast<LPSTR>(release.launchArguments.c_str()),
 					nullptr,
 					nullptr,
 					TRUE,
@@ -357,6 +356,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				}
 
 				break;
+			}
 			case DownloadAndInstallStep::InstallLaunchFailed:
 
 				ImGui::Text("Error! Failed to launch setup");
@@ -374,14 +374,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				}
 				else if (waitResult == WAIT_OBJECT_0)
 				{
+					DWORD exitCode = 0;
+
+					GetExitCodeProcess(updateProcessInfo.hProcess, &exitCode);
+
 					CloseHandle(updateProcessInfo.hProcess);
 					CloseHandle(updateProcessInfo.hThread);
 					RtlZeroMemory(&updateProcessInfo, sizeof(updateProcessInfo));
 
-					// TODO: check exit code and set status accordingly
-					instStep = DownloadAndInstallStep::InstallSucceeded;
-
 					DeleteFileA(cfg.GetLocalReleaseTempFilePath().string().c_str());
+
+					const auto& release = cfg.GetSelectedRelease();
+
+					if (release.skipExitCodeCheck)
+					{
+						instStep = DownloadAndInstallStep::InstallSucceeded;
+						break;
+					}
+
+					if (std::ranges::find(release.successExitCodes, exitCode) != release.successExitCodes.end())
+					{
+						instStep = DownloadAndInstallStep::InstallSucceeded;
+						break;
+					}
+
+					instStep = DownloadAndInstallStep::InstallFailed;
 				}
 
 				break;
