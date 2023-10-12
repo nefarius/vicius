@@ -305,6 +305,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 				ImGui::Text("Downloading (%.2f MB of %.2f MB)",
 					totalDownloaded / AS_MB, totalToDownload / AS_MB);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
 				ImGui::ProgressBar(
 					(static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
 					ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f)
@@ -358,6 +359,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				if (auto waitResult = WaitForSingleObject(updateProcessInfo.hProcess, 1); waitResult == WAIT_TIMEOUT)
 				{
 					ImGui::Text("Installing...");
+					ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
 					ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
 				}
 				else if (waitResult == WAIT_OBJECT_0)
