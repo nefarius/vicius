@@ -353,7 +353,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 				break;
 			}
-		case WizardPage::End:
+		case WizardPage::Finish:
 			// TODO: implement me
 			break;
 		}
@@ -363,7 +363,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 		ImGui::SetCursorPos(ImVec2(570, navigateButtonOffsetY));
 		ImGui::BeginDisabled(isCancelDisabled);
-		if (ImGui::Button(currentPage == WizardPage::End ? "Finish" : "Cancel"))
+		if (ImGui::Button(currentPage == WizardPage::Finish ? "Finish" : "Cancel"))
 		{
 			window.close();
 		}

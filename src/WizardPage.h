@@ -21,14 +21,14 @@ enum class WizardPage
 	/**
 	 * \brief The last possible wizard page.
 	 */
-	End
+	Finish
 };
 
 inline WizardPage& operator++(WizardPage& c)
 {
 	using IntType = std::underlying_type_t<WizardPage>;
 	c = static_cast<WizardPage>(static_cast<IntType>(c) + 1);
-	if (c == WizardPage::End)
+	if (c == WizardPage::Finish)
 		c = static_cast<WizardPage>(0);
 	return c;
 }
