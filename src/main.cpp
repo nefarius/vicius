@@ -249,8 +249,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		}
 		case WizardPage::DownloadAndInstall:
 		{
-			isBackDisabled = true;
-			isCancelDisabled = true;
+			static double totalToDownload = 0;
+			static double totalDownloaded = 0;
+
+			// use this state to reset everything since the user might retry on error
+			if (instStep == DownloadAndInstallStep::Begin)
+			{
+				isBackDisabled = true;
+				isCancelDisabled = true;
+
+				totalToDownload = 0;
+				totalDownloaded = 0;
+
+				cfg.ResetReleaseDownloadState();
+			}
 
 			ImGui::Indent(leftBorderIndent);
 			ImGui::PushFont(G_Font_H1);
@@ -259,9 +271,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			ImGui::PopFont();
 
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
-
-			static double totalToDownload = 0;
-			static double totalDownloaded = 0;
 
 			bool isDownloading = false;
 			bool hasFinished = false;
@@ -292,6 +301,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				instStep = DownloadAndInstallStep::Downloading;
 			}
 
+			// download has finished, advance step
 			if (instStep == DownloadAndInstallStep::Downloading && hasFinished)
 			{
 				instStep = statusCode == 200

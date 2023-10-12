@@ -161,24 +161,7 @@ namespace models
 		 * \param releaseIndex Zero-based release index.
 		 * \param progressFn The download progress callback.
 		 */
-		bool DownloadReleaseAsync(int releaseIndex, curl_progress_callback progressFn)
-		{
-			// fail if already in-progress
-			if (downloadTask.has_value())
-			{
-				return false;
-			}
-
-			downloadTask = std::async(
-				std::launch::async,
-				&InstanceConfig::DownloadRelease,
-				this,
-				progressFn,
-				releaseIndex
-			);
-
-			return true;
-		}
+		bool DownloadReleaseAsync(int releaseIndex, curl_progress_callback progressFn);
 
 		/**
 		 * \brief Checks the current download status.
@@ -187,30 +170,12 @@ namespace models
 		 * \param statusCode The HTTP status code (set when hasFinished is true).
 		 * \return True if a download has been invoked, false otherwise.
 		 */
-		[[nodiscard]] bool GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, int& statusCode) const
-		{
-			if (!downloadTask.has_value())
-			{
-				return false;
-			}
+		[[nodiscard]] bool GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, int& statusCode) const;
 
-			const std::future_status status = (*downloadTask).wait_for(std::chrono::milliseconds(1));
-
-			isDownloading = status == std::future_status::timeout;
-			hasFinished = status == std::future_status::ready;
-
-			if (hasFinished)
-			{
-				statusCode = (*downloadTask).get();
-			}
-
-			return true;
-		}
-
-		void ResetReleaseDownloadState()
-		{
-			downloadTask.reset();
-		}
+		/**
+		 * \brief Reset the download async task state.
+		 */
+		void ResetReleaseDownloadState();
 
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{

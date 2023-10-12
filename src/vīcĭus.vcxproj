@@ -175,6 +175,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="InstanceConfig.cpp" />
+    <ClCompile Include="InstanceConfig.Download.cpp" />
     <ClCompile Include="InstanceConfig.Web.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="markdown.cpp" />
