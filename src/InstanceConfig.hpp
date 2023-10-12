@@ -84,7 +84,7 @@ namespace models
 
 		bool SetSelectedRelease(const int releaseIndex)
 		{
-			if (releaseIndex < 0 || releaseIndex >= remote.releases.size())
+			if (releaseIndex < 0 || releaseIndex >= static_cast<int>(remote.releases.size()))
 			{
 				return false;
 			}
