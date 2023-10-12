@@ -9,6 +9,7 @@
 #include <restclient-cpp/restclient.h>
 #include <restclient-cpp/connection.h>
 #include <curl/curl.h>
+#include <magic_enum.hpp>
 
 #include "UpdateResponse.hpp"
 
@@ -30,8 +31,10 @@ namespace models
 
 	NLOHMANN_JSON_SERIALIZE_ENUM(Authority, {
 	                             {Authority::Invalid, nullptr},
-	                             {Authority::Local, "Local"},
-	                             {Authority::Remote, "Remote"},
+	                             {Authority::Local,
+	                             magic_enum::enum_name(Authority::Local)},
+	                             {Authority::Remote,
+	                             magic_enum::enum_name(Authority::Remote)},
 	                             })
 
 	/**
@@ -189,7 +192,7 @@ namespace models
 
 			if (hasFinished)
 			{
-				statusCode = (*downloadTask).get();				
+				statusCode = (*downloadTask).get();
 			}
 
 			return true;
