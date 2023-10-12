@@ -87,18 +87,20 @@ namespace models
 	class FileVersionConfig
 	{
 	public:
+		std::string path;
 		std::string version;
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileVersionConfig, version)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileVersionConfig, path, version)
 
 	class FileSizeConfig
 	{
 	public:
+		std::string path;
 		size_t size;
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileSizeConfig, size)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileSizeConfig, path, size)
 
 	/**
 	 * \brief Parameters that might be provided by both the server and the local configuration.
