@@ -81,7 +81,7 @@ namespace models
 		std::string GetTaskBarTitle() const { return shared.taskBarTitle; }
 		std::string GetProductName() const { return shared.productName; }
 
-		bool SetSelectedRelease(const int releaseIndex)
+		bool SetSelectedRelease(const int releaseIndex = 0)
 		{
 			if (releaseIndex < 0 || releaseIndex >= static_cast<int>(remote.releases.size()))
 			{
