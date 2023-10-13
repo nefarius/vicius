@@ -5,6 +5,7 @@
 
 #include <tuple>
 
+#include <tchar.h>
 #include <comdef.h>
 #include <ole2.h>
 #include <taskschd.h>
@@ -24,43 +25,93 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 	// string id
 	BSTR bstrId = SysAllocString(L"DailyTrigger");
 	// start boundary - format should be YYYY-MM-DDTHH:MM:SS(+-)(timezone).
-	BSTR bstrStart = SysAllocString(L""); // TODO: make configurable
-	BSTR bstrEnd = nullptr; // end boundary - ""
+	BSTR bstrStart = SysAllocString(L"2023-01-01T12:00:00"); // TODO: make configurable
+	BSTR bstrEnd = SysAllocString(L"2053-01-01T12:00:00"); // end boundary - ""
 	BSTR bstrName = nullptr; // user name
 	BSTR bstrPwd = nullptr; // user password
 
 	BSTR bstrAuthor = SysAllocString(ConvertAnsiToWide(NV_TASK_AUTHOR).c_str());
 
-	// clean up all resources when going out of scope
-	sg::make_scope_guard([bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart]() noexcept
+	CREDUI_INFO cui;
+	TCHAR pszName[CREDUI_MAX_USERNAME_LENGTH] = _T("");
+	TCHAR pszPwd[CREDUI_MAX_PASSWORD_LENGTH] = _T("");
+	BOOL fSave;
+
+	cui.cbSize = sizeof(CREDUI_INFO);
+	cui.hwndParent = nullptr;
+	//  Ensure that MessageText and CaptionText identify
+	//  what credentials to use and which application requires them.
+	cui.pszMessageText = TEXT("Account information for task registration:");
+	cui.pszCaptionText = TEXT("Enter Account Information for Task Registration");
+	cui.hbmBanner = nullptr;
+	fSave = FALSE;
+
+	if (const DWORD dwErr = CredUIPromptForCredentials(
+		&cui, //  CREDUI_INFO structure
+		TEXT(""), //  Target for credentials
+		nullptr, //  Reserved
+		0, //  Reason
+		pszName, //  User name
+		CREDUI_MAX_USERNAME_LENGTH, //  Max number for user name
+		pszPwd, //  Password
+		CREDUI_MAX_PASSWORD_LENGTH, //  Max number for password
+		&fSave, //  State of save check box
+		CREDUI_FLAGS_GENERIC_CREDENTIALS | //  Flags
+		CREDUI_FLAGS_ALWAYS_SHOW_UI |
+		CREDUI_FLAGS_DO_NOT_PERSIST))
 	{
-		if (bstrTaskName)
-		{
-			SysFreeString(bstrTaskName);
-		}
+		return std::make_tuple(HRESULT_FROM_WIN32(dwErr), "User credentials submission failed");
+	}
 
-		if (bstrExecutablePath)
-		{
-			SysFreeString(bstrExecutablePath);
-		}
+	bstrName = SysAllocString(pszName);
+	bstrPwd = SysAllocString(pszPwd);
 
-		if (bstrId)
+	// clean up all resources when going out of scope
+	sg::make_scope_guard(
+		[bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart, bstrEnd, bstrName, bstrPwd]() noexcept
 		{
-			SysFreeString(bstrId);
-		}
+			if (bstrTaskName)
+			{
+				SysFreeString(bstrTaskName);
+			}
 
-		if (bstrAuthor)
-		{
-			SysFreeString(bstrAuthor);
-		}
+			if (bstrExecutablePath)
+			{
+				SysFreeString(bstrExecutablePath);
+			}
 
-		if (bstrStart)
-		{
-			SysFreeString(bstrStart);
-		}
+			if (bstrId)
+			{
+				SysFreeString(bstrId);
+			}
 
-		CoUninitialize();
-	});
+			if (bstrAuthor)
+			{
+				SysFreeString(bstrAuthor);
+			}
+
+			if (bstrStart)
+			{
+				SysFreeString(bstrStart);
+			}
+
+			if (bstrEnd)
+			{
+				SysFreeString(bstrEnd);
+			}
+
+			if (bstrName)
+			{
+				SysFreeString(bstrName);
+			}
+
+			if (bstrPwd)
+			{
+				SysFreeString(bstrPwd);
+			}
+
+			CoUninitialize();
+		});
 
 	HRESULT hr = CoInitialize(nullptr);
 	if (FAILED(hr))
