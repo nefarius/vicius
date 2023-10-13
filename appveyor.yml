@@ -9,10 +9,10 @@ configuration:
 install:
 - cmd: git submodule -q update --init
 before_build:
-- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\%APPVEYOR_PROJECT_NAME%.vcxproj" --vcxproj.inf-time-stamp
-- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\%APPVEYOR_PROJECT_NAME%.rc" --resource.file-version --resource.product-version
+- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\vīcĭus.vcxproj" --vcxproj.inf-time-stamp
+- cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\vīcĭus.rc" --resource.file-version --resource.product-version
 build:
-  project: $(APPVEYOR_BUILD_FOLDER)\$(APPVEYOR_PROJECT_NAME).sln
+  project: $(APPVEYOR_BUILD_FOLDER)\vīcĭus.sln
 deploy:
 - provider: Environment
   name: BUILDBOT
