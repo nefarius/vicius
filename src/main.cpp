@@ -62,6 +62,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		// TODO: implement self-updating logic here
 	}
 
+	bool isOutdated = false;
+	if (!cfg.IsInstalledVersionOutdated(isOutdated))
+	{
+		// TODO: add error handling
+	}
+
 
 	constexpr int windowWidth = 640, windowHeight = 512;
 	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetTaskBarTitle(), sf::Style::None);

@@ -181,6 +181,8 @@ namespace models
 		 */
 		void ResetReleaseDownloadState();
 
+		bool IsInstalledVersionOutdated(bool& isOutdated);
+
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{
 		}

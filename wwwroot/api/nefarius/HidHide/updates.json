@@ -5,7 +5,13 @@
         "latestUrl": "http://localhost:5200/api/nefarius/HidHide/nefarius_HidHide_Updater.exe"
     },
     "shared": {
-        "productName": "BthPS3"
+        "productName": "BthPS3",
+        "detectionMethod": "RegistryValue",
+        "detection": {
+            "hive": "HKLM",
+            "key": "SOFTWARE\\Nefarius Software Solutions e.U.\\HidHide",
+            "value": "Version"
+        }
     },
     "releases": [
         {
@@ -21,11 +27,6 @@
                     0,
                     3010
                 ]
-            },
-            "detectionMethod": "RegistryValue",
-            "detection": {
-                "key": "HKLM\\...",
-                "value": "Version"
             }
         }
     ]

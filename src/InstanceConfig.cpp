@@ -1,5 +1,7 @@
 #include "Updater.h"
 #include "InstanceConfig.hpp"
+#include <winreg/WinReg.hpp>
+#include <neargye/semver.hpp>
 
 
 models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInstance), remote()
@@ -87,8 +89,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInsta
 	// first try to build "manufacturer/product" and use filename as 
 	// fallback if extraction via regex didn't yield any results
 	tenantSubPath = (!manufacturer.empty() && !product.empty())
-		                ? std::format("{}/{}", manufacturer, product)
-		                : appFilename;
+		? std::format("{}/{}", manufacturer, product)
+		: appFilename;
 
 	updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
 }
@@ -96,4 +98,68 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInsta
 models::InstanceConfig::~InstanceConfig()
 {
 	RestClient::disable();
+}
+
+bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
+{
+	const auto& release = GetSelectedRelease();
+
+	switch (shared.detectionMethod)
+	{
+	case ProductVersionDetectionMethod::RegistryValue:
+	{
+		const auto& cfg = shared.GetRegistryValueConfig();
+		HKEY hive = nullptr;
+
+		switch (cfg.hive)
+		{
+		case RegistryHive::HKCU:
+			hive = HKEY_CURRENT_USER;
+			break;
+		case RegistryHive::HKLM:
+			hive = HKEY_LOCAL_MACHINE;
+			break;
+		case RegistryHive::HKCR:
+			hive = HKEY_CLASSES_ROOT;
+			break;
+		default:
+			return false;
+		}
+
+		const auto subKey = ConvertAnsiToWide(cfg.key);
+		const auto valueName = ConvertAnsiToWide(cfg.value);
+
+		winreg::RegKey key;
+
+		if (const winreg::RegResult result = key.TryOpen(hive, subKey, KEY_READ); !result)
+		{
+			return false;
+		}
+
+		const std::wstring value = key.GetStringValue(valueName);
+		const semver::version localVersion{ ConvertWideToANSI(value) };
+
+		isOutdated = release.GetSemVersion() > localVersion;
+
+		return true;
+	}
+	case ProductVersionDetectionMethod::FileVersion:
+	{
+		const auto& cfg = shared.GetFileVersionConfig();
+
+		// TODO: implement me
+
+		break;
+	}
+	case ProductVersionDetectionMethod::FileSize:
+	{
+		const auto& cfg = shared.GetFileSizeConfig();
+
+		// TODO: implement me
+
+		break;
+	}
+	}
+
+	return false;
 }

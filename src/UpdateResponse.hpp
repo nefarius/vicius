@@ -61,9 +61,9 @@ namespace models
 	 */
 	enum class RegistryHive
 	{
-		HKCU = reinterpret_cast<ULONG_PTR>(HKEY_CURRENT_USER),
-		HKLM = reinterpret_cast<ULONG_PTR>(HKEY_LOCAL_MACHINE),
-		HKCR = reinterpret_cast<ULONG_PTR>(HKEY_CLASSES_ROOT),
+		HKCU,
+		HKLM,
+		HKCR,
 		Invalid = -1
 	};
 
@@ -110,13 +110,38 @@ namespace models
 	public:
 		std::string taskBarTitle;
 		std::string productName;
+		/** The detection method */
+		ProductVersionDetectionMethod detectionMethod;
+		/** The detection method for the installed software version */
+		json detection;
 
 		SharedConfig() : taskBarTitle(NV_TASKBAR_TITLE), productName(NV_PRODUCT_NAME)
 		{
 		}
+
+		RegistryValueConfig GetRegistryValueConfig() const
+		{
+			return detection.get<RegistryValueConfig>();
+		}
+
+		FileVersionConfig GetFileVersionConfig() const
+		{
+			return detection.get<FileVersionConfig>();
+		}
+
+		FileSizeConfig GetFileSizeConfig() const
+		{
+			return detection.get<FileSizeConfig>();
+		}
 	};
 
-	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SharedConfig, taskBarTitle, productName)
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+		SharedConfig,
+		taskBarTitle, 
+		productName, 
+		detectionMethod,
+		detection
+	)
 
 	/**
 	 * \brief Setup exit code parameters.
@@ -158,11 +183,7 @@ namespace models
 		std::string checksum{};
 		/** The checksum algorithm */
 		ChecksumAlgorithm checksumAlg;
-		/** The detection method */
-		ProductVersionDetectionMethod detectionMethod;
-		/** The detection method for the installed software version */
-		json detection;
-
+		
 		/** Full pathname of the local temporary file */
 		std::filesystem::path localTempFilePath{};
 
@@ -182,21 +203,6 @@ namespace models
 				return semver::version{0, 0, 0};
 			}
 		}
-
-		RegistryValueConfig GetRegistryValueConfig() const
-		{
-			return detection.get<RegistryValueConfig>();
-		}
-
-		FileVersionConfig GetFileVersionConfig() const
-		{
-			return detection.get<FileVersionConfig>();
-		}
-
-		FileSizeConfig GetFileSizeConfig() const
-		{
-			return detection.get<FileSizeConfig>();
-		}
 	};
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
@@ -210,9 +216,7 @@ namespace models
 		launchArguments,
 		exitCode,
 		checksum,
-		checksumAlg,
-		detectionMethod,
-		detection
+		checksumAlg
 	)
 
 	/**
