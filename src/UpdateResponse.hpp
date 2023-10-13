@@ -118,7 +118,9 @@ namespace models
 	class SharedConfig
 	{
 	public:
+		/** The classic window title, only shown in taskbar in our case */
 		std::string taskBarTitle;
+		/** Name of the product shown in UI */
 		std::string productName;
 		/** The detection method */
 		ProductVersionDetectionMethod detectionMethod;
