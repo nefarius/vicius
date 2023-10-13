@@ -174,6 +174,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 
 		if (const winreg::RegResult result = key.TryOpen(hive, subKey, KEY_READ); !result)
 		{
+			spdlog::error("Failed to open {}\\{} key", magic_enum::enum_name(cfg.hive), cfg.key);
 			return false;
 		}
 
@@ -181,6 +182,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 
 		if (!resource.IsValid())
 		{
+			spdlog::error("Failed to access value {}", cfg.value);
 			return false;
 		}
 
@@ -194,6 +196,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 		}
 		catch (...)
 		{
+			spdlog::error("Failed to convert value {} into SemVer", ConvertWideToANSI(value));
 			return false;
 		}
 
@@ -205,15 +208,14 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 	case ProductVersionDetectionMethod::FileVersion:
 	{
 		const auto& cfg = shared.GetFileVersionConfig();
-
+		
 		try
-		{
-			const semver::version localVersion{ util::GetVersionFromFile(cfg.path) };
-
-			isOutdated = release.GetSemVersion() > localVersion;
+		{			
+			isOutdated = release.GetSemVersion() > util::GetVersionFromFile(cfg.path);
 		}
 		catch (...)
 		{
+			spdlog::error("Failed to get version resource from {}", cfg.path);
 			return false;
 		}
 
@@ -234,6 +236,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 		}
 		catch (...)
 		{
+			spdlog::error("Failed to get file size from {}", cfg.path);
 			return false;
 		}
 
