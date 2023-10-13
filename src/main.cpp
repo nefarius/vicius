@@ -52,6 +52,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	// updater configuration, defaults and app state
 	models::InstanceConfig cfg(hInstance);
 
+	cfg.CreateScheduledTask();
+
 	if (!cfg.RequestUpdateInfo())
 	{
 		// TODO: add fallback actions

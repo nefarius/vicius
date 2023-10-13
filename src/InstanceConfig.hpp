@@ -188,6 +188,8 @@ namespace models
 		 */
 		bool IsInstalledVersionOutdated(bool& isOutdated);
 
+		std::tuple<HRESULT, const char *> CreateScheduledTask() const;
+
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{
 		}

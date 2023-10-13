@@ -15,6 +15,7 @@
     "neargye-semver",
     "winreg",
     "hash-library",
-    "spdlog"
+    "spdlog",
+    "scope-guard"
   ]
 }
