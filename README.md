@@ -48,6 +48,8 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Add "Light" theme
 - [ ] Add embedded images support for Markdown widget
 - [ ] Implement Product Version detection
+- [ ] Support closing and restarting applications before and after the main update
+- [ ] Support running prerequisites installation before main update
 
 ## Sources & 3rd party credits
 

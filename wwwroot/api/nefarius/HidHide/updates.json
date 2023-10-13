@@ -16,11 +16,10 @@
             "downloadUrl": "https://download.visualstudio.microsoft.com/download/pr/f9ea536d-8e1f-4247-88b8-e79e33fa0873/c06e39f73a3bb1ec8833bb1cde98fce3/windowsdesktop-runtime-7.0.12-win-x64.exe",
             "launchArguments": "/norestart",
             "exitCode": {
-                "skipCheck": false,
+                "skipCheck": true,
                 "successCodes": [
                     0,
-                    3010,
-                    1602
+                    3010
                 ]
             },
             "detectionMethod": "RegistryValue",
