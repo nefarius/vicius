@@ -51,6 +51,7 @@ Non-exhaustive list of things open or in-progress...
   - [x] `RegistryValue`
   - [x] `FileVersion`
   - [x] `FileSize`
+  - [x] `FileChecksum`
 - [ ] Support closing and restarting applications before and after the main update
 - [ ] Support running prerequisites installation before main update
 - [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
