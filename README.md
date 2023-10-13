@@ -40,7 +40,7 @@ Non-exhaustive list of things open or in-progress...
   - [x] `WizardPage::Start`
   - [x] `WizardPage::SingleVersionSummary`
   - [ ] `WizardPage::MultipleVersionsOverview`
-  - [ ] `WizardPage::DownloadAndInstall`
+  - [x] `WizardPage::DownloadAndInstall`
   - [ ] ...
 - [ ] Design Beta-Release support
 - [ ] Specify supported Command Line Arguments
