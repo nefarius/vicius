@@ -9,7 +9,7 @@ namespace util
 {
 	std::filesystem::path GetImageBasePathW()
 	{
-		wchar_t myPath[MAX_PATH + 1] = {0};
+		wchar_t myPath[MAX_PATH + 1] = { 0 };
 
 		GetModuleFileNameW(
 			reinterpret_cast<HINSTANCE>(&__ImageBase),
@@ -34,7 +34,7 @@ namespace util
 
 			if (GetFileVersionInfoA(filePath.string().c_str(), verHandle, verSize, verData))
 			{
-				if (VerQueryValueA(verData, "\\", (VOID FAR * FAR*)&lpBuffer, &size))
+				if (VerQueryValueA(verData, "\\", (VOID FAR * FAR*) & lpBuffer, &size))
 				{
 					if (size)
 					{
@@ -52,7 +52,7 @@ namespace util
 			delete[] verData;
 		}
 
-		return semver::version{versionString.str()};
+		return semver::version{ versionString.str() };
 	}
 
 	bool ParseCommandLineArguments(argh::parser& cmdl)
@@ -96,5 +96,21 @@ namespace util
 		const auto strRange = strEnd - strBegin + 1;
 
 		return str.substr(strBegin, strRange);
+	}
+
+	bool icompare_pred(unsigned char a, unsigned char b)
+	{
+		return std::tolower(a) == std::tolower(b);
+	}
+
+	bool icompare(std::string const& a, std::string const& b)
+	{
+		if (a.length() == b.length()) {
+			return std::equal(b.begin(), b.end(),
+				a.begin(), icompare_pred);
+		}
+		else {
+			return false;
+		}
 	}
 }

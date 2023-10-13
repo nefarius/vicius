@@ -19,7 +19,6 @@ namespace models
 		MD5,
 		SHA1,
 		SHA256,
-		SHA512,
 		Invalid = -1
 	};
 
@@ -31,8 +30,6 @@ namespace models
 	                             magic_enum::enum_name(ChecksumAlgorithm::SHA1)},
 	                             {ChecksumAlgorithm::SHA256,
 	                             magic_enum::enum_name(ChecksumAlgorithm::SHA256)},
-	                             {ChecksumAlgorithm::SHA512,
-	                             magic_enum::enum_name(ChecksumAlgorithm::SHA512)},
 	                             })
 
 	/**
@@ -43,6 +40,7 @@ namespace models
 		RegistryValue,
 		FileVersion,
 		FileSize,
+		FileChecksum,
 		Invalid = -1
 	};
 
@@ -54,6 +52,8 @@ namespace models
 	                             magic_enum::enum_name(ProductVersionDetectionMethod::FileVersion)},
 	                             {ProductVersionDetectionMethod::FileSize,
 	                             magic_enum::enum_name(ProductVersionDetectionMethod::FileSize)},
+	                             {ProductVersionDetectionMethod::FileChecksum,
+	                             magic_enum::enum_name(ProductVersionDetectionMethod::FileChecksum)},
 	                             })
 
 	/**
@@ -102,6 +102,16 @@ namespace models
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileSizeConfig, path, size)
 
+	class FileChecksumConfig
+	{
+	public:
+		std::string path;
+		ChecksumAlgorithm algorithm;
+		std::string hash;
+	};
+
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileChecksumConfig, path, algorithm, hash)
+
 	/**
 	 * \brief Parameters that might be provided by both the server and the local configuration.
 	 */
@@ -133,12 +143,17 @@ namespace models
 		{
 			return detection.get<FileSizeConfig>();
 		}
+
+		FileChecksumConfig GetFileChecksumConfig() const
+		{
+			return detection.get<FileChecksumConfig>();
+		}
 	};
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 		SharedConfig,
-		taskBarTitle, 
-		productName, 
+		taskBarTitle,
+		productName,
 		detectionMethod,
 		detection
 	)
@@ -183,7 +198,7 @@ namespace models
 		std::string checksum{};
 		/** The checksum algorithm */
 		ChecksumAlgorithm checksumAlg;
-		
+
 		/** Full pathname of the local temporary file */
 		std::filesystem::path localTempFilePath{};
 

@@ -1,7 +1,15 @@
 #include "Updater.h"
 #include "InstanceConfig.hpp"
+
+#include <fstream>
+#include <cctype>
+#include <algorithm>
+
 #include <winreg/WinReg.hpp>
 #include <neargye/semver.hpp>
+#include <hash-library/md5.h>
+#include <hash-library/sha1.h>
+#include <hash-library/sha256.h>
 
 
 models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInstance), remote()
@@ -89,8 +97,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInsta
 	// first try to build "manufacturer/product" and use filename as 
 	// fallback if extraction via regex didn't yield any results
 	tenantSubPath = (!manufacturer.empty() && !product.empty())
-		                ? std::format("{}/{}", manufacturer, product)
-		                : appFilename;
+		? std::format("{}/{}", manufacturer, product)
+		: appFilename;
 
 	updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
 }
@@ -107,84 +115,187 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 	switch (shared.detectionMethod)
 	{
 	case ProductVersionDetectionMethod::RegistryValue:
+	{
+		const auto& cfg = shared.GetRegistryValueConfig();
+		HKEY hive = nullptr;
+
+		switch (cfg.hive)
 		{
-			const auto& cfg = shared.GetRegistryValueConfig();
-			HKEY hive = nullptr;
-
-			switch (cfg.hive)
-			{
-			case RegistryHive::HKCU:
-				hive = HKEY_CURRENT_USER;
-				break;
-			case RegistryHive::HKLM:
-				hive = HKEY_LOCAL_MACHINE;
-				break;
-			case RegistryHive::HKCR:
-				hive = HKEY_CLASSES_ROOT;
-				break;
-			case RegistryHive::Invalid:
-				return false;
-			}
-
-			const auto subKey = ConvertAnsiToWide(cfg.key);
-			const auto valueName = ConvertAnsiToWide(cfg.value);
-
-			winreg::RegKey key;
-
-			if (const winreg::RegResult result = key.TryOpen(hive, subKey, KEY_READ); !result)
-			{
-				return false;
-			}
-
-			const std::wstring value = key.GetStringValue(valueName);
-
-			try
-			{
-				const semver::version localVersion{ConvertWideToANSI(value)};
-
-				isOutdated = release.GetSemVersion() > localVersion;
-			}
-			catch (...)
-			{
-				return false;
-			}
-
-			return true;
+		case RegistryHive::HKCU:
+			hive = HKEY_CURRENT_USER;
+			break;
+		case RegistryHive::HKLM:
+			hive = HKEY_LOCAL_MACHINE;
+			break;
+		case RegistryHive::HKCR:
+			hive = HKEY_CLASSES_ROOT;
+			break;
+		case RegistryHive::Invalid:
+			return false;
 		}
+
+		const auto subKey = ConvertAnsiToWide(cfg.key);
+		const auto valueName = ConvertAnsiToWide(cfg.value);
+
+		winreg::RegKey key;
+
+		if (const winreg::RegResult result = key.TryOpen(hive, subKey, KEY_READ); !result)
+		{
+			return false;
+		}
+
+		const std::wstring value = key.GetStringValue(valueName);
+
+		try
+		{
+			const semver::version localVersion{ ConvertWideToANSI(value) };
+
+			isOutdated = release.GetSemVersion() > localVersion;
+		}
+		catch (...)
+		{
+			return false;
+		}
+
+		return true;
+	}
 	case ProductVersionDetectionMethod::FileVersion:
+	{
+		const auto& cfg = shared.GetFileVersionConfig();
+
+		try
 		{
-			const auto& cfg = shared.GetFileVersionConfig();
+			const semver::version localVersion{ util::GetVersionFromFile(cfg.path) };
 
-			try
-			{
-				const semver::version localVersion{util::GetVersionFromFile(cfg.path)};
-
-				isOutdated = release.GetSemVersion() > localVersion;
-			}
-			catch (...)
-			{
-				return false;
-			}
-
-			return true;
+			isOutdated = release.GetSemVersion() > localVersion;
 		}
+		catch (...)
+		{
+			return false;
+		}
+
+		return true;
+	}
 	case ProductVersionDetectionMethod::FileSize:
+	{
+		const auto& cfg = shared.GetFileSizeConfig();
+
+		try
 		{
-			const auto& cfg = shared.GetFileSizeConfig();
+			const std::filesystem::path file{ cfg.path };
 
-			try
-			{
-				const std::filesystem::path file{cfg.path};
+			isOutdated = file_size(file) != cfg.size;
+		}
+		catch (...)
+		{
+			return false;
+		}
 
-				isOutdated = file_size(file) != cfg.size;
-			}
-			catch (...)
+		return true;
+	}
+	case ProductVersionDetectionMethod::FileChecksum:
+	{
+		const auto& cfg = shared.GetFileChecksumConfig();
+
+		if (!std::filesystem::exists(cfg.path))
+		{
+			return false;
+		}
+
+		std::ifstream file(cfg.path, std::ios::binary);
+
+		if (!file.is_open())
+		{
+			return false;
+		}
+
+		constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
+
+		switch (cfg.algorithm)
+		{
+		case ChecksumAlgorithm::MD5:
+		{
+			MD5 alg;
+
+			std::vector<char> buffer(chunkSize);
+			while (!file.eof())
 			{
-				return false;
+				file.read(buffer.data(), buffer.size());
+				std::streamsize bytesRead = file.gcount();
+
+				alg.add(buffer.data(), bytesRead);
+
+				if (bytesRead < chunkSize && !file.eof())
+				{
+					if (file.fail())
+					{
+						return false;
+					}
+				}
 			}
+
+			isOutdated = !util::icompare(alg.getHash(), cfg.hash);
 
 			return true;
 		}
+		case ChecksumAlgorithm::SHA1:
+		{
+			SHA1 alg;
+
+			std::vector<char> buffer(chunkSize);
+			while (!file.eof())
+			{
+				file.read(buffer.data(), buffer.size());
+				std::streamsize bytesRead = file.gcount();
+
+				alg.add(buffer.data(), bytesRead);
+
+				if (bytesRead < chunkSize && !file.eof())
+				{
+					if (file.fail())
+					{
+						return false;
+					}
+				}
+			}
+
+			isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+
+			return true;
+		}
+		case ChecksumAlgorithm::SHA256:
+		{
+			SHA256 alg;
+
+			std::vector<char> buffer(chunkSize);
+			while (!file.eof())
+			{
+				file.read(buffer.data(), buffer.size());
+				std::streamsize bytesRead = file.gcount();
+
+				alg.add(buffer.data(), bytesRead);
+
+				if (bytesRead < chunkSize && !file.eof())
+				{
+					if (file.fail())
+					{
+						return false;
+					}
+				}
+			}
+
+			isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+
+			return true;
+		}
+		case ChecksumAlgorithm::Invalid:
+			return false;
+		}
+
+		file.close();
+
+		break;
+	}
 	}
 
 	return false;

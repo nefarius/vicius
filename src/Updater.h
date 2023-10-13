@@ -70,4 +70,6 @@ namespace util
 	semver::version GetVersionFromFile(const std::filesystem::path& filePath);
 	bool ParseCommandLineArguments(argh::parser& cmdl);
 	std::string trim(const std::string& str, const std::string& whitespace = " \t");
+	bool icompare_pred(unsigned char a, unsigned char b);
+	bool icompare(std::string const& a, std::string const& b);
 }
