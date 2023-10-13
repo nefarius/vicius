@@ -15,12 +15,14 @@
             "summary": "## Features\n  * Awesome new thing\n  * Also this\n  * And that\n\n## Bugfixes\n  * Removed bug I put there\n  * Ooopsie, that wasn't supposed to happen\n## Nonsense\n  * Need to see\n  * What happens...\n  * If we need scroll bars\n  * Vertically",
             "downloadUrl": "https://download.visualstudio.microsoft.com/download/pr/f9ea536d-8e1f-4247-88b8-e79e33fa0873/c06e39f73a3bb1ec8833bb1cde98fce3/windowsdesktop-runtime-7.0.12-win-x64.exe",
             "launchArguments": "/norestart",
-            "successExitCodes": [
-                0,
-                3010,
-                1602
-            ],
-            "skipExitCodeCheck": false,
+            "exitCode": {
+                "skipCheck": false,
+                "successCodes": [
+                    0,
+                    3010,
+                    1602
+                ]
+            },
             "detectionMethod": "RegistryValue",
             "detection": {
                 "key": "HKLM\\...",

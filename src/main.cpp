@@ -387,13 +387,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 					const auto& release = cfg.GetSelectedRelease();
 
-					if (release.skipExitCodeCheck)
+					if (release.exitCode.skipCheck)
 					{
 						instStep = DownloadAndInstallStep::InstallSucceeded;
 						break;
 					}
 
-					if (std::ranges::find(release.successExitCodes, exitCode) != release.successExitCodes.end())
+					if (std::ranges::find(release.exitCode.successCodes, exitCode) != release.exitCode.successCodes.end())
 					{
 						instStep = DownloadAndInstallStep::InstallSucceeded;
 						break;

@@ -118,6 +118,17 @@ namespace models
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SharedConfig, taskBarTitle, productName)
 
+	class ExitCodeCheck
+	{
+	public:
+		/** True to skip exit code check */
+		bool skipCheck;
+		/** The setup exit codes treated as success */
+		std::vector<int> successCodes;
+	};
+
+	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ExitCodeCheck, skipCheck, successCodes)
+
 	/**
 	 * \brief Represents an update release.
 	 */
@@ -138,10 +149,8 @@ namespace models
 		size_t downloadSize;
 		/** The launch arguments (CLI arguments) if any */
 		std::string launchArguments{};
-		/** The setup exit codes treated as success */
-		std::vector<int> successExitCodes;
-		/** True to skip exit code check */
-		bool skipExitCodeCheck;
+		/** The exit code parameters */
+		ExitCodeCheck exitCode;
 		/** The (optional) checksum of the remote setup */
 		std::string checksum;
 		/** The checksum algorithm */
@@ -196,8 +205,7 @@ namespace models
 		downloadUrl,
 		downloadSize,
 		launchArguments,
-		successExitCodes,
-		skipExitCodeCheck,
+		exitCode,
 		checksum,
 		checksumAlg,
 		detectionMethod,
