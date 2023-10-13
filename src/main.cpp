@@ -66,6 +66,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	if (!cfg.IsInstalledVersionOutdated(isOutdated))
 	{
 		// TODO: add error handling
+		return ERROR_NO_DATA_DETECTED;
 	}
 
 
