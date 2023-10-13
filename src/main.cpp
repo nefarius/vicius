@@ -69,6 +69,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		return ERROR_NO_DATA_DETECTED;
 	}
 
+	// we're up2date
+	if (!isOutdated)
+	{
+		return ERROR_SUCCESS;
+	}
 
 	constexpr int windowWidth = 640, windowHeight = 512;
 	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetTaskBarTitle(), sf::Style::None);
