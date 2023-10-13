@@ -9,7 +9,6 @@
 #include <ole2.h>
 #include <taskschd.h>
 #include <wincred.h>
-#include <taskschd.h>
 
 #pragma comment(lib, "taskschd.lib")
 #pragma comment(lib, "comsupp.lib")
