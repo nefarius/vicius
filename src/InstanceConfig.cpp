@@ -144,7 +144,14 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 			return false;
 		}
 
-		const std::wstring value = key.GetStringValue(valueName);
+		const auto& resource = key.TryGetStringValue(valueName);
+
+		if (!resource.IsValid())
+		{
+			return false;
+		}
+
+		const std::wstring value = resource.GetValue();
 
 		try
 		{
