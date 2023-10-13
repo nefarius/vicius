@@ -89,8 +89,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInsta
 	// first try to build "manufacturer/product" and use filename as 
 	// fallback if extraction via regex didn't yield any results
 	tenantSubPath = (!manufacturer.empty() && !product.empty())
-		? std::format("{}/{}", manufacturer, product)
-		: appFilename;
+		                ? std::format("{}/{}", manufacturer, product)
+		                : appFilename;
 
 	updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
 }
@@ -107,75 +107,84 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 	switch (shared.detectionMethod)
 	{
 	case ProductVersionDetectionMethod::RegistryValue:
-	{
-		const auto& cfg = shared.GetRegistryValueConfig();
-		HKEY hive = nullptr;
-
-		switch (cfg.hive)
 		{
-		case RegistryHive::HKCU:
-			hive = HKEY_CURRENT_USER;
-			break;
-		case RegistryHive::HKLM:
-			hive = HKEY_LOCAL_MACHINE;
-			break;
-		case RegistryHive::HKCR:
-			hive = HKEY_CLASSES_ROOT;
-			break;
-		case RegistryHive::Invalid:
-			return false;
+			const auto& cfg = shared.GetRegistryValueConfig();
+			HKEY hive = nullptr;
+
+			switch (cfg.hive)
+			{
+			case RegistryHive::HKCU:
+				hive = HKEY_CURRENT_USER;
+				break;
+			case RegistryHive::HKLM:
+				hive = HKEY_LOCAL_MACHINE;
+				break;
+			case RegistryHive::HKCR:
+				hive = HKEY_CLASSES_ROOT;
+				break;
+			case RegistryHive::Invalid:
+				return false;
+			}
+
+			const auto subKey = ConvertAnsiToWide(cfg.key);
+			const auto valueName = ConvertAnsiToWide(cfg.value);
+
+			winreg::RegKey key;
+
+			if (const winreg::RegResult result = key.TryOpen(hive, subKey, KEY_READ); !result)
+			{
+				return false;
+			}
+
+			const std::wstring value = key.GetStringValue(valueName);
+
+			try
+			{
+				const semver::version localVersion{ConvertWideToANSI(value)};
+
+				isOutdated = release.GetSemVersion() > localVersion;
+			}
+			catch (...)
+			{
+				return false;
+			}
+
+			return true;
 		}
-
-		const auto subKey = ConvertAnsiToWide(cfg.key);
-		const auto valueName = ConvertAnsiToWide(cfg.value);
-
-		winreg::RegKey key;
-
-		if (const winreg::RegResult result = key.TryOpen(hive, subKey, KEY_READ); !result)
-		{
-			return false;
-		}
-
-		const std::wstring value = key.GetStringValue(valueName);
-
-		try
-		{
-			const semver::version localVersion{ ConvertWideToANSI(value) };
-
-			isOutdated = release.GetSemVersion() > localVersion;
-		}
-		catch (...)
-		{
-			return false;
-		}
-
-		return true;
-	}
 	case ProductVersionDetectionMethod::FileVersion:
-	{
-		const auto& cfg = shared.GetFileVersionConfig();
-
-		try
 		{
-			const semver::version localVersion{ util::GetVersionFromFile(cfg.path) };
+			const auto& cfg = shared.GetFileVersionConfig();
 
-			isOutdated = release.GetSemVersion() > localVersion;
-		}
-		catch (...)
-		{
-			return false;
-		}
+			try
+			{
+				const semver::version localVersion{util::GetVersionFromFile(cfg.path)};
 
-		return true;
-	}
+				isOutdated = release.GetSemVersion() > localVersion;
+			}
+			catch (...)
+			{
+				return false;
+			}
+
+			return true;
+		}
 	case ProductVersionDetectionMethod::FileSize:
-	{
-		const auto& cfg = shared.GetFileSizeConfig();
+		{
+			const auto& cfg = shared.GetFileSizeConfig();
 
-		// TODO: implement me
+			try
+			{
+				const std::filesystem::path file{cfg.path};
 
-		break;
-	}
+				isOutdated = file_size(file) != cfg.size;
+			}
+			catch (...)
+			{
+				return false;
+			}
+
+			return true;
+		}
 	}
 
 	return false;

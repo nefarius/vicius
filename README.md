@@ -47,7 +47,10 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Make app icon customizable
 - [ ] Add "Light" theme
 - [ ] Add embedded images support for Markdown widget
-- [ ] Implement Product Version detection
+- [x] Implement Product Version detection
+  - [x] `RegistryValue`
+  - [x] `FileVersion`
+  - [x] `FileSize`
 - [ ] Support closing and restarting applications before and after the main update
 - [ ] Support running prerequisites installation before main update
 - [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
