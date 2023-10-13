@@ -6,7 +6,7 @@
     },
     "shared": {
         "productName": "BthPS3",
-        "detectionMethod": "FileSize",
+        "detectionMethod": "RegistryValue",
         "detection": {
             "hive": "HKLM",
             "key": "SOFTWARE\\Nefarius Software Solutions e.U.\\HidHide",

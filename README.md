@@ -57,6 +57,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
 - [ ] Add some logging
 - [ ] Tidy up and improve includes
+- [ ] Implement Task Scheduler (de-)registration
 
 ## Sources & 3rd party credits
 
