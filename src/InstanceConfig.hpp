@@ -119,14 +119,14 @@ namespace models
 		 * \param currentVersion The local product version to check against.
 		 * \return True if a newer version is available, false otherwise.
 		 */
-		[[nodiscard]] bool IsProductUpdateAvailable(const semver::version& currentVersion) const
+		[[nodiscard]] bool IsProductUpdateAvailable(const semver::version& currentVersion)
 		{
 			if (remote.releases.empty())
 			{
 				return false;
 			}
 
-			const auto latest = remote.releases[0].GetSemVersion();
+			const auto latest = GetSelectedRelease().GetSemVersion();
 
 			return latest > currentVersion;
 		}
