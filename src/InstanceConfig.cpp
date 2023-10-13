@@ -346,6 +346,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 			return true;
 		}
 		case ChecksumAlgorithm::Invalid:
+			spdlog::error("Invalid hashing algorithm specified");
 			return false;
 		}
 
