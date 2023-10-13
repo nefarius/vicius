@@ -80,3 +80,4 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [WinReg](https://github.com/GiovanniDicanio/WinReg)
 - [Portable C++ Hashing Library](https://github.com/stbrumme/hash-library)
 - [A modern C++ scope guard that is easy to use but hard to misuse](https://github.com/ricab/scope_guard)
+- [DailyTaskScheduler](https://github.com/JohnAliyetti/DailyTaskScheduler)
