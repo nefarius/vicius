@@ -251,6 +251,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 
 		if (!std::filesystem::exists(cfg.path))
 		{
+			spdlog::error("File {} doesn't exist", cfg.path);
 			return false;
 		}
 
@@ -258,6 +259,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 
 		if (!file.is_open())
 		{
+			spdlog::error("Failed to open file {}", cfg.path);
 			return false;
 		}
 
