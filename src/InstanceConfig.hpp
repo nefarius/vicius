@@ -181,6 +181,11 @@ namespace models
 		 */
 		void ResetReleaseDownloadState();
 
+		/**
+		 * \brief Checks the version of the installed product against the latest available release.
+		 * \param isOutdated True if the detected installed version is older than the latest server release.
+		 * \return True if detection succeeded, false on error.
+		 */
 		bool IsInstalledVersionOutdated(bool& isOutdated);
 
 		InstanceConfig() : remote(), authority(Authority::Remote)

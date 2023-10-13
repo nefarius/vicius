@@ -122,6 +122,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 		case RegistryHive::HKCR:
 			hive = HKEY_CLASSES_ROOT;
 			break;
+		case RegistryHive::Invalid:
 		default:
 			return false;
 		}
