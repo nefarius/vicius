@@ -208,9 +208,9 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 	case ProductVersionDetectionMethod::FileVersion:
 	{
 		const auto& cfg = shared.GetFileVersionConfig();
-		
+
 		try
-		{			
+		{
 			isOutdated = release.GetSemVersion() > util::GetVersionFromFile(cfg.path);
 		}
 		catch (...)
@@ -283,6 +283,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 				{
 					if (file.fail())
 					{
+						spdlog::error("Failed to read file {} to end", cfg.path);
 						return false;
 					}
 				}
@@ -308,6 +309,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 				{
 					if (file.fail())
 					{
+						spdlog::error("Failed to read file {} to end", cfg.path);
 						return false;
 					}
 				}
@@ -333,6 +335,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 				{
 					if (file.fail())
 					{
+						spdlog::error("Failed to read file {} to end", cfg.path);
 						return false;
 					}
 				}
@@ -351,8 +354,10 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 		break;
 	}
 	case ProductVersionDetectionMethod::Invalid:
+		spdlog::error("Invalid detection method specified");
 		return false;
 	}
 
+	spdlog::error("No detection method matched");
 	return false;
 }
