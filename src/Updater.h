@@ -39,6 +39,11 @@
 // 
 #include <neargye/semver.hpp>
 
+//
+// Logging
+// 
+#include <spdlog/spdlog.h>
+
 // 
 // Custom
 // 

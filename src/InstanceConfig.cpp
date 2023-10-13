@@ -11,6 +11,8 @@
 #include <hash-library/sha1.h>
 #include <hash-library/sha256.h>
 
+#include <magic_enum.hpp>
+
 
 models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInstance), remote()
 {
@@ -37,11 +39,22 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInsta
 		serverUrlTemplate = NV_API_URL_TEMPLATE;
 	}
 
+	spdlog::debug("serverUrlTemplate = {}", serverUrlTemplate);
+
 	appPath = util::GetImageBasePathW();
+	spdlog::debug("appPath = {}", appPath.string());
+
 	appVersion = util::GetVersionFromFile(appPath);
+	spdlog::debug("appVersion = {}", appVersion.to_string());
+
 	appFilename = appPath.stem().string();
+	spdlog::debug("appFilename = {}", appFilename);
+
 	filenameRegex = NV_FILENAME_REGEX;
+	spdlog::debug("filenameRegex = {}", filenameRegex);
+
 	authority = Authority::Remote;
+	spdlog::debug("authority = {}", magic_enum::enum_name(authority));
 
 	//
 	// Merge from config file, if available
@@ -72,9 +85,14 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInsta
 		catch (...)
 		{
 			// invalid config, too bad
+			spdlog::error("Couldn't deserialize contents of {}", configFile.string());
 		}
 
 		configFileStream.close();
+	}
+	else
+	{
+		spdlog::info("No local configuration found at {}", configFile.string());
 	}
 
 	//
@@ -91,7 +109,17 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInsta
 		{
 			manufacturer = match[1];
 			product = match[2];
+
+			spdlog::info("Extracted manufacturer {} and product {} values", manufacturer, product);
 		}
+		else
+		{
+			spdlog::warn("Unexpected match size using regex {} on {}", filenameRegex, appFilename);
+		}
+	}
+	else
+	{
+		spdlog::info("Regex {} didn't match anything on {}", filenameRegex, appFilename);
 	}
 
 	// first try to build "manufacturer/product" and use filename as 
@@ -99,8 +127,10 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInsta
 	tenantSubPath = (!manufacturer.empty() && !product.empty())
 		? std::format("{}/{}", manufacturer, product)
 		: appFilename;
+	spdlog::debug("tenantSubPath = {}", tenantSubPath);
 
 	updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
+	spdlog::debug("updateRequestUrl = {}", updateRequestUrl);
 }
 
 models::InstanceConfig::~InstanceConfig()
