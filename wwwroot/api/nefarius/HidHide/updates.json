@@ -6,7 +6,7 @@
     },
     "shared": {
         "productName": "BthPS3",
-        "detectionMethod": "FileChecksum",
+        "detectionMethod": "FileSize",
         "detection": {
             "hive": "HKLM",
             "key": "SOFTWARE\\Nefarius Software Solutions e.U.\\HidHide",
@@ -14,7 +14,9 @@
 
             "path": "F:\\Downloads\\ep_setup (4).exe",
             "algorithm": "SHA1",
-            "hash": "6A697E5076A040DB00174D4799D5B8F788D3BC37"
+            "hash": "6A697E5076A040DB00174D4799D5B8F788D3BC37",
+
+            "size": 1944064
         }
     },
     "releases": [
