@@ -114,6 +114,9 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 
 	switch (shared.detectionMethod)
 	{
+		//
+		// Detect product version via registry key and value
+		// 
 	case ProductVersionDetectionMethod::RegistryValue:
 	{
 		const auto& cfg = shared.GetRegistryValueConfig();
@@ -166,6 +169,9 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 
 		return true;
 	}
+	//
+	// Detect product by comparing version resource
+	// 
 	case ProductVersionDetectionMethod::FileVersion:
 	{
 		const auto& cfg = shared.GetFileVersionConfig();
@@ -183,6 +189,9 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 
 		return true;
 	}
+	//
+	// Detect product by comparing expected file sizes
+	// 
 	case ProductVersionDetectionMethod::FileSize:
 	{
 		const auto& cfg = shared.GetFileSizeConfig();
@@ -200,6 +209,9 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 
 		return true;
 	}
+	//
+	// Detect product by hashing a given file checksum
+	// 
 	case ProductVersionDetectionMethod::FileChecksum:
 	{
 		const auto& cfg = shared.GetFileChecksumConfig();
