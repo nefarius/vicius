@@ -137,9 +137,17 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 		}
 
 		const std::wstring value = key.GetStringValue(valueName);
-		const semver::version localVersion{ ConvertWideToANSI(value) };
 
-		isOutdated = release.GetSemVersion() > localVersion;
+		try
+		{
+			const semver::version localVersion{ ConvertWideToANSI(value) };
+
+			isOutdated = release.GetSemVersion() > localVersion;
+		}
+		catch (...)
+		{
+			return false;
+		}
 
 		return true;
 	}
