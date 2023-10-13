@@ -155,9 +155,18 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 	{
 		const auto& cfg = shared.GetFileVersionConfig();
 
-		// TODO: implement me
+		try
+		{
+			const semver::version localVersion{ util::GetVersionFromFile(cfg.path) };
 
-		break;
+			isOutdated = release.GetSemVersion() > localVersion;
+		}
+		catch (...)
+		{
+			return false;
+		}
+
+		return true;
 	}
 	case ProductVersionDetectionMethod::FileSize:
 	{
