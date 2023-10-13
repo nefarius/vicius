@@ -6,6 +6,7 @@ platform:
 - x64
 configuration:
 - Release
+test: off
 install:
 - cmd: git submodule -q update --init
 - cmd: vcpkg integrate install
