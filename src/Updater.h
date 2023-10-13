@@ -77,4 +77,10 @@ namespace util
 	std::string trim(const std::string& str, const std::string& whitespace = " \t");
 	bool icompare_pred(unsigned char a, unsigned char b);
 	bool icompare(std::string const& a, std::string const& b);
+	bool IsAdmin(int& errorCode);
+}
+
+namespace winapi
+{
+	DWORD IsAppRunningAsAdminMode(PBOOL IsAdmin);
 }

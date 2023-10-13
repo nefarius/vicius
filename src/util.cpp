@@ -113,4 +113,63 @@ namespace util
 			return false;
 		}
 	}
+
+	bool IsAdmin(int& errorCode)
+	{
+		BOOL isAdmin = FALSE;
+
+		if (winapi::IsAppRunningAsAdminMode(&isAdmin) != ERROR_SUCCESS)
+		{
+			errorCode = EXIT_FAILURE;
+			return false;
+		}
+
+		if (!isAdmin)
+		{
+			errorCode = EXIT_FAILURE;
+			return false;
+		}
+
+		return true;
+	}
+}
+
+namespace winapi
+{
+	DWORD IsAppRunningAsAdminMode(PBOOL IsAdmin)
+	{
+		DWORD dwError = ERROR_SUCCESS;
+		PSID pAdministratorsGroup = nullptr;
+
+		// Allocate and initialize a SID of the administrators group.
+		SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
+		if (!AllocateAndInitializeSid(
+			&NtAuthority,
+			2,
+			SECURITY_BUILTIN_DOMAIN_RID,
+			DOMAIN_ALIAS_RID_ADMINS,
+			0, 0, 0, 0, 0, 0,
+			&pAdministratorsGroup))
+		{
+			dwError = GetLastError();
+			goto Cleanup;
+		}
+
+		// Determine whether the SID of administrators group is enabled in 
+		// the primary access token of the process.
+		if (!CheckTokenMembership(nullptr, pAdministratorsGroup, IsAdmin))
+		{
+			dwError = GetLastError();
+		}
+
+	Cleanup:
+		// Centralized cleanup for all allocated resources.
+		if (pAdministratorsGroup)
+		{
+			FreeSid(pAdministratorsGroup);
+			pAdministratorsGroup = nullptr;
+		}
+
+		return dwError;
+	}
 }
