@@ -30,7 +30,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 	BSTR bstrName = nullptr; // user name
 	BSTR bstrPwd = nullptr; // user password
 
-	BSTR bstrAuthor = SysAllocString(NV_TASK_AUTHOR);
+	BSTR bstrAuthor = SysAllocString(ConvertAnsiToWide(NV_TASK_AUTHOR).c_str());
 
 	// clean up all resources when going out of scope
 	sg::make_scope_guard([bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart]() noexcept
