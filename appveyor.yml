@@ -8,6 +8,8 @@ configuration:
 - Release
 install:
 - cmd: git submodule -q update --init
+- cmd: vcpkg integrate install
+- cmd: vcpkg update
 - ps: Setup-VS2022
 before_build:
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\vīcĭus.vcxproj" --vcxproj.inf-time-stamp

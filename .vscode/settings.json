@@ -1,12 +1,15 @@
 {
     "cSpell.words": [
         "Argh",
+        "BUILDBOT",
         "libcurl",
         "norestart",
         "nŏvīcĭus",
         "RUDA",
         "runtimes",
         "SFML",
-        "vīcĭus"
+        "vcpkg",
+        "vīcĭus",
+        "vpatch"
     ]
 }
