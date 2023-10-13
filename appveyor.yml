@@ -4,6 +4,7 @@ image: Windows
 platform:
 - x86
 - x64
+- ARM64
 configuration:
 - Release
 test: off
