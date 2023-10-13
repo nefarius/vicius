@@ -88,6 +88,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	bool isCancelDisabled = false;
 	STARTUPINFOA info = { sizeof(STARTUPINFOA) };
 	PROCESS_INFORMATION updateProcessInfo{};
+	DWORD status = ERROR_SUCCESS;
 
 	sf::Vector2i grabbedOffset;
 	auto grabbedWindow = false;
@@ -411,9 +412,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 				break;
 			case DownloadAndInstallStep::InstallSucceeded:
 
-				ImGui::Text("Done!");
+				//ImGui::Text("Done!");
 
 				// TODO: implement me
+
+				++currentPage;
 
 				break;
 			}
@@ -425,6 +428,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		case WizardPage::Finish:
 		{
 			// TODO: implement me
+
+			window.close();
+
 			break;
 		}
 		}
@@ -449,5 +455,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	ImGui::SFML::Shutdown();
 
-	return 0;
+	return status;
 }
