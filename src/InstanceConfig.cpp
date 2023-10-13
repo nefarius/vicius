@@ -296,6 +296,8 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 
 		break;
 	}
+	case ProductVersionDetectionMethod::Invalid:
+		return false;
 	}
 
 	return false;
