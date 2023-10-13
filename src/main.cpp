@@ -37,6 +37,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	if (!util::ParseCommandLineArguments(cmdl))
 	{
 		// TODO: better fallback action?
+		spdlog::critical("Failed to parse command line arguments");
 		return EXIT_FAILURE;
 	}
 
@@ -54,6 +55,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	if (!cfg.RequestUpdateInfo())
 	{
 		// TODO: add fallback actions
+		spdlog::critical("Failed to get server response");
 		return ERROR_WINHTTP_INVALID_SERVER_RESPONSE;
 	}
 
@@ -66,12 +68,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	if (!cfg.IsInstalledVersionOutdated(isOutdated))
 	{
 		// TODO: add error handling
+		spdlog::critical("Failed to detect installed product version");
 		return ERROR_NO_DATA_DETECTED;
 	}
 
 	// we're up2date
 	if (!isOutdated)
 	{
+		spdlog::info("Installed software is up-to-date");
 		return ERROR_SUCCESS;
 	}
 
@@ -314,6 +318,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			// download has finished, advance step
 			if (instStep == DownloadAndInstallStep::Downloading && hasFinished)
 			{
+				spdlog::debug("Download finished with status code {}", statusCode);
 				instStep = statusCode == 200
 					? DownloadAndInstallStep::DownloadSucceeded
 					: DownloadAndInstallStep::DownloadFailed;
@@ -361,10 +366,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 					&updateProcessInfo
 				))
 				{
+					spdlog::error("Failed to launch {}, error {}",
+						tempFile.string(), GetLastError());
 					instStep = DownloadAndInstallStep::InstallLaunchFailed;
 				}
 				else
 				{
+					spdlog::debug("Setup process launched successfully");
 					instStep = DownloadAndInstallStep::InstallRunning;
 				}
 
@@ -401,12 +409,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 					if (release.exitCode.skipCheck)
 					{
+						spdlog::debug("Skipping error code check as per configuration");
 						instStep = DownloadAndInstallStep::InstallSucceeded;
 						break;
 					}
 
 					if (std::ranges::find(release.exitCode.successCodes, exitCode) != release.exitCode.successCodes.end())
 					{
+						spdlog::debug("Exit code {} marked as success-condition", exitCode);
 						instStep = DownloadAndInstallStep::InstallSucceeded;
 						break;
 					}
