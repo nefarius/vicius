@@ -86,6 +86,9 @@ void ui::ApplyImGuiStyleDark()
 	style.ChildRounding = 4;
 }
 
+/**
+ * \brief Loads fonts used in UI and Markdown widget from embedded resources.
+ */
 void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels)
 {
 	ImFontConfig font_cfg;
