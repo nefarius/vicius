@@ -74,3 +74,4 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [Magic Enum C++](https://github.com/Neargye/magic_enum)
 - [Semantic Versioning for modern C++](https://github.com/Neargye/semver)
 - [WinReg](https://github.com/GiovanniDicanio/WinReg)
+- [Portable C++ Hashing Library](https://github.com/stbrumme/hash-library)
