@@ -55,6 +55,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Support closing and restarting applications before and after the main update
 - [ ] Support running prerequisites installation before main update
 - [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
+- [ ] Add some logging
 
 ## Sources & 3rd party credits
 
