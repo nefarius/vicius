@@ -416,6 +416,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 				// TODO: implement me
 
+				status = ERROR_SUCCESS;
 				++currentPage;
 
 				break;
@@ -455,5 +456,5 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	ImGui::SFML::Shutdown();
 
-	return status;
+	return static_cast<int>(status);
 }
