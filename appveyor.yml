@@ -8,6 +8,11 @@ platform:
 configuration:
 - Release
 test: off
+skip_commits:
+  files:
+    - assets/*
+    - '**/*.md'
+    - '**/*.json'
 install:
 - cmd: git submodule -q update --init
 - cmd: vcpkg integrate install
