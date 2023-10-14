@@ -27,7 +27,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 	// randomize start time to avoid DDoS-ing the server on big installations
 	std::random_device rd;
 	std::mt19937 rng(rd());
-	std::uniform_int_distribution<int> uniH(8, 22);
+	std::uniform_int_distribution<int> uniH(6, 22);
 	std::uniform_int_distribution<int> uniM(1, 59);
 	std::stringstream ss;
 	ss << "2023-01-01T"
@@ -136,8 +136,8 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 
 		return std::make_tuple(hr, "Cannot get identification info");
 	}
-
-	//  Get the trigger collection to insert the weekly trigger.
+	
+	// Get the trigger collection to insert the weekly trigger.
 	ITriggerCollection* pTriggerCollection = nullptr;
 	hr = pTask->get_Triggers(&pTriggerCollection);
 
@@ -162,7 +162,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 	}
 
 	IDailyTrigger* pDailyTrigger = nullptr;
-	hr = pTrigger->QueryInterface(IID_IDailyTrigger, (void**)&pDailyTrigger);
+	hr = pTrigger->QueryInterface(IID_PPV_ARGS(&pDailyTrigger));
 	pTrigger->Release();
 
 	if (FAILED(hr))
@@ -195,7 +195,8 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 	}
 
 	//  Set the time when the trigger is ended
-	/* hr = pDailyTrigger->put_EndBoundary(bstrEnd);
+	/* TODO: we do not use an end date so it never expires
+	hr = pDailyTrigger->put_EndBoundary(bstrEnd);
 
 	if (FAILED(hr))
 	{
@@ -235,7 +236,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 
 	IExecAction* pExecAction = nullptr;
 	//  QI for the executable task pointer.
-	hr = pAction->QueryInterface(IID_IExecAction, (void**)&pExecAction);
+	hr = pAction->QueryInterface(IID_PPV_ARGS(&pExecAction));
 	pAction->Release();
 
 	if (FAILED(hr))
@@ -248,6 +249,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 
 	//  Set the path of the executable to bstrExecutablePath.
 	hr = pExecAction->put_Path(bstrExecutablePath);
+	// TODO: add launch arguments
 
 	pExecAction->Release();
 
@@ -258,6 +260,30 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 
 		return std::make_tuple(hr, "Cannot add path for executable action");
 	}
+
+	// Get task settings
+	ITaskSettings* pTaskSettings = nullptr;
+	hr = pTask->get_Settings(&pTaskSettings);
+
+	if (FAILED(hr))
+	{
+		pRootFolder->Release();
+		pTask->Release();
+
+		return std::make_tuple(hr, "Cannot get task settings");
+	}
+
+	// Allow task to be run when run schedule was missed
+	hr = pTaskSettings->put_StartWhenAvailable(TRUE);
+	if (FAILED(hr))
+	{
+		pRootFolder->Release();
+		pTask->Release();
+
+		return std::make_tuple(hr, "Failed to set start when available");
+	}
+
+	pTaskSettings->Release();
 
 	//  Register the task in the root folder.
 	IRegisteredTask* pRegisteredTask = nullptr;
