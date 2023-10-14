@@ -31,10 +31,10 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 	std::uniform_int_distribution<int> uniM(1, 59);
 	std::stringstream ss;
 	ss << "2023-01-01T"
-	<< std::setw(2) << std::setfill('0') << uniH(rng)
-	<< ":"
-	<< std::setw(2) << std::setfill('0') << uniM(rng)
-	<< ":00";
+		<< std::setw(2) << std::setfill('0') << uniH(rng)
+		<< ":"
+		<< std::setw(2) << std::setfill('0') << uniM(rng)
+		<< ":00";
 	const std::string timeStr = ss.str();
 
 	// start boundary - format should be YYYY-MM-DDTHH:MM:SS(+-)(timezone).
@@ -136,7 +136,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 
 		return std::make_tuple(hr, "Cannot get identification info");
 	}
-	
+
 	// Get the trigger collection to insert the weekly trigger.
 	ITriggerCollection* pTriggerCollection = nullptr;
 	hr = pTask->get_Triggers(&pTriggerCollection);

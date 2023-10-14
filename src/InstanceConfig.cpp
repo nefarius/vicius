@@ -125,8 +125,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInsta
 	// first try to build "manufacturer/product" and use filename as 
 	// fallback if extraction via regex didn't yield any results
 	tenantSubPath = (!manufacturer.empty() && !product.empty())
-		? std::format("{}/{}", manufacturer, product)
-		: appFilename;
+		                ? std::format("{}/{}", manufacturer, product)
+		                : appFilename;
 	spdlog::debug("tenantSubPath = {}", tenantSubPath);
 
 	updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
@@ -144,216 +144,216 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 
 	switch (shared.detectionMethod)
 	{
-		//
-		// Detect product version via registry key and value
-		// 
+	//
+	// Detect product version via registry key and value
+	// 
 	case ProductVersionDetectionMethod::RegistryValue:
-	{
-		const auto& cfg = shared.GetRegistryValueConfig();
-		HKEY hive = nullptr;
-
-		switch (cfg.hive)
 		{
-		case RegistryHive::HKCU:
-			hive = HKEY_CURRENT_USER;
-			break;
-		case RegistryHive::HKLM:
-			hive = HKEY_LOCAL_MACHINE;
-			break;
-		case RegistryHive::HKCR:
-			hive = HKEY_CLASSES_ROOT;
-			break;
-		case RegistryHive::Invalid:
-			return false;
+			const auto& cfg = shared.GetRegistryValueConfig();
+			HKEY hive = nullptr;
+
+			switch (cfg.hive)
+			{
+			case RegistryHive::HKCU:
+				hive = HKEY_CURRENT_USER;
+				break;
+			case RegistryHive::HKLM:
+				hive = HKEY_LOCAL_MACHINE;
+				break;
+			case RegistryHive::HKCR:
+				hive = HKEY_CLASSES_ROOT;
+				break;
+			case RegistryHive::Invalid:
+				return false;
+			}
+
+			const auto subKey = ConvertAnsiToWide(cfg.key);
+			const auto valueName = ConvertAnsiToWide(cfg.value);
+
+			winreg::RegKey key;
+
+			if (const winreg::RegResult result = key.TryOpen(hive, subKey, KEY_READ); !result)
+			{
+				spdlog::error("Failed to open {}\\{} key", magic_enum::enum_name(cfg.hive), cfg.key);
+				return false;
+			}
+
+			const auto& resource = key.TryGetStringValue(valueName);
+
+			if (!resource.IsValid())
+			{
+				spdlog::error("Failed to access value {}", cfg.value);
+				return false;
+			}
+
+			const std::wstring value = resource.GetValue();
+
+			try
+			{
+				const semver::version localVersion{ConvertWideToANSI(value)};
+
+				isOutdated = release.GetSemVersion() > localVersion;
+			}
+			catch (...)
+			{
+				spdlog::error("Failed to convert value {} into SemVer", ConvertWideToANSI(value));
+				return false;
+			}
+
+			return true;
 		}
-
-		const auto subKey = ConvertAnsiToWide(cfg.key);
-		const auto valueName = ConvertAnsiToWide(cfg.value);
-
-		winreg::RegKey key;
-
-		if (const winreg::RegResult result = key.TryOpen(hive, subKey, KEY_READ); !result)
-		{
-			spdlog::error("Failed to open {}\\{} key", magic_enum::enum_name(cfg.hive), cfg.key);
-			return false;
-		}
-
-		const auto& resource = key.TryGetStringValue(valueName);
-
-		if (!resource.IsValid())
-		{
-			spdlog::error("Failed to access value {}", cfg.value);
-			return false;
-		}
-
-		const std::wstring value = resource.GetValue();
-
-		try
-		{
-			const semver::version localVersion{ ConvertWideToANSI(value) };
-
-			isOutdated = release.GetSemVersion() > localVersion;
-		}
-		catch (...)
-		{
-			spdlog::error("Failed to convert value {} into SemVer", ConvertWideToANSI(value));
-			return false;
-		}
-
-		return true;
-	}
 	//
 	// Detect product by comparing version resource
 	// 
 	case ProductVersionDetectionMethod::FileVersion:
-	{
-		const auto& cfg = shared.GetFileVersionConfig();
-
-		try
 		{
-			isOutdated = release.GetSemVersion() > util::GetVersionFromFile(cfg.path);
-		}
-		catch (...)
-		{
-			spdlog::error("Failed to get version resource from {}", cfg.path);
-			return false;
-		}
+			const auto& cfg = shared.GetFileVersionConfig();
 
-		return true;
-	}
+			try
+			{
+				isOutdated = release.GetSemVersion() > util::GetVersionFromFile(cfg.path);
+			}
+			catch (...)
+			{
+				spdlog::error("Failed to get version resource from {}", cfg.path);
+				return false;
+			}
+
+			return true;
+		}
 	//
 	// Detect product by comparing expected file sizes
 	// 
 	case ProductVersionDetectionMethod::FileSize:
-	{
-		const auto& cfg = shared.GetFileSizeConfig();
-
-		try
 		{
-			const std::filesystem::path file{ cfg.path };
+			const auto& cfg = shared.GetFileSizeConfig();
 
-			isOutdated = file_size(file) != cfg.size;
-		}
-		catch (...)
-		{
-			spdlog::error("Failed to get file size from {}", cfg.path);
-			return false;
-		}
+			try
+			{
+				const std::filesystem::path file{cfg.path};
 
-		return true;
-	}
+				isOutdated = file_size(file) != cfg.size;
+			}
+			catch (...)
+			{
+				spdlog::error("Failed to get file size from {}", cfg.path);
+				return false;
+			}
+
+			return true;
+		}
 	//
 	// Detect product by hashing a given file checksum
 	// 
 	case ProductVersionDetectionMethod::FileChecksum:
-	{
-		const auto& cfg = shared.GetFileChecksumConfig();
-
-		if (!std::filesystem::exists(cfg.path))
 		{
-			spdlog::error("File {} doesn't exist", cfg.path);
-			return false;
-		}
+			const auto& cfg = shared.GetFileChecksumConfig();
 
-		std::ifstream file(cfg.path, std::ios::binary);
-
-		if (!file.is_open())
-		{
-			spdlog::error("Failed to open file {}", cfg.path);
-			return false;
-		}
-
-		constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
-
-		switch (cfg.algorithm)
-		{
-		case ChecksumAlgorithm::MD5:
-		{
-			MD5 alg;
-
-			std::vector<char> buffer(chunkSize);
-			while (!file.eof())
+			if (!std::filesystem::exists(cfg.path))
 			{
-				file.read(buffer.data(), buffer.size());
-				std::streamsize bytesRead = file.gcount();
-
-				alg.add(buffer.data(), bytesRead);
-
-				if (bytesRead < chunkSize && !file.eof())
-				{
-					if (file.fail())
-					{
-						spdlog::error("Failed to read file {} to end", cfg.path);
-						return false;
-					}
-				}
+				spdlog::error("File {} doesn't exist", cfg.path);
+				return false;
 			}
 
-			isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+			std::ifstream file(cfg.path, std::ios::binary);
 
-			return true;
-		}
-		case ChecksumAlgorithm::SHA1:
-		{
-			SHA1 alg;
-
-			std::vector<char> buffer(chunkSize);
-			while (!file.eof())
+			if (!file.is_open())
 			{
-				file.read(buffer.data(), buffer.size());
-				std::streamsize bytesRead = file.gcount();
-
-				alg.add(buffer.data(), bytesRead);
-
-				if (bytesRead < chunkSize && !file.eof())
-				{
-					if (file.fail())
-					{
-						spdlog::error("Failed to read file {} to end", cfg.path);
-						return false;
-					}
-				}
+				spdlog::error("Failed to open file {}", cfg.path);
+				return false;
 			}
 
-			isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+			constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
 
-			return true;
-		}
-		case ChecksumAlgorithm::SHA256:
-		{
-			SHA256 alg;
-
-			std::vector<char> buffer(chunkSize);
-			while (!file.eof())
+			switch (cfg.algorithm)
 			{
-				file.read(buffer.data(), buffer.size());
-				std::streamsize bytesRead = file.gcount();
-
-				alg.add(buffer.data(), bytesRead);
-
-				if (bytesRead < chunkSize && !file.eof())
+			case ChecksumAlgorithm::MD5:
 				{
-					if (file.fail())
+					MD5 alg;
+
+					std::vector<char> buffer(chunkSize);
+					while (!file.eof())
 					{
-						spdlog::error("Failed to read file {} to end", cfg.path);
-						return false;
+						file.read(buffer.data(), buffer.size());
+						std::streamsize bytesRead = file.gcount();
+
+						alg.add(buffer.data(), bytesRead);
+
+						if (bytesRead < chunkSize && !file.eof())
+						{
+							if (file.fail())
+							{
+								spdlog::error("Failed to read file {} to end", cfg.path);
+								return false;
+							}
+						}
 					}
+
+					isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+
+					return true;
 				}
+			case ChecksumAlgorithm::SHA1:
+				{
+					SHA1 alg;
+
+					std::vector<char> buffer(chunkSize);
+					while (!file.eof())
+					{
+						file.read(buffer.data(), buffer.size());
+						std::streamsize bytesRead = file.gcount();
+
+						alg.add(buffer.data(), bytesRead);
+
+						if (bytesRead < chunkSize && !file.eof())
+						{
+							if (file.fail())
+							{
+								spdlog::error("Failed to read file {} to end", cfg.path);
+								return false;
+							}
+						}
+					}
+
+					isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+
+					return true;
+				}
+			case ChecksumAlgorithm::SHA256:
+				{
+					SHA256 alg;
+
+					std::vector<char> buffer(chunkSize);
+					while (!file.eof())
+					{
+						file.read(buffer.data(), buffer.size());
+						std::streamsize bytesRead = file.gcount();
+
+						alg.add(buffer.data(), bytesRead);
+
+						if (bytesRead < chunkSize && !file.eof())
+						{
+							if (file.fail())
+							{
+								spdlog::error("Failed to read file {} to end", cfg.path);
+								return false;
+							}
+						}
+					}
+
+					isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+
+					return true;
+				}
+			case ChecksumAlgorithm::Invalid:
+				spdlog::error("Invalid hashing algorithm specified");
+				return false;
 			}
 
-			isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+			file.close();
 
-			return true;
+			break;
 		}
-		case ChecksumAlgorithm::Invalid:
-			spdlog::error("Invalid hashing algorithm specified");
-			return false;
-		}
-
-		file.close();
-
-		break;
-	}
 	case ProductVersionDetectionMethod::Invalid:
 		spdlog::error("Invalid detection method specified");
 		return false;
@@ -361,4 +361,25 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 
 	spdlog::error("No detection method matched");
 	return false;
+}
+
+bool models::InstanceConfig::RegisterAutostart() const
+{
+	winreg::RegKey key;
+	const auto subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+
+	if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey); !result)
+	{
+		spdlog::error("Failed to open {}", ConvertWideToANSI(subKey));
+		return false;
+	}
+
+	if (const auto writeResult = key.TrySetStringValue(ConvertAnsiToWide(appFilename),
+	                                                   ConvertAnsiToWide(appPath.string())); !writeResult)
+	{
+		spdlog::error("Failed to write autostart value");
+		return false;
+	}
+
+	return true;
 }

@@ -190,6 +190,8 @@ namespace models
 
 		std::tuple<HRESULT, const char *> CreateScheduledTask() const;
 
+		bool RegisterAutostart() const;
+
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{
 		}

@@ -52,6 +52,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	// updater configuration, defaults and app state
 	models::InstanceConfig cfg(hInstance);
 
+	cfg.RegisterAutostart();
+
 	cfg.CreateScheduledTask();
 
 	if (!cfg.RequestUpdateInfo())
