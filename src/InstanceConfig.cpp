@@ -24,7 +24,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
 	const auto logLevel = magic_enum::enum_cast<spdlog::level::level_enum>(cmdl("--log-level").str());
 
-	auto sink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
+	auto sink = std::make_shared<spdlog::sinks::msvc_sink_mt>(false);
 
 	// override log level, if provided by CLI
 	if (logLevel.has_value())
@@ -51,6 +51,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 	}
 
 	set_default_logger(logger);
+
+	spdlog::debug("Initializing updater instance (PID: {})", GetCurrentProcessId());
 
 	//
 	// Defaults and embedded stuff
