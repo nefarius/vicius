@@ -190,7 +190,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 	}
 
 	//  ------------------------------------------------------
-	//  Add an Action to the task. This task will execute vParams.bstrExecutablePath.
+	//  Add an Action to the task. This task will execute bstrExecutablePath.
 	IActionCollection* pActionCollection = nullptr;
 
 	//  Get the task action collection pointer.
@@ -230,7 +230,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 		return std::make_tuple(hr, "QueryInterface call failed on IExecAction");
 	}
 
-	//  Set the path of the executable to vParams.bstrExecutablePath.
+	//  Set the path of the executable to bstrExecutablePath.
 	hr = pExecAction->put_Path(bstrExecutablePath);
 
 	pExecAction->Release();
