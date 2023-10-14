@@ -58,6 +58,8 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Add some logging
 - [ ] Tidy up and improve includes
 - [ ] Implement Task Scheduler (de-)registration
+- [ ] Implement machine-wide registration  
+      Currently only the user executing the updater will run registrations, which is sufficient for most cases
 
 ## Sources & 3rd party credits
 
