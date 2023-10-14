@@ -4,6 +4,7 @@
 #include <scope_guard.hpp>
 
 #include <tuple>
+#include <random>
 
 #include <tchar.h>
 #include <comdef.h>
@@ -22,9 +23,24 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 	BSTR bstrExecutablePath = SysAllocString(ConvertAnsiToWide(appPath.string()).c_str());
 	// string id
 	BSTR bstrId = SysAllocString(L"DailyTrigger");
+
+	// randomize start time to avoid DDoS-ing the server on big installations
+	std::random_device rd;
+	std::mt19937 rng(rd());
+	std::uniform_int_distribution<int> uniH(8, 22);
+	std::uniform_int_distribution<int> uniM(1, 59);
+	std::stringstream ss;
+	ss << "2023-01-01T"
+	<< std::setw(2) << std::setfill('0') << uniH(rng)
+	<< ":"
+	<< std::setw(2) << std::setfill('0') << uniM(rng)
+	<< ":00";
+	const std::string timeStr = ss.str();
+
 	// start boundary - format should be YYYY-MM-DDTHH:MM:SS(+-)(timezone).
-	BSTR bstrStart = SysAllocString(L"2023-01-01T12:00:00"); // TODO: make configurable
-	BSTR bstrEnd = SysAllocString(L"2053-01-01T12:00:00"); // end boundary - ""
+	BSTR bstrStart = SysAllocString(ConvertAnsiToWide(timeStr).c_str()); // TODO: make configurable
+	// not used currently
+	BSTR bstrEnd = SysAllocString(L"2153-01-01T12:00:00"); // end boundary - ""
 	BSTR bstrAuthor = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
 
 	// clean up all resources when going out of scope
@@ -179,7 +195,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 	}
 
 	//  Set the time when the trigger is ended
-	hr = pDailyTrigger->put_EndBoundary(bstrEnd);
+	/* hr = pDailyTrigger->put_EndBoundary(bstrEnd);
 
 	if (FAILED(hr))
 	{
@@ -187,7 +203,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 		pTask->Release();
 
 		return std::make_tuple(hr, "Cannot put the end boundary");
-	}
+	} */
 
 	//  ------------------------------------------------------
 	//  Add an Action to the task. This task will execute bstrExecutablePath.

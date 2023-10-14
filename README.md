@@ -33,6 +33,8 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
 
 Non-exhaustive list of things open or in-progress...
 
+### Must-haves
+
 - [ ] Finalize REST API design
 - [ ] Finalize local updater config JSON format
 - [ ] Add self-updater logic
@@ -44,22 +46,25 @@ Non-exhaustive list of things open or in-progress...
   - [ ] `WizardPage::MultipleVersionsOverview`
   - [x] `WizardPage::DownloadAndInstall`
   - [ ] ...
-- [ ] Design Beta-Release support
 - [ ] Specify supported Command Line Arguments
-- [ ] Make app icon customizable
-- [ ] Add "Light" theme
-- [ ] Add embedded images support for Markdown widget
 - [x] Implement Product Version detection
   - [x] `RegistryValue`
   - [x] `FileVersion`
   - [x] `FileSize`
   - [x] `FileChecksum`
+- [ ] Add some logging
+- [ ] Implement Task Scheduler (de-)registration
+
+### Nice-to-haves
+
+- [ ] Design Beta-Release support
+- [ ] Make app icon customizable
+- [ ] Add "Light" theme
+- [ ] Add embedded images support for Markdown widget
 - [ ] Support closing and restarting applications before and after the main update
 - [ ] Support running prerequisites installation before main update
 - [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
-- [ ] Add some logging
 - [ ] Tidy up and improve includes
-- [ ] Implement Task Scheduler (de-)registration
 - [ ] Implement machine-wide registration  
       Currently only the user executing the updater will run registrations, which is sufficient for most cases
 
