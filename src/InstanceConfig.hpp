@@ -188,7 +188,7 @@ namespace models
 		 */
 		bool IsInstalledVersionOutdated(bool& isOutdated);
 
-		std::tuple<HRESULT, const char *> CreateScheduledTask() const;
+		std::tuple<HRESULT, const char*> CreateScheduledTask(const std::string& launchArgs = "--background") const;
 
 		/**
 		 * \brief Registers the updater executable in current users' autostart.

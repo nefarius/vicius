@@ -15,7 +15,7 @@
 #pragma comment(lib, "comsupp.lib")
 
 
-std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() const
+std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask(const std::string& launchArgs) const
 {
 	// task name
 	BSTR bstrTaskName = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
@@ -42,10 +42,11 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 	// not used currently
 	BSTR bstrEnd = SysAllocString(L"2153-01-01T12:00:00"); // end boundary - ""
 	BSTR bstrAuthor = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
+	BSTR bstrLaunchArgs = SysAllocString(ConvertAnsiToWide(launchArgs).c_str());
 
 	// clean up all resources when going out of scope
 	sg::make_scope_guard(
-		[bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart, bstrEnd]() noexcept
+		[bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart, bstrEnd, bstrLaunchArgs]() noexcept
 		{
 			if (bstrTaskName) SysFreeString(bstrTaskName);
 			if (bstrExecutablePath) SysFreeString(bstrExecutablePath);
@@ -53,6 +54,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 			if (bstrAuthor) SysFreeString(bstrAuthor);
 			if (bstrStart) SysFreeString(bstrStart);
 			if (bstrEnd) SysFreeString(bstrEnd);
+			if (bstrLaunchArgs)SysFreeString(bstrLaunchArgs);
 
 			CoUninitialize();
 		});
@@ -249,7 +251,17 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 
 	//  Set the path of the executable to bstrExecutablePath.
 	hr = pExecAction->put_Path(bstrExecutablePath);
-	// TODO: add launch arguments
+
+	if (FAILED(hr))
+	{
+		pRootFolder->Release();
+		pTask->Release();
+
+		return std::make_tuple(hr, "Cannot add path for executable action");
+	}
+
+	// set launch arguments
+	hr = pExecAction->put_Arguments(bstrLaunchArgs);
 
 	pExecAction->Release();
 
@@ -258,7 +270,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 		pRootFolder->Release();
 		pTask->Release();
 
-		return std::make_tuple(hr, "Cannot add path for executable action");
+		return std::make_tuple(hr, "Cannot launch arguments for executable action");
 	}
 
 	// Get task settings

@@ -30,8 +30,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	UNREFERENCED_PARAMETER(szCmdLine);
 	UNREFERENCED_PARAMETER(iCmdShow);
 
-#pragma region CLI parsing
-
 	argh::parser cmdl;
 
 	if (!util::ParseCommandLineArguments(cmdl))
@@ -41,20 +39,44 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		return EXIT_FAILURE;
 	}
 
-#pragma endregion
-
-#pragma region CLI processing
-
-	// TODO: implement me
-
-#pragma endregion
-
 	// updater configuration, defaults and app state
 	models::InstanceConfig cfg(hInstance);
+	
+	// actions to perform when install is instructed
+	if (cmdl[{ "--install" }])
+	{
+		if (const auto autoRet = cfg.RegisterAutostart(); !autoRet)
+		{
+			// TODO: better fallback action?
+			spdlog::critical("Failed to register in autostart");
+			return EXIT_FAILURE;
+		}
 
-	cfg.RegisterAutostart();
+		if (const auto taskRet = cfg.CreateScheduledTask(); FAILED(std::get<0>(taskRet)))
+		{
+			// TODO: better fallback action?
+			spdlog::critical("Failed to (re-)create Scheduled Task, error: {}", std::get<1>(taskRet));
+			return EXIT_FAILURE;
+		}
+	}
 
-	cfg.CreateScheduledTask();
+	// actions to perform when running in autostart
+	if (cmdl[{ "--autostart" }])
+	{
+		if (const auto ret = cfg.CreateScheduledTask(); FAILED(std::get<0>(ret)))
+		{
+			spdlog::error("Failed to (re-)create Scheduled Task, error: {}", std::get<1>(ret));
+
+			// TODO: anything else we can do in this case?
+		}
+	}
+
+	// actions to perform when run by Task Scheduler
+	if (cmdl[{ "--background" }])
+	{
+		// TODO: implement me
+	}
+
 
 	if (!cfg.RequestUpdateInfo())
 	{
