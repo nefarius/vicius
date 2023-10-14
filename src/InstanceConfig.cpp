@@ -22,20 +22,32 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 	// Setup logger
 	// 
 
-	auto sink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
-	auto logger = std::make_shared<spdlog::logger>("updater", sink);
+	const auto logLevel = magic_enum::enum_cast<spdlog::level::level_enum>(cmdl("--log-level").str());
 
-	logger->flush_on(spdlog::level::info);
+	auto sink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
 
 	// override log level, if provided by CLI
-	if (const auto logLevel = magic_enum::enum_cast<spdlog::level::level_enum>(cmdl("--log-level").str()); logLevel.
-		has_value())
+	if (logLevel.has_value())
+	{
+		sink->set_level(logLevel.value());
+	}
+	else
+	{
+		sink->set_level(spdlog::level::info);
+	}
+
+	auto logger = std::make_shared<spdlog::logger>("updater", sink);
+	
+	// override log level, if provided by CLI
+	if (logLevel.has_value())
 	{
 		logger->set_level(logLevel.value());
+		logger->flush_on(logLevel.value());
 	}
 	else
 	{
 		logger->set_level(spdlog::level::info);
+		logger->flush_on(spdlog::level::info);
 	}
 
 	set_default_logger(logger);
