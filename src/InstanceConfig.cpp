@@ -2,8 +2,6 @@
 #include "InstanceConfig.hpp"
 
 #include <fstream>
-#include <cctype>
-#include <algorithm>
 
 #include <winreg/WinReg.hpp>
 #include <neargye/semver.hpp>
@@ -11,12 +9,36 @@
 #include <hash-library/sha1.h>
 #include <hash-library/sha256.h>
 
+#include <spdlog/sinks/msvc_sink.h>
+
 #include <magic_enum.hpp>
 
 
-models::InstanceConfig::InstanceConfig(HINSTANCE hInstance) : appInstance(hInstance), remote()
+models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) : appInstance(hInstance), remote()
 {
 	RestClient::init();
+
+	//
+	// Setup logger
+	// 
+
+	auto sink = std::make_shared<spdlog::sinks::msvc_sink_mt>();
+	auto logger = std::make_shared<spdlog::logger>("updater", sink);
+
+	logger->flush_on(spdlog::level::info);
+
+	// override log level, if provided by CLI
+	if (const auto logLevel = magic_enum::enum_cast<spdlog::level::level_enum>(cmdl("--log-level").str()); logLevel.
+		has_value())
+	{
+		logger->set_level(logLevel.value());
+	}
+	else
+	{
+		logger->set_level(spdlog::level::info);
+	}
+
+	set_default_logger(logger);
 
 	//
 	// Defaults and embedded stuff
