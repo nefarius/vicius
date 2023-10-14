@@ -9,11 +9,9 @@
 #include <comdef.h>
 #include <ole2.h>
 #include <taskschd.h>
-#include <wincred.h>
 
 #pragma comment(lib, "taskschd.lib")
 #pragma comment(lib, "comsupp.lib")
-#pragma comment(lib, "credui.lib")
 
 
 std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() const
@@ -27,88 +25,18 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 	// start boundary - format should be YYYY-MM-DDTHH:MM:SS(+-)(timezone).
 	BSTR bstrStart = SysAllocString(L"2023-01-01T12:00:00"); // TODO: make configurable
 	BSTR bstrEnd = SysAllocString(L"2053-01-01T12:00:00"); // end boundary - ""
-	BSTR bstrName = nullptr; // user name
-	BSTR bstrPwd = nullptr; // user password
-
-	BSTR bstrAuthor = SysAllocString(ConvertAnsiToWide(NV_TASK_AUTHOR).c_str());
-
-	CREDUI_INFO cui;
-	TCHAR pszName[CREDUI_MAX_USERNAME_LENGTH] = _T("");
-	TCHAR pszPwd[CREDUI_MAX_PASSWORD_LENGTH] = _T("");
-	BOOL fSave;
-
-	cui.cbSize = sizeof(CREDUI_INFO);
-	cui.hwndParent = nullptr;
-	//  Ensure that MessageText and CaptionText identify
-	//  what credentials to use and which application requires them.
-	cui.pszMessageText = TEXT("Account information for task registration:");
-	cui.pszCaptionText = TEXT("Enter Account Information for Task Registration");
-	cui.hbmBanner = nullptr;
-	fSave = FALSE;
-
-	if (const DWORD dwErr = CredUIPromptForCredentials(
-		&cui, //  CREDUI_INFO structure
-		TEXT(""), //  Target for credentials
-		nullptr, //  Reserved
-		0, //  Reason
-		pszName, //  User name
-		CREDUI_MAX_USERNAME_LENGTH, //  Max number for user name
-		pszPwd, //  Password
-		CREDUI_MAX_PASSWORD_LENGTH, //  Max number for password
-		&fSave, //  State of save check box
-		CREDUI_FLAGS_GENERIC_CREDENTIALS | //  Flags
-		CREDUI_FLAGS_ALWAYS_SHOW_UI |
-		CREDUI_FLAGS_DO_NOT_PERSIST))
-	{
-		return std::make_tuple(HRESULT_FROM_WIN32(dwErr), "User credentials submission failed");
-	}
-
-	bstrName = SysAllocString(pszName);
-	bstrPwd = SysAllocString(pszPwd);
+	BSTR bstrAuthor = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
 
 	// clean up all resources when going out of scope
 	sg::make_scope_guard(
-		[bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart, bstrEnd, bstrName, bstrPwd]() noexcept
+		[bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart, bstrEnd]() noexcept
 		{
-			if (bstrTaskName)
-			{
-				SysFreeString(bstrTaskName);
-			}
-
-			if (bstrExecutablePath)
-			{
-				SysFreeString(bstrExecutablePath);
-			}
-
-			if (bstrId)
-			{
-				SysFreeString(bstrId);
-			}
-
-			if (bstrAuthor)
-			{
-				SysFreeString(bstrAuthor);
-			}
-
-			if (bstrStart)
-			{
-				SysFreeString(bstrStart);
-			}
-
-			if (bstrEnd)
-			{
-				SysFreeString(bstrEnd);
-			}
-
-			if (bstrName)
-			{
-				SysFreeString(bstrName);
-			}
-
-			if (bstrPwd)
-			{
-				SysFreeString(bstrPwd);
-			}
+			if (bstrTaskName) SysFreeString(bstrTaskName);
+			if (bstrExecutablePath) SysFreeString(bstrExecutablePath);
+			if (bstrId) SysFreeString(bstrId);
+			if (bstrAuthor) SysFreeString(bstrAuthor);
+			if (bstrStart) SysFreeString(bstrStart);
+			if (bstrEnd) SysFreeString(bstrEnd);
 
 			CoUninitialize();
 		});
@@ -321,9 +249,9 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask() c
 		bstrTaskName,
 		pTask,
 		TASK_CREATE_OR_UPDATE,
-		_variant_t(bstrName),
-		_variant_t(bstrPwd),
-		TASK_LOGON_PASSWORD,
+		_variant_t(),
+		_variant_t(),
+		TASK_LOGON_INTERACTIVE_TOKEN,
 		_variant_t(L""),
 		&pRegisteredTask
 	);
