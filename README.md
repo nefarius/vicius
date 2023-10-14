@@ -52,7 +52,7 @@ Non-exhaustive list of things open or in-progress...
   - [x] `FileVersion`
   - [x] `FileSize`
   - [x] `FileChecksum`
-- [ ] Add some logging
+- [x] Add some logging
 - [ ] Implement Task Scheduler
   - [x] Registration
   - [ ] Removal
