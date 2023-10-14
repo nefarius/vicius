@@ -363,7 +363,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 	return false;
 }
 
-bool models::InstanceConfig::RegisterAutostart() const
+bool models::InstanceConfig::RegisterAutostart(const std::string& launchArgs) const
 {
 	winreg::RegKey key;
 	const auto subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
@@ -374,8 +374,13 @@ bool models::InstanceConfig::RegisterAutostart() const
 		return false;
 	}
 
-	if (const auto writeResult = key.TrySetStringValue(ConvertAnsiToWide(appFilename),
-	                                                   ConvertAnsiToWide(appPath.string())); !writeResult)
+	std::stringstream ss;
+	ss << "\"" << appPath.string() << "\" " << launchArgs;
+
+	if (const auto writeResult = key.TrySetStringValue(
+			ConvertAnsiToWide(appFilename),
+			ConvertAnsiToWide(ss.str())); !
+		writeResult)
 	{
 		spdlog::error("Failed to write autostart value");
 		return false;

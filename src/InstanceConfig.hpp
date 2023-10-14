@@ -190,7 +190,12 @@ namespace models
 
 		std::tuple<HRESULT, const char *> CreateScheduledTask() const;
 
-		bool RegisterAutostart() const;
+		/**
+		 * \brief Registers the updater executable in current users' autostart.
+		 * \param launchArgs Optional launch arguments when run at autostart.
+		 * \return True on success, false on error.
+		 */
+		bool RegisterAutostart(const std::string& launchArgs = "--autostart") const;
 
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{
