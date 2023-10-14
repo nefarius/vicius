@@ -379,8 +379,8 @@ bool models::InstanceConfig::RegisterAutostart(const std::string& launchArgs) co
 
 	if (const auto writeResult = key.TrySetStringValue(
 			ConvertAnsiToWide(appFilename),
-			ConvertAnsiToWide(ss.str())); !
-		writeResult)
+			ConvertAnsiToWide(ss.str()));
+		!writeResult)
 	{
 		spdlog::error("Failed to write autostart value");
 		return false;
