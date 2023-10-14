@@ -37,7 +37,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 	}
 
 	auto logger = std::make_shared<spdlog::logger>("updater", sink);
-	
+
 	// override log level, if provided by CLI
 	if (logLevel.has_value())
 	{
@@ -185,6 +185,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 	// 
 	case ProductVersionDetectionMethod::RegistryValue:
 		{
+			spdlog::debug("Running product detection via registry value");
 			const auto& cfg = shared.GetRegistryValueConfig();
 			HKEY hive = nullptr;
 
@@ -243,6 +244,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 	// 
 	case ProductVersionDetectionMethod::FileVersion:
 		{
+			spdlog::debug("Running product detection via file version");
 			const auto& cfg = shared.GetFileVersionConfig();
 
 			try
@@ -262,6 +264,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 	// 
 	case ProductVersionDetectionMethod::FileSize:
 		{
+			spdlog::debug("Running product detection via file size");
 			const auto& cfg = shared.GetFileSizeConfig();
 
 			try
@@ -283,6 +286,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 	// 
 	case ProductVersionDetectionMethod::FileChecksum:
 		{
+			spdlog::debug("Running product detection via file checksum");
 			const auto& cfg = shared.GetFileChecksumConfig();
 
 			if (!std::filesystem::exists(cfg.path))
@@ -305,6 +309,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 			{
 			case ChecksumAlgorithm::MD5:
 				{
+					spdlog::debug("Hashing with MD5");
 					MD5 alg;
 
 					std::vector<char> buffer(chunkSize);
@@ -331,6 +336,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 				}
 			case ChecksumAlgorithm::SHA1:
 				{
+					spdlog::debug("Hashing with SHA1");
 					SHA1 alg;
 
 					std::vector<char> buffer(chunkSize);
@@ -357,6 +363,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 				}
 			case ChecksumAlgorithm::SHA256:
 				{
+					spdlog::debug("Hashing with SHA256");
 					SHA256 alg;
 
 					std::vector<char> buffer(chunkSize);

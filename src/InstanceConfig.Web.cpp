@@ -20,7 +20,9 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 	const auto conn = new RestClient::Connection("");
 
 	conn->SetTimeout(5);
-	conn->SetUserAgent(std::format("{}/{}", appFilename, appVersion.to_string()));
+	const auto ua = std::format("{}/{}", appFilename, appVersion.to_string());
+	spdlog::debug("Setting User Agent to {}", ua);
+	conn->SetUserAgent(ua);
 	conn->FollowRedirects(true);
 	conn->FollowRedirects(true, 5);
 	conn->SetFileProgressCallback(progressFn);
@@ -37,11 +39,15 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 		return -1;
 	}
 
+	spdlog::debug("tempPath = {}", tempPath);
+
 	if (GetTempFileNameA(tempPath.c_str(), "VICIUS", 0, tempFile.data()) == 0)
 	{
 		spdlog::error("Failed to get temporary file name, error", GetLastError());
 		return -1;
 	}
+
+	spdlog::debug("tempFile = {}", tempFile);
 
 	auto& release = GetSelectedRelease();
 	release.localTempFilePath = tempFile;
@@ -96,7 +102,9 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 	const auto conn = new RestClient::Connection("");
 
 	conn->SetTimeout(5);
-	conn->SetUserAgent(std::format("{}/{}", appFilename, appVersion.to_string()));
+	const auto ua = std::format("{}/{}", appFilename, appVersion.to_string());
+	spdlog::debug("Setting User Agent to {}", ua);
+	conn->SetUserAgent(ua);
 	conn->FollowRedirects(true);
 	conn->FollowRedirects(true, 5);
 
