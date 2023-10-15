@@ -13,6 +13,18 @@ static std::string ConvertWideToANSI(const std::wstring& wstr)
 	return str;
 }
 
+static std::string GetRandomString()
+{
+     std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+
+     std::random_device rd;
+     std::mt19937 generator(rd());
+
+     std::ranges::shuffle(str, generator);
+
+     return str.substr(0, 8);
+}
+
 
 EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow)
 {
@@ -64,7 +76,8 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 
 	std::filesystem::path original = path;
 	// hint: we must remain on the same drive, or renaming will fail!
-	std::filesystem::path temp = original.parent_path() / "newupdater.exe";
+	std::filesystem::path randomName(GetRandomString());
+	std::filesystem::path temp = original.parent_path() / randomName;
 	std::string tempFile = temp.string();
 	curlpp::Cleanup myCleanup;
 	HANDLE hProcess = nullptr;

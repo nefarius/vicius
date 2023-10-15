@@ -13,6 +13,7 @@
 #include <string>
 #include <fstream>
 #include <algorithm>
+#include <random>
 #define _SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING 1
 #include <locale>
 
