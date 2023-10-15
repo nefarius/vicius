@@ -9,6 +9,7 @@
 #include <windows.h>
 #include <shellapi.h>
 
+#include <filesystem>
 #include <string>
 #include <fstream>
 #include <algorithm>

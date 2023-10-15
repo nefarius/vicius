@@ -69,13 +69,19 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	if (!(cmdl({"--path"}) >> path))
 		return;
 
+	std::filesystem::path original = path;
+	std::filesystem::path temp = original.parent_path() / "newupdater.exe";
 	curlpp::Cleanup myCleanup;
 
 	try
 	{
+		MoveFileA(original.string().c_str(), temp.string().c_str());
+
 		// download directly to main file stream
-		std::ofstream outStream(path, std::ios::binary);
+		std::ofstream outStream(original, std::ios::binary | std::ofstream::ate);
 		outStream << curlpp::options::Url(url);
+
+		DeleteFileA(temp.string().c_str());
 	}
 	catch (curlpp::RuntimeError& e)
 	{
@@ -85,12 +91,4 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	{
 		MessageBoxA(hwnd, e.what(), "Logic error", MB_OK);
 	}
-
-	return;
-
-	MessageBoxA(hwnd, lpszCmdLine, "Hi 2", MB_OK);
-	//MoveFileA("nefarius_HidHide_Updater.exe", "nefarius_HidHide_Updater_2.exe");
-	DeleteFileA("nefarius_HidHide_Updater.exe");
-	MoveFileA("Updater.exe", "nefarius_HidHide_Updater.exe");
-	//DeleteFileA("nefarius_HidHide_Updater_2.exe");
 }
