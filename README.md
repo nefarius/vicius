@@ -93,3 +93,5 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [Portable C++ Hashing Library](https://github.com/stbrumme/hash-library)
 - [A modern C++ scope guard that is easy to use but hard to misuse](https://github.com/ricab/scope_guard)
 - [DailyTaskScheduler](https://github.com/JohnAliyetti/DailyTaskScheduler)
+- [INFO: Windows Rundll and Rundll32 Interface](https://web.archive.org/web/20150109234931/http://support.microsoft.com/kb/164787)
+- [How can I run a child process that requires elevation and wait?](https://stackoverflow.com/a/4893508)
