@@ -54,23 +54,12 @@ bool models::InstanceConfig::HasWritePermissions() const
 bool models::InstanceConfig::RunSelfUpdater() const
 {
 	const auto workDir = appPath.parent_path();
-	std::stringstream dllPath, procArgs;
+	std::stringstream dllPath;
 	dllPath << appPath.string() << NV_ADS_UPDATER_NAME;
 	const auto ads = dllPath.str();
 	spdlog::debug("ads = {}", ads);
 
 	const auto runDll = "rundll32.exe";
-
-	// build CLI args
-	procArgs
-		<< "\"" << ads << "\",PerformUpdate"
-		<< " --silent"
-		<< " --pid " << GetCurrentProcessId()
-		<< " --path \"" << appPath.string() << "\""
-		<< " --url \"" << remote.instance.latestUrl << "\"";
-
-	const auto args = procArgs.str();
-	spdlog::debug("args = {}", args);
 
 	// if we can write to our directory, spawn under current user
 	if (HasWritePermissions())
@@ -83,8 +72,19 @@ bool models::InstanceConfig::RunSelfUpdater() const
 		si.dwFlags = STARTF_USESHOWWINDOW;
 		si.wShowWindow = SW_HIDE;
 
+		std::stringstream argsStream;
+		// build CLI args
+		argsStream
+			<< "rundll32 \"" << ads << "\",PerformUpdate"
+			<< " --silent"
+			<< " --pid " << GetCurrentProcessId()
+			<< " --path \"" << appPath.string() << "\""
+			<< " --url \"" << remote.instance.latestUrl << "\"";
+		const auto args = argsStream.str();
+		spdlog::debug("args = {}", args);
+
 		if (!CreateProcessA(
-			runDll,
+			nullptr,
 			const_cast<LPSTR>(args.c_str()),
 			nullptr,
 			nullptr,
@@ -100,6 +100,8 @@ bool models::InstanceConfig::RunSelfUpdater() const
 			return false;
 		}
 
+		spdlog::debug("Process launched");
+
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 	}
@@ -107,6 +109,17 @@ bool models::InstanceConfig::RunSelfUpdater() const
 	else
 	{
 		spdlog::debug("Requesting running with elevated privileges");
+
+		std::stringstream argsStream;
+		// build CLI args
+		argsStream
+			<< "\"" << ads << "\",PerformUpdate"
+			<< " --silent"
+			<< " --pid " << GetCurrentProcessId()
+			<< " --path \"" << appPath.string() << "\""
+			<< " --url \"" << remote.instance.latestUrl << "\"";
+		const auto args = argsStream.str();
+		spdlog::debug("args = {}", args);
 
 		SHELLEXECUTEINFOA shExInfo = {0};
 		shExInfo.cbSize = sizeof(shExInfo);
@@ -124,6 +137,8 @@ bool models::InstanceConfig::RunSelfUpdater() const
 			spdlog::error("Failed to run elevated updater process, error: {}", GetLastError());
 			return false;
 		}
+
+		spdlog::debug("Process launched");
 
 		CloseHandle(shExInfo.hProcess);
 	}

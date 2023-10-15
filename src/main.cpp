@@ -67,6 +67,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			spdlog::critical("Failed to extract self-updater");
 			return EXIT_FAILURE;
 		}
+
+		return EXIT_SUCCESS;
 	}
 
 	// actions to perform when running in autostart
@@ -115,9 +117,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	{
 		spdlog::debug("Newer updater version available, preparing self-update");
 
+		if (const auto extRet = cfg.ExtractSelfUpdater(); !extRet)
+		{
+			// TODO: better fallback action?
+			spdlog::critical("Failed to extract self-updater");
+			return EXIT_FAILURE;
+		}
+
 		if (cfg.RunSelfUpdater())
 		{
-			return ERROR_SUCCESS;
+			return EXIT_SUCCESS;
 		}
 
 		spdlog::error("Failed to invoke self-update");

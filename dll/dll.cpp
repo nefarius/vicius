@@ -61,24 +61,65 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 		"--pid", // PID of the parent process
 		"--url", // latest updater download URL
 		"--path", // the target file path
+		"--log-level"
 	});
 
 	// we now have the same format as a classic main argv to parse
 	cmdl.parse(nArgs, argv.data());
 
+	const auto logLevel = magic_enum::enum_cast<spdlog::level::level_enum>(cmdl("--log-level").str());
+
+	auto sink = std::make_shared<spdlog::sinks::msvc_sink_mt>(false);
+
+	// override log level, if provided by CLI
+	if (logLevel.has_value())
+	{
+		sink->set_level(logLevel.value());
+	}
+	else
+	{
+		sink->set_level(spdlog::level::debug);
+	}
+
+	auto logger = std::make_shared<spdlog::logger>("self-updater", sink);
+
+	// override log level, if provided by CLI
+	if (logLevel.has_value())
+	{
+		logger->set_level(logLevel.value());
+		logger->flush_on(logLevel.value());
+	}
+	else
+	{
+		logger->set_level(spdlog::level::debug);
+		logger->flush_on(spdlog::level::debug);
+	}
+
+	set_default_logger(logger);
+
 	bool silent = cmdl[{"--silent"}];
+	spdlog::debug("silent = {}", silent);
 
 	std::string url;
 	if (!(cmdl({"--url"}) >> url))
+	{
+		spdlog::critical("--url parameter missing");
 		return;
+	}
 
 	int pid;
 	if (!(cmdl({"--pid"}) >> pid))
+	{
+		spdlog::critical("--pid parameter missing");
 		return;
+	}
 
 	std::string path;
 	if (!(cmdl({"--path"}) >> path))
+	{
+		spdlog::critical("--path parameter missing");
 		return;
+	}
 
 	std::filesystem::path original = path;
 	// hint: we must remain on the same drive, or renaming will fail!
@@ -95,7 +136,11 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 		if (hProcess) CloseHandle(hProcess);
 
 		// we failed and bail since the rest of the logic will not work
-		if (--retries < 1) return;
+		if (--retries < 1)
+		{
+			spdlog::critical("Waiting for process with PID {} to end timed out", pid);
+			return;
+		}
 
 		hProcess = OpenProcess(
 			PROCESS_QUERY_INFORMATION,
@@ -103,9 +148,24 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 			pid
 		);
 
-		if (hProcess) Sleep(25);
+		if (hProcess)
+		{
+			DWORD exitCode = 0;
+			GetExitCodeProcess(hProcess, &exitCode);
+
+			if (exitCode == 0)
+			{
+				spdlog::debug("Process exited with code {}", exitCode);
+				CloseHandle(hProcess);
+				break;
+			}
+
+			Sleep(250);
+		}
 	}
 	while (hProcess);
+
+	spdlog::debug("Preparing download");
 
 	std::ofstream outStream;
 	const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
@@ -116,13 +176,18 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 		// we can not yet directly write to it but move it to free the original name!
 		MoveFileA(original.string().c_str(), tempFile.c_str());
 		SetFileAttributesA(tempFile.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
+		spdlog::debug("Moved file {} to hidden file {}", original.string(), tempFile);
 
 		// download directly to main file stream
 		outStream.open(original, std::ios::binary | std::ofstream::ate);
 		outStream << curlpp::options::Url(url);
 
+		spdlog::info("Downloading {} finished", url);
+
 		if (DeleteFileA(tempFile.c_str()) == 0)
 		{
+			spdlog::warn("Failed to delete file {}, scheduling removal on reboot", tempFile);
+
 			// if it still fails, schedule nuking the old file at next reboot
 			MoveFileExA(
 				tempFile.c_str(),
@@ -131,18 +196,22 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 			);
 		}
 
+		spdlog::info("Finished successfully, exiting self-updater");
 		return;
 	}
 	catch (curlpp::RuntimeError& e)
 	{
+		spdlog::error("Runtime error: {}", e.what());
 		if (!silent) MessageBoxA(hwnd, e.what(), "Runtime error", MB_ICONERROR | MB_OK);
 	}
 	catch (curlpp::LogicError& e)
 	{
+		spdlog::error("Logic error: {}", e.what());
 		if (!silent) MessageBoxA(hwnd, e.what(), "Logic error", MB_ICONERROR | MB_OK);
 	}
 	catch (std::ios_base::failure& e)
 	{
+		spdlog::error("I/O error: {}", e.what());
 		if (!silent) MessageBoxA(hwnd, e.what(), "I/O error", MB_ICONERROR | MB_OK);
 	}
 	catch (...)
@@ -163,4 +232,6 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 			MOVEFILE_DELAY_UNTIL_REBOOT
 		);
 	}
+
+	spdlog::warn("Finished with warning or errors");
 }

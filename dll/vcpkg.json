@@ -6,6 +6,8 @@
   "supports": "!(arm | uwp)",
   "dependencies": [
     "argh",
-    "curlpp"
+    "curlpp",
+    "spdlog",
+    "magic-enum"
   ]
 }
