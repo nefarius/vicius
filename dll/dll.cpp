@@ -119,4 +119,8 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	{
 		MessageBoxA(hwnd, e.what(), "Logic error", MB_OK);
 	}
+	catch (...)
+	{
+		// welp
+	}
 }
