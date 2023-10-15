@@ -282,6 +282,7 @@
     <CopyFileToFolders Include="nefarius_HidHide_Updater.json">
       <FileType>Document</FileType>
     </CopyFileToFolders>
+    <None Include="selfupdater\x64\selfupdater.dll" />
     <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
