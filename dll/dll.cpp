@@ -178,6 +178,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 		SetFileAttributesA(tempFile.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
 		spdlog::debug("Moved file {} to hidden file {}", original.string(), tempFile);
 
+		spdlog::debug("Starting download");
 		// download directly to main file stream
 		outStream.open(original, std::ios::binary | std::ofstream::ate);
 		outStream << curlpp::options::Url(url);
