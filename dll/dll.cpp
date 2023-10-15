@@ -28,6 +28,10 @@ static std::string GetRandomString()
 
 EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR lpszCmdLine, int nCmdShow)
 {
+	UNREFERENCED_PARAMETER(hinst);
+	UNREFERENCED_PARAMETER(lpszCmdLine);
+	UNREFERENCED_PARAMETER(nCmdShow);
+
 	int nArgs;
 
 	const LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
