@@ -188,7 +188,7 @@ namespace models
 		 */
 		bool IsInstalledVersionOutdated(bool& isOutdated);
 
-		std::tuple<HRESULT, const char*> CreateScheduledTask(const std::string& launchArgs = "--background") const;
+		std::tuple<HRESULT, const char*> CreateScheduledTask(const std::string& launchArgs = NV_CLI_BACKGROUND) const;
 
 		std::tuple<HRESULT, const char*> RemoveScheduledTask() const;
 
@@ -197,7 +197,7 @@ namespace models
 		 * \param launchArgs Optional launch arguments when run at autostart.
 		 * \return True on success, false on error.
 		 */
-		bool RegisterAutostart(const std::string& launchArgs = "--autostart") const;
+		bool RegisterAutostart(const std::string& launchArgs = NV_CLI_AUTOSTART) const;
 
 		/**
 		 * \brief Removes the autostart entry for the current user.

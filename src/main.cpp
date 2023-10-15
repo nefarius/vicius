@@ -45,7 +45,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	models::InstanceConfig cfg(hInstance, cmdl);
 
 	// actions to perform when install is instructed
-	if (cmdl[{"--install"}])
+	if (cmdl[{NV_CLI_INSTALL}])
 	{
 		if (const auto autoRet = cfg.RegisterAutostart(); !autoRet)
 		{
@@ -70,7 +70,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	}
 
 	// actions to perform when running in autostart
-	if (cmdl[{"--autostart"}])
+	if (cmdl[{NV_CLI_AUTOSTART}])
 	{
 		if (const auto ret = cfg.CreateScheduledTask(); FAILED(std::get<0>(ret)))
 		{
@@ -81,13 +81,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	}
 
 	// actions to perform when run by Task Scheduler
-	if (cmdl[{"--background"}])
+	if (cmdl[{NV_CLI_BACKGROUND}])
 	{
 		// TODO: implement me
 	}
 
 	// uninstall tasks
-	if (cmdl[{"--uninstall"}])
+	if (cmdl[{NV_CLI_UNINSTALL}])
 	{
 		if (const auto autoRet = cfg.RemoveAutostart(); !autoRet)
 		{

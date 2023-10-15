@@ -54,6 +54,10 @@
 
 
 #define NV_UPDATER_ADS_NAME		":updater.dll"
+#define NV_CLI_INSTALL			"--install"
+#define NV_CLI_UNINSTALL		"--uninstall"
+#define NV_CLI_AUTOSTART		"--autostart"
+#define NV_CLI_BACKGROUND		"--background"
 
 
 //
