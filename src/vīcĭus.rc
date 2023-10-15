@@ -94,8 +94,8 @@ IDI_ICON_MAIN           ICON                    "favicon.ico"
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION 1,3,0,0
- PRODUCTVERSION 1,3,0,0
+ FILEVERSION 1,4,0,0
+ PRODUCTVERSION 1,4,0,0
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
  FILEFLAGS 0x1L
@@ -112,12 +112,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Nefarius Software Solutions e.U."
             VALUE "FileDescription", "Universal Updater Agent"
-            VALUE "FileVersion", "1.3.0.0"
+            VALUE "FileVersion", "1.4.0.0"
             VALUE "InternalName", "Updater.exe"
             VALUE "LegalCopyright", "Copyright (C) 2020-2023 Nefarius Software Solutions e.U."
             VALUE "OriginalFilename", "Updater.exe"
             VALUE "ProductName", "Enhance Pointer Precision Tool"
-            VALUE "ProductVersion", "1.3.0.0"
+            VALUE "ProductVersion", "1.4.0.0"
         END
     END
     BLOCK "VarFileInfo"
