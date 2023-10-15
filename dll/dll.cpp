@@ -91,8 +91,8 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	}
 	else
 	{
-		logger->set_level(spdlog::level::debug);
-		logger->flush_on(spdlog::level::debug);
+		logger->set_level(spdlog::level::info);
+		logger->flush_on(spdlog::level::info);
 	}
 
 	set_default_logger(logger);

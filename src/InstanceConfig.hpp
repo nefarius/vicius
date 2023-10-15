@@ -188,7 +188,7 @@ namespace models
 		 */
 		bool IsInstalledVersionOutdated(bool& isOutdated);
 
-		std::tuple<HRESULT, const char*> CreateScheduledTask(const std::string& launchArgs = NV_CLI_BACKGROUND " --log-level debug") const;
+		std::tuple<HRESULT, const char*> CreateScheduledTask(const std::string& launchArgs = NV_CLI_BACKGROUND) const;
 
 		std::tuple<HRESULT, const char*> RemoveScheduledTask() const;
 
