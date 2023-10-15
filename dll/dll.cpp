@@ -110,7 +110,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	{
 		// we can not yet directly write to it but move it to free the original name!
 		MoveFileA(original.string().c_str(), tempFile.c_str());
-		//SetFileAttributesA(tempFile.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
+		SetFileAttributesA(tempFile.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
 
 		// download directly to main file stream
 		outStream.open(original, std::ios::binary | std::ofstream::ate);
