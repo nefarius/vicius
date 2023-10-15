@@ -110,13 +110,12 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	{
 		// we can not yet directly write to it but move it to free the original name!
 		MoveFileA(original.string().c_str(), tempFile.c_str());
-		SetFileAttributesA(tempFile.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
+		//SetFileAttributesA(tempFile.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
 
 		// download directly to main file stream
 		outStream.open(original, std::ios::binary | std::ofstream::ate);
 		outStream << curlpp::options::Url(url);
 
-		// delete the file where this ADS sits in (yes, it works!)
 		if (DeleteFileA(tempFile.c_str()) == 0)
 		{
 			// if it still fails, schedule nuking the old file at next reboot
@@ -144,5 +143,19 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	catch (...)
 	{
 		// welp
+	}
+
+	// restore original file on failure
+	CopyFileA(tempFile.c_str(), original.string().c_str(), FALSE);
+	SetFileAttributesA(original.string().c_str(), FILE_ATTRIBUTE_NORMAL);
+	// attempt to delete temporary copy
+	if (DeleteFileA(tempFile.c_str()) == 0)
+	{
+		// if it still fails, schedule nuking the old file at next reboot
+		MoveFileExA(
+			tempFile.c_str(),
+			nullptr,
+			MOVEFILE_DELAY_UNTIL_REBOOT
+		);
 	}
 }
