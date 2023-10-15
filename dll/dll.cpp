@@ -84,6 +84,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	int retries = 10;
 
 	// wait until parent is no more
+	// TODO: fix me!
 	do
 	{
 		if (hProcess) CloseHandle(hProcess);
@@ -92,7 +93,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 		if (--retries < 1) return;
 
 		hProcess = OpenProcess(
-			PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+			PROCESS_QUERY_INFORMATION,
 			FALSE,
 			pid
 		);
