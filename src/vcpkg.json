@@ -16,6 +16,7 @@
     "winreg",
     "hash-library",
     "spdlog",
-    "scope-guard"
+    "scope-guard",
+    "curlpp"
   ]
 }
