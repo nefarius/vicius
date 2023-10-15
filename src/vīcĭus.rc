@@ -62,7 +62,7 @@ IDR_FONT_FK             FONT                    "fonts\\forkawesome-webfont.ttf"
 // DLL
 //
 
-IDR_DLL_SELF_UPDATER    DLL                     "selfupdater\\x64\\selfupdater.dll"
+IDR_DLL_SELF_UPDATER    RCDATA                     "selfupdater\\x64\\selfupdater.dll"
 
 
 /////////////////////////////////////////////////////////////////////////////

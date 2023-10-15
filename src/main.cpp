@@ -60,6 +60,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			spdlog::critical("Failed to (re-)create Scheduled Task, error: {}", std::get<1>(taskRet));
 			return EXIT_FAILURE;
 		}
+
+		if (const auto extRet = cfg.ExtractSelfUpdater(); !extRet)
+		{
+			// TODO: better fallback action?
+			spdlog::critical("Failed to extract self-updater");
+			return EXIT_FAILURE;
+		}
 	}
 
 	// actions to perform when running in autostart

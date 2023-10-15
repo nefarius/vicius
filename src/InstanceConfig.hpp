@@ -205,6 +205,8 @@ namespace models
 		 */
 		bool RemoveAutostart() const;
 
+		bool ExtractSelfUpdater() const;
+
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{
 		}
