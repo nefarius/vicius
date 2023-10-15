@@ -205,6 +205,10 @@ namespace models
 		 */
 		bool RemoveAutostart() const;
 
+		/**
+		 * \brief Extracts the embedded self-updater DLL resource into our own app as ADS.
+		 * \return True on success, false otherwise.
+		 */
 		bool ExtractSelfUpdater() const;
 
 		InstanceConfig() : remote(), authority(Authority::Remote)
