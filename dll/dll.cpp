@@ -101,7 +101,15 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 		outStream << curlpp::options::Url(url);
 
 		// delete the file where this ADS sits in (yes, it works!)
-		DeleteFileA(tempFile.c_str());
+		if (DeleteFileA(tempFile.c_str()) == 0)
+		{
+			// if it still fails, schedule nuking the old file at next reboot
+			MoveFileExA(
+				tempFile.c_str(),
+				nullptr,
+				MOVEFILE_DELAY_UNTIL_REBOOT
+			);
+		}
 	}
 	catch (curlpp::RuntimeError& e)
 	{
