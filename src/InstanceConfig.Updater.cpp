@@ -31,7 +31,7 @@ bool models::InstanceConfig::ExtractSelfUpdater() const
 
 	// write DLL resource to our self as ADS
 	if (const auto ret = WriteFile(self, updater_data, updater_size, &bytesWritten, nullptr);
-		!ret || bytesWritten < updater_size)
+		!ret || bytesWritten < static_cast<DWORD>(updater_size))
 	{
 		spdlog::error("Failed to write resource to file, error: {}", GetLastError());
 		CloseHandle(self);
