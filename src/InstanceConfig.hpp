@@ -211,8 +211,16 @@ namespace models
 		 */
 		bool ExtractSelfUpdater() const;
 
+		/**
+		 * \brief Checks if the current app working directory can be written to.
+		 * \return True if we can write, false otherwise.
+		 */
 		bool HasWritePermissions() const;
 
+		/**
+		 * \brief Attempts to spawn the self-updater component.
+		 * \return True on success (end this process if the case), false on error.
+		 */
 		bool RunSelfUpdater() const;
 
 		InstanceConfig() : remote(), authority(Authority::Remote)
