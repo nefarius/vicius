@@ -113,6 +113,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	if (cfg.IsNewerUpdaterAvailable())
 	{
+		spdlog::debug("Newer updater version available, preparing self-update");
+
 		if (cfg.RunSelfUpdater())
 		{
 			return ERROR_SUCCESS;

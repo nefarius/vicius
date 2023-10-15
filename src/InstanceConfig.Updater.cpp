@@ -57,27 +57,31 @@ bool models::InstanceConfig::RunSelfUpdater() const
 	std::stringstream dllPath, procArgs;
 	dllPath << appPath.string() << NV_UPDATER_ADS_NAME;
 	const auto ads = dllPath.str();
+	spdlog::debug("ads = {}", ads);
 
 	const auto runDll = "rundll32.exe";
 
 	// build CLI args
 	procArgs
-		<< ads << ",PerformUpdate"
+		<< "\"" << ads << "\",PerformUpdate"
 		<< " --silent"
 		<< " --pid " << GetCurrentProcessId()
 		<< " --path \"" << appPath.string() << "\""
 		<< " --url \"" << remote.instance.latestUrl << "\"";
 
 	const auto args = procArgs.str();
+	spdlog::debug("args = {}", args);
 
 	// if we can write to our directory, spawn under current user
 	if (HasWritePermissions())
 	{
-		STARTUPINFOA info = {sizeof(STARTUPINFOA)};
+		spdlog::debug("Running with regular privileges");
+
+		STARTUPINFOA si = {sizeof(STARTUPINFOA)};
 		PROCESS_INFORMATION pi{};
 
-		info.dwFlags = STARTF_USESHOWWINDOW;
-		info.wShowWindow = SW_HIDE;
+		si.dwFlags = STARTF_USESHOWWINDOW;
+		si.wShowWindow = SW_HIDE;
 
 		if (!CreateProcessA(
 			runDll,
@@ -87,8 +91,8 @@ bool models::InstanceConfig::RunSelfUpdater() const
 			TRUE,
 			CREATE_NO_WINDOW,
 			nullptr,
-			nullptr,
-			&info,
+			workDir.string().c_str(),
+			&si,
 			&pi
 		))
 		{
@@ -102,6 +106,8 @@ bool models::InstanceConfig::RunSelfUpdater() const
 	// request elevation
 	else
 	{
+		spdlog::debug("Requesting running with elevated privileges");
+
 		SHELLEXECUTEINFOA shExInfo = {0};
 		shExInfo.cbSize = sizeof(shExInfo);
 		shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
