@@ -62,6 +62,8 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	// we now have the same format as a classic main argv to parse
 	cmdl.parse(nArgs, argv.data());
 
+	bool silent = cmdl[{"--silent"}];
+
 	std::string url;
 	if (!(cmdl({"--url"}) >> url))
 		return;
@@ -130,15 +132,15 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	}
 	catch (curlpp::RuntimeError& e)
 	{
-		MessageBoxA(hwnd, e.what(), "Runtime error", MB_OK);
+		if (!silent) MessageBoxA(hwnd, e.what(), "Runtime error", MB_OK);
 	}
 	catch (curlpp::LogicError& e)
 	{
-		MessageBoxA(hwnd, e.what(), "Logic error", MB_OK);
+		if (!silent) MessageBoxA(hwnd, e.what(), "Logic error", MB_OK);
 	}
 	catch (std::ios_base::failure& e)
 	{
-		MessageBoxA(hwnd, e.what(), "I/O error", MB_OK);
+		if (!silent) MessageBoxA(hwnd, e.what(), "I/O error", MB_OK);
 	}
 	catch (...)
 	{
