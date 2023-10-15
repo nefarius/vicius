@@ -11,7 +11,7 @@ bool models::InstanceConfig::ExtractSelfUpdater() const
 	const LPVOID updater_data = LockResource(LoadResource(appInstance, updater_res));
 
 	std::stringstream ss;
-	ss << appPath.string() << NV_UPDATER_ADS_NAME;
+	ss << appPath.string() << NV_ADS_UPDATER_NAME;
 	const auto ads = ss.str();
 
 	const HANDLE self = CreateFileA(
@@ -55,7 +55,7 @@ bool models::InstanceConfig::RunSelfUpdater() const
 {
 	const auto workDir = appPath.parent_path();
 	std::stringstream dllPath, procArgs;
-	dllPath << appPath.string() << NV_UPDATER_ADS_NAME;
+	dllPath << appPath.string() << NV_ADS_UPDATER_NAME;
 	const auto ads = dllPath.str();
 	spdlog::debug("ads = {}", ads);
 
