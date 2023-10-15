@@ -15,14 +15,14 @@ static std::string ConvertWideToANSI(const std::wstring& wstr)
 
 static std::string GetRandomString()
 {
-     std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+	std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
 
-     std::random_device rd;
-     std::mt19937 generator(rd());
+	std::random_device rd;
+	std::mt19937 generator(rd());
 
-     std::ranges::shuffle(str, generator);
+	std::ranges::shuffle(str, generator);
 
-     return str.substr(0, 8);
+	return str.substr(0, 8);
 }
 
 
@@ -102,6 +102,10 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	}
 	while (hProcess);
 
+	std::ofstream outStream;
+	const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
+	outStream.exceptions(exceptionMask);
+
 	try
 	{
 		// we can not yet directly write to it but move it to free the original name!
@@ -109,7 +113,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 		SetFileAttributesA(tempFile.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
 
 		// download directly to main file stream
-		std::ofstream outStream(original, std::ios::binary | std::ofstream::ate);
+		outStream.open(original, std::ios::binary | std::ofstream::ate);
 		outStream << curlpp::options::Url(url);
 
 		// delete the file where this ADS sits in (yes, it works!)
@@ -122,6 +126,8 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 				MOVEFILE_DELAY_UNTIL_REBOOT
 			);
 		}
+
+		return;
 	}
 	catch (curlpp::RuntimeError& e)
 	{
@@ -130,6 +136,10 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	catch (curlpp::LogicError& e)
 	{
 		MessageBoxA(hwnd, e.what(), "Logic error", MB_OK);
+	}
+	catch (std::ios_base::failure& e)
+	{
+		MessageBoxA(hwnd, e.what(), "I/O error", MB_OK);
 	}
 	catch (...)
 	{
