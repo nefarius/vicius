@@ -53,9 +53,9 @@ Non-exhaustive list of things open or in-progress...
   - [x] `FileSize`
   - [x] `FileChecksum`
 - [x] Add some logging
-- [ ] Implement Task Scheduler
+- [x] Implement Task Scheduler
   - [x] Registration
-  - [ ] Removal
+  - [x] Removal
 
 ### Nice-to-haves
 
