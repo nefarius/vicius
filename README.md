@@ -37,8 +37,9 @@ Non-exhaustive list of things open or in-progress...
 
 - [ ] Finalize REST API design
 - [ ] Finalize local updater config JSON format
-- [ ] Add self-updater logic
-  - With [libPeConv](https://github.com/hasherezade/libpeconv) maybe? Would be cool if we can avoid writing a temporary EXE somewhere
+- [x] Add self-updater logic
+  - ~~With [libPeConv](https://github.com/hasherezade/libpeconv) maybe? Would be cool if we can avoid writing a temporary EXE somewhere~~
+  - [ ] Tests
 - [ ] [Documentation](https://github.com/nefarius/docs.nefarius.at/tree/nefarius/project/vicius)
 - [ ] Finalize UI design
   - [x] `WizardPage::Start`
