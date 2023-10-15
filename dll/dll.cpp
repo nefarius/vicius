@@ -132,15 +132,15 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	}
 	catch (curlpp::RuntimeError& e)
 	{
-		if (!silent) MessageBoxA(hwnd, e.what(), "Runtime error", MB_OK);
+		if (!silent) MessageBoxA(hwnd, e.what(), "Runtime error", MB_ICONERROR | MB_OK);
 	}
 	catch (curlpp::LogicError& e)
 	{
-		if (!silent) MessageBoxA(hwnd, e.what(), "Logic error", MB_OK);
+		if (!silent) MessageBoxA(hwnd, e.what(), "Logic error", MB_ICONERROR | MB_OK);
 	}
 	catch (std::ios_base::failure& e)
 	{
-		if (!silent) MessageBoxA(hwnd, e.what(), "I/O error", MB_OK);
+		if (!silent) MessageBoxA(hwnd, e.what(), "I/O error", MB_ICONERROR | MB_OK);
 	}
 	catch (...)
 	{
