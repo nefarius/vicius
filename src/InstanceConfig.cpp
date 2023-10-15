@@ -230,6 +230,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 				const semver::version localVersion{ConvertWideToANSI(value)};
 
 				isOutdated = release.GetSemVersion() > localVersion;
+				spdlog::debug("isOutdated = {}", isOutdated);
 			}
 			catch (...)
 			{
@@ -250,6 +251,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 			try
 			{
 				isOutdated = release.GetSemVersion() > util::GetVersionFromFile(cfg.path);
+				spdlog::debug("isOutdated = {}", isOutdated);
 			}
 			catch (...)
 			{
@@ -272,6 +274,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 				const std::filesystem::path file{cfg.path};
 
 				isOutdated = file_size(file) != cfg.size;
+				spdlog::debug("isOutdated = {}", isOutdated);
 			}
 			catch (...)
 			{
@@ -331,6 +334,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 					}
 
 					isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+					spdlog::debug("isOutdated = {}", isOutdated);
 
 					return true;
 				}
@@ -358,6 +362,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 					}
 
 					isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+					spdlog::debug("isOutdated = {}", isOutdated);
 
 					return true;
 				}
@@ -385,6 +390,7 @@ bool models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 					}
 
 					isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+					spdlog::debug("isOutdated = {}", isOutdated);
 
 					return true;
 				}
