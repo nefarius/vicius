@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="cpp.hint" />
+    <None Include="vcpkg.json" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
