@@ -190,12 +190,20 @@ namespace models
 
 		std::tuple<HRESULT, const char*> CreateScheduledTask(const std::string& launchArgs = "--background") const;
 
+		std::tuple<HRESULT, const char*> RemoveScheduledTask() const;
+
 		/**
 		 * \brief Registers the updater executable in current users' autostart.
 		 * \param launchArgs Optional launch arguments when run at autostart.
 		 * \return True on success, false on error.
 		 */
 		bool RegisterAutostart(const std::string& launchArgs = "--autostart") const;
+
+		/**
+		 * \brief Removes the autostart entry for the current user.
+		 * \return True on success, false otherwise.
+		 */
+		bool RemoveAutostart() const;
 
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{

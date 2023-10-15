@@ -325,3 +325,63 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask(con
 
 	return std::make_tuple(hr, "Success!");
 }
+
+std::tuple<HRESULT, const char*> models::InstanceConfig::RemoveScheduledTask() const
+{
+	BSTR bstrTaskName = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
+
+	sg::make_scope_guard(
+		[bstrTaskName]() noexcept
+		{
+			if (bstrTaskName)SysFreeString(bstrTaskName);
+
+			CoUninitialize();
+		});
+
+	HRESULT hr = CoInitialize(nullptr);
+	if (FAILED(hr))
+	{
+		return std::make_tuple(hr, "COM initialization failed");
+	}
+
+	//  Create an instance of the Task Service.
+	ITaskService* pService = nullptr;
+	hr = CoCreateInstance(
+		CLSID_TaskScheduler,
+		nullptr,
+		CLSCTX_INPROC_SERVER,
+		IID_ITaskService,
+		(void**)&pService
+	);
+	if (FAILED(hr))
+	{
+		return std::make_tuple(hr, "Failed to create an instance of ITaskService");
+	}
+
+	//  Connect to the task service.
+	hr = pService->Connect(_variant_t(), _variant_t(),
+	                       _variant_t(), _variant_t());
+	if (FAILED(hr))
+	{
+		pService->Release();
+
+		return std::make_tuple(hr, "ITaskService Connect failed");
+	}
+
+	//  Get the pointer to the root task folder that will hold the new task that is registered.
+	ITaskFolder* pRootFolder = nullptr;
+	hr = pService->GetFolder(_bstr_t(L"\\"), &pRootFolder);
+
+	if (FAILED(hr))
+	{
+		pService->Release();
+
+		return std::make_tuple(hr, "Cannot get Root Folder pointer");
+	}
+
+	pRootFolder->DeleteTask(bstrTaskName, 0);
+	pRootFolder->Release();
+	pService->Release();
+
+	return std::make_tuple(hr, "Success!");
+}

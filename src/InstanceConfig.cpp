@@ -431,3 +431,23 @@ bool models::InstanceConfig::RegisterAutostart(const std::string& launchArgs) co
 
 	return true;
 }
+
+bool models::InstanceConfig::RemoveAutostart() const
+{
+	winreg::RegKey key;
+	const auto subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
+
+	if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey); !result)
+	{
+		spdlog::error("Failed to open {}", ConvertWideToANSI(subKey));
+		return false;
+	}
+
+	if (const auto result = key.TryDeleteValue(ConvertAnsiToWide(appFilename)); !result)
+	{
+		spdlog::error("Failed to delete autostart value");
+		return false;
+	}
+
+	return true;
+}

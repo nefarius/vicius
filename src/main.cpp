@@ -40,7 +40,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		spdlog::critical("Failed to parse command line arguments");
 		return EXIT_FAILURE;
 	}
-	
+
 	// updater configuration, defaults and app state
 	models::InstanceConfig cfg(hInstance, cmdl);
 
@@ -79,6 +79,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		// TODO: implement me
 	}
 
+	// uninstall tasks
+	if (cmdl[{"--uninstall"}])
+	{
+		if (const auto autoRet = cfg.RemoveAutostart(); !autoRet)
+		{
+			// TODO: better fallback action?
+			spdlog::critical("Failed to de-register in autostart");
+			return EXIT_FAILURE;
+		}
+
+		if (const auto taskRet = cfg.RemoveScheduledTask(); FAILED(std::get<0>(taskRet)))
+		{
+			// TODO: better fallback action?
+			spdlog::critical("Failed to delete Scheduled Task, error: {}", std::get<1>(taskRet));
+			return EXIT_FAILURE;
+		}
+	}
 
 	if (!cfg.RequestUpdateInfo())
 	{
