@@ -63,12 +63,9 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 		return;
 
 	std::filesystem::path original = path;
-	// TEMP directory
-	std::string tempPath(MAX_PATH, '\0');
-	GetTempPathA(MAX_PATH, tempPath.data());
-	// temporary file
-	std::string tempFile(MAX_PATH, '\0');
-	GetTempFileNameA(tempPath.c_str(), "VICIUS", 0, tempFile.data());
+	// hint: we must remain on the same drive, or renaming will fail!
+	std::filesystem::path temp = original.parent_path() / "newupdater.exe";
+	std::string tempFile = temp.string();
 	curlpp::Cleanup myCleanup;
 	HANDLE hProcess = nullptr;
 	int retries = 10;
@@ -95,6 +92,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 	{
 		// we can not yet directly write to it but move it to free the original name!
 		MoveFileA(original.string().c_str(), tempFile.c_str());
+		SetFileAttributesA(tempFile.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
 
 		// download directly to main file stream
 		std::ofstream outStream(original, std::ios::binary | std::ofstream::ate);
