@@ -113,7 +113,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	if (cfg.IsNewerUpdaterAvailable())
 	{
-		// TODO: implement self-updating logic here
+		if (cfg.RunSelfUpdater())
+		{
+			return ERROR_SUCCESS;
+		}
+
+		spdlog::error("Failed to invoke self-update");
 	}
 
 	bool isOutdated = false;

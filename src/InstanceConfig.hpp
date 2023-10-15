@@ -211,6 +211,10 @@ namespace models
 		 */
 		bool ExtractSelfUpdater() const;
 
+		bool HasWritePermissions() const;
+
+		bool RunSelfUpdater() const;
+
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{
 		}

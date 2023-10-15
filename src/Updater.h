@@ -53,6 +53,9 @@
 #include "DownloadAndInstall.hpp"
 
 
+#define NV_UPDATER_ADS_NAME		":updater.dll"
+
+
 //
 // Functions
 // 
