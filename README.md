@@ -74,8 +74,9 @@ Non-exhaustive list of things open or in-progress...
 
 This tool benefits from these awesome projects ❤ (appearance in no special order):
 
+### Dependencies
+
 - [Dear ImGui](https://github.com/ocornut/imgui)
-  - [Using Icon Fonts](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-icon-fonts)
 - [Simple and Fast Multimedia Library](https://www.sfml-dev.org/)
 - [ImGui-SFML](https://github.com/SFML/imgui-sfml)
 - [Argh! A minimalist argument handler](https://github.com/adishavit/argh)
@@ -92,6 +93,11 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [WinReg](https://github.com/GiovanniDicanio/WinReg)
 - [Portable C++ Hashing Library](https://github.com/stbrumme/hash-library)
 - [A modern C++ scope guard that is easy to use but hard to misuse](https://github.com/ricab/scope_guard)
+
+### Literature & references
+
+- [Using Icon Fonts](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-icon-fonts)
 - [DailyTaskScheduler](https://github.com/JohnAliyetti/DailyTaskScheduler)
 - [INFO: Windows Rundll and Rundll32 Interface](https://web.archive.org/web/20150109234931/http://support.microsoft.com/kb/164787)
 - [How can I run a child process that requires elevation and wait?](https://stackoverflow.com/a/4893508)
+- [Execute from Alternate Streams](https://gist.github.com/api0cradle/cdd2d0d0ec9abb686f0e89306e277b8f)
