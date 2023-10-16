@@ -88,8 +88,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		}
 	}
 
+	const bool background = cmdl[{NV_CLI_BACKGROUND}];
+
 	// actions to perform when run by Task Scheduler
-	if (cmdl[{NV_CLI_BACKGROUND}])
+	if (background)
 	{
 		// TODO: implement me
 	}
@@ -142,8 +144,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		return ERROR_NO_DATA_DETECTED;
 	}
 
-	// we're up2date
-	if (!isOutdated)
+	// we're up2date and silent, exit
+	if (!isOutdated && background)
 	{
 		spdlog::info("Installed software is up-to-date");
 		return ERROR_SUCCESS;
