@@ -68,6 +68,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			return EXIT_FAILURE;
 		}
 
+		spdlog::info("Installation tasks finished successfully");
 		return EXIT_SUCCESS;
 	}
 
@@ -115,15 +116,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 	if (cfg.IsNewerUpdaterAvailable())
 	{
-		spdlog::debug("Newer updater version available, preparing self-update");
-
-		if (const auto extRet = cfg.ExtractSelfUpdater(); !extRet)
-		{
-			// TODO: better fallback action?
-			spdlog::critical("Failed to extract self-updater");
-			return EXIT_FAILURE;
-		}
-
+		spdlog::debug("Newer updater version available, invoking self-update");
+		
 		if (cfg.RunSelfUpdater())
 		{
 			return EXIT_SUCCESS;

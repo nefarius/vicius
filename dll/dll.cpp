@@ -114,18 +114,20 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 		return;
 	}
 
-	std::string path;
-	if (!(cmdl({"--path"}) >> path))
+	if (!cmdl({"--path"}))
 	{
 		spdlog::critical("--path parameter missing");
 		return;
 	}
 
-	std::filesystem::path original = path;
+	std::filesystem::path original = cmdl({"--path"}).str();
+	spdlog::debug("original = {}", original.string());
 	// hint: we must remain on the same drive, or renaming will fail!
 	std::filesystem::path randomName(GetRandomString());
+	spdlog::debug("randomName = {}", randomName.string());
 	std::filesystem::path temp = original.parent_path() / randomName;
 	std::string tempFile = temp.string();
+	spdlog::debug("tempFile = {}", tempFile);
 	curlpp::Cleanup myCleanup;
 	HANDLE hProcess = nullptr;
 	int retries = 10;
