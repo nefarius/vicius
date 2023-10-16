@@ -42,7 +42,12 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask(con
 	// not used currently
 	BSTR bstrEnd = SysAllocString(L"2153-01-01T12:00:00"); // end boundary - ""
 	BSTR bstrAuthor = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
-	BSTR bstrLaunchArgs = SysAllocString(ConvertAnsiToWide(launchArgs).c_str());
+
+	std::stringstream argsBuilder;
+	argsBuilder << launchArgs << " " << NV_CLI_LOG_LEVEL << " " << magic_enum::enum_name(spdlog::get_level());
+	std::string argsBuilt = argsBuilder.str();
+	spdlog::debug("argsBuilt = {}", argsBuilt);
+	BSTR bstrLaunchArgs = SysAllocString(ConvertAnsiToWide(argsBuilt).c_str());
 
 	// clean up all resources when going out of scope
 	sg::make_scope_guard(
