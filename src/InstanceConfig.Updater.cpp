@@ -48,7 +48,24 @@ bool models::InstanceConfig::ExtractSelfUpdater() const
 
 bool models::InstanceConfig::HasWritePermissions() const
 {
-	return _access(appPath.string().c_str(), 06) == 0;
+	const HANDLE self = CreateFileA(
+		appPath.string().c_str(),
+		GENERIC_WRITE,
+		0,
+		nullptr,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		nullptr
+	);
+
+	const DWORD error = GetLastError();
+
+	if (self != INVALID_HANDLE_VALUE) CloseHandle(self);
+
+	// error is ERROR_SHARING_VIOLATION when we can write
+	// and ERROR_ACCESS_DENIED if missing permissions
+
+	return error == ERROR_SHARING_VIOLATION;
 }
 
 bool models::InstanceConfig::RunSelfUpdater() const
