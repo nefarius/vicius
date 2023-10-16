@@ -112,6 +112,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		}
 	}
 
+	// contact update server and get latest state and config
 	if (!cfg.RequestUpdateInfo())
 	{
 		// TODO: add fallback actions
@@ -119,6 +120,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		return ERROR_WINHTTP_INVALID_SERVER_RESPONSE;
 	}
 
+	// check for updater updates - updateception :D
 	if (cfg.IsNewerUpdaterAvailable())
 	{
 		spdlog::debug("Newer updater version available, invoking self-update");
@@ -132,6 +134,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	}
 
 	bool isOutdated = false;
+	// run local product detection
 	if (!cfg.IsInstalledVersionOutdated(isOutdated))
 	{
 		// TODO: add error handling
