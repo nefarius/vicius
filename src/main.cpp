@@ -17,6 +17,11 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
+// 
+// TaskDialog
+// 
+#pragma comment(lib, "Comctl32.lib")
+
 #define AS_MB	(1024 * 1024)
 
 extern ImFont* G_Font_H1;
@@ -117,7 +122,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	if (cfg.IsNewerUpdaterAvailable())
 	{
 		spdlog::debug("Newer updater version available, invoking self-update");
-		
+
 		if (cfg.RunSelfUpdater())
 		{
 			return EXIT_SUCCESS;
