@@ -5,7 +5,7 @@
         "latestUrl": "https://downloads.nefarius.at/other/nefarius/vpatch/vpatch.exe"
     },
     "shared": {
-        "productName": "BthPS3",
+        "productName": "HidHide",
         "detectionMethod": "RegistryValue",
         "detection": {
             "hive": "HKLM",

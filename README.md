@@ -44,6 +44,9 @@ Non-exhaustive list of things open or in-progress...
   - [x] Tests
   - [ ] Fix issues launching from write-protected directory like `Program Files`
 - [ ] [Documentation](https://github.com/nefarius/docs.nefarius.at/tree/nefarius/project/vicius)
+- [ ] Add message box dialog if the user launches the updater with no args
+  - [ ] Standard text if we are up to date
+  - [ ] Inform if Betas are available
 - [ ] Finalize UI design
   - [x] `WizardPage::Start`
   - [x] `WizardPage::SingleVersionSummary`
@@ -73,6 +76,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Tidy up and improve includes
 - [ ] Implement machine-wide registration  
       Currently only the user executing the updater will run registrations, which is sufficient for most cases
+- [ ] Postpone update dialog popping up if the product is currently in use
 
 ## Sources & 3rd party credits
 
