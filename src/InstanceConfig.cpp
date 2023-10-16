@@ -36,7 +36,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 		sink->set_level(spdlog::level::info);
 	}
 
-	auto logger = std::make_shared<spdlog::logger>("updater", sink);
+	auto logger = std::make_shared<spdlog::logger>("vicius-updater", sink);
 
 	// override log level, if provided by CLI
 	if (logLevel.has_value())

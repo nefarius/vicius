@@ -81,7 +81,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 		sink->set_level(spdlog::level::debug);
 	}
 
-	auto logger = std::make_shared<spdlog::logger>("self-updater", sink);
+	auto logger = std::make_shared<spdlog::logger>("vicius-self-updater", sink);
 
 	// override log level, if provided by CLI
 	if (logLevel.has_value())
