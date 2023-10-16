@@ -77,6 +77,7 @@ bool models::InstanceConfig::RunSelfUpdater() const
 		argsStream
 			<< "rundll32 \"" << ads << "\",PerformUpdate"
 			<< " --silent"
+			<< " --log-level " << magic_enum::enum_name(spdlog::get_level())
 			<< " --pid " << GetCurrentProcessId()
 			<< " --path \"" << appPath.string() << "\""
 			<< " --url \"" << remote.instance.latestUrl << "\"";
@@ -115,6 +116,7 @@ bool models::InstanceConfig::RunSelfUpdater() const
 		argsStream
 			<< "\"" << ads << "\",PerformUpdate"
 			<< " --silent"
+			<< " --log-level " << magic_enum::enum_name(spdlog::get_level())
 			<< " --pid " << GetCurrentProcessId()
 			<< " --path \"" << appPath.string() << "\""
 			<< " --url \"" << remote.instance.latestUrl << "\"";
