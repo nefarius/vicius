@@ -2,19 +2,6 @@
 #include "Common.h"
 #include "InstanceConfig.hpp"
 
-#include <scope_guard.hpp>
-
-#include <tuple>
-#include <random>
-
-#include <tchar.h>
-#include <comdef.h>
-#include <ole2.h>
-#include <taskschd.h>
-
-#pragma comment(lib, "taskschd.lib")
-#pragma comment(lib, "comsupp.lib")
-
 
 std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask(const std::string& launchArgs) const
 {

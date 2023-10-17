@@ -1,7 +1,6 @@
 #include "pch.h"
-#define _CRT_SECURE_NO_WARNINGS
-#include "Common.h"
 #include "InstanceConfig.hpp"
+#define _CRT_SECURE_NO_WARNINGS
 
 
 void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) const

@@ -2,18 +2,6 @@
 #include "Common.h"
 #include "InstanceConfig.hpp"
 
-#include <fstream>
-
-#include <winreg/WinReg.hpp>
-#include <neargye/semver.hpp>
-#include <hash-library/md5.h>
-#include <hash-library/sha1.h>
-#include <hash-library/sha256.h>
-
-#include <spdlog/sinks/msvc_sink.h>
-
-#include <magic_enum.hpp>
-
 
 models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) : appInstance(hInstance), remote()
 {

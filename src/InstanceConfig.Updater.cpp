@@ -2,8 +2,6 @@
 #include "Common.h"
 #include "InstanceConfig.hpp"
 
-#include <tchar.h>
-
 
 bool models::InstanceConfig::ExtractSelfUpdater() const
 {
