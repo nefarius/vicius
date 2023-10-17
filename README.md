@@ -45,7 +45,7 @@ Non-exhaustive list of things open or in-progress...
   - [x] Fix issues launching from write-protected directory like `Program Files`
 - [ ] [Documentation](https://github.com/nefarius/docs.nefarius.at/tree/nefarius/project/vicius)
 - [ ] Add message box dialog if the user launches the updater with no args
-  - [ ] Standard text if we are up to date
+  - [x] Standard text if we are up to date
   - [ ] Inform if Betas are available
 - [ ] Finalize UI design
   - [x] `WizardPage::Start`
@@ -73,9 +73,9 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Support closing and restarting applications before and after the main update
 - [ ] Support running prerequisites installation before main update
 - [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
-- [ ] Tidy up and improve includes
-  - [ ] Optimize build times
-  - [ ] Use pre-compiled headers?
+- [x] Tidy up and improve includes
+  - [x] Optimize build times
+  - [x] Use pre-compiled headers?
 - [ ] Implement machine-wide registration  
       Currently only the user executing the updater will run registrations, which is sufficient for most cases
 - [ ] Postpone update dialog popping up if the product is currently in use
