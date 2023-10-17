@@ -42,8 +42,15 @@
 #include <scope_guard.hpp>
 
 //
+// Logging
+// 
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/msvc_sink.h>
+
+//
 // STL
 // 
 #include <filesystem>
 #include <tuple>
 #include <random>
+#include <algorithm>
