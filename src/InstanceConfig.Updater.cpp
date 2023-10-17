@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Updater.h"
+#include "Common.h"
 #include "InstanceConfig.hpp"
 
 #include <tchar.h>

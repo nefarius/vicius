@@ -1,11 +1,6 @@
 #include "pch.h"
-#include "Updater.h"
+#include "Common.h"
 #include "WizardPage.h"
-
-#include <winhttp.h>
-
-#include "pch.h"
-
 
 //
 // Models

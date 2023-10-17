@@ -283,7 +283,7 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="UniUtil.h" />
-    <ClInclude Include="Updater.h" />
+    <ClInclude Include="Common.h" />
     <ClInclude Include="UpdateResponse.hpp" />
     <ClInclude Include="WizardPage.h" />
   </ItemGroup>

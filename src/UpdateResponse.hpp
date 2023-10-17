@@ -5,7 +5,7 @@
 #include <neargye/semver.hpp>
 #include <magic_enum.hpp>
 
-#include "Updater.h"
+#include "Common.h"
 
 using json = nlohmann::json;
 
