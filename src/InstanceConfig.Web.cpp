@@ -1,3 +1,4 @@
+#include "pch.h"
 #define _CRT_SECURE_NO_WARNINGS
 #include "Updater.h"
 #include "InstanceConfig.hpp"

@@ -1,7 +1,10 @@
+#include "pch.h"
 #include "Updater.h"
 #include "WizardPage.h"
 
 #include <winhttp.h>
+
+#include "pch.h"
 
 
 //
