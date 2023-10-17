@@ -37,6 +37,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		return EXIT_FAILURE;
 	}
 
+	// running in background (silent)
 	const bool background = cmdl[{NV_CLI_BACKGROUND}];
 
 	// updater configuration, defaults and app state
