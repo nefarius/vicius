@@ -54,3 +54,11 @@
 #include <tuple>
 #include <random>
 #include <algorithm>
+#include <locale>
+
+// 
+// Custom
+// 
+#include "UniUtil.h"
+#include "resource.h"
+#include "CustomizeMe.h"
