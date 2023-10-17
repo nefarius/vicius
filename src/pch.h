@@ -39,6 +39,7 @@
 #include <hash-library/md5.h>
 #include <hash-library/sha1.h>
 #include <hash-library/sha256.h>
+#include <scope_guard.hpp>
 
 //
 // STL
