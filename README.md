@@ -44,6 +44,7 @@ Non-exhaustive list of things open or in-progress...
   - [x] Tests
   - [x] Fix issues launching from write-protected directory like `Program Files`
 - [ ] [Documentation](https://github.com/nefarius/docs.nefarius.at/tree/nefarius/project/vicius)
+  - [ ] Specify supported Command Line Arguments
 - [ ] Add message box dialog if the user launches the updater with no args
   - [x] Standard text if we are up to date
   - [ ] Inform if Betas are available
@@ -53,7 +54,6 @@ Non-exhaustive list of things open or in-progress...
   - [ ] `WizardPage::MultipleVersionsOverview`
   - [x] `WizardPage::DownloadAndInstall`
   - [ ] ...
-- [ ] Specify supported Command Line Arguments
 - [x] Implement Product Version detection
   - [x] `RegistryValue`
   - [x] `FileVersion`
