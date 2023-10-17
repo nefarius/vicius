@@ -46,6 +46,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		return EXIT_FAILURE;
 	}
 
+	const bool background = cmdl[{NV_CLI_BACKGROUND}];
+
 	// updater configuration, defaults and app state
 	models::InstanceConfig cfg(hInstance, cmdl);
 
@@ -86,9 +88,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 			// TODO: anything else we can do in this case?
 		}
-	}
-
-	const bool background = cmdl[{NV_CLI_BACKGROUND}];
+	}	
 
 	// actions to perform when run by Task Scheduler
 	if (background)

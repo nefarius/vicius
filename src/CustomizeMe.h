@@ -12,7 +12,7 @@
 //
 // Default window title
 // 
-#define NV_TASKBAR_TITLE		"Nefarius' Updater"
+#define NV_WINDOW_TITLE			"Nefarius' Updater"
 #define NV_PRODUCT_NAME			"Updater"
 
 #define NV_API_URL_MAX_CHARS	2000

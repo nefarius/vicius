@@ -127,7 +127,7 @@ namespace models
 		/** The detection method for the installed software version */
 		json detection;
 
-		SharedConfig() : windowTitle(NV_TASKBAR_TITLE), productName(NV_PRODUCT_NAME)
+		SharedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME)
 		{
 		}
 
