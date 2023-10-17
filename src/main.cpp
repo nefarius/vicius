@@ -146,7 +146,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	if (!isOutdated)
 	{
 		spdlog::info("Installed software is up-to-date");
-		cfg.DisplayUpTpDateDialog();
+		cfg.DisplayUpToDateDialog();
 		return ERROR_SUCCESS;
 	}
 

@@ -3,7 +3,7 @@
 #include "InstanceConfig.hpp"
 
 
-void models::InstanceConfig::DisplayUpTpDateDialog() const
+void models::InstanceConfig::DisplayUpToDateDialog() const
 {
 	int nClickedButton;
 

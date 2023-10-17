@@ -215,7 +215,7 @@ namespace models
 		 */
 		bool RunSelfUpdater() const;
 
-		void DisplayUpTpDateDialog() const;
+		void DisplayUpToDateDialog() const;
 
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{
