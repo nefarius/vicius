@@ -180,9 +180,9 @@ namespace models
 		 */
 		bool IsInstalledVersionOutdated(bool& isOutdated);
 
-		std::tuple<HRESULT, const char*> CreateScheduledTask(const std::string& launchArgs = NV_CLI_BACKGROUND) const;
+		std::tuple<HRESULT, std::string> CreateScheduledTask(const std::string& launchArgs = NV_CLI_BACKGROUND) const;
 
-		std::tuple<HRESULT, const char*> RemoveScheduledTask() const;
+		std::tuple<HRESULT, std::string> RemoveScheduledTask() const;
 
 		/**
 		 * \brief Registers the updater executable in current users' autostart.

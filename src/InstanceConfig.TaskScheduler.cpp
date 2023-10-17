@@ -3,7 +3,7 @@
 #include "InstanceConfig.hpp"
 
 
-std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask(const std::string& launchArgs) const
+std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(const std::string& launchArgs) const
 {
 	// task name
 	BSTR bstrTaskName = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
@@ -319,7 +319,7 @@ std::tuple<HRESULT, const char*> models::InstanceConfig::CreateScheduledTask(con
 	return std::make_tuple(hr, "Success!");
 }
 
-std::tuple<HRESULT, const char*> models::InstanceConfig::RemoveScheduledTask() const
+std::tuple<HRESULT, std::string> models::InstanceConfig::RemoveScheduledTask() const
 {
 	BSTR bstrTaskName = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
 
