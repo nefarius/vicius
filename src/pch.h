@@ -52,6 +52,7 @@
 // STL
 // 
 #include <filesystem>
+#include <fstream>
 #include <tuple>
 #include <random>
 #include <algorithm>
@@ -59,6 +60,8 @@
 #include <regex>
 #include <future>
 #include <optional>
+#include <string>
+#include <vector>
 
 // 
 // Custom

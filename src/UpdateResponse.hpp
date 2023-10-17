@@ -1,10 +1,6 @@
 #pragma once
 #include <string>
 #include <vector>
-#include <nlohmann/json.hpp>
-#include <neargye/semver.hpp>
-#include <magic_enum.hpp>
-
 #include "Common.h"
 
 using json = nlohmann::json;
