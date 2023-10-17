@@ -1,13 +1,8 @@
 #pragma once
 
 // 
-// Custom
+// Constants
 // 
-#include "UniUtil.h"
-#include "resource.h"
-#include "CustomizeMe.h"
-#include "DownloadAndInstall.hpp"
-
 
 #define NV_ADS_UPDATER_NAME		":updater.dll"
 #define NV_CLI_INSTALL			"--install"

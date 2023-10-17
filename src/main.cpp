@@ -1,11 +1,8 @@
 #include "pch.h"
 #include "Common.h"
 #include "WizardPage.h"
-
-//
-// Models
-// 
 #include "InstanceConfig.hpp"
+#include "DownloadAndInstall.hpp"
 
 
 //
@@ -15,10 +12,6 @@
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
-// 
-// TaskDialog
-// 
-#pragma comment(lib, "Comctl32.lib")
 
 #define AS_MB	(1024 * 1024)
 
