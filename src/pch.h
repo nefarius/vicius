@@ -40,6 +40,7 @@
 #include <hash-library/sha1.h>
 #include <hash-library/sha256.h>
 #include <scope_guard.hpp>
+#include <nlohmann/json.hpp>
 
 //
 // Logging
@@ -55,6 +56,9 @@
 #include <random>
 #include <algorithm>
 #include <locale>
+#include <regex>
+#include <future>
+#include <optional>
 
 // 
 // Custom
