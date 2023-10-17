@@ -74,6 +74,8 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Support running prerequisites installation before main update
 - [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
 - [ ] Tidy up and improve includes
+  - [ ] Optimize build times
+  - [ ] Use pre-compiled headers?
 - [ ] Implement machine-wide registration  
       Currently only the user executing the updater will run registrations, which is sufficient for most cases
 - [ ] Postpone update dialog popping up if the product is currently in use

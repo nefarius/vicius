@@ -123,7 +123,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	}
 
 	// check for updater updates - updateception :D
-	if (cfg.IsNewerUpdaterAvailable())
+	if (!cmdl[{NV_CLI_SKIP_SELF_UPDATE}] && cfg.IsNewerUpdaterAvailable())
 	{
 		spdlog::debug("Newer updater version available, invoking self-update");
 
@@ -148,6 +148,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	if (!isOutdated && background)
 	{
 		spdlog::info("Installed software is up-to-date");
+		return ERROR_SUCCESS;
+	}
+
+	// we're up2date and inform the user
+	if (!isOutdated)
+	{
+		spdlog::info("Installed software is up-to-date");
+		cfg.DisplayUpTpDateDialog();
 		return ERROR_SUCCESS;
 	}
 

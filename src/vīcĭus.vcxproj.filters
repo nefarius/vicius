@@ -54,6 +54,9 @@
     <ClCompile Include="InstanceConfig.Updater.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
+    <ClCompile Include="InstanceConfig.Dialogs.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">

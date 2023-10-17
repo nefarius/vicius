@@ -59,6 +59,7 @@
 #define NV_CLI_AUTOSTART		"--autostart"
 #define NV_CLI_BACKGROUND		"--background"
 #define NV_CLI_LOG_LEVEL		"--log-level"
+#define NV_CLI_SKIP_SELF_UPDATE	"--skip-self-update"
 
 
 //

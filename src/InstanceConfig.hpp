@@ -78,7 +78,7 @@ namespace models
 		semver::version GetAppVersion() const { return appVersion; }
 		std::string GetAppFilename() const { return appFilename; }
 
-		std::string GetTaskBarTitle() const { return shared.taskBarTitle; }
+		std::string GetTaskBarTitle() const { return shared.windowTitle; }
 		std::string GetProductName() const { return shared.productName; }
 
 		bool SetSelectedRelease(const int releaseIndex = 0)
@@ -222,6 +222,8 @@ namespace models
 		 * \return True on success (end this process if the case), false on error.
 		 */
 		bool RunSelfUpdater() const;
+
+		void DisplayUpTpDateDialog() const;
 
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{

@@ -119,7 +119,7 @@ namespace models
 	{
 	public:
 		/** The classic window title, only shown in taskbar in our case */
-		std::string taskBarTitle;
+		std::string windowTitle;
 		/** Name of the product shown in UI */
 		std::string productName;
 		/** The detection method */
@@ -127,7 +127,7 @@ namespace models
 		/** The detection method for the installed software version */
 		json detection;
 
-		SharedConfig() : taskBarTitle(NV_TASKBAR_TITLE), productName(NV_PRODUCT_NAME)
+		SharedConfig() : windowTitle(NV_TASKBAR_TITLE), productName(NV_PRODUCT_NAME)
 		{
 		}
 
@@ -154,7 +154,7 @@ namespace models
 
 	NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
 		SharedConfig,
-		taskBarTitle,
+		windowTitle,
 		productName,
 		detectionMethod,
 		detection
