@@ -32,3 +32,28 @@ void models::InstanceConfig::DisplayUpToDateDialog() const
 		spdlog::error("Unexpected dialog result: {}", hr);
 	}
 }
+
+void models::InstanceConfig::DisplayErrorDialog(const std::string& header, const std::string& body) const
+{
+	int nClickedButton;
+
+	const auto windowTitle = ConvertAnsiToWide(shared.windowTitle);
+	const auto windowHeader = ConvertAnsiToWide(header);
+	const auto windowBody = ConvertAnsiToWide(body);
+
+	const HRESULT hr = TaskDialog(
+		nullptr,
+		appInstance,
+		windowTitle.c_str(),
+		windowHeader.c_str(),
+		windowBody.c_str(),
+		TDCBF_CLOSE_BUTTON,
+		TD_ERROR_ICON,
+		&nClickedButton
+	);
+
+	if (FAILED(hr))
+	{
+		spdlog::error("Unexpected dialog result: {}", hr);
+	}
+}

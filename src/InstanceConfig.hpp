@@ -217,6 +217,8 @@ namespace models
 
 		void DisplayUpToDateDialog() const;
 
+		void DisplayErrorDialog(const std::string& header, const std::string& body) const;
+
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{
 		}
