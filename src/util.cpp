@@ -9,7 +9,7 @@ namespace util
 {
 	std::filesystem::path GetImageBasePathW()
 	{
-		wchar_t myPath[MAX_PATH + 1] = { 0 };
+		wchar_t myPath[MAX_PATH + 1] = {0};
 
 		GetModuleFileNameW(
 			reinterpret_cast<HINSTANCE>(&__ImageBase),
@@ -34,7 +34,7 @@ namespace util
 
 			if (GetFileVersionInfoA(filePath.string().c_str(), verHandle, verSize, verData))
 			{
-				if (VerQueryValueA(verData, "\\", (VOID FAR * FAR*) & lpBuffer, &size))
+				if (VerQueryValueA(verData, "\\", (VOID FAR * FAR*)&lpBuffer, &size))
 				{
 					if (size)
 					{
@@ -52,7 +52,7 @@ namespace util
 			delete[] verData;
 		}
 
-		return semver::version{ versionString.str() };
+		return semver::version{versionString.str()};
 	}
 
 	bool ParseCommandLineArguments(argh::parser& cmdl)
@@ -103,15 +103,14 @@ namespace util
 		return std::tolower(a) == std::tolower(b);
 	}
 
-	bool icompare(std::string const& a, std::string const& b)
+	bool icompare(const std::string& a, const std::string& b)
 	{
-		if (a.length() == b.length()) {
+		if (a.length() == b.length())
+		{
 			return std::equal(b.begin(), b.end(),
-				a.begin(), icompare_pred);
+			                  a.begin(), icompare_pred);
 		}
-		else {
-			return false;
-		}
+		return false;
 	}
 
 	bool IsAdmin(int& errorCode)
@@ -171,5 +170,33 @@ namespace winapi
 		}
 
 		return dwError;
+	}
+
+	std::string GetLastErrorStdStr(DWORD errorCode)
+	{
+		DWORD error = (errorCode == ERROR_SUCCESS) ? GetLastError() : errorCode;
+		if (error)
+		{
+			LPVOID lpMsgBuf;
+			DWORD bufLen = FormatMessageA(
+				FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				FORMAT_MESSAGE_FROM_SYSTEM |
+				FORMAT_MESSAGE_IGNORE_INSERTS,
+				nullptr,
+				error,
+				MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+				(LPSTR)&lpMsgBuf,
+				0, nullptr);
+			if (bufLen)
+			{
+				auto lpMsgStr = static_cast<LPCSTR>(lpMsgBuf);
+				std::string result(lpMsgStr, lpMsgStr + bufLen);
+
+				LocalFree(lpMsgBuf);
+
+				return result;
+			}
+		}
+		return std::string("OK");
 	}
 }

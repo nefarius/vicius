@@ -43,4 +43,5 @@ namespace util
 namespace winapi
 {
 	DWORD IsAppRunningAsAdminMode(PBOOL IsAdmin);
+	std::string GetLastErrorStdStr(DWORD errorCode);
 }
