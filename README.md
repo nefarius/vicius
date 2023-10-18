@@ -30,6 +30,8 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
   If run in autostart when the user logs on, it can make sure that scheduled tasks and other supportive components are configured and working properly.
 - Low resource consumption  
   The updater process is only invoked on demand (at user logon and once per day via Task Scheduler) and doesn't keep running in the background.
+- Respects your time  
+  Busy fragging in a game? Turned Focus Assist on? We won't bother you with any popup windows until you're ready.
 
 ## TODOs
 
