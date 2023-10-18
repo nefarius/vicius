@@ -57,7 +57,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         if (const auto taskRet = cfg.CreateScheduledTask(); FAILED(std::get<0>(taskRet)))
         {
             // TODO: better fallback action?
-            spdlog::critical("Failed to (re-)create scheduled task, error: {}", std::get<1>(taskRet));
+
+            _com_error err(std::get<0>(taskRet));
+            spdlog::critical("Failed to (re-)create Scheduled Task, error: {}, HRESULT: {}", std::get<1>(taskRet),
+                             ConvertWideToANSI(err.ErrorMessage()));
             cfg.TryDisplayErrorDialog("Failed to create scheduled task", std::get<1>(taskRet));
             return NV_E_SCHEDULED_TASK;
         }
@@ -79,7 +82,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     {
         if (const auto ret = cfg.CreateScheduledTask(); FAILED(std::get<0>(ret)))
         {
-            spdlog::error("Failed to (re-)create Scheduled Task, error: {}", std::get<1>(ret));
+            _com_error err(std::get<0>(ret));
+            spdlog::error("Failed to (re-)create Scheduled Task, error: {}, HRESULT: {}", std::get<1>(ret),
+                          ConvertWideToANSI(err.ErrorMessage()));
             cfg.TryDisplayErrorDialog("Failed to create scheduled task", std::get<1>(ret));
             // TODO: anything else we can do in this case?
         }
