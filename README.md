@@ -45,7 +45,7 @@ Non-exhaustive list of things open or in-progress...
   - ~~With [libPeConv](https://github.com/hasherezade/libpeconv) maybe? Would be cool if we can avoid writing a temporary EXE somewhere~~
   - [x] Tests
   - [x] Fix issues launching from write-protected directory like `Program Files`
-- [ ] [Documentation](https://github.com/nefarius/docs.nefarius.at/tree/nefarius/project/vicius)
+- [ ] [Documentation](https://docs.nefarius.at/projects/Vicius/)
   - [ ] About page
   - [ ] JSON Schemas
   - [x] Specify supported Command Line Arguments
