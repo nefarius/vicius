@@ -38,8 +38,8 @@ void models::InstanceConfig::TryDisplayUpToDateDialog(const bool force) const
 	}
 }
 
-void models::InstanceConfig::TryDisplayErrorDialog(const std::string& header, const std::string& body,
-                                                const bool force) const
+void models::InstanceConfig::TryDisplayErrorDialog(
+	const std::string& header, const std::string& body, const bool force) const
 {
 	if (!force && IsSilent())
 	{

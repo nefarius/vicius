@@ -76,7 +76,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		if (const auto ret = cfg.CreateScheduledTask(); FAILED(std::get<0>(ret)))
 		{
 			spdlog::error("Failed to (re-)create Scheduled Task, error: {}", std::get<1>(ret));
-
+			cfg.TryDisplayErrorDialog("Failed to create scheduled task", std::get<1>(ret));
 			// TODO: anything else we can do in this case?
 		}
 	}
@@ -94,7 +94,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		if (const auto taskRet = cfg.RemoveScheduledTask(); FAILED(std::get<0>(taskRet)))
 		{
 			// TODO: better fallback action?
-			spdlog::critical("Failed to delete Scheduled Task, error: {}", std::get<1>(taskRet));
+			spdlog::critical("Failed to delete scheduled task, error: {}", std::get<1>(taskRet));
+			cfg.TryDisplayErrorDialog("Failed to delete scheduled task", std::get<1>(taskRet));
 			return EXIT_FAILURE;
 		}
 	}
