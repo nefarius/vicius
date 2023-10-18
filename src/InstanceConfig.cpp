@@ -429,7 +429,7 @@ std::tuple<bool, std::string> models::InstanceConfig::RegisterAutostart(const st
     return std::make_tuple(true, "OK");
 }
 
-bool models::InstanceConfig::RemoveAutostart() const
+std::tuple<bool, std::string> models::InstanceConfig::RemoveAutostart() const
 {
     winreg::RegKey key;
     const auto subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
@@ -437,14 +437,14 @@ bool models::InstanceConfig::RemoveAutostart() const
     if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey); !result)
     {
         spdlog::error("Failed to open {}", ConvertWideToANSI(subKey));
-        return false;
+        return std::make_tuple(false, "Failed to open registry key");
     }
 
     if (const auto result = key.TryDeleteValue(ConvertAnsiToWide(appFilename)); !result)
     {
         spdlog::error("Failed to delete autostart value");
-        return false;
+        return std::make_tuple(false, "Failed to delete autostart value");
     }
 
-    return true;
+    return std::make_tuple(true, "OK");
 }

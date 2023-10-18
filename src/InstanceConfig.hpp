@@ -196,7 +196,7 @@ namespace models
 		 * \brief Removes the autostart entry for the current user.
 		 * \return True on success, false otherwise.
 		 */
-		bool RemoveAutostart() const;
+		std::tuple<bool, std::string> RemoveAutostart() const;
 
 		/**
 		 * \brief Extracts the embedded self-updater DLL resource into our own app as ADS.

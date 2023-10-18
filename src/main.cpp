@@ -85,10 +85,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // uninstall tasks
     if (cmdl[{NV_CLI_UNINSTALL}])
     {
-        if (const auto autoRet = cfg.RemoveAutostart(); !autoRet)
+        if (const auto autoRet = cfg.RemoveAutostart(); !std::get<0>(autoRet))
         {
             // TODO: better fallback action?
-            spdlog::critical("Failed to de-register in autostart");
+            spdlog::critical("Failed to de-register from autostart");
+            cfg.TryDisplayErrorDialog("Failed to de-register from autostart", std::get<1>(autoRet));
             return NV_E_AUTOSTART;
         }
 
