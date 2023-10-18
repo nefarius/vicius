@@ -5,7 +5,8 @@
  */
 
 //
-// Regex for file name extraction, assumes "username_repository_Updater" format
+// Regex for file name extraction, assumes "manufacturer_product_Updater" format
+// Does NOT include file extension
 // 
 #define NV_FILENAME_REGEX       R"(^(\w+)_(\w+)_Updater$)"
 
