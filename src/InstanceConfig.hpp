@@ -179,7 +179,7 @@ namespace models
 		 * \param isOutdated True if the detected installed version is older than the latest server release.
 		 * \return True if detection succeeded, false on error.
 		 */
-		bool IsInstalledVersionOutdated(bool& isOutdated);
+		std::tuple<bool, std::string> IsInstalledVersionOutdated(bool& isOutdated);
 
 		std::tuple<HRESULT, std::string> CreateScheduledTask(const std::string& launchArgs = NV_CLI_BACKGROUND) const;
 

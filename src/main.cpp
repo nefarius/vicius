@@ -124,10 +124,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     bool isOutdated = false;
     // run local product detection
-    if (!cfg.IsInstalledVersionOutdated(isOutdated))
+    if (const auto ret = cfg.IsInstalledVersionOutdated(isOutdated); !std::get<0>(ret))
     {
         // TODO: add error handling
         spdlog::critical("Failed to detect installed product version");
+        cfg.TryDisplayErrorDialog("Failed to detect installed product version", std::get<1>(ret));
         return NV_E_PRODUCT_DETECTION;
     }
 

@@ -11,7 +11,7 @@
         "detection": {
             "hive": "HKLM",
             "key": "SOFTWARE\\Nefarius Software Solutions e.U.\\HidHide",
-            "value": "Version",
+            "value": "VersionINVALID",
 
             "path": "F:\\Downloads\\ep_setup (4).exe",
             "algorithm": "SHA1",
