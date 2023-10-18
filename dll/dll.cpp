@@ -205,6 +205,8 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
             );
         }
 
+        outStream.close();
+
         spdlog::info("Spawning main process install procedure");
 
         STARTUPINFOA si = {sizeof(STARTUPINFOA)};
@@ -227,7 +229,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
             const_cast<LPSTR>(launchArgs.c_str()),
             nullptr,
             nullptr,
-            TRUE,
+            FALSE,
             CREATE_NO_WINDOW,
             nullptr,
             workDir.string().c_str(),
