@@ -105,7 +105,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	{
 		// TODO: add fallback actions
 		spdlog::critical("Failed to get server response");
-		return ERROR_WINHTTP_INVALID_SERVER_RESPONSE;
+		return NV_E_SERVER_RESPONSE;
 	}
 
 	// check for updater updates - updateception :D
@@ -127,7 +127,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	{
 		// TODO: add error handling
 		spdlog::critical("Failed to detect installed product version");
-		return ERROR_NO_DATA_DETECTED;
+		return NV_E_PRODUCT_DETECTION;
 	}
 
 	// we're up2date and silent, exit

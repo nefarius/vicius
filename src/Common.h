@@ -21,6 +21,8 @@
 #define NV_E_AUTOSTART              101
 #define NV_E_SCHEDULED_TASK         102
 #define NV_E_EXTRACT_SELF_UPDATE    103
+#define NV_E_SERVER_RESPONSE        104
+#define NV_E_PRODUCT_DETECTION      105
 
 
 //
