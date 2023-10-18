@@ -216,9 +216,9 @@ namespace models
 		 */
 		bool RunSelfUpdater() const;
 
-		void DisplayUpToDateDialog() const;
+		void TryDisplayUpToDateDialog(bool force = false) const;
 
-		void DisplayErrorDialog(const std::string& header, const std::string& body, bool force = false) const;
+		void TryDisplayErrorDialog(const std::string& header, const std::string& body, bool force = false) const;
 
 		[[nodiscard]] bool IsSilent() const { return isSilent; }
 

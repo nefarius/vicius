@@ -37,9 +37,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		return EXIT_FAILURE;
 	}
 
-	// running in background (silent)
-	const bool background = cmdl[{NV_CLI_BACKGROUND}];
-
 	// updater configuration, defaults and app state
 	models::InstanceConfig cfg(hInstance, cmdl);
 
@@ -81,12 +78,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 			// TODO: anything else we can do in this case?
 		}
-	}	
-
-	// actions to perform when run by Task Scheduler
-	if (background)
-	{
-		// TODO: implement me
 	}
 
 	// uninstall tasks
@@ -138,20 +129,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	}
 
 	// we're up2date and silent, exit
-	if (!isOutdated && background)
-	{
-		spdlog::info("Installed software is up-to-date");
-		return ERROR_SUCCESS;
-	}
-
-	// we're up2date and inform the user
 	if (!isOutdated)
 	{
 		spdlog::info("Installed software is up-to-date");
-		cfg.DisplayUpToDateDialog();
+		cfg.TryDisplayUpToDateDialog();
 		return ERROR_SUCCESS;
 	}
-
+	
 	constexpr int windowWidth = 640, windowHeight = 512;
 	sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetTaskBarTitle(), sf::Style::None);
 

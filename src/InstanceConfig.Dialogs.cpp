@@ -1,10 +1,15 @@
 #include "pch.h"
-#include "Common.h"
 #include "InstanceConfig.hpp"
 
 
-void models::InstanceConfig::DisplayUpToDateDialog() const
+void models::InstanceConfig::TryDisplayUpToDateDialog(const bool force) const
 {
+	if (!force && IsSilent())
+	{
+		spdlog::debug("Silent run, suppressing error dialog");
+		return;
+	}
+
 	int nClickedButton;
 
 	const auto productName = ConvertAnsiToWide(shared.productName);
@@ -33,7 +38,7 @@ void models::InstanceConfig::DisplayUpToDateDialog() const
 	}
 }
 
-void models::InstanceConfig::DisplayErrorDialog(const std::string& header, const std::string& body,
+void models::InstanceConfig::TryDisplayErrorDialog(const std::string& header, const std::string& body,
                                                 const bool force) const
 {
 	if (!force && IsSilent())
