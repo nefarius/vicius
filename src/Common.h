@@ -13,6 +13,10 @@
 #define NV_CLI_SKIP_SELF_UPDATE     "--skip-self-update"
 #define NV_CLI_SILENT               "--silent"
 
+//
+// App error exit codes
+// 
+
 #define NV_E_CLI_PARSING            100
 #define NV_E_AUTOSTART              101
 #define NV_E_SCHEDULED_TASK         102
