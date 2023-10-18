@@ -131,7 +131,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
     spdlog::debug("tempFile = {}", tempFile);
     curlpp::Cleanup myCleanup;
     HANDLE hProcess = nullptr;
-    int retries = 10;
+    int retries = 20; // 5 seconds timeout
 
     // wait until parent is no more
     do
