@@ -63,7 +63,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			// TODO: better fallback action?
 			spdlog::critical("Failed to extract self-updater, error: {}", std::get<1>(extRet));
 			cfg.TryDisplayErrorDialog("Failed to extract self-updater", std::get<1>(extRet));
-			return NV_E_EXTRACT_SU;
+			return NV_E_EXTRACT_SELF_UPDATE;
 		}
 
 		spdlog::info("Installation tasks finished successfully");
