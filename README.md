@@ -82,6 +82,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Implement machine-wide registration  
       Currently only the user executing the updater will run registrations, which is sufficient for most cases
 - [ ] Postpone update dialog popping up if the product is currently in use
+- [ ] Add [Authenticode](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/authenticode) signature checks
 
 ## Sources & 3rd party credits
 
