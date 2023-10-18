@@ -68,7 +68,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
 
         spdlog::info("Installation tasks finished successfully");
-        return EXIT_SUCCESS;
+        return NV_S_INSTALL;
     }
 
     // actions to perform when running in autostart
@@ -118,7 +118,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         if (cfg.RunSelfUpdater())
         {
-            return EXIT_SUCCESS;
+            return NV_S_SELF_UPDATER;
         }
 
         spdlog::error("Failed to invoke self-update");
@@ -139,11 +139,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     {
         spdlog::info("Installed software is up-to-date");
         cfg.TryDisplayUpToDateDialog();
-        return ERROR_SUCCESS;
+        return NV_S_UP_TO_DATE;
     }
 
     // check if we are currently bothering the user
-    if (!cmdl[{NV_CLI_FORCE}] && cfg.IsSilent())
+    if (!cmdl[{NV_CLI_IGNORE_BUSY_STATE}] && cfg.IsSilent())
     {
         QUERY_USER_NOTIFICATION_STATE state = {};
 
@@ -153,9 +153,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
         else
         {
-            if (state == QUNS_BUSY ||
-                state == QUNS_RUNNING_D3D_FULL_SCREEN ||
-                state == QUNS_PRESENTATION_MODE)
+            if (state != QUNS_ACCEPTS_NOTIFICATIONS)
             {
                 spdlog::info("User busy or running full-screen game, exiting");
                 return NV_E_BUSY;
@@ -528,7 +526,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     // TODO: implement me
 
-                    status = ERROR_SUCCESS;
+                    status = NV_S_UPDATE_FINISHED;
                     ++currentPage;
 
                     break;
