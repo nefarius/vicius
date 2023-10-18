@@ -97,7 +97,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 	return code;
 }
 
-[[nodiscard]] bool models::InstanceConfig::RequestUpdateInfo()
+[[nodiscard]] std::tuple<bool, std::string> models::InstanceConfig::RequestUpdateInfo()
 {
 	const auto conn = new RestClient::Connection("");
 
@@ -120,7 +120,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 	{
 		// TODO: add retry logic or similar
 		spdlog::error("GET request failed with code {}", code);
-		return false;
+		return std::make_tuple(false, std::format("HTTP error code {}", code));
 	}
 
 	try
@@ -139,7 +139,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 		{
 			spdlog::info("{} authority specified (or empty response), ignoring server parameters",
 				magic_enum::enum_name(authority));
-			return true;
+			return std::make_tuple(true, "OK");
 		}
 
 		// TODO: implement merging remote shared config
@@ -147,16 +147,16 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 		spdlog::info("Processing remote shared configuration parameters");
 		shared = remote.shared;
 
-		return true;
+		return std::make_tuple(true, "OK");
 	}
 	catch (const json::exception& e)
 	{
 		spdlog::error("Failed to parse JSON, error {}", e.what());
-		return false;
+		return std::make_tuple(false, std::format("JSON parsing error: {}", e.what()));
 	}
-	catch (...)
+	catch (const std::exception& e)
 	{
-		spdlog::error("Unexpected error during response parsing");
-		return false;
+		spdlog::error("Unexpected error during response parsing, error {}", e.what());
+		return std::make_tuple(false, std::format("Unknown error error: {}", e.what()));
 	}
 }
