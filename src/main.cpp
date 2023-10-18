@@ -142,6 +142,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         return ERROR_SUCCESS;
     }
 
+    // check if we are currently bothering the user
+    if (!cmdl[{NV_CLI_FORCE}] && cfg.IsSilent())
+    {
+        QUERY_USER_NOTIFICATION_STATE state = {};
+
+        if (const HRESULT hr = SHQueryUserNotificationState(&state); FAILED(hr))
+        {
+            spdlog::warn("Querying notification state failed with HRESULT {}", hr);
+        }
+        else
+        {
+            if (state == QUNS_BUSY ||
+                state == QUNS_RUNNING_D3D_FULL_SCREEN ||
+                state == QUNS_PRESENTATION_MODE)
+            {
+                spdlog::info("User busy or running full-screen game, exiting");
+                return NV_E_BUSY;
+            }
+        }
+    }
+
     constexpr int windowWidth = 640, windowHeight = 512;
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetWindowTitle(), sf::Style::None);
 

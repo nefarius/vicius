@@ -12,6 +12,7 @@
 #define NV_CLI_LOG_LEVEL            "--log-level"
 #define NV_CLI_SKIP_SELF_UPDATE     "--skip-self-update"
 #define NV_CLI_SILENT               "--silent"
+#define NV_CLI_FORCE                "--force"
 
 //
 // App error exit codes
@@ -23,6 +24,7 @@
 #define NV_E_EXTRACT_SELF_UPDATE    103
 #define NV_E_SERVER_RESPONSE        104
 #define NV_E_PRODUCT_DETECTION      105
+#define NV_E_BUSY                   106
 
 
 //
