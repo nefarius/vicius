@@ -161,7 +161,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 
             spdlog::debug("exitCode = {}", exitCode);
 
-            if (exitCode == 0)
+            if (exitCode == 0 || exitCode == 201 /* NV_S_SELF_UPDATER */)
             {
                 spdlog::debug("Process exited with code {}", exitCode);
                 CloseHandle(hProcess);
