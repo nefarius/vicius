@@ -3,7 +3,7 @@
 #include "InstanceConfig.hpp"
 
 
-bool models::InstanceConfig::ExtractSelfUpdater() const
+std::tuple<bool, std::string> models::InstanceConfig::ExtractSelfUpdater() const
 {
 	const HRSRC updater_res = FindResource(appInstance, MAKEINTRESOURCE(IDR_DLL_SELF_UPDATER), RT_RCDATA);
 	const int updater_size = static_cast<int>(SizeofResource(appInstance, updater_res));
@@ -25,8 +25,7 @@ bool models::InstanceConfig::ExtractSelfUpdater() const
 
 	if (self == INVALID_HANDLE_VALUE)
 	{
-		spdlog::error("Failed to open ADS handle, error: {}", GetLastError());
-		return false;
+		return std::make_tuple(false, winapi::GetLastErrorStdStr());
 	}
 
 	DWORD bytesWritten = 0;
@@ -35,14 +34,15 @@ bool models::InstanceConfig::ExtractSelfUpdater() const
 	if (const auto ret = WriteFile(self, updater_data, updater_size, &bytesWritten, nullptr);
 		!ret || bytesWritten < static_cast<DWORD>(updater_size))
 	{
-		spdlog::error("Failed to write resource to file, error: {}", GetLastError());
+		const DWORD error = GetLastError();
 		CloseHandle(self);
-		return false;
+		SetLastError(error);
+		return std::make_tuple(false, winapi::GetLastErrorStdStr());
 	}
 
 	CloseHandle(self);
 
-	return true;
+	return std::make_tuple(true, "OK");
 }
 
 bool models::InstanceConfig::HasWritePermissions() const

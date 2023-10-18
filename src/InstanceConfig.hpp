@@ -56,6 +56,7 @@ namespace models
 
 		std::optional<std::shared_future<int>> downloadTask;
 		int selectedRelease{0};
+		bool isSilent{false};
 
 		int DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
 
@@ -201,7 +202,7 @@ namespace models
 		 * \brief Extracts the embedded self-updater DLL resource into our own app as ADS.
 		 * \return True on success, false otherwise.
 		 */
-		bool ExtractSelfUpdater() const;
+		std::tuple<bool, std::string> ExtractSelfUpdater() const;
 
 		/**
 		 * \brief Checks if the current app working directory can be written to.
@@ -217,7 +218,9 @@ namespace models
 
 		void DisplayUpToDateDialog() const;
 
-		void DisplayErrorDialog(const std::string& header, const std::string& body) const;
+		void DisplayErrorDialog(const std::string& header, const std::string& body, bool force = false) const;
+
+		[[nodiscard]] bool IsSilent() const { return isSilent; }
 
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{

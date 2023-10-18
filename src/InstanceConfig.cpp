@@ -47,6 +47,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 	// Defaults and embedded stuff
 	// 
 
+	isSilent = cmdl[{NV_CLI_BACKGROUND}] || cmdl[{NV_CLI_SILENT}];
+
 	// grab our backend URL from string resource
 	std::string idsServerUrl(NV_API_URL_MAX_CHARS, '\0');
 	if (LoadStringA(

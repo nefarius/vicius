@@ -60,10 +60,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			return EXIT_FAILURE;
 		}
 
-		if (const auto extRet = cfg.ExtractSelfUpdater(); !extRet)
+		if (const auto extRet = cfg.ExtractSelfUpdater(); !std::get<0>(extRet))
 		{
 			// TODO: better fallback action?
-			spdlog::critical("Failed to extract self-updater");
+			spdlog::critical("Failed to extract self-updater, error: {}", std::get<1>(extRet));
+
 			return EXIT_FAILURE;
 		}
 

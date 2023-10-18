@@ -33,8 +33,15 @@ void models::InstanceConfig::DisplayUpToDateDialog() const
 	}
 }
 
-void models::InstanceConfig::DisplayErrorDialog(const std::string& header, const std::string& body) const
+void models::InstanceConfig::DisplayErrorDialog(const std::string& header, const std::string& body,
+                                                const bool force) const
 {
+	if (!force && IsSilent())
+	{
+		spdlog::debug("Silent run, suppressing error dialog");
+		return;
+	}
+
 	int nClickedButton;
 
 	const auto windowTitle = ConvertAnsiToWide(shared.windowTitle);
