@@ -33,6 +33,11 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
 - Respects your time  
   Busy fragging in a game? We won't bother you with any popup windows until you're ready.
 
+## Prerequisites
+
+- An NTFS formatted volume
+- An internet connection
+
 ## TODOs
 
 Non-exhaustive list of things open or in-progress...
