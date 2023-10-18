@@ -46,7 +46,11 @@ Non-exhaustive list of things open or in-progress...
   - [x] Tests
   - [x] Fix issues launching from write-protected directory like `Program Files`
 - [ ] [Documentation](https://github.com/nefarius/docs.nefarius.at/tree/nefarius/project/vicius)
-  - [ ] Specify supported Command Line Arguments
+  - [ ] About page
+  - [ ] JSON Schemas
+  - [x] Specify supported Command Line Arguments
+  - [x] Exit Codes
+  - [ ] ...
 - [ ] Add message box dialog if the user launches the updater with no args
   - [x] Standard text if we are up to date
   - [ ] Inform if Betas are available
