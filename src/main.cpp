@@ -28,7 +28,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     argh::parser cmdl;
 
-    cmdl.add_params({NV_CLI_LOG_LEVEL});
+    cmdl.add_params({
+        NV_CLI_LOG_LEVEL,
+        NV_CLI_LOG_TO_FILE
+    });
 
     if (!util::ParseCommandLineArguments(cmdl))
     {

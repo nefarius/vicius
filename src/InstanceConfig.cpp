@@ -13,19 +13,23 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     const auto logLevel = magic_enum::enum_cast<spdlog::level::level_enum>(cmdl("--log-level").str());
 
-    auto sink = std::make_shared<spdlog::sinks::msvc_sink_mt>(false);
+    auto debugSink = std::make_shared<spdlog::sinks::msvc_sink_mt>(false);
+    debugSink->set_level(logLevel.has_value() ? logLevel.value() : spdlog::level::info);
 
-    // override log level, if provided by CLI
-    if (logLevel.has_value())
+    std::shared_ptr<spdlog::logger> logger;
+
+    if (cmdl({NV_CLI_LOG_TO_FILE}))
     {
-        sink->set_level(logLevel.value());
+        const auto logFilename = cmdl({NV_CLI_LOG_TO_FILE}).str();
+        auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilename, true);
+        fileSink->set_level(logLevel.has_value() ? logLevel.value() : spdlog::level::info);
+
+        logger = std::make_shared<spdlog::logger>(spdlog::logger("vicius-updater", {debugSink, fileSink}));
     }
     else
     {
-        sink->set_level(spdlog::level::info);
+        logger = std::make_shared<spdlog::logger>("vicius-updater", debugSink);
     }
-
-    auto logger = std::make_shared<spdlog::logger>("vicius-updater", sink);
 
     // override log level, if provided by CLI
     if (logLevel.has_value())
