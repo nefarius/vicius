@@ -34,7 +34,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 	{
 		// TODO: better fallback action?
 		spdlog::critical("Failed to parse command line arguments");
-		return EXIT_FAILURE;
+		return NV_E_CLI_PARSING;
 	}
 
 	// updater configuration, defaults and app state
@@ -47,7 +47,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		{
 			// TODO: better fallback action?
 			spdlog::critical("Failed to register in autostart");
-			return EXIT_FAILURE;
+			return NV_E_AUTOSTART;
 		}
 
 		if (const auto taskRet = cfg.CreateScheduledTask(); FAILED(std::get<0>(taskRet)))
@@ -55,7 +55,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			// TODO: better fallback action?
 			spdlog::critical("Failed to (re-)create scheduled task, error: {}", std::get<1>(taskRet));
 			cfg.TryDisplayErrorDialog("Failed to create scheduled task", std::get<1>(taskRet));
-			return EXIT_FAILURE;
+			return NV_E_SCHEDULED_TASK;
 		}
 
 		if (const auto extRet = cfg.ExtractSelfUpdater(); !std::get<0>(extRet))
@@ -63,7 +63,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			// TODO: better fallback action?
 			spdlog::critical("Failed to extract self-updater, error: {}", std::get<1>(extRet));
 			cfg.TryDisplayErrorDialog("Failed to extract self-updater", std::get<1>(extRet));
-			return EXIT_FAILURE;
+			return NV_E_EXTRACT_SU;
 		}
 
 		spdlog::info("Installation tasks finished successfully");
@@ -88,7 +88,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 		{
 			// TODO: better fallback action?
 			spdlog::critical("Failed to de-register in autostart");
-			return EXIT_FAILURE;
+			return NV_E_AUTOSTART;
 		}
 
 		if (const auto taskRet = cfg.RemoveScheduledTask(); FAILED(std::get<0>(taskRet)))
@@ -96,7 +96,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 			// TODO: better fallback action?
 			spdlog::critical("Failed to delete scheduled task, error: {}", std::get<1>(taskRet));
 			cfg.TryDisplayErrorDialog("Failed to delete scheduled task", std::get<1>(taskRet));
-			return EXIT_FAILURE;
+			return NV_E_SCHEDULED_TASK;
 		}
 	}
 
