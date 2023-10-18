@@ -18,17 +18,25 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     std::shared_ptr<spdlog::logger> logger;
 
-    if (cmdl({NV_CLI_LOG_TO_FILE}))
+    try
     {
-        const auto logFilename = cmdl({NV_CLI_LOG_TO_FILE}).str();
-        auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilename, true);
-        fileSink->set_level(logLevel.has_value() ? logLevel.value() : spdlog::level::info);
+        if (cmdl({NV_CLI_LOG_TO_FILE}))
+        {
+            const auto logFilename = cmdl({NV_CLI_LOG_TO_FILE}).str();
+            auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilename, true);
+            fileSink->set_level(logLevel.has_value() ? logLevel.value() : spdlog::level::info);
 
-        logger = std::make_shared<spdlog::logger>(spdlog::logger("vicius-updater", {debugSink, fileSink}));
+            logger = std::make_shared<spdlog::logger>(spdlog::logger(NV_LOGGER_NAME, {debugSink, fileSink}));
+        }
+        else
+        {
+            logger = std::make_shared<spdlog::logger>(NV_LOGGER_NAME, debugSink);
+        }
     }
-    else
+    catch (...)
     {
-        logger = std::make_shared<spdlog::logger>("vicius-updater", debugSink);
+        // fallback action; user might have specified an invalid path
+        logger = std::make_shared<spdlog::logger>(NV_LOGGER_NAME, debugSink);
     }
 
     // override log level, if provided by CLI

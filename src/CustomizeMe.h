@@ -7,14 +7,29 @@
 //
 // Regex for file name extraction, assumes "username_repository_Updater" format
 // 
-#define NV_FILENAME_REGEX		R"(^(\w+)_(\w+)_Updater$)"
+#define NV_FILENAME_REGEX       R"(^(\w+)_(\w+)_Updater$)"
 
 //
-// Default window title
+// URL template (or absolute URL) where to find the update information
 // 
-#define NV_WINDOW_TITLE			"Nefarius' Updater"
-#define NV_PRODUCT_NAME			"Updater"
+#define NV_API_URL_TEMPLATE     "https://aiu.api.nefarius.systems/api/github/{}/updates?asJson=true"
 
-#define NV_API_URL_MAX_CHARS	2000
+//
+// Default window title (displayed in taskbar)
+// 
+#define NV_WINDOW_TITLE         "Nefarius' Updater"
 
-#define NV_API_URL_TEMPLATE		"https://aiu.api.nefarius.systems/api/github/{}/updates?asJson=true"
+//
+// Default fallback product name
+// 
+#define NV_PRODUCT_NAME         "Updater"
+
+//
+// Default logger name
+// 
+#define NV_LOGGER_NAME          "vicius-updater"
+
+//
+// Maximum allowed characters for URLs
+// 
+#define NV_API_URL_MAX_CHARS    2000
