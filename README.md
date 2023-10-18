@@ -69,6 +69,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Design Beta-Release support
 - [ ] Make app icon customizable
 - [ ] Add "Light" theme
+- [ ] Make UI DPI-aware
 - [ ] Add embedded images support for Markdown widget
 - [ ] Support closing and restarting applications before and after the main update
 - [ ] Support running prerequisites installation before main update
