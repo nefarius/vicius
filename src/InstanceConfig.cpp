@@ -403,7 +403,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
     return std::make_tuple(false, "Unsupported detection method");
 }
 
-bool models::InstanceConfig::RegisterAutostart(const std::string& launchArgs) const
+std::tuple<bool, std::string> models::InstanceConfig::RegisterAutostart(const std::string& launchArgs) const
 {
     winreg::RegKey key;
     const auto subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
@@ -411,7 +411,7 @@ bool models::InstanceConfig::RegisterAutostart(const std::string& launchArgs) co
     if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey); !result)
     {
         spdlog::error("Failed to open {}", ConvertWideToANSI(subKey));
-        return false;
+        return std::make_tuple(false, "Failed to open registry key");
     }
 
     std::stringstream ss;
@@ -423,10 +423,10 @@ bool models::InstanceConfig::RegisterAutostart(const std::string& launchArgs) co
         !writeResult)
     {
         spdlog::error("Failed to write autostart value");
-        return false;
+        return std::make_tuple(false, "Failed to write registry value");
     }
 
-    return true;
+    return std::make_tuple(true, "OK");
 }
 
 bool models::InstanceConfig::RemoveAutostart() const

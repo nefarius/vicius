@@ -43,10 +43,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // actions to perform when install is instructed
     if (cmdl[{NV_CLI_INSTALL}])
     {
-        if (const auto autoRet = cfg.RegisterAutostart(); !autoRet)
+        if (const auto autoRet = cfg.RegisterAutostart(); !std::get<0>(autoRet))
         {
             // TODO: better fallback action?
             spdlog::critical("Failed to register in autostart");
+            cfg.TryDisplayErrorDialog("Failed to register in autostart", std::get<1>(autoRet));
             return NV_E_AUTOSTART;
         }
 

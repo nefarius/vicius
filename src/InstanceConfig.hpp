@@ -190,7 +190,7 @@ namespace models
 		 * \param launchArgs Optional launch arguments when run at autostart.
 		 * \return True on success, false on error.
 		 */
-		bool RegisterAutostart(const std::string& launchArgs = NV_CLI_AUTOSTART) const;
+		std::tuple<bool, std::string> RegisterAutostart(const std::string& launchArgs = NV_CLI_AUTOSTART) const;
 
 		/**
 		 * \brief Removes the autostart entry for the current user.
