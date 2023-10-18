@@ -35,6 +35,7 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
 
 ## Prerequisites
 
+- Windows 7 or later
 - An NTFS formatted volume
 - An Internet connection
 
