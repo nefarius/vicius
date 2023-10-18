@@ -71,7 +71,7 @@ namespace models
 		semver::version GetAppVersion() const { return appVersion; }
 		std::string GetAppFilename() const { return appFilename; }
 
-		std::string GetTaskBarTitle() const { return shared.windowTitle; }
+		std::string GetWindowTitle() const { return shared.windowTitle; }
 		std::string GetProductName() const { return shared.productName; }
 
 		bool SetSelectedRelease(const int releaseIndex = 0)
