@@ -119,8 +119,10 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     if (code != 200)
     {
         // TODO: add retry logic or similar
+        
         spdlog::error("GET request failed with code {}", code);
-        return std::make_tuple(false, std::format("HTTP error code {}", code));
+        const auto curlCode = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
+        return std::make_tuple(false, std::format("HTTP error {}", curlCode));
     }
 
     try
