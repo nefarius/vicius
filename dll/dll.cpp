@@ -131,7 +131,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
     spdlog::debug("tempFile = {}", tempFile);
     curlpp::Cleanup myCleanup;
     HANDLE hProcess = nullptr;
-    int retries = 20; // 5 seconds timeout
+    int retries = 20; // 2 seconds timeout
 
     // wait until parent is no more
     do
@@ -151,10 +151,15 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
             pid
         );
 
+        spdlog::debug("hProcess = {}", fmt::ptr(hProcess));
+        spdlog::debug("GetLastError = {}", GetLastError());
+
         if (hProcess)
         {
             DWORD exitCode = 0;
             GetExitCodeProcess(hProcess, &exitCode);
+
+            spdlog::debug("exitCode = {}", exitCode);
 
             if (exitCode == 0)
             {
@@ -163,7 +168,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
                 break;
             }
 
-            Sleep(250);
+            Sleep(100);
         }
     }
     while (hProcess);
