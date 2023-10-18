@@ -4,16 +4,18 @@
  * Customize this file to tune the build to your liking
  */
 
+
+//
+// URL template (or absolute URL) where to find the update information
+// The {} will be replaced with the "manufacturer/product" sub-path
+// 
+#define NV_API_URL_TEMPLATE     "https://aiu.api.nefarius.systems/api/github/{}/updates?asJson=true"
+
 //
 // Regex for file name extraction, assumes "manufacturer_product_Updater" format
 // Does NOT include file extension
 // 
 #define NV_FILENAME_REGEX       R"(^(\w+)_(\w+)_Updater$)"
-
-//
-// URL template (or absolute URL) where to find the update information
-// 
-#define NV_API_URL_TEMPLATE     "https://aiu.api.nefarius.systems/api/github/{}/updates?asJson=true"
 
 //
 // Default window title (displayed in taskbar)
