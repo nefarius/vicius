@@ -10,8 +10,10 @@
 // The {} will be replaced with the "manufacturer/product" sub-path
 // 
 #if defined(NDEBUG)
+// this value will be used for RELEASE builds
 #define NV_API_URL_TEMPLATE     "https://vicius.api.nefarius.systems/api/example/updates.json"
 #else
+// this value will be used for DEBUG builds
 #define NV_API_URL_TEMPLATE     "http://localhost:5200/api/{}/updates.json"
 #endif
 
