@@ -80,9 +80,9 @@ Non-exhaustive list of things open or in-progress...
 - [x] Implement Task Scheduler
   - [x] Registration
   - [x] Removal
-- [ ] Fix issue on Windows 7:  
-      ```Failed to (re-)create Scheduled Task, error: Error saving the Task, HRESULT: Die Aufgaben-XML enthält einen Wert, der entweder falsch formatiert ist oder sich außerhalb des Bereichs befindet.
-      ```
+  - [ ] Fix issue on Windows 7:  
+        ```Failed to (re-)create Scheduled Task, error: Error saving the Task, HRESULT: Die Aufgaben-XML enthält einen Wert, der entweder falsch formatiert ist oder sich außerhalb des Bereichs befindet.
+        ```
 
 ### Nice-to-haves
 
