@@ -36,3 +36,8 @@
 // Maximum allowed characters for URLs
 // 
 #define NV_API_URL_MAX_CHARS    2000
+
+//
+// Uncomment to build without local configuration JSON file support
+// 
+//#define NV_FLAGS_NO_CONFIG_FILE

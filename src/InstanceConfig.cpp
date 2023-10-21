@@ -99,6 +99,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     // Merge from config file, if available
     // 
 
+#if !defined(NV_FLAGS_NO_CONFIG_FILE)
     if (auto configFile = appPath.parent_path() / std::format("{}.json", appFilename); exists(configFile))
     {
         std::ifstream configFileStream(configFile);
@@ -133,6 +134,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     {
         spdlog::info("No local configuration found at {}", configFile.string());
     }
+#endif
 
     //
     // File name extraction
