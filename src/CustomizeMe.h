@@ -42,6 +42,12 @@
 // 
 #define NV_HTTP_HEADERS_NAME    "Vicius"
 
+
+/*
+ * Compiler switches turning optional features on or off
+ */
+
+
 //
 // Uncomment to build without local configuration JSON file support
 // 
