@@ -24,6 +24,7 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
   No need to worry if .NET or other runtimes are present on the target machines, everything it needs is delivered in a single Win32 executable.
 - (Almost) zero configuration  
   The bare minimum configuration can be provided by simply compiling in the server URL by adjusting the `CustomizeMe.h` header file. This does not mean you need to maintain one build for every product you wanna support; you will get **multi-tenancy out of the box** by simply naming the resulting executable after the following scheme: `manufacturer_product_Updater.exe`, e.g. `nefarius_HidHide_Updater.exe` will build the server path as `https://example.org/api/nefarius/HidHide/updates.json` (or however it is defined in `CustomizeMe.h`) automatically!
+  - All alternative, more sophisticated configuration options [are described in the extended documentation](https://docs.nefarius.at/projects/Vicius/).
 - Self-updater  
   Sometimes just the updater process needs an update (e.g. security patches), not the entire product it is watching over. It can update itself if the server-provided instance version is higher than the locally running one.
 - Self-healing  
@@ -36,6 +37,7 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
 ## Prerequisites
 
 - Windows 7 or later
+  - Partially working, development and testing happens on Windows 10
 - An NTFS formatted volume
 - An Internet connection
 
