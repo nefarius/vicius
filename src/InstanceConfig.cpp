@@ -11,6 +11,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     // Setup logger
     // 
 
+#if !defined(NV_FLAGS_NO_LOGGING)
     const auto logLevel = magic_enum::enum_cast<spdlog::level::level_enum>(cmdl("--log-level").str());
 
     auto debugSink = std::make_shared<spdlog::sinks::msvc_sink_mt>(false);
@@ -52,6 +53,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     }
 
     set_default_logger(logger);
+#endif
 
     spdlog::debug("Initializing updater instance (PID: {})", GetCurrentProcessId());
 

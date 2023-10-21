@@ -57,3 +57,8 @@
 // Uncomment to build without setting custom HTTP headers (X-Vicius-...)
 // 
 //#define NV_FLAGS_NO_VENDOR_HEADERS
+
+//
+// Uncomment to build without any logging support whatsoever
+// 
+//#define NV_FLAGS_NO_LOGGING
