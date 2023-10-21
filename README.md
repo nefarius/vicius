@@ -98,6 +98,7 @@ Non-exhaustive list of things open or in-progress...
       Currently only the user executing the updater will run registrations, which is sufficient for most cases
 - [ ] Postpone update dialog popping up if the product is currently in use
 - [ ] Add [Authenticode](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/authenticode) signature checks
+- [ ] Allow using a HTTP proxy address via configuration
 
 ## Sources & 3rd party credits
 
