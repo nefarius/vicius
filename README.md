@@ -58,6 +58,9 @@ Non-exhaustive list of things open or in-progress...
   - [ ] JSON Schemas
   - [x] Specify supported Command Line Arguments
   - [x] Exit Codes
+  - [x] Emergency Feature
+  - [x] Server Discovery
+  - [ ] Logging
   - [ ] ...
 - [ ] Add message box dialog if the user launches the updater with no args
   - [x] Standard text if we are up to date
