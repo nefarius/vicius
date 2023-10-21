@@ -38,6 +38,16 @@
 #define NV_API_URL_MAX_CHARS    2000
 
 //
+// Name of the custom HTTP headers added to each server request
+// 
+#define NV_HTTP_HEADERS_NAME    "Vicius"
+
+//
 // Uncomment to build without local configuration JSON file support
 // 
 //#define NV_FLAGS_NO_CONFIG_FILE
+
+//
+// Uncomment to build without setting custom HTTP headers (X-Vicius-...)
+// 
+//#define NV_FLAGS_NO_VENDOR_HEADERS

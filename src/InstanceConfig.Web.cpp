@@ -10,9 +10,11 @@ void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) cons
     // these header values, classic web servers will just ignore them
     // 
 
-    conn->AppendHeader("X-Vicius-Manufacturer", manufacturer);
-    conn->AppendHeader("X-Vicius-Product", product);
-    conn->AppendHeader("X-Vicius-Version", appVersion.to_string());
+#if !defined(NV_FLAGS_NO_VENDOR_HEADERS)
+    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Manufacturer", manufacturer);
+    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Product", product);
+    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Version", appVersion.to_string());
+#endif
 }
 
 int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, const int releaseIndex)
