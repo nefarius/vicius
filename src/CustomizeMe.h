@@ -27,7 +27,7 @@
 #define NV_WINDOW_TITLE         "Nefarius' Updater"
 
 //
-// Default fallback product name
+// Default fallback product name (displayed in main UI window)
 // 
 #define NV_PRODUCT_NAME         "Updater"
 
