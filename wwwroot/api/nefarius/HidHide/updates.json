@@ -2,7 +2,8 @@
     "instance": {
         "updatesDisabled": false,
         "latestVersion": "2.0.0",
-        "latestUrl": "https://downloads.nefarius.at/other/nefarius/vpatch/vpatch.exe"
+        "latestUrl": "https://downloads.nefarius.at/other/nefarius/vpatch/vpatch.exe",
+        "emergencyUrl": "https://example.org"
     },
     "shared": {
         "productName": "HidHide",

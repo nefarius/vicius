@@ -237,11 +237,13 @@ namespace models
 	{
 	public:
 		/** True to disable, false to enable the updates globally */
-		bool updatesDisabled;
+		bool updatesDisabled{false};
 		/** The latest updater version available */
-		std::string latestVersion;
+		std::string latestVersion{};
 		/** URL of the latest updater binary */
-		std::string latestUrl;
+		std::string latestUrl{};
+        /** Optional URL pointing to an emergency announcement web page */
+        std::string emergencyUrl{};
 
 		/**
 		 * \brief Converts the version string to a SemVer type.
@@ -264,7 +266,8 @@ namespace models
 		UpdateConfig,
 		updatesDisabled,
 		latestVersion,
-		latestUrl
+		latestUrl,
+        emergencyUrl
 	)
 
 	/**

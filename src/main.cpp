@@ -119,6 +119,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         return NV_E_SERVER_RESPONSE;
     }
 
+    // launches emergency URL in default browser, if any
+    if (cfg.HasEmergencyUrlSet())
+    {
+        cfg.LaunchEmergencySite();
+    }
+
     // check for updater updates - updateception :D
     if (!cmdl[{NV_CLI_SKIP_SELF_UPDATE}] && cfg.IsNewerUpdaterAvailable())
     {
@@ -130,7 +136,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
 
         spdlog::error("Failed to invoke self-update");
-    }
+    }    
 
     bool isOutdated = false;
     // run local product detection

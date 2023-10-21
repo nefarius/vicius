@@ -222,6 +222,10 @@ namespace models
 
 		[[nodiscard]] bool IsSilent() const { return isSilent; }
 
+        [[nodiscard]] bool HasEmergencyUrlSet() const { return !remote.instance.emergencyUrl.empty(); }
+
+        void LaunchEmergencySite() const;
+
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{
 		}
