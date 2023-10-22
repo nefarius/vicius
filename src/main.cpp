@@ -159,6 +159,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // check if we are currently bothering the user
     if (!cmdl[{NV_CLI_IGNORE_BUSY_STATE}] && cfg.IsSilent())
     {
+        // query state for the next 30 minutes before giving up
+        int retries = 30;
+
+    retryBusy:
         QUERY_USER_NOTIFICATION_STATE state = {};
 
         if (const HRESULT hr = SHQueryUserNotificationState(&state); FAILED(hr))
@@ -169,8 +173,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         {
             if (state != QUNS_ACCEPTS_NOTIFICATIONS)
             {
-                spdlog::info("User busy or running full-screen game, exiting");
-                return NV_E_BUSY;
+                if (--retries < 1)
+                {
+                    spdlog::info("User busy or running full-screen game, exiting");
+                    return NV_E_BUSY;
+                }
+
+                // wait for roughly a minute
+                Sleep(60 * 1000);
+                goto retryBusy;
             }
         }
     }
