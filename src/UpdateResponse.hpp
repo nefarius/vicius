@@ -299,7 +299,7 @@ namespace models
         /** The global settings instance */
         UpdateConfig instance;
         /** The (optional) shared settings */
-        SharedConfig shared;
+        std::optional<SharedConfig> shared;
         /** The available releases */
         std::vector<UpdateRelease> releases;
     };

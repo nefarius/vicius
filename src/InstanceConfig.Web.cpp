@@ -148,8 +148,11 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
         // TODO: implement merging remote shared config
 
-        spdlog::info("Processing remote shared configuration parameters");
-        shared = remote.shared;
+        if (remote.shared.has_value())
+        {
+            spdlog::info("Processing remote shared configuration parameters");
+            shared = remote.shared.value();
+        }
 
         return std::make_tuple(true, "OK");
     }
