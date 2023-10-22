@@ -136,7 +136,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
 
         spdlog::error("Failed to invoke self-update");
-    }    
+    }
 
     bool isOutdated = false;
     // run local product detection
@@ -508,24 +508,50 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                         const auto& release = cfg.GetSelectedRelease();
 
-                        /*
-                        if (release.exitCode.skipCheck)
+                        // check if we have release-specific instructions first
+                        if (release.exitCode.has_value())
                         {
-                            spdlog::debug("Skipping error code check as per configuration");
-                            instStep = DownloadAndInstallStep::InstallSucceeded;
-                            break;
+                            if (release.exitCode.value().skipCheck)
+                            {
+                                spdlog::debug("Skipping error code check as per configuration");
+                                instStep = DownloadAndInstallStep::InstallSucceeded;
+                                break;
+                            }
+
+                            if (std::ranges::find(release.exitCode.value().successCodes, exitCode) != release.exitCode.
+                                value().successCodes.
+                                end())
+                            {
+                                spdlog::debug("Exit code {} marked as success-condition", exitCode);
+                                instStep = DownloadAndInstallStep::InstallSucceeded;
+                                break;
+                            }
                         }
 
-                        if (std::ranges::find(release.exitCode.successCodes, exitCode) != release.exitCode.successCodes.
-                            end())
+                        // check instance-level fallback
+                        if (cfg.HasExitCodeCheck())
                         {
-                            spdlog::debug("Exit code {} marked as success-condition", exitCode);
-                            instStep = DownloadAndInstallStep::InstallSucceeded;
-                            break;
-                        }
-                        */
+                            const auto& [skipCheck, successCodes] = cfg.GetExitCodeCheck();
 
-                        instStep = DownloadAndInstallStep::InstallFailed;
+                            if (skipCheck)
+                            {
+                                spdlog::debug("Skipping error code check as per configuration");
+                                instStep = DownloadAndInstallStep::InstallSucceeded;
+                                break;
+                            }
+
+                            if (std::ranges::find(successCodes, exitCode) != successCodes.end())
+                            {
+                                spdlog::debug("Exit code {} marked as success-condition", exitCode);
+                                instStep = DownloadAndInstallStep::InstallSucceeded;
+                                break;
+                            }
+                        }
+
+                        // final fallback
+                        instStep = exitCode == NV_SUCCESS_EXIT_CODE
+                                       ? DownloadAndInstallStep::InstallSucceeded
+                                       : DownloadAndInstallStep::InstallFailed;
                     }
 
                     break;

@@ -247,6 +247,10 @@ namespace models
          */
         void LaunchEmergencySite() const;
 
+        bool HasExitCodeCheck() const { return remote.instance.exitCode.has_value(); }
+
+        ExitCodeCheck& GetExitCodeCheck() { return remote.instance.exitCode.value(); }
+
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{
 		}

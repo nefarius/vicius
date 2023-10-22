@@ -48,6 +48,11 @@
 // 
 #define NV_HTTP_HEADERS_NAME    "Vicius"
 
+//
+// The default setup exit code assuming success, if not specified otherwise
+// 
+#define NV_SUCCESS_EXIT_CODE    0
+
 
 /*
  * Compiler switches turning optional features on or off
