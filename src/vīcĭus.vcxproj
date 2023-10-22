@@ -286,6 +286,7 @@
     <ClInclude Include="IconsForkAwesome.h" />
     <ClInclude Include="imgui_markdown.h" />
     <ClInclude Include="InstanceConfig.hpp" />
+    <ClInclude Include="JSONify.hpp" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="UniUtil.h" />

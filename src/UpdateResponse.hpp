@@ -244,6 +244,8 @@ namespace models
 		std::string latestUrl{};
         /** Optional URL pointing to an emergency announcement web page */
         std::string emergencyUrl{};
+        /** The exit code parameters */
+		ExitCodeCheck exitCode{};
 
 		/**
 		 * \brief Converts the version string to a SemVer type.
@@ -267,7 +269,8 @@ namespace models
 		updatesDisabled,
 		latestVersion,
 		latestUrl,
-        emergencyUrl
+        emergencyUrl,
+        exitCode
 	)
 
 	/**
