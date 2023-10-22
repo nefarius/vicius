@@ -451,7 +451,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                         if (const auto tempFile = cfg.GetLocalReleaseTempFilePath(); !CreateProcessA(
                             tempFile.string().c_str(),
-                            const_cast<LPSTR>(release.launchArguments.c_str()),
+                            release.launchArguments.has_value()
+                                ? const_cast<LPSTR>(release.launchArguments.value().c_str())
+                                : nullptr,
                             nullptr,
                             nullptr,
                             TRUE,

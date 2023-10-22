@@ -188,11 +188,11 @@ namespace models
         /** Size of the remote file */
         size_t downloadSize;
         /** The launch arguments (CLI arguments) if any */
-        std::string launchArguments{};
+        std::optional<std::string> launchArguments;
         /** The exit code parameters */
         std::optional<ExitCodeCheck> exitCode;
         /** The (optional) checksum of the remote setup */
-        std::string checksum{};
+        std::optional<std::string> checksum;
         /** The checksum algorithm */
         ChecksumAlgorithm checksumAlg;
 
