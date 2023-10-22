@@ -216,14 +216,35 @@ namespace models
 		 */
 		bool RunSelfUpdater() const;
 
-		void TryDisplayUpToDateDialog(bool force = false) const;
+        /**
+         * \brief Attempts to bing up the up-to-date dialog.
+         * \param force True to force despite silent flags being present.
+         */
+        void TryDisplayUpToDateDialog(bool force = false) const;
 
-		void TryDisplayErrorDialog(const std::string& header, const std::string& body, bool force = false) const;
+        /**
+         * \brief Attempts to bring up a Task Dialog with error information.
+         * \param header The header text of the Task Dialog.
+         * \param body The body text of the Task Dialog.
+         * \param force True to ignore silent flags.
+         */
+        void TryDisplayErrorDialog(const std::string& header, const std::string& body, bool force = false) const;
 
-		[[nodiscard]] bool IsSilent() const { return isSilent; }
+        /**
+         * \brief Queries whether we're run as background or silent.
+         * \return True if silent/background requested.
+         */
+        [[nodiscard]] bool IsSilent() const { return isSilent; }
 
+        /**
+         * \brief Checks whether an emergency URL is specified by the server.
+         * \return True if URL is set, false otherwise.
+         */
         [[nodiscard]] bool HasEmergencyUrlSet() const { return !remote.instance.emergencyUrl.empty(); }
 
+        /**
+         * \brief Executes the emergency URL with the default local URL handler.
+         */
         void LaunchEmergencySite() const;
 
 		InstanceConfig() : remote(), authority(Authority::Remote)
