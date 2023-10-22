@@ -170,6 +170,20 @@ namespace models
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ExitCodeCheck, skipCheck, successCodes)
 
     /**
+     * \brief Details about checksum/hash calculation.
+     */
+    class ChecksumParameters
+    {
+    public:
+        /** The checksum to compare against */
+        std::string checksum;
+        /** The checksum algorithm */
+        ChecksumAlgorithm checksumAlg;
+    };
+
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ChecksumParameters, checksum, checksumAlg)
+
+    /**
      * \brief Represents an update release.
      */
     class UpdateRelease
@@ -192,9 +206,7 @@ namespace models
         /** The exit code parameters */
         std::optional<ExitCodeCheck> exitCode;
         /** The (optional) checksum of the remote setup */
-        std::optional<std::string> checksum;
-        /** The checksum algorithm */
-        ChecksumAlgorithm checksumAlg;
+        std::optional<ChecksumParameters> checksum;
 
         /** Full pathname of the local temporary file */
         std::filesystem::path localTempFilePath{};
@@ -227,8 +239,7 @@ namespace models
         downloadSize,
         launchArguments,
         exitCode,
-        checksum,
-        checksumAlg
+        checksum
     )
 
     /**
