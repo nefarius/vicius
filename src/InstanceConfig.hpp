@@ -124,16 +124,22 @@ namespace models
 			return latest > currentVersion;
 		}
 
-		/**
-		 * \brief Checks if a newer updater than the local version is available.
-		 * \return True if a newer version is available, false otherwise.
-		 */
-		[[nodiscard]] bool IsNewerUpdaterAvailable() const
-		{
-			const auto latest = remote.instance.GetSemVersion();
+        /**
+         * \brief Checks if a newer updater than the local version is available.
+         * \return True if a newer version is available, false otherwise.
+         */
+        [[nodiscard]] bool IsNewerUpdaterAvailable() const
+        {
+            if (remote.instance.latestVersion.has_value() &&
+                remote.instance.latestUrl.has_value())
+            {
+                const auto latest = remote.instance.GetSemVersion();
 
-			return latest > appVersion;
-		}
+                return latest > appVersion;
+            }
+
+            return false;
+        }
 
 		/**
 		 * \brief Checks if we have one single update release.

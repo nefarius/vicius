@@ -200,7 +200,7 @@ namespace models
         /** URL of the new setup/release download */
         std::string downloadUrl;
         /** Size of the remote file */
-        size_t downloadSize;
+        std::optional<size_t> downloadSize;
         /** The launch arguments (CLI arguments) if any */
         std::optional<std::string> launchArguments;
         /** The exit code parameters */
@@ -249,11 +249,11 @@ namespace models
     {
     public:
         /** True to disable, false to enable the updates globally */
-        bool updatesDisabled{false};
+        std::optional<bool> updatesDisabled;
         /** The latest updater version available */
-        std::string latestVersion{};
+        std::optional<std::string> latestVersion;
         /** URL of the latest updater binary */
-        std::string latestUrl{};
+        std::optional<std::string> latestUrl;
         /** Optional URL pointing to an emergency announcement web page */
         std::optional<std::string> emergencyUrl;
         /** The exit code parameters */
@@ -265,11 +265,16 @@ namespace models
          */
         semver::version GetSemVersion() const
         {
+            if (!latestVersion.has_value())
+            {
+                return semver::version{0, 0, 0};
+            }
+
             try
             {
-                return semver::version{latestVersion};
+                return semver::version{latestVersion.value()};
             }
-            catch (...)
+            catch (...) // couldn't convert version string
             {
                 return semver::version{0, 0, 0};
             }

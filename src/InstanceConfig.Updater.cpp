@@ -96,7 +96,7 @@ bool models::InstanceConfig::RunSelfUpdater() const
 			<< " --log-level " << magic_enum::enum_name(spdlog::get_level())
 			<< " --pid " << GetCurrentProcessId()
 			<< " --path \"" << appPath.string() << "\""
-			<< " --url \"" << remote.instance.latestUrl << "\"";
+			<< " --url \"" << remote.instance.latestUrl.value() << "\"";
 		const auto args = argsStream.str();
 		spdlog::debug("args = {}", args);
 
@@ -135,7 +135,7 @@ bool models::InstanceConfig::RunSelfUpdater() const
 			<< " --log-level " << magic_enum::enum_name(spdlog::get_level())
 			<< " --pid " << GetCurrentProcessId()
 			<< " --path \"" << appPath.string() << "\""
-			<< " --url \"" << remote.instance.latestUrl << "\"";
+			<< " --url \"" << remote.instance.latestUrl.value() << "\"";
 		const auto args = argsStream.str();
 		spdlog::debug("args = {}", args);
 
