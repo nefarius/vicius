@@ -194,6 +194,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         SendMessage(window.getSystemHandle(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
     }
 
+    // TODO: try best compromise to display window when user is busy
+    //SendMessage(window.getSystemHandle(), WM_SYSCOMMAND, SC_MINIMIZE, 0);
+
     auto currentPage = WizardPage::Start;
     auto instStep = DownloadAndInstallStep::Begin;
     bool isBackDisabled = false;
