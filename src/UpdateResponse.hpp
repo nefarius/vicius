@@ -142,7 +142,7 @@ namespace models
         /** Name of the product shown in UI */
         std::string productName;
         /** The detection method */
-        ProductVersionDetectionMethod detectionMethod;
+        ProductVersionDetectionMethod detectionMethod{ProductVersionDetectionMethod::Invalid};
         /** The detection method for the installed software version */
         json detection;
 
