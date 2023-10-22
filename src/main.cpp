@@ -247,8 +247,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         ImGui::SFML::Update(window, deltaClock.restart());
 
-        //ImGui::ShowDemoWindow();
-
         ImGuiWindowFlags flags =
             ImGuiWindowFlags_NoCollapse |
             ImGuiWindowFlags_NoMove |
