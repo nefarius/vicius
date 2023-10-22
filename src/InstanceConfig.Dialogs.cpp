@@ -12,8 +12,8 @@ void models::InstanceConfig::TryDisplayUpToDateDialog(const bool force) const
 
 	int nClickedButton;
 
-	const auto productName = ConvertAnsiToWide(shared.productName);
-	const auto windowTitle = ConvertAnsiToWide(shared.windowTitle);
+	const auto productName = ConvertAnsiToWide(merged.productName);
+	const auto windowTitle = ConvertAnsiToWide(merged.windowTitle);
 
 	std::wstringstream sTitle, sHeader, sBody;
 
@@ -49,7 +49,7 @@ void models::InstanceConfig::TryDisplayErrorDialog(
 
 	int nClickedButton;
 
-	const auto windowTitle = ConvertAnsiToWide(shared.windowTitle);
+	const auto windowTitle = ConvertAnsiToWide(merged.windowTitle);
 	const auto windowHeader = ConvertAnsiToWide(header);
 	const auto windowBody = ConvertAnsiToWide(body);
 

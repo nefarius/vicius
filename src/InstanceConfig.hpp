@@ -50,7 +50,7 @@ namespace models
 		std::string updateRequestUrl;
 
 		/** The local and remote shared configuration */
-		SharedConfig shared;
+		MergedConfig merged;
 		/** The remote API response */
 		UpdateResponse remote;
 
@@ -71,8 +71,8 @@ namespace models
 		semver::version GetAppVersion() const { return appVersion; }
 		std::string GetAppFilename() const { return appFilename; }
 
-		std::string GetWindowTitle() const { return shared.windowTitle; }
-		std::string GetProductName() const { return shared.productName; }
+		std::string GetWindowTitle() const { return merged.windowTitle; }
+		std::string GetProductName() const { return merged.productName; }
 
 		bool SetSelectedRelease(const int releaseIndex = 0)
 		{

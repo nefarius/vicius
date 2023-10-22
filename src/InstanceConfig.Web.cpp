@@ -121,7 +121,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     if (code != 200)
     {
         // TODO: add retry logic or similar
-        
+
         spdlog::error("GET request failed with code {}", code);
         const auto curlCode = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
         return std::make_tuple(false, std::format("HTTP error {}", curlCode));
@@ -146,12 +146,22 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             return std::make_tuple(true, "OK");
         }
 
-        // TODO: implement merging remote shared config
-
         if (remote.shared.has_value())
         {
+            const auto& shared = remote.shared.value();
             spdlog::info("Processing remote shared configuration parameters");
-            shared = remote.shared.value();
+
+            if (shared.windowTitle.has_value())
+                merged.windowTitle = shared.windowTitle.value();
+
+            if (shared.productName.has_value())
+                merged.productName = shared.productName.value();
+
+            if (shared.detectionMethod.has_value())
+                merged.detectionMethod = shared.detectionMethod.value();
+
+            if (shared.detection.has_value())
+                merged.detection = shared.detection.value();
         }
 
         return std::make_tuple(true, "OK");

@@ -121,7 +121,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
             // populate shared config first either from JSON file or with built-in defaults
             if (data.contains("shared"))
             {
-                shared = data["shared"].get<SharedConfig>();
+                merged = data["shared"].get<MergedConfig>();
             }
         }
         catch (...)
@@ -185,7 +185,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 {
     const auto& release = GetSelectedRelease();
 
-    switch (shared.detectionMethod)
+    switch (merged.detectionMethod)
     {
     //
     // Detect product version via registry key and value
@@ -193,7 +193,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
     case ProductVersionDetectionMethod::RegistryValue:
         {
             spdlog::debug("Running product detection via registry value");
-            const auto& cfg = shared.GetRegistryValueConfig();
+            const auto& cfg = merged.GetRegistryValueConfig();
             HKEY hive = nullptr;
 
             switch (cfg.hive)
@@ -253,7 +253,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
     case ProductVersionDetectionMethod::FileVersion:
         {
             spdlog::debug("Running product detection via file version");
-            const auto& cfg = shared.GetFileVersionConfig();
+            const auto& cfg = merged.GetFileVersionConfig();
 
             try
             {
@@ -274,7 +274,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
     case ProductVersionDetectionMethod::FileSize:
         {
             spdlog::debug("Running product detection via file size");
-            const auto& cfg = shared.GetFileSizeConfig();
+            const auto& cfg = merged.GetFileSizeConfig();
 
             try
             {
@@ -297,7 +297,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
     case ProductVersionDetectionMethod::FileChecksum:
         {
             spdlog::debug("Running product detection via file checksum");
-            const auto& cfg = shared.GetFileChecksumConfig();
+            const auto& cfg = merged.GetFileChecksumConfig();
 
             if (!std::filesystem::exists(cfg.path))
             {

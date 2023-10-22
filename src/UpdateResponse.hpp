@@ -114,6 +114,30 @@ namespace models
     {
     public:
         /** The classic window title, only shown in taskbar in our case */
+        std::optional<std::string> windowTitle;
+        /** Name of the product shown in UI */
+        std::optional<std::string> productName;
+        /** The detection method */
+        std::optional<ProductVersionDetectionMethod> detectionMethod;
+        /** The detection method for the installed software version */
+        std::optional<json> detection;
+    };
+
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+        SharedConfig,
+        windowTitle,
+        productName,
+        detectionMethod,
+        detection
+    )
+
+    /**
+     * \brief Parameters that might be provided by both the server and the local configuration.
+     */
+    class MergedConfig
+    {
+    public:
+        /** The classic window title, only shown in taskbar in our case */
         std::string windowTitle;
         /** Name of the product shown in UI */
         std::string productName;
@@ -122,7 +146,7 @@ namespace models
         /** The detection method for the installed software version */
         json detection;
 
-        SharedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME)
+        MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME)
         {
         }
 
@@ -148,7 +172,7 @@ namespace models
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-        SharedConfig,
+        MergedConfig,
         windowTitle,
         productName,
         detectionMethod,
