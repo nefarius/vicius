@@ -240,7 +240,7 @@ namespace models
          * \brief Checks whether an emergency URL is specified by the server.
          * \return True if URL is set, false otherwise.
          */
-        [[nodiscard]] bool HasEmergencyUrlSet() const { return !remote.instance.emergencyUrl.empty(); }
+        [[nodiscard]] bool HasEmergencyUrlSet() const { return remote.instance.emergencyUrl.has_value(); }
 
         /**
          * \brief Executes the emergency URL with the default local URL handler.

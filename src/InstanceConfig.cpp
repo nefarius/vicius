@@ -467,5 +467,5 @@ std::tuple<bool, std::string> models::InstanceConfig::RemoveAutostart() const
 
 void models::InstanceConfig::LaunchEmergencySite() const
 {
-    ShellExecuteA(nullptr, "open", remote.instance.emergencyUrl.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    ShellExecuteA(nullptr, "open", remote.instance.emergencyUrl.value().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }

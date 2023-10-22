@@ -508,6 +508,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                         const auto& release = cfg.GetSelectedRelease();
 
+                        /*
                         if (release.exitCode.skipCheck)
                         {
                             spdlog::debug("Skipping error code check as per configuration");
@@ -522,6 +523,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                             instStep = DownloadAndInstallStep::InstallSucceeded;
                             break;
                         }
+                        */
 
                         instStep = DownloadAndInstallStep::InstallFailed;
                     }

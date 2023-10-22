@@ -1,5 +1,6 @@
 #pragma once
 #include "Common.h"
+#include "ADL.hpp"
 
 using json = nlohmann::json;
 
@@ -189,7 +190,7 @@ namespace models
 		/** The launch arguments (CLI arguments) if any */
 		std::string launchArguments{};
 		/** The exit code parameters */
-		ExitCodeCheck exitCode{};
+		std::optional<ExitCodeCheck> exitCode;
 		/** The (optional) checksum of the remote setup */
 		std::string checksum{};
 		/** The checksum algorithm */
@@ -243,7 +244,9 @@ namespace models
 		/** URL of the latest updater binary */
 		std::string latestUrl{};
         /** Optional URL pointing to an emergency announcement web page */
-        std::string emergencyUrl{};
+        std::optional<std::string> emergencyUrl;
+        /** The exit code parameters */
+		std::optional<ExitCodeCheck> exitCode;
 
 		/**
 		 * \brief Converts the version string to a SemVer type.
@@ -267,7 +270,8 @@ namespace models
 		updatesDisabled,
 		latestVersion,
 		latestUrl,
-        emergencyUrl
+        emergencyUrl,
+        exitCode
 	)
 
 	/**
