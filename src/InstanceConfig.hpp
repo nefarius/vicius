@@ -247,9 +247,11 @@ namespace models
          */
         void LaunchEmergencySite() const;
 
-        bool HasExitCodeCheck() const { return remote.instance.exitCode.has_value(); }
-
-        ExitCodeCheck& GetExitCodeCheck() { return remote.instance.exitCode.value(); }
+        /**
+         * \brief Returns the instance-global exit code check settings, if any.
+         * \return The optional ExitCodeCheck.
+         */
+        std::optional<ExitCodeCheck>& ExitCodeCheck() { return remote.instance.exitCode; }
 
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{

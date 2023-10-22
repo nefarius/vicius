@@ -529,9 +529,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         }
 
                         // check instance-level fallback
-                        if (cfg.HasExitCodeCheck())
+                        if (cfg.ExitCodeCheck().has_value())
                         {
-                            const auto& [skipCheck, successCodes] = cfg.GetExitCodeCheck();
+                            const auto& [skipCheck, successCodes] = cfg.ExitCodeCheck().value();
 
                             if (skipCheck)
                             {
