@@ -1,8 +1,8 @@
 using FastEndpoints;
 
-var bld = WebApplication.CreateBuilder();
+WebApplicationBuilder bld = WebApplication.CreateBuilder();
 bld.Services.AddFastEndpoints();
 
-var app = bld.Build();
+WebApplication app = bld.Build();
 app.UseFastEndpoints();
 app.Run();
