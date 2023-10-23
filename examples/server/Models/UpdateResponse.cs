@@ -7,34 +7,61 @@ using Newtonsoft.Json.Converters;
 
 namespace Nefarius.Vicius.Example.Server.Models;
 
+/// <summary>
+///     The supported checksum/hashing algorithms.
+/// </summary>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 [JsonConverter(typeof(StringEnumConverter))]
 public enum ChecksumAlgorithm
 {
+    /// <summary>
+    ///     MD5.
+    /// </summary>
     [EnumMember(Value = nameof(MD5))]
     MD5,
 
+    /// <summary>
+    ///     SHA1.
+    /// </summary>
     [EnumMember(Value = nameof(SHA1))]
     SHA1,
 
+    /// <summary>
+    ///     SHA256.
+    /// </summary>
     [EnumMember(Value = nameof(SHA256))]
     SHA256
 }
 
+/// <summary>
+///     The detection method of the installed software to use on the client.
+/// </summary>
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 [JsonConverter(typeof(StringEnumConverter))]
 public enum ProductVersionDetectionMethod
 {
+    /// <summary>
+    ///     Performs checking a specified registry hive, key and value.
+    /// </summary>
     [EnumMember(Value = nameof(RegistryValue))]
     RegistryValue,
 
+    /// <summary>
+    ///     Performs checking a specified file version resource.
+    /// </summary>
     [EnumMember(Value = nameof(FileVersion))]
     FileVersion,
 
+    /// <summary>
+    ///     Performs checking a specified file size for matching.
+    /// </summary>
     [EnumMember(Value = nameof(FileSize))]
     FileSize,
 
+    /// <summary>
+    ///     Calculates and compares the hash of a given file.
+    /// </summary>
     [EnumMember(Value = nameof(FileChecksum))]
     FileChecksum
 }

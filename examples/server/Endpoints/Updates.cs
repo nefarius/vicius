@@ -10,7 +10,7 @@ using NJsonSchema.Generation;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints;
 
-public sealed class Updates : EndpointWithoutRequest
+internal sealed class Updates : EndpointWithoutRequest
 {
     public override void Configure()
     {
