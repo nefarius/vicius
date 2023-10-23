@@ -19,6 +19,7 @@ install:
 - cmd: vcpkg update
 - ps: Setup-VS2022
 before_build:
+- cmd: nuget restore
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\vīcĭus.vcxproj" --vcxproj.inf-time-stamp
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\vīcĭus.rc" --resource.file-version --resource.product-version
 build:
