@@ -1,34 +1,56 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Serialization;
 
-using NJsonSchema.Annotations;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace Nefarius.Vicius.Example.Server.Models;
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
+[JsonConverter(typeof(StringEnumConverter))]
 public enum ChecksumAlgorithm
 {
+    [EnumMember(Value = nameof(MD5))]
     MD5,
+
+    [EnumMember(Value = nameof(SHA1))]
     SHA1,
+
+    [EnumMember(Value = nameof(SHA256))]
     SHA256
 }
 
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
+[JsonConverter(typeof(StringEnumConverter))]
 public enum ProductVersionDetectionMethod
 {
+    [EnumMember(Value = nameof(RegistryValue))]
     RegistryValue,
+
+    [EnumMember(Value = nameof(FileVersion))]
     FileVersion,
+
+    [EnumMember(Value = nameof(FileSize))]
     FileSize,
+
+    [EnumMember(Value = nameof(FileChecksum))]
     FileChecksum
 }
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
+[JsonConverter(typeof(StringEnumConverter))]
 public enum RegistryHive
 {
+    [EnumMember(Value = nameof(HKCU))]
     HKCU,
+
+    [EnumMember(Value = nameof(HKLM))]
     HKLM,
+
+    [EnumMember(Value = nameof(HKCR))]
     HKCR
 }
 
@@ -77,16 +99,12 @@ public sealed class FileChecksumConfig
 
 public sealed class SharedConfig
 {
-    [CanBeNull]
     public string? WindowTitle { get; set; }
 
-    [CanBeNull]
     public string? ProductName { get; set; }
 
-    [CanBeNull]
     public ProductVersionDetectionMethod? DetectionMethod { get; set; }
 
-    [CanBeNull]
     public object? Detection { get; set; }
 }
 
@@ -140,31 +158,23 @@ public sealed class UpdateRelease
     [Required]
     public string DownloadUrl { get; set; } = null!;
 
-    [CanBeNull]
     public int? DownloadSize { get; set; }
 
-    [CanBeNull]
     public string? LaunchArguments { get; set; }
 
-    [CanBeNull]
     public ExitCodeCheck? ExitCode { get; set; }
 }
 
 public sealed class UpdateConfig
 {
-    [CanBeNull]
     public bool? UpdatesDisabled { get; set; }
 
-    [CanBeNull]
     public string? LatestVersion { get; set; }
 
-    [CanBeNull]
     public string? LatestUrl { get; set; }
 
-    [CanBeNull]
     public string? EmergencyUrl { get; set; }
 
-    [CanBeNull]
     public ExitCodeCheck? ExitCode { get; set; }
 }
 
@@ -173,7 +183,6 @@ public sealed class UpdateResponse
     [Required]
     public UpdateConfig Instance { get; set; } = new();
 
-    [CanBeNull]
     public SharedConfig? Shared { get; set; }
 
     [Required]
