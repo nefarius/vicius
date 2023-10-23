@@ -14,7 +14,7 @@ public sealed class Updates : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/schema/updates.json");
+        Get("api/example/schema/updates.json");
         AllowAnonymous();
     }
 
