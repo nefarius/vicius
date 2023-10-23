@@ -178,6 +178,9 @@ public sealed class UpdateConfig
     public ExitCodeCheck? ExitCode { get; set; }
 }
 
+/// <summary>
+///     An instance returned by the remote update API.
+/// </summary>
 public sealed class UpdateResponse
 {
     [Required]
@@ -185,6 +188,9 @@ public sealed class UpdateResponse
 
     public SharedConfig? Shared { get; set; }
 
+    /// <summary>
+    ///     The available update releases.
+    /// </summary>
     [Required]
     public List<UpdateRelease> Releases { get; set; } = new();
 }

@@ -20,15 +20,15 @@ public sealed class Updates : EndpointWithoutRequest
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        JsonSchemaGeneratorSettings settings = new JsonSchemaGeneratorSettings()
+        JsonSchemaGeneratorSettings settings = new()
         {
-            ActualSerializerSettings =
+            SerializerSettings = new JsonSerializerSettings
             {
                 Formatting = Formatting.Indented,
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             }
         };
-        JsonSchemaGenerator generator = new JsonSchemaGenerator(settings);
+        JsonSchemaGenerator generator = new(settings);
         JsonSchema? schema = generator.Generate(typeof(UpdateResponse));
         string? schemaData = schema.ToJson();
 
