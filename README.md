@@ -19,7 +19,7 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
 ## Features
 
 - **No backend application server required**  
-  All you need on the server-side to get going is a web host supporting delivering static JSON files and you're done. [GitHub Pages](https://pages.github.com/) would be a sufficient free hosting solution where you can upload to and deliver the updater configuration from.
+  All you need on the server-side to get going is a web host supporting delivering static JSON files and you're done. [GitHub Pages](https://pages.github.com/) would be a sufficient free hosting solution where you can upload to and deliver the updater configuration from. Take a look at the [example server implementation](examples/server) if you wish to write your own backend service.
 - **Self-contained**  
   No need to worry if .NET or other runtimes are present on the target machines, everything it needs is delivered in a single Win32 executable.
 - **(Almost) zero configuration**  
