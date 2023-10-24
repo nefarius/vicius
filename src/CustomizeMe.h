@@ -21,7 +21,7 @@
 
 //
 // Regex for file name extraction, assumes "manufacturer_product_Updater" format
-// Does NOT include file extension
+// Matching value does NOT include file extension
 // 
 #define NV_FILENAME_REGEX       R"(^(\w+)_(\w+)_Updater$)"
 
