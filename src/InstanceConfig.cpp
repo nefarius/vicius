@@ -243,10 +243,11 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                 isOutdated = release.GetSemVersion() > localVersion;
                 spdlog::debug("isOutdated = {}", isOutdated);
             }
-            catch (...)
+            catch (const std::exception& e)
             {
-                spdlog::error("Failed to convert value {} into SemVer", ConvertWideToANSI(value));
-                return std::make_tuple(false, "String to SemVer conversion failed");
+                spdlog::error("Failed to convert value {} into SemVer, error: {}",
+                    ConvertWideToANSI(value), e.what());
+                return std::make_tuple(false, std::format("String to SemVer conversion failed: {}", e.what()));
             }
 
             return std::make_tuple(true, "OK");

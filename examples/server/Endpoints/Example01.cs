@@ -18,19 +18,18 @@ internal sealed class Example01Endpoint : EndpointWithoutRequest
         {
             Instance =
             {
-                UpdatesDisabled = false,
                 LatestVersion = "1.0.0",
                 LatestUrl = "https://downloads.nefarius.at/other/nefarius/vpatch/vpatch.exe"
             },
             Shared = new SharedConfig
             {
-                ProductName = "HidHide",
-                WindowTitle = "HidHide Updater",
+                ProductName = ".NET Runtime",
+                WindowTitle = ".NET Runtime Updater",
                 DetectionMethod = ProductVersionDetectionMethod.RegistryValue,
                 Detection = new RegistryValueConfig()
                 {
                     Hive = RegistryHive.HKLM,
-                    Key = @"SOFTWARE\Nefarius Software Solutions e.U.\HidHide",
+                    Key = @"SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedhost",
                     Value = "Version"
                 }
             },
@@ -40,7 +39,7 @@ internal sealed class Example01Endpoint : EndpointWithoutRequest
                 {
                     Name = "Demo Update",
                     PublishedAt = DateTimeOffset.UtcNow.AddDays(-3),
-                    Version = System.Version.Parse("3.0.0"),
+                    Version = System.Version.Parse("7.0.0"),
                     // Markdown support in summary (changelog, description)
                     Summary = """
                               ## Features
