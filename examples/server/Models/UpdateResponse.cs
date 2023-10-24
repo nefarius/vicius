@@ -162,7 +162,7 @@ public sealed class ExitCodeCheck
     public bool SkipCheck { get; set; }
 
     [Required]
-    public List<int> SuccessCodes { get; set; } = new() { 0 };
+    public List<int> SuccessCodes { get; set; } = new();
 }
 
 public sealed class ChecksumParameters
@@ -183,13 +183,13 @@ public sealed class UpdateRelease
     public string Name { get; set; } = null!;
 
     [Required]
-    public string Version { get; set; } = null!;
+    public Version Version { get; set; } = null!;
 
     [Required]
     public string Summary { get; set; } = null!;
 
     [Required]
-    public string PublishedAt { get; set; } = null!;
+    public DateTimeOffset PublishedAt { get; set; }
 
     [Required]
     public string DownloadUrl { get; set; } = null!;
