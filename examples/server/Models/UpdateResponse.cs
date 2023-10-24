@@ -133,6 +133,7 @@ public sealed class RegistryValueConfig : ProductVersionDetectionImplementation
 ///     Reads the version resource of the specified local file and matches it against the selected
 ///     <see cref="UpdateRelease" /> version.
 /// </summary>
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class FileVersionConfig : ProductVersionDetectionImplementation
 {
     /// <summary>
@@ -142,25 +143,48 @@ public sealed class FileVersionConfig : ProductVersionDetectionImplementation
     public required string Path { get; set; }
 }
 
+/// <summary>
+///     Compares the size of a given file against the provided value.
+/// </summary>
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class FileSizeConfig : ProductVersionDetectionImplementation
 {
+    /// <summary>
+    ///     The absolute local path to the file to read.
+    /// </summary>
     [Required]
-    public string Path { get; set; }
+    public required string Path { get; set; }
 
+    /// <summary>
+    ///     The expected file size in bytes. If the file versions do not match, the product is flagged as outdated.
+    /// </summary>
     [Required]
-    public int Size { get; set; }
+    public required long Size { get; set; }
 }
 
+/// <summary>
+///     Calculates and compares the checksum/hash of a given file.
+/// </summary>
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class FileChecksumConfig : ProductVersionDetectionImplementation
 {
+    /// <summary>
+    ///     The absolute local path to the file to read.
+    /// </summary>
     [Required]
-    public string Path { get; set; }
+    public required string Path { get; set; }
 
+    /// <summary>
+    ///     The hashing algorithm to use.
+    /// </summary>
     [Required]
-    public ChecksumAlgorithm Algorithm { get; set; }
+    public required ChecksumAlgorithm Algorithm { get; set; }
 
+    /// <summary>
+    ///     The expected hash string. If the hashes do not match, the product is flagged as outdated.
+    /// </summary>
     [Required]
-    public string Hash { get; set; }
+    public required string Hash { get; set; }
 }
 
 /// <summary>
@@ -247,6 +271,7 @@ public sealed class ExitCodeCheck
 ///     Parameters for checksum/hash calculation.
 /// </summary>
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class ChecksumParameters
 {
     /// <summary>
@@ -267,6 +292,7 @@ public sealed class ChecksumParameters
 /// </summary>
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class UpdateRelease
 {
     /// <summary>
@@ -334,6 +360,7 @@ public sealed class UpdateRelease
 ///     Update instance configuration. Parameters applying to the entire product/tenant.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class UpdateConfig
 {
     /// <summary>
