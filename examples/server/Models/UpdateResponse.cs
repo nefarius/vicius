@@ -296,7 +296,8 @@ public sealed class UpdateRelease
     public string DownloadUrl { get; set; } = null!;
 
     /// <summary>
-    ///     Optional size (in bytes) of the download target.
+    ///     Optional size (in bytes) of the download target. If this is not set, the UI will simply display "N/A" until the
+    ///     actual download starts.
     /// </summary>
     public long? DownloadSize { get; set; }
 
