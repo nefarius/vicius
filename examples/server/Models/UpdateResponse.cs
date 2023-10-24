@@ -104,6 +104,9 @@ public abstract class ProductVersionDetectionImplementation
 {
 }
 
+/// <summary>
+///     Queries a specific registry value and matches it against the selected <see cref="UpdateRelease" /> version.
+/// </summary>
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class RegistryValueConfig : ProductVersionDetectionImplementation
 {
@@ -126,13 +129,17 @@ public sealed class RegistryValueConfig : ProductVersionDetectionImplementation
     public required string Value { get; set; }
 }
 
+/// <summary>
+///     Reads the version resource of the specified local file and matches it against the selected
+///     <see cref="UpdateRelease" /> version.
+/// </summary>
 public sealed class FileVersionConfig : ProductVersionDetectionImplementation
 {
+    /// <summary>
+    ///     The absolute local path to the file to read.
+    /// </summary>
     [Required]
-    public string Path { get; set; }
-
-    [Required]
-    public string Version { get; set; }
+    public required string Path { get; set; }
 }
 
 public sealed class FileSizeConfig : ProductVersionDetectionImplementation
@@ -187,6 +194,7 @@ public sealed class SharedConfig
 ///     The shared configuration that has been merged with local and remote parameters.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class MergedConfig
 {
     /// <summary>

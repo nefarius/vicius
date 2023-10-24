@@ -83,10 +83,9 @@ namespace models
     {
     public:
         std::string path;
-        std::string version;
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileVersionConfig, path, version)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileVersionConfig, path)
 
     class FileSizeConfig
     {

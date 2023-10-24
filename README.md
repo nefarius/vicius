@@ -105,6 +105,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Postpone update dialog popping up if the product is currently in use
 - [ ] Add [Authenticode](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/authenticode) signature checks
 - [ ] Allow using a HTTP proxy address via configuration
+- [ ] Support environment variables or custom placeholders in path strings and alike
 
 ## Sources & 3rd party credits
 
