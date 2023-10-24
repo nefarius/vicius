@@ -1,5 +1,7 @@
 ﻿using FastEndpoints;
 
+using Nefarius.Vicius.Example.Server.Models;
+
 namespace Nefarius.Vicius.Example.Server.Endpoints;
 
 internal sealed class Example00Endpoint : EndpointWithoutRequest
@@ -12,6 +14,14 @@ internal sealed class Example00Endpoint : EndpointWithoutRequest
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        await SendOkAsync(ct);
+        var response = new UpdateResponse()
+        {
+            Instance =
+            {
+                EmergencyUrl = "https://docs.nefarius.at/projects/Vicius/Emergency-Feature/"
+            }
+        };
+        
+        await SendOkAsync(response, ct);
     }
 }
