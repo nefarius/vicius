@@ -18,20 +18,20 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
 
 ## Features
 
-- No backend application server required  
+- **No backend application server required**  
   All you need on the server-side to get going is a web host supporting delivering static JSON files and you're done. [GitHub Pages](https://pages.github.com/) would be a sufficient free hosting solution where you can upload to and deliver the updater configuration from.
-- Self-contained  
+- **Self-contained**  
   No need to worry if .NET or other runtimes are present on the target machines, everything it needs is delivered in a single Win32 executable.
-- (Almost) zero configuration  
+- **(Almost) zero configuration**  
   The bare minimum configuration can be provided by simply compiling in the server URL by adjusting the `CustomizeMe.h` header file. This does not mean you need to maintain one build for every product you wanna support; you will get **multi-tenancy out of the box** by simply naming the resulting executable after the following scheme: `manufacturer_product_Updater.exe`, e.g. `nefarius_HidHide_Updater.exe` will build the server path as `https://example.org/api/nefarius/HidHide/updates.json` (or however it is defined in `CustomizeMe.h`) automatically!
   - All alternative, more sophisticated configuration options [are described in the extended documentation](https://docs.nefarius.at/projects/Vicius/Server-Discovery/).
-- Self-updater  
+- **Self-updater**  
   Sometimes just the updater process needs an update (e.g. security patches), not the entire product it is watching over. It can update itself if the server-provided instance version is higher than the locally running one.
-- Self-healing  
+- **Self-healing**  
   If run in autostart when the user logs on, it can make sure that scheduled tasks and other supportive components are configured and working properly.
-- Low resource consumption  
+- **Low resource consumption**  
   The updater process is only invoked on demand (at user logon and once per day via Task Scheduler) and doesn't keep running in the background.
-- Respects your time  
+- **Respects your time**  
   Busy fragging in a game? We won't bother you with any popup windows until you're ready.
 
 ## Prerequisites
