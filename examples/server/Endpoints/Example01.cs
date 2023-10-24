@@ -26,7 +26,13 @@ internal sealed class Example01Endpoint : EndpointWithoutRequest
             {
                 ProductName = "HidHide",
                 WindowTitle = "HidHide Updater",
-                DetectionMethod = ProductVersionDetectionMethod.RegistryValue
+                DetectionMethod = ProductVersionDetectionMethod.RegistryValue,
+                Detection = new RegistryValueConfig()
+                {
+                    Hive = RegistryHive.HKLM,
+                    Key = @"SOFTWARE\Nefarius Software Solutions e.U.\HidHide",
+                    Value = "Version"
+                }
             },
             Releases =
             {

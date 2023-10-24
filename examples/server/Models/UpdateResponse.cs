@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Serialization;
+using System.Text.Json.Serialization;
 
-using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 
 namespace Nefarius.Vicius.Example.Server.Models;
@@ -12,7 +12,7 @@ namespace Nefarius.Vicius.Example.Server.Models;
 /// </summary>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-[JsonConverter(typeof(StringEnumConverter))]
+[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
 public enum ChecksumAlgorithm
 {
     /// <summary>
@@ -38,7 +38,7 @@ public enum ChecksumAlgorithm
 ///     The detection method of the installed software to use on the client.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-[JsonConverter(typeof(StringEnumConverter))]
+[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
 public enum ProductVersionDetectionMethod
 {
     /// <summary>
@@ -68,7 +68,7 @@ public enum ProductVersionDetectionMethod
 
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-[JsonConverter(typeof(StringEnumConverter))]
+[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
 public enum RegistryHive
 {
     [EnumMember(Value = nameof(HKCU))]
@@ -81,8 +81,16 @@ public enum RegistryHive
     HKCR
 }
 
+[JsonDerivedType(typeof(RegistryValueConfig), typeDiscriminator: nameof(RegistryValueConfig))]
+[JsonDerivedType(typeof(FileVersionConfig), typeDiscriminator: nameof(FileVersionConfig))]
+[JsonDerivedType(typeof(FileSizeConfig), typeDiscriminator: nameof(FileSizeConfig))]
+[JsonDerivedType(typeof(FileChecksumConfig), typeDiscriminator: nameof(FileChecksumConfig))]
+public abstract class ProductVersionDetectionImplementation
+{
+}
+
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
-public sealed class RegistryValueConfig
+public sealed class RegistryValueConfig : ProductVersionDetectionImplementation
 {
     [Required]
     public RegistryHive Hive { get; set; }
@@ -94,7 +102,7 @@ public sealed class RegistryValueConfig
     public string Value { get; set; }
 }
 
-public sealed class FileVersionConfig
+public sealed class FileVersionConfig : ProductVersionDetectionImplementation
 {
     [Required]
     public string Path { get; set; }
@@ -103,7 +111,7 @@ public sealed class FileVersionConfig
     public string Version { get; set; }
 }
 
-public sealed class FileSizeConfig
+public sealed class FileSizeConfig : ProductVersionDetectionImplementation
 {
     [Required]
     public string Path { get; set; }
@@ -112,7 +120,7 @@ public sealed class FileSizeConfig
     public int Size { get; set; }
 }
 
-public sealed class FileChecksumConfig
+public sealed class FileChecksumConfig : ProductVersionDetectionImplementation
 {
     [Required]
     public string Path { get; set; }
@@ -135,41 +143,65 @@ public sealed class SharedConfig
 
     public ProductVersionDetectionMethod? DetectionMethod { get; set; }
 
-    public object? Detection { get; set; }
+    public ProductVersionDetectionImplementation? Detection { get; set; }
 }
 
+/// <summary>
+///     The shared configuration that has been merged with local and remote parameters.
+/// </summary>
 public sealed class MergedConfig
 {
+    /// <summary>
+    ///     The process window title visible in the taskbar.
+    /// </summary>
     [Required]
-    public string WindowTitle { get; set; }
+    public required string WindowTitle { get; set; }
 
     [Required]
-    public string ProductName { get; set; }
+    public required string ProductName { get; set; }
 
     [Required]
-    public ProductVersionDetectionMethod DetectionMethod { get; set; }
+    public required ProductVersionDetectionMethod DetectionMethod { get; set; }
 
     [Required]
-    public object Detection { get; set; }
+    public required ProductVersionDetectionImplementation Detection { get; set; }
 }
 
 /// <summary>
 ///     Setup exit code parameters.
 /// </summary>
+[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+[SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 public sealed class ExitCodeCheck
 {
+    /// <summary>
+    ///     Ignore whatever exit code we got if true. 
+    /// </summary>
     [Required]
     public bool SkipCheck { get; set; }
 
+    /// <summary>
+    ///     One or more exit codes that signify success.
+    /// </summary>
     [Required]
     public List<int> SuccessCodes { get; set; } = new();
 }
 
+/// <summary>
+///     Parameters for checksum/hash calculation.
+/// </summary>
+[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 public sealed class ChecksumParameters
 {
+    /// <summary>
+    ///     The checksum/hash value to compare against.
+    /// </summary>
     [Required]
-    public string Checksum { get; set; }
+    public string Checksum { get; set; } = null!;
 
+    /// <summary>
+    ///     The algorithm to use to calculate the checksum/hash.
+    /// </summary>
     [Required]
     public ChecksumAlgorithm ChecksumAlg { get; set; }
 }
@@ -177,6 +209,7 @@ public sealed class ChecksumParameters
 /// <summary>
 ///     Represents an update release.
 /// </summary>
+[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 public sealed class UpdateRelease
 {
     /// <summary>
@@ -192,7 +225,7 @@ public sealed class UpdateRelease
     public Version Version { get; set; } = null!;
 
     /// <summary>
-    ///     Summary/changelog/description of the release.
+    ///     Summary/changelog/description of the release. Supports Markdown syntax.
     /// </summary>
     [Required]
     public string Summary { get; set; } = null!;
@@ -244,12 +277,24 @@ public sealed class UpdateRelease
 /// </summary>
 public sealed class UpdateConfig
 {
+    /// <summary>
+    ///     Updates are currently disabled, do not do anything, even if new versions are found.
+    /// </summary>
     public bool? UpdatesDisabled { get; set; }
 
+    /// <summary>
+    ///     The latest version of the updater binary.
+    /// </summary>
     public string? LatestVersion { get; set; }
 
+    /// <summary>
+    ///     Direct URL to the latest updater binary.
+    /// </summary>
     public string? LatestUrl { get; set; }
 
+    /// <summary>
+    ///     The emergency URL. See https://docs.nefarius.at/projects/Vicius/Emergency-Feature/
+    /// </summary>
     public string? EmergencyUrl { get; set; }
 
     /// <summary>
@@ -261,6 +306,7 @@ public sealed class UpdateConfig
 /// <summary>
 ///     An instance returned by the remote update API.
 /// </summary>
+[SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 public sealed class UpdateResponse
 {
     /// <summary>
