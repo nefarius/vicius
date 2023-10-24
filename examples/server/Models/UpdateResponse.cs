@@ -124,6 +124,9 @@ public sealed class FileChecksumConfig
     public string Hash { get; set; }
 }
 
+/// <summary>
+///     Parameters that might be provided by both the server and the local configuration.
+/// </summary>
 public sealed class SharedConfig
 {
     public string? WindowTitle { get; set; }
@@ -150,6 +153,9 @@ public sealed class MergedConfig
     public object Detection { get; set; }
 }
 
+/// <summary>
+///     Setup exit code parameters.
+/// </summary>
 public sealed class ExitCodeCheck
 {
     [Required]
@@ -168,6 +174,9 @@ public sealed class ChecksumParameters
     public ChecksumAlgorithm ChecksumAlg { get; set; }
 }
 
+/// <summary>
+///     Represents an update release.
+/// </summary>
 public sealed class UpdateRelease
 {
     [Required]
@@ -189,9 +198,15 @@ public sealed class UpdateRelease
 
     public string? LaunchArguments { get; set; }
 
+    /// <summary>
+    ///     Setup exit code parameters.
+    /// </summary>
     public ExitCodeCheck? ExitCode { get; set; }
 }
 
+/// <summary>
+///     Update instance configuration. Parameters applying to the entire product/tenant.
+/// </summary>
 public sealed class UpdateConfig
 {
     public bool? UpdatesDisabled { get; set; }
@@ -202,6 +217,9 @@ public sealed class UpdateConfig
 
     public string? EmergencyUrl { get; set; }
 
+    /// <summary>
+    ///     Setup exit code parameters.
+    /// </summary>
     public ExitCodeCheck? ExitCode { get; set; }
 }
 
@@ -210,9 +228,15 @@ public sealed class UpdateConfig
 /// </summary>
 public sealed class UpdateResponse
 {
+    /// <summary>
+    ///     Update instance configuration. Parameters applying to the entire product/tenant.
+    /// </summary>
     [Required]
     public UpdateConfig Instance { get; set; } = new();
 
+    /// <summary>
+    ///     Parameters that might be provided by both the server and the local configuration.
+    /// </summary>
     public SharedConfig? Shared { get; set; }
 
     /// <summary>
