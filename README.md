@@ -60,7 +60,10 @@ Non-exhaustive list of things open or in-progress...
   - [x] Exit Codes
   - [x] Emergency Feature
   - [x] Server Discovery
-  - [ ] Logging
+  - [x] Logging
+  - [ ] Common Errors
+  - [ ] Local Configuration
+  - [ ] Remote Configuration
   - [ ] ...
 - [ ] Add message box dialog if the user launches the updater with no args
   - [x] Standard text if we are up to date
