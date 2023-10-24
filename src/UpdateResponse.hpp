@@ -231,6 +231,8 @@ namespace models
         std::optional<ExitCodeCheck> exitCode;
         /** The (optional) checksum of the remote setup */
         std::optional<ChecksumParameters> checksum;
+        /** If set, this release is ignored and not presented to the user */
+        std::optional<bool> disabled;
 
         /** Full pathname of the local temporary file */
         std::filesystem::path localTempFilePath{};

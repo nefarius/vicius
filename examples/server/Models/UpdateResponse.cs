@@ -179,29 +179,64 @@ public sealed class ChecksumParameters
 /// </summary>
 public sealed class UpdateRelease
 {
+    /// <summary>
+    ///     Simple display name of the release.
+    /// </summary>
     [Required]
     public string Name { get; set; } = null!;
 
+    /// <summary>
+    ///     Semantic version of the release.
+    /// </summary>
     [Required]
     public Version Version { get; set; } = null!;
 
+    /// <summary>
+    ///     Summary/changelog/description of the release.
+    /// </summary>
     [Required]
     public string Summary { get; set; } = null!;
 
+    /// <summary>
+    ///     The release publish timestamp.
+    /// </summary>
+    /// <remarks>
+    ///     Releases are sorted on the client by descending <see cref="Version" />, even if the publish date doesn't match the
+    ///     order of the release.
+    /// </remarks>
     [Required]
     public DateTimeOffset PublishedAt { get; set; }
 
+    /// <summary>
+    ///     The direct URL to the new product setup.
+    /// </summary>
     [Required]
     public string DownloadUrl { get; set; } = null!;
 
-    public int? DownloadSize { get; set; }
+    /// <summary>
+    ///     Optional size (in bytes) of the download target.
+    /// </summary>
+    public long? DownloadSize { get; set; }
 
+    /// <summary>
+    ///     Optional arguments to pass to the setup process.
+    /// </summary>
     public string? LaunchArguments { get; set; }
 
     /// <summary>
     ///     Setup exit code parameters.
     /// </summary>
     public ExitCodeCheck? ExitCode { get; set; }
+
+    /// <summary>
+    ///     Optional checksum/hashing settings to perform after download.
+    /// </summary>
+    public ChecksumParameters? Checksum { get; set; }
+
+    /// <summary>
+    ///     Skips/disables this release on the client if set.
+    /// </summary>
+    public bool? Disabled { get; set; }
 }
 
 /// <summary>

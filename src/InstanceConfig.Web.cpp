@@ -132,6 +132,14 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         const json reply = json::parse(body);
         remote = reply.get<UpdateResponse>();
 
+        // remove releases marked as disabled
+        std::erase_if(
+            remote.releases,
+            [](const UpdateRelease& x)
+            {
+                return x.disabled;
+            });
+
         // top release is always latest by version, even if the response wasn't the right order
         std::ranges::sort(remote.releases, [](const auto& lhs, const auto& rhs)
         {
