@@ -44,22 +44,20 @@ internal sealed class Example01Endpoint : EndpointWithoutRequest
                     // Markdown support in summary (changelog, description)
                     Summary = """
                               ## Features
-                              
                                 * Awesome new thing
                                 * Also this
                                 * And that
                                 
                               ## Bugfixes
-                              
                                 * Removed bug I put there
                                 * Whoops, that wasn't supposed to happen
                                 
                               ## Nonsense
-                              
                                 * Need to see
                                 * What happens...
                                 * If we need scroll bars
                                 * Vertically
+                                * [Links are also supported!](https://example.org)
                               """,
                     // pulling bigger .NET runtime setup as an example to demo progress bar
                     DownloadUrl =
