@@ -141,7 +141,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             });
 
         // top release is always latest by version, even if the response wasn't the right order
-        std::ranges::sort(remote.releases, [](const auto& lhs, const auto& rhs)
+        std::ranges::sort(remote.releases, [](const UpdateRelease& lhs, const UpdateRelease& rhs)
         {
             return lhs.GetSemVersion() > rhs.GetSemVersion();
         });
