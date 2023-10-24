@@ -25,6 +25,7 @@ internal sealed class SchemaEndpoint : EndpointWithoutRequest
             SerializerSettings = new JsonSerializerSettings
             {
                 Formatting = Formatting.Indented,
+                // transform PascalCase properties to camelCase fields
                 ContractResolver = new CamelCasePropertyNamesContractResolver()
             }
         };

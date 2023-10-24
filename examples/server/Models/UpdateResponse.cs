@@ -66,25 +66,40 @@ public enum ProductVersionDetectionMethod
     FileChecksum
 }
 
+/// <summary>
+///     The registry hive to search for keys/values under.
+/// </summary>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 [Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
 public enum RegistryHive
 {
+    /// <summary>
+    ///     HKEY_CURRENT_USER hive.
+    /// </summary>
     [EnumMember(Value = nameof(HKCU))]
     HKCU,
 
+    /// <summary>
+    ///     HKEY_LOCAL_MACHINE hive.
+    /// </summary>
     [EnumMember(Value = nameof(HKLM))]
     HKLM,
 
+    /// <summary>
+    ///     HKEY_CLASSES_ROOT hive.
+    /// </summary>
     [EnumMember(Value = nameof(HKCR))]
     HKCR
 }
 
-[JsonDerivedType(typeof(RegistryValueConfig), typeDiscriminator: nameof(RegistryValueConfig))]
-[JsonDerivedType(typeof(FileVersionConfig), typeDiscriminator: nameof(FileVersionConfig))]
-[JsonDerivedType(typeof(FileSizeConfig), typeDiscriminator: nameof(FileSizeConfig))]
-[JsonDerivedType(typeof(FileChecksumConfig), typeDiscriminator: nameof(FileChecksumConfig))]
+/// <summary>
+///     Possible product version detection parameters.
+/// </summary>
+[JsonDerivedType(typeof(RegistryValueConfig), nameof(RegistryValueConfig))]
+[JsonDerivedType(typeof(FileVersionConfig), nameof(FileVersionConfig))]
+[JsonDerivedType(typeof(FileSizeConfig), nameof(FileSizeConfig))]
+[JsonDerivedType(typeof(FileChecksumConfig), nameof(FileChecksumConfig))]
 public abstract class ProductVersionDetectionImplementation
 {
 }
@@ -92,14 +107,23 @@ public abstract class ProductVersionDetectionImplementation
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class RegistryValueConfig : ProductVersionDetectionImplementation
 {
+    /// <summary>
+    ///     The hive.
+    /// </summary>
     [Required]
-    public RegistryHive Hive { get; set; }
+    public required RegistryHive Hive { get; set; }
 
+    /// <summary>
+    ///     The (sub-)key.
+    /// </summary>
     [Required]
-    public string Key { get; set; }
+    public required string Key { get; set; }
 
+    /// <summary>
+    ///     The value name.
+    /// </summary>
     [Required]
-    public string Value { get; set; }
+    public required string Value { get; set; }
 }
 
 public sealed class FileVersionConfig : ProductVersionDetectionImplementation
@@ -135,20 +159,34 @@ public sealed class FileChecksumConfig : ProductVersionDetectionImplementation
 /// <summary>
 ///     Parameters that might be provided by both the server and the local configuration.
 /// </summary>
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class SharedConfig
 {
+    /// <summary>
+    ///     The process window title visible in the taskbar.
+    /// </summary>
     public string? WindowTitle { get; set; }
 
+    /// <summary>
+    ///     The product name displayed in the UI and dialogs.
+    /// </summary>
     public string? ProductName { get; set; }
 
+    /// <summary>
+    ///     The implementation to use to detect the locally installed product version to compare release versions against.
+    /// </summary>
     public ProductVersionDetectionMethod? DetectionMethod { get; set; }
 
+    /// <summary>
+    ///     The details of the selected <see cref="DetectionMethod" />.
+    /// </summary>
     public ProductVersionDetectionImplementation? Detection { get; set; }
 }
 
 /// <summary>
 ///     The shared configuration that has been merged with local and remote parameters.
 /// </summary>
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class MergedConfig
 {
     /// <summary>
@@ -157,12 +195,21 @@ public sealed class MergedConfig
     [Required]
     public required string WindowTitle { get; set; }
 
+    /// <summary>
+    ///     The product name displayed in the UI and dialogs.
+    /// </summary>
     [Required]
     public required string ProductName { get; set; }
 
+    /// <summary>
+    ///     The implementation to use to detect the locally installed product version to compare release versions against.
+    /// </summary>
     [Required]
     public required ProductVersionDetectionMethod DetectionMethod { get; set; }
 
+    /// <summary>
+    ///     The details of the selected <see cref="DetectionMethod" />.
+    /// </summary>
     [Required]
     public required ProductVersionDetectionImplementation Detection { get; set; }
 }
@@ -172,10 +219,11 @@ public sealed class MergedConfig
 /// </summary>
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 [SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class ExitCodeCheck
 {
     /// <summary>
-    ///     Ignore whatever exit code we got if true. 
+    ///     Ignore whatever exit code we got if true.
     /// </summary>
     [Required]
     public bool SkipCheck { get; set; }
@@ -210,6 +258,7 @@ public sealed class ChecksumParameters
 ///     Represents an update release.
 /// </summary>
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class UpdateRelease
 {
     /// <summary>
@@ -275,6 +324,7 @@ public sealed class UpdateRelease
 /// <summary>
 ///     Update instance configuration. Parameters applying to the entire product/tenant.
 /// </summary>
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class UpdateConfig
 {
     /// <summary>
@@ -307,6 +357,7 @@ public sealed class UpdateConfig
 ///     An instance returned by the remote update API.
 /// </summary>
 [SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class UpdateResponse
 {
     /// <summary>
