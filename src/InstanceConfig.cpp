@@ -63,6 +63,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     isSilent = cmdl[{NV_CLI_BACKGROUND}] || cmdl[{NV_CLI_SILENT}];
 
+#if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     // grab our backend URL from string resource
     std::string idsServerUrl(NV_API_URL_MAX_CHARS, '\0');
     if (LoadStringA(
@@ -76,9 +77,12 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     }
     else
     {
+#endif
         // fallback to compiled-in value
         serverUrlTemplate = NV_API_URL_TEMPLATE;
+#if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     }
+#endif
 
     spdlog::debug("serverUrlTemplate = {}", serverUrlTemplate);
 

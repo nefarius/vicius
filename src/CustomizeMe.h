@@ -8,6 +8,8 @@
 //
 // URL template (or absolute URL) where to find the update information
 // The {} will be replaced with the "manufacturer/product" sub-path
+// CAUTION: set NV_FLAGS_NO_SERVER_URL_RESOURCE to enforce these values
+// See also https://docs.nefarius.at/projects/Vicius/Server-Discovery/
 // 
 #if defined(NDEBUG)
 // this value will be used for RELEASE builds
@@ -58,6 +60,14 @@
  * Compiler switches turning optional features on or off
  */
 
+
+//
+// Uncomment to build without ever reading the server URL from the string table resource
+// > If this is set 
+// >   https://docs.nefarius.at/projects/Vicius/Server-Discovery/#edit-the-string-table-resource
+// > will no longer work
+// 
+#define NV_FLAGS_NO_SERVER_URL_RESOURCE
 
 //
 // Uncomment to build without local configuration JSON file support
