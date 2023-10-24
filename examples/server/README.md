@@ -13,4 +13,6 @@ podman push nefarius.azurecr.io/nefarius-vicius-server:latest
 
 ## Sources & 3rd party credits
 
+- [NJsonSchema for .NET](https://github.com/RicoSuter/NJsonSchema)
 - [FastEndpoints](https://fast-endpoints.com/)
+- [Nefarius.Utilities.AspNetCore](https://github.com/nefarius/Nefarius.Utilities.AspNetCore)
