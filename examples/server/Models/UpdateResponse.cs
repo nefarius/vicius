@@ -258,7 +258,7 @@ public sealed class ExitCodeCheck
     ///     Ignore whatever exit code we got if true.
     /// </summary>
     [Required]
-    public bool SkipCheck { get; set; }
+    public bool SkipCheck { get; set; } = false;
 
     /// <summary>
     ///     One or more exit codes that signify success.
@@ -371,7 +371,7 @@ public sealed class UpdateConfig
     /// <summary>
     ///     The latest version of the updater binary.
     /// </summary>
-    public string? LatestVersion { get; set; }
+    public Version? LatestVersion { get; set; }
 
     /// <summary>
     ///     Direct URL to the latest updater binary.

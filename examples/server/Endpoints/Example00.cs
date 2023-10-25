@@ -4,6 +4,9 @@ using Nefarius.Vicius.Example.Server.Models;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints;
 
+/// <summary>
+///     Demoing only the emergency feature, see https://docs.nefarius.at/projects/Vicius/Emergency-Feature/
+/// </summary>
 internal sealed class Example00Endpoint : EndpointWithoutRequest
 {
     public override void Configure()
@@ -14,14 +17,14 @@ internal sealed class Example00Endpoint : EndpointWithoutRequest
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        var response = new UpdateResponse()
+        UpdateResponse response = new UpdateResponse
         {
-            Instance = new UpdateConfig()
+            Instance = new UpdateConfig
             {
                 EmergencyUrl = "https://docs.nefarius.at/projects/Vicius/Emergency-Feature/"
             }
         };
-        
+
         await SendOkAsync(response, ct);
     }
 }
