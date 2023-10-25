@@ -399,8 +399,7 @@ public sealed class UpdateResponse
     /// <summary>
     ///     Update instance configuration. Parameters applying to the entire product/tenant.
     /// </summary>
-    [Required]
-    public UpdateConfig Instance { get; set; } = new();
+    public UpdateConfig? Instance { get; set; }
 
     /// <summary>
     ///     Parameters that might be provided by both the server and the local configuration.

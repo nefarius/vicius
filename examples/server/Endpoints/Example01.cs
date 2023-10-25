@@ -16,7 +16,7 @@ internal sealed class Example01Endpoint : EndpointWithoutRequest
     {
         UpdateResponse response = new()
         {
-            Instance =
+            Instance = new UpdateConfig
             {
                 LatestVersion = "1.0.0",
                 LatestUrl = "https://downloads.nefarius.at/other/nefarius/vpatch/vpatch.exe"

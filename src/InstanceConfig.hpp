@@ -130,10 +130,15 @@ namespace models
          */
         [[nodiscard]] bool IsNewerUpdaterAvailable() const
         {
-            if (remote.instance.latestVersion.has_value() &&
-                remote.instance.latestUrl.has_value())
+            if (!remote.instance.has_value())
             {
-                const auto latest = remote.instance.GetSemVersion();
+                return false;
+            }
+
+            if (remote.instance.value().latestVersion.has_value() &&
+                remote.instance.value().latestUrl.has_value())
+            {
+                const auto latest = remote.instance.value().GetSemVersion();
 
                 return latest > appVersion;
             }
@@ -246,7 +251,7 @@ namespace models
          * \brief Checks whether an emergency URL is specified by the server.
          * \return True if URL is set, false otherwise.
          */
-        [[nodiscard]] bool HasEmergencyUrlSet() const { return remote.instance.emergencyUrl.has_value(); }
+        [[nodiscard]] bool HasEmergencyUrlSet() const { return remote.instance.has_value() ? remote.instance.value().emergencyUrl.has_value() : false; }
 
         /**
          * \brief Executes the emergency URL with the default local URL handler.
@@ -254,10 +259,20 @@ namespace models
         void LaunchEmergencySite() const;
 
         /**
-         * \brief Returns the instance-global exit code check settings, if any.
+         * \brief Returns the exit code check settings, if any.
          * \return The optional ExitCodeCheck.
          */
-        std::optional<ExitCodeCheck>& ExitCodeCheck() { return remote.instance.exitCode; }
+        std::optional<ExitCodeCheck> ExitCodeCheck()
+        {
+            // check if our release has the settings first
+            if (const auto& release = GetSelectedRelease(); release.exitCode.has_value())
+            {
+                return release.exitCode;
+            }
+
+            // fallback to instance-global value, if any
+            return remote.instance.has_value() ? remote.instance.value().exitCode : std::nullopt;
+        }
 
 		InstanceConfig() : remote(), authority(Authority::Remote)
 		{

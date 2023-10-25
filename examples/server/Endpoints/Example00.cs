@@ -16,7 +16,7 @@ internal sealed class Example00Endpoint : EndpointWithoutRequest
     {
         var response = new UpdateResponse()
         {
-            Instance =
+            Instance = new UpdateConfig()
             {
                 EmergencyUrl = "https://docs.nefarius.at/projects/Vicius/Emergency-Feature/"
             }

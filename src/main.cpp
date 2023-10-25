@@ -519,30 +519,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                             spdlog::warn("Failed to delete temporary file {}, error {}",
                                          cfg.GetLocalReleaseTempFilePath().string(), GetLastError());
                         }
-
-                        const auto& release = cfg.GetSelectedRelease();
-
-                        // check if we have release-specific instructions first
-                        if (release.exitCode.has_value())
-                        {
-                            if (release.exitCode.value().skipCheck)
-                            {
-                                spdlog::debug("Skipping error code check as per configuration");
-                                instStep = DownloadAndInstallStep::InstallSucceeded;
-                                break;
-                            }
-
-                            if (std::ranges::find(release.exitCode.value().successCodes, exitCode) != release.exitCode.
-                                value().successCodes.
-                                end())
-                            {
-                                spdlog::debug("Exit code {} marked as success-condition", exitCode);
-                                instStep = DownloadAndInstallStep::InstallSucceeded;
-                                break;
-                            }
-                        }
-
-                        // check instance-level fallback
+                                                
                         if (cfg.ExitCodeCheck().has_value())
                         {
                             const auto& [skipCheck, successCodes] = cfg.ExitCodeCheck().value();

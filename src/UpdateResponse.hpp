@@ -321,8 +321,8 @@ namespace models
     class UpdateResponse
     {
     public:
-        /** The global settings instance */
-        UpdateConfig instance;
+        /** The (optional) global settings instance */
+        std::optional<UpdateConfig> instance;
         /** The (optional) shared settings */
         std::optional<SharedConfig> shared;
         /** The available releases */
