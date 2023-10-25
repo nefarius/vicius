@@ -343,6 +343,7 @@ public sealed class UpdateRelease
     /// <summary>
     ///     Setup exit code parameters.
     /// </summary>
+    /// <remarks>You can use <see cref="UpdateConfig.ExitCode"/> instead to apply to all releases.</remarks>
     public ExitCodeCheck? ExitCode { get; set; }
 
     /// <summary>
