@@ -49,6 +49,8 @@ Non-exhaustive list of things open or in-progress...
 
 - [ ] Finalize REST API design
 - [ ] Finalize local updater config JSON format
+- [ ] Add info dialog before self-updating UAC dialog comes up
+- [ ] Add silent update option
 - [x] Add self-updater logic
   - ~~With [libPeConv](https://github.com/hasherezade/libpeconv) maybe? Would be cool if we can avoid writing a temporary EXE somewhere~~
   - [x] Tests
