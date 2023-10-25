@@ -127,7 +127,7 @@ bool models::InstanceConfig::RunSelfUpdater() const
 	{
 		spdlog::debug("Requesting running with elevated privileges");
 
-        // TODO: add user info dialog
+        TryDisplayUACDialog();
 
 		std::stringstream argsStream;
 		// build CLI args

@@ -274,6 +274,8 @@ namespace models
             return remote.instance.has_value() ? remote.instance.value().exitCode : std::nullopt;
         }
 
+        void TryDisplayUACDialog(bool force = false) const;
+
 		InstanceConfig() : authority(Authority::Remote)
 		{
 		}
