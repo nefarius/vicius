@@ -274,7 +274,7 @@ namespace models
             return remote.instance.has_value() ? remote.instance.value().exitCode : std::nullopt;
         }
 
-		InstanceConfig() : remote(), authority(Authority::Remote)
+		InstanceConfig() : authority(Authority::Remote)
 		{
 		}
 
