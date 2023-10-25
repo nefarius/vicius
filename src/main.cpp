@@ -452,7 +452,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     break;
                 case DownloadAndInstallStep::DownloadFailed:
 
-                    ImGui::Text("Error! Code: %d", statusCode);
+                    ImGui::Text("Error! Code: %s", magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(statusCode)));
 
                 // TODO: implement me
 
@@ -460,12 +460,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 case DownloadAndInstallStep::PrepareInstall:
                     {
                         const auto& release = cfg.GetSelectedRelease();
+                        const auto& tempFile = cfg.GetLocalReleaseTempFilePath();
 
-                        if (const auto tempFile = cfg.GetLocalReleaseTempFilePath(); !CreateProcessA(
-                            tempFile.string().c_str(),
-                            release.launchArguments.has_value()
-                                ? const_cast<LPSTR>(release.launchArguments.value().c_str())
-                                : nullptr,
+                        std::stringstream launchArgs;
+                        launchArgs << tempFile;
+
+                        if (release.launchArguments.has_value())
+                        {
+                            launchArgs << " " << release.launchArguments.value();
+                        }
+
+                        const auto& args = launchArgs.str();
+
+                        if (!CreateProcessA(
+                            nullptr,
+                            const_cast<LPSTR>(args.c_str()),
                             nullptr,
                             nullptr,
                             TRUE,
@@ -519,10 +528,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                             spdlog::warn("Failed to delete temporary file {}, error {}",
                                          cfg.GetLocalReleaseTempFilePath().string(), GetLastError());
                         }
-                                                
+
                         if (cfg.ExitCodeCheck().has_value())
                         {
-                            const auto& [skipCheck, successCodes] = cfg.ExitCodeCheck().value();
+                            const auto [skipCheck, successCodes] = cfg.ExitCodeCheck().value();
 
                             if (skipCheck)
                             {
