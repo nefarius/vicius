@@ -44,8 +44,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     models::InstanceConfig cfg(hInstance, cmdl);
 
     // actions to perform when install is instructed
+#if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
     if (cmdl[{NV_CLI_INSTALL}])
     {
+#endif
         if (const auto autoRet = cfg.RegisterAutostart(); !std::get<0>(autoRet))
         {
             // TODO: better fallback action?
@@ -73,9 +75,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             return NV_E_EXTRACT_SELF_UPDATE;
         }
 
+#if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
         spdlog::info("Installation tasks finished successfully");
         return NV_S_INSTALL;
     }
+#endif
 
     // actions to perform when running in autostart
     if (cmdl[{NV_CLI_AUTOSTART}])

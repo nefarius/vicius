@@ -84,3 +84,8 @@
 // Uncomment to build without any logging support whatsoever
 // 
 //#define NV_FLAGS_NO_LOGGING
+
+//
+// Uncomment to always run install steps on launch
+// 
+//#define NV_FLAGS_ALWAYS_RUN_INSTALL
