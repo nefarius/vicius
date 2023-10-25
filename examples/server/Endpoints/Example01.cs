@@ -37,7 +37,7 @@ internal sealed class Example01Endpoint : EndpointWithoutRequest
             {
                 new UpdateRelease
                 {
-                    Name = "Demo Update",
+                    Name = ".NET Runtime Demo Update",
                     PublishedAt = DateTimeOffset.UtcNow.AddDays(-3),
                     Version = System.Version.Parse("7.0.12"),
                     // Markdown support in summary (changelog, description)
