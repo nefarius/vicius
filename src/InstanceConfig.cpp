@@ -12,7 +12,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     // 
 
 #if !defined(NV_FLAGS_NO_LOGGING)
-    const auto logLevel = magic_enum::enum_cast<spdlog::level::level_enum>(cmdl("--log-level").str());
+    const auto logLevel = magic_enum::enum_cast<spdlog::level::level_enum>(cmdl(NV_CLI_PARAM_LOG_LEVEL).str());
 
     auto debugSink = std::make_shared<spdlog::sinks::msvc_sink_mt>(false);
     debugSink->set_level(logLevel.has_value() ? logLevel.value() : spdlog::level::info);
@@ -81,6 +81,13 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
         // fallback to compiled-in value
         serverUrlTemplate = NV_API_URL_TEMPLATE;
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
+    }
+#endif
+
+#if !defined(NDEBUG)
+    if (cmdl[{NV_CLI_PARAM_SERVER_URL}])
+    {
+        serverUrlTemplate = cmdl(NV_CLI_PARAM_SERVER_URL).str();
     }
 #endif
 
