@@ -83,10 +83,10 @@
     <ClInclude Include="WizardPage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="InstanceConfig.hpp">
+    <ClInclude Include="models\InstanceConfig.hpp">
       <Filter>Header Files\Models</Filter>
     </ClInclude>
-    <ClInclude Include="UpdateResponse.hpp">
+    <ClInclude Include="models\UpdateResponse.hpp">
       <Filter>Header Files\Models</Filter>
     </ClInclude>
     <ClInclude Include="ADL.hpp">
