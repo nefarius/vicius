@@ -1,12 +1,21 @@
 using System.Text.Json.Serialization;
 
 using FastEndpoints;
+using FastEndpoints.Swagger;
 
 using Nefarius.Utilities.AspNetCore;
 using Nefarius.Vicius.Example.Server.Converters;
 
 WebApplicationBuilder bld = WebApplication.CreateBuilder().Setup();
-bld.Services.AddFastEndpoints();
+bld.Services.AddFastEndpoints().SwaggerDocument(o =>
+{
+    // you will not need this but it is nice to have a summary
+    o.DocumentSettings = s =>
+    {
+        s.Title = "vīcĭus updater API";
+        s.Version = "v1";
+    };
+});
 
 WebApplication app = bld.Build().Setup();
 
@@ -19,6 +28,6 @@ app.UseFastEndpoints(c =>
     c.Serializer.Options.Converters.Add(new CustomDateTimeOffsetConverter("yyyy-MM-ddThh:mm:ssZ"));
     // we use the enum value names (strings) instead of numerical values
     c.Serializer.Options.Converters.Add(new JsonStringEnumConverter());
-});
+}).UseSwaggerGen();
 
 app.Run();

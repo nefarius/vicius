@@ -10,6 +10,9 @@ using NJsonSchema.Generation;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints;
 
+/// <summary>
+///     Delivers the JSON schema of all types involved in the update response.
+/// </summary>
 internal sealed class SchemaEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
