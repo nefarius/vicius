@@ -360,8 +360,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 {
                     currentPage = WizardPage::DownloadAndInstall;
                 }
-
-
+                
                 ImGui::Unindent(leftBorderIndent);
 
                 break;
@@ -458,7 +457,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     ImGui::Text("Error! Code: %s", magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(statusCode)));
 
-                // TODO: implement me
+                    // TODO: implement me, allow retries
 
                     break;
                 case DownloadAndInstallStep::PrepareInstall:
