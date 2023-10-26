@@ -47,7 +47,7 @@ Non-exhaustive list of things open or in-progress...
 
 ### Must-haves
 
-- [ ] Finalize REST API design
+- [x] Finalize REST API design
 - [ ] Finalize local updater config JSON format
 - [x] Add info dialog before self-updating UAC dialog comes up
 - [ ] Add silent update option
