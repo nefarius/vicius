@@ -14,7 +14,7 @@ internal sealed class SchemaEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/example/schema/updates.json");
+        Get("api/vicius/master/schema.json");
         AllowAnonymous();
     }
 
