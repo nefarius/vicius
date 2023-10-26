@@ -77,7 +77,24 @@ Non-exhaustive list of things open or in-progress...
         ```Failed to (re-)create Scheduled Task, error: Error saving the Task, HRESULT: Die Aufgaben-XML enthält einen Wert, der entweder falsch formatiert ist oder sich außerhalb des Bereichs befindet.
         ```
 
-#### Done
+### Nice-to-haves
+
+- [ ] Design Beta-Release support
+- [ ] Make app icon customizable
+- [ ] Add "Light" theme
+- [ ] Make UI DPI-aware
+- [ ] Add embedded images support for Markdown widget
+- [ ] Support closing and restarting applications before and after the main update
+- [ ] Support running prerequisites installation before main update
+- [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
+- [ ] Implement machine-wide registration  
+      Currently only the user executing the updater will run registrations, which is sufficient for most cases
+- [ ] Postpone update dialog popping up if the product is currently in use
+- [ ] Add [Authenticode](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/authenticode) signature checks
+- [ ] Allow using a HTTP proxy address via configuration
+- [ ] Support environment variables or custom placeholders in path strings and alike
+
+### Done
 
 - [x] Finalize REST API design
 - [x] Add info dialog before self-updating UAC dialog comes up
@@ -90,26 +107,9 @@ Non-exhaustive list of things open or in-progress...
   - [x] `FileSize`
   - [x] `FileChecksum`
 - [x] Add some logging
-
-### Nice-to-haves
-
-- [ ] Design Beta-Release support
-- [ ] Make app icon customizable
-- [ ] Add "Light" theme
-- [ ] Make UI DPI-aware
-- [ ] Add embedded images support for Markdown widget
-- [ ] Support closing and restarting applications before and after the main update
-- [ ] Support running prerequisites installation before main update
-- [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
 - [x] Tidy up and improve includes
   - [x] Optimize build times
   - [x] Use pre-compiled headers?
-- [ ] Implement machine-wide registration  
-      Currently only the user executing the updater will run registrations, which is sufficient for most cases
-- [ ] Postpone update dialog popping up if the product is currently in use
-- [ ] Add [Authenticode](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/authenticode) signature checks
-- [ ] Allow using a HTTP proxy address via configuration
-- [ ] Support environment variables or custom placeholders in path strings and alike
 
 ## Sources & 3rd party credits
 
