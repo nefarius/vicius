@@ -5,6 +5,8 @@ using System.Text.Json.Serialization;
 
 using Newtonsoft.Json.Converters;
 
+using NJsonSchema.Annotations;
+
 namespace Nefarius.Vicius.Example.Server.Models;
 
 /// <summary>
@@ -252,6 +254,7 @@ public sealed class MergedConfig
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 [SuppressMessage("ReSharper", "CollectionNeverQueried.Global")]
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class ExitCodeCheck
 {
     /// <summary>
@@ -305,6 +308,7 @@ public sealed class UpdateRelease
     ///     Semantic version of the release.
     /// </summary>
     [Required]
+    [JsonSchemaType(typeof(string))]
     public Version Version { get; set; } = null!;
 
     /// <summary>
@@ -372,6 +376,7 @@ public sealed class UpdateConfig
     /// <summary>
     ///     The latest version of the updater binary.
     /// </summary>
+    [JsonSchemaType(typeof(string))]
     public Version? LatestVersion { get; set; }
 
     /// <summary>
