@@ -56,7 +56,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Add silent update option
 - [ ] [Documentation](https://docs.nefarius.at/projects/Vicius/)
   - [ ] About page
-  - [ ] JSON Schemas
+  - [x] JSON Schemas
   - [x] Specify supported Command Line Arguments
   - [x] Exit Codes
   - [x] Emergency Feature
@@ -64,7 +64,7 @@ Non-exhaustive list of things open or in-progress...
   - [x] Logging
   - [ ] Common Errors
   - [ ] Local Configuration
-  - [ ] Remote Configuration
+  - [x] Remote Configuration
   - [ ] ...
 - [ ] Add message box dialog if the user launches the updater with no args
   - [x] Standard text if we are up to date
