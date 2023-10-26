@@ -47,14 +47,8 @@ Non-exhaustive list of things open or in-progress...
 
 ### Must-haves
 
-- [x] Finalize REST API design
 - [ ] Finalize local updater config JSON format
-- [x] Add info dialog before self-updating UAC dialog comes up
 - [ ] Add silent update option
-- [x] Add self-updater logic
-  - ~~With [libPeConv](https://github.com/hasherezade/libpeconv) maybe? Would be cool if we can avoid writing a temporary EXE somewhere~~
-  - [x] Tests
-  - [x] Fix issues launching from write-protected directory like `Program Files`
 - [ ] [Documentation](https://docs.nefarius.at/projects/Vicius/)
   - [ ] About page
   - [ ] JSON Schemas
@@ -76,18 +70,26 @@ Non-exhaustive list of things open or in-progress...
   - [ ] `WizardPage::MultipleVersionsOverview`
   - [x] `WizardPage::DownloadAndInstall`
   - [ ] ...
-- [x] Implement Product Version detection
-  - [x] `RegistryValue`
-  - [x] `FileVersion`
-  - [x] `FileSize`
-  - [x] `FileChecksum`
-- [x] Add some logging
 - [x] Implement Task Scheduler
   - [x] Registration
   - [x] Removal
   - [ ] Fix issue on Windows 7:  
         ```Failed to (re-)create Scheduled Task, error: Error saving the Task, HRESULT: Die Aufgaben-XML enthält einen Wert, der entweder falsch formatiert ist oder sich außerhalb des Bereichs befindet.
         ```
+
+#### Done
+
+- [x] Finalize REST API design
+- [x] Add info dialog before self-updating UAC dialog comes up
+- [x] Add self-updater logic
+  - [x] Tests
+  - [x] Fix issues launching from write-protected directory like `Program Files`
+- [x] Implement Product Version detection
+  - [x] `RegistryValue`
+  - [x] `FileVersion`
+  - [x] `FileSize`
+  - [x] `FileChecksum`
+- [x] Add some logging
 
 ### Nice-to-haves
 
