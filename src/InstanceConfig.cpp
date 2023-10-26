@@ -21,9 +21,9 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     try
     {
-        if (cmdl({NV_CLI_LOG_TO_FILE}))
+        if (cmdl({NV_CLI_PARAM_LOG_TO_FILE}))
         {
-            const auto logFilename = cmdl({NV_CLI_LOG_TO_FILE}).str();
+            const auto logFilename = cmdl({NV_CLI_PARAM_LOG_TO_FILE}).str();
             auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilename, true);
             fileSink->set_level(logLevel.has_value() ? logLevel.value() : spdlog::level::info);
 

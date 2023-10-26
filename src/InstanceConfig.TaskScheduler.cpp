@@ -32,7 +32,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
 	BSTR bstrAuthor = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
 
 	std::stringstream argsBuilder;
-	argsBuilder << launchArgs << " " << NV_CLI_LOG_LEVEL << " " << magic_enum::enum_name(spdlog::get_level());
+	argsBuilder << launchArgs << " " << NV_CLI_PARAM_LOG_LEVEL << " " << magic_enum::enum_name(spdlog::get_level());
 	std::string argsBuilt = argsBuilder.str();
 	spdlog::debug("argsBuilt = {}", argsBuilt);
 	BSTR bstrLaunchArgs = SysAllocString(ConvertAnsiToWide(argsBuilt).c_str());
