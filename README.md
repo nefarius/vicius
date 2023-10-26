@@ -8,12 +8,13 @@ Nefarius' [nŏvīcĭus](https://latinitium.com/latin-dictionaries/?t=lsn31290) u
 
 ## About
 
+<!--
 ---
 
 *Very* work in progress, do not use 🔥 Star ⭐ it instead to show interest 🤟
 
 ---
-
+-->
 vīcĭus is a self-contained C++20 executable acting as a software update agent. It can be deployed alongside your product and will take care of periodically checking for newer versions online and notifying the user of pending updates. Its goal is to require the least amount of configuration to get it up and running while providing enough flexibility to be customized for various environments, if desired. It doesn't require any prerequisites being present on the target system and should be able to run on any recent Windows version.
 
 ## Features
