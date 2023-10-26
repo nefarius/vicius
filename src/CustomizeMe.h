@@ -16,8 +16,7 @@
 #define NV_API_URL_TEMPLATE     "https://vicius.api.nefarius.systems/api/contoso/Example00/updates.json"
 #else
 // this value will be used for DEBUG builds
-//#define NV_API_URL_TEMPLATE     "http://localhost:5200/api/{}/updates.json"
-#define NV_API_URL_TEMPLATE     "http://localhost:5228/api/contoso/Example01/updates.json"
+#define NV_API_URL_TEMPLATE     "http://localhost:5200/api/{}/updates.json"
 #endif
 
 //
