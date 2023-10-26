@@ -2,7 +2,7 @@
 
 # Nefarius' vīcĭus updater agent
 
-[![Build status](https://ci.appveyor.com/api/projects/status/6n8p9r0koqqt1q6m?svg=true)](https://ci.appveyor.com/project/nefarius/vicius) [![Documentation](https://img.shields.io/badge/Documentation-8A2BE2)](https://docs.nefarius.at/projects/Vicius/) ![Mastodon Follow](https://img.shields.io/mastodon/follow/109321120351128938) <!-- ![GitHub all releases](https://img.shields.io/github/downloads/nefarius/vicius/total) -->
+[![Build status](https://ci.appveyor.com/api/projects/status/6n8p9r0koqqt1q6m?svg=true)](https://ci.appveyor.com/project/nefarius/vicius) [![Documentation](https://img.shields.io/badge/Documentation-8A2BE2)](https://docs.nefarius.at/projects/Vicius/) [![Mastodon Follow](https://img.shields.io/mastodon/follow/109321120351128938?domain=https%3A%2F%2Ffosstodon.org%2F)](https://fosstodon.org/@Nefarius) <!-- ![GitHub all releases](https://img.shields.io/github/downloads/nefarius/vicius/total) -->
 
 Nefarius' [nŏvīcĭus](https://latinitium.com/latin-dictionaries/?t=lsn31290) universal software updater agent for Windows.
 
