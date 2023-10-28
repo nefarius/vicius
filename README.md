@@ -51,6 +51,11 @@ Non-exhaustive list of things open or in-progress...
 
 ### Must-haves
 
+- [ ] Handle all known error-cases (and retries)
+  - [ ] Server response errors
+  - [ ] Release download errors
+  - [ ] Setup launch errors
+  - [ ] ...
 - [ ] Finalize local updater config JSON format
 - [ ] Add silent update option
 - [ ] [Documentation](https://docs.nefarius.at/projects/Vicius/)
