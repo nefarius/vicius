@@ -13,7 +13,7 @@
 
     <ItemGroup>
         <PackageReference Include="FastEndpoints" Version="5.19.0"/>
-        <PackageReference Include="FastEndpoints.Swagger" Version="5.18.0"/>
+        <PackageReference Include="FastEndpoints.Swagger" Version="5.19.0"/>
         <PackageReference Include="Nefarius.Utilities.AspNetCore" Version="1.11.0"/>
         <PackageReference Include="NJsonSchema.CodeGeneration" Version="10.9.0"/>
     </ItemGroup>
