@@ -49,6 +49,12 @@ Head over to the [extended documentation](https://docs.nefarius.at/projects/Vici
 
 ![Updater_yiFLglPhgk.png](assets/Updater_yiFLglPhgk.png)
 
+![Updater_7FQbC2u1wg.png](assets/Updater_7FQbC2u1wg.png)
+
+![Updater_mc9y7o4qcL.png](assets/Updater_mc9y7o4qcL.png)
+
+![Updater_EMJNlbXitT.png](assets/Updater_EMJNlbXitT.png)
+
 ## TODOs
 
 Non-exhaustive list of things open or in-progress...
