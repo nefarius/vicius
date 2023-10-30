@@ -456,6 +456,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     instStep = DownloadAndInstallStep::PrepareInstall;
 
+                    spdlog::info("Download finished successfully");
+
                     break;
                 case DownloadAndInstallStep::DownloadFailed:
 
