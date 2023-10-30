@@ -393,6 +393,11 @@ public sealed class UpdateConfig
     ///     Setup exit code parameters.
     /// </summary>
     public ExitCodeCheck? ExitCode { get; set; }
+
+    /// <summary>
+    ///     URL pointing to a help article opening when the user clicks the help button.
+    /// </summary>
+    public string? HelpUrl { get; set; }
 }
 
 /// <summary>

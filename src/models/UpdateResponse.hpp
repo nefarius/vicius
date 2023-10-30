@@ -283,6 +283,8 @@ namespace models
         std::optional<std::string> emergencyUrl;
         /** The exit code parameters */
         std::optional<ExitCodeCheck> exitCode;
+        /** URL of a help article */
+        std::optional<std::string> helpUrl;
 
         /**
          * \brief Converts the version string to a SemVer type.
@@ -312,7 +314,8 @@ namespace models
         latestVersion,
         latestUrl,
         emergencyUrl,
-        exitCode
+        exitCode,
+        helpUrl
     )
 
     /**
