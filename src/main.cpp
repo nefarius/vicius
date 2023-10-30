@@ -30,7 +30,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     cmdl.add_params({
         NV_CLI_PARAM_LOG_LEVEL,
-        NV_CLI_PARAM_LOG_TO_FILE
+        NV_CLI_PARAM_LOG_TO_FILE,
+        NV_CLI_PARAM_SERVER_URL
     });
 
     if (!util::ParseCommandLineArguments(cmdl))
@@ -360,7 +361,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 {
                     currentPage = WizardPage::DownloadAndInstall;
                 }
-                
+
                 ImGui::Unindent(leftBorderIndent);
 
                 break;
@@ -455,9 +456,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     break;
                 case DownloadAndInstallStep::DownloadFailed:
 
-                    ImGui::Text("Error! Code: %s", magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(statusCode)));
+                    if (statusCode < CURL_LAST)
+                    {
+                        const auto curlCode = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(statusCode));
+                        ImGui::Text("Download failed, cURL error: %s", curlCode.data());
+                    }
+                    else
+                    {
+                        ImGui::Text("Download failed, HTTP error code: %d", statusCode);
+                    }
 
-                    // TODO: implement me, allow retries
+                    isCancelDisabled = false;
+
+                // TODO: implement me, allow retries
 
                     break;
                 case DownloadAndInstallStep::PrepareInstall:

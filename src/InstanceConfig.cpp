@@ -85,7 +85,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 #endif
 
 #if !defined(NDEBUG)
-    if (cmdl[{NV_CLI_PARAM_SERVER_URL}])
+    if (cmdl({NV_CLI_PARAM_SERVER_URL}))
     {
         serverUrlTemplate = cmdl(NV_CLI_PARAM_SERVER_URL).str();
     }
