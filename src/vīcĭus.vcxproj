@@ -321,6 +321,11 @@
     <Font Include="fonts\Ruda-Regular.ttf" />
     <Font Include="fonts\Ruda-SemiBold.ttf" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\dll\dll.vcxproj">
+      <Project>{b96525f6-9e7d-4e69-ab16-3397492aee30}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
