@@ -63,7 +63,7 @@ Non-exhaustive list of things open or in-progress...
 
 - [ ] Handle all known error-cases (and retries)
   - [ ] Server response errors
-  - [ ] Release download errors
+  - [x] Release download errors
   - [ ] Setup launch errors
   - [ ] ...
 - [ ] Finalize local updater config JSON format
