@@ -339,6 +339,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             {
                 isBackDisabled = false;
 
+                // makes sure we support retrying a failed download
+                cfg.ResetReleaseDownloadState();
+
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H1);
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
@@ -456,6 +459,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     break;
                 case DownloadAndInstallStep::DownloadFailed:
 
+                    isCancelDisabled = false;
+                    isBackDisabled = false;
+
                     if (statusCode < CURL_LAST)
                     {
                         const auto curlCode = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(statusCode));
@@ -465,10 +471,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     {
                         ImGui::Text("Download failed, HTTP error code: %d", statusCode);
                     }
+                    
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
+                    ImGui::Text("Press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
 
-                    isCancelDisabled = false;
-
-                // TODO: implement me, allow retries
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 15);
+                    ImGui::Text("Press the 'Cancel' button to abort and close.");
 
                     break;
                 case DownloadAndInstallStep::PrepareInstall:
