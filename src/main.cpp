@@ -330,6 +330,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     window.close();
                 }
 
+                if (cfg.GetHelpUrl().has_value())
+                {
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
+                    if (ImGui::Button(ICON_FK_QUESTION " Display help page"))
+                    {
+                        ShellExecuteA(nullptr, "open", cfg.GetHelpUrl().value().c_str(), nullptr, nullptr,
+                                      SW_SHOWNORMAL);
+                    }
+                }
+
                 ImGui::PopFont();
                 ImGui::Unindent(leftBorderIndent);
                 ImGui::Unindent(leftBorderIndent);
@@ -473,7 +483,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     {
                         ImGui::Text("Download failed, HTTP error code: %d", statusCode);
                     }
-                    
+
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
                     ImGui::Text("Press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
 
