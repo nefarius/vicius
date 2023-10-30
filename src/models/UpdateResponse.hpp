@@ -290,7 +290,7 @@ namespace models
          * \brief Converts the version string to a SemVer type.
          * \return The parsed version.
          */
-        semver::version GetSemVersion() const
+        semver::version GetLatestUpdaterSemVersion() const
         {
             if (!latestVersion.has_value())
             {

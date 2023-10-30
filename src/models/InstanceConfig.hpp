@@ -138,7 +138,7 @@ namespace models
             if (remote.instance.value().latestVersion.has_value() &&
                 remote.instance.value().latestUrl.has_value())
             {
-                const auto latest = remote.instance.value().GetSemVersion();
+                const auto latest = remote.instance.value().GetLatestUpdaterSemVersion();
 
                 return latest > appVersion;
             }
