@@ -629,8 +629,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             }
         case WizardPage::Finish:
             {
-                // TODO: implement me
-
                 window.close();
 
                 break;
