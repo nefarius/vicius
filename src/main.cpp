@@ -481,6 +481,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     isCancelDisabled = false;
                     isBackDisabled = false;
+                    status = NV_E_DOWNLOAD_FAILED;
 
                     if (statusCode < CURL_LAST)
                     {
@@ -543,6 +544,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     ImGui::Text("Error! Failed to launch setup");
 
+                    isCancelDisabled = false;
+                    isBackDisabled = false;
+                    status = NV_E_SETUP_LAUNCH_FAILED;
+
                 // TODO: handle error
 
                     break;
@@ -600,6 +605,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 case DownloadAndInstallStep::InstallFailed:
 
                     ImGui::Text("Error! Installation failed");
+
+                    isCancelDisabled = false;
+                    isBackDisabled = false;
+                    status = NV_E_SETUP_FAILED;
 
                 // TODO: handle error
 

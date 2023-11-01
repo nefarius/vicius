@@ -27,6 +27,9 @@
 #define NV_E_SERVER_RESPONSE        104
 #define NV_E_PRODUCT_DETECTION      105
 #define NV_E_BUSY                   106
+#define NV_E_DOWNLOAD_FAILED        107
+#define NV_E_SETUP_LAUNCH_FAILED    108
+#define NV_E_SETUP_FAILED           109
 
 #define NV_S_INSTALL                200
 #define NV_S_SELF_UPDATER           201
