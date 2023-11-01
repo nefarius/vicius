@@ -97,9 +97,6 @@ Non-exhaustive list of things open or in-progress...
   - [ ] `WizardPage::MultipleVersionsOverview`
   - [x] `WizardPage::DownloadAndInstall`
   - [ ] ...
-- [x] Implement Task Scheduler
-  - [x] Registration
-  - [x] Removal
 
 ### Nice-to-haves
 
@@ -120,6 +117,9 @@ Non-exhaustive list of things open or in-progress...
 
 ### Done
 
+- [x] Implement Task Scheduler
+  - [x] Registration
+  - [x] Removal
 - [x] Finalize REST API design
 - [x] Add info dialog before self-updating UAC dialog comes up
 - [x] Add self-updater logic
