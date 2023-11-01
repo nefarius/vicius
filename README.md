@@ -49,7 +49,7 @@ Head over to the [extended documentation](https://docs.nefarius.at/projects/Vici
 
 You can get [unsigned build snapshots here](https://buildbot.nefarius.at/builds/vicius/). Consider these Beta-releases.
 
-Signed stable releases will be provided on the repository releases page.
+Signed stable releases will be provided [on the repository releases page](releases/).
 
 ## Screenshots
 
