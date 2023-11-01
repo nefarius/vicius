@@ -161,6 +161,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         return NV_S_UP_TO_DATE;
     }
 
+    // there's a pending update but user chose to postpone
     if (cfg.IsInPostponePeriod())
     {
         spdlog::info("Postpone period active, exiting");
