@@ -32,6 +32,13 @@
 #define NV_S_SELF_UPDATER           201
 #define NV_S_UP_TO_DATE             202
 #define NV_S_UPDATE_FINISHED        203
+#define NV_S_POSTPONE_PERIOD        204
+
+//
+// Other/Internal
+// 
+
+#define NV_POSTPONE_TS_VALUE_NAME       L"LastTimestamp"
 
 
 //

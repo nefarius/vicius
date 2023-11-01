@@ -161,6 +161,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         return NV_S_UP_TO_DATE;
     }
 
+    if (cfg.IsInPostponePeriod())
+    {
+        spdlog::info("Postpone period active, exiting");
+        return NV_S_POSTPONE_PERIOD;
+    }
+
     // check if we are currently bothering the user
     if (!cmdl[{NV_CLI_IGNORE_BUSY_STATE}] && cfg.IsSilent())
     {
@@ -326,7 +332,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
                 if (ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow"))
                 {
-                    // TODO: implement me
+                    cfg.SetPostponeData();
                     window.close();
                 }
 

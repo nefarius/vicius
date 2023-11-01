@@ -288,6 +288,17 @@ namespace models
             return remote.instance.has_value() ? remote.instance.value().helpUrl : std::nullopt;
         }
 
+        /**
+         * \brief Stores the current timestamp in a volatile registry key.
+         */
+        void SetPostponeData();
+
+        /**
+         * \brief Checks whether we're still in the postpone window.
+         * \return True if we're still within a 24 hour window, false otherwise.
+         */
+        bool IsInPostponePeriod();
+
         InstanceConfig() : authority(Authority::Remote)
         {
         }
