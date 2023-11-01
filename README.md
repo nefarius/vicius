@@ -68,10 +68,11 @@ Non-exhaustive list of things open or in-progress...
 ### Must-haves
 
 - [x] Implement "postpone" choice behaviour
-- [ ] Handle all known error-cases (and retries)
-  - [ ] Server response errors
+- [ ] Add retry-logic (e.g. retry failed downloads etc.)
+- [ ] Handle all known error-cases
+  - [x] Server response errors
   - [x] Release download errors
-  - [ ] Setup launch errors
+  - [x] Setup launch errors
   - [ ] ...
 - [ ] Finalize local updater config JSON format
 - [ ] Add silent update option
