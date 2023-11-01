@@ -32,7 +32,8 @@
 #define NV_S_SELF_UPDATER           201
 #define NV_S_UP_TO_DATE             202
 #define NV_S_UPDATE_FINISHED        203
-#define NV_S_POSTPONE_PERIOD        204
+#define NV_S_USER_POSTPONED         204
+#define NV_S_POSTPONE_PERIOD        205
 
 //
 // Other/Internal

@@ -334,6 +334,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 if (ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow"))
                 {
                     cfg.SetPostponeData();
+                    status = NV_S_USER_POSTPONED;
                     window.close();
                 }
 
