@@ -61,6 +61,7 @@ Non-exhaustive list of things open or in-progress...
 
 ### Must-haves
 
+- [ ] Implement "postpone" choice behaviour
 - [ ] Handle all known error-cases (and retries)
   - [ ] Server response errors
   - [x] Release download errors
