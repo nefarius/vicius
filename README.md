@@ -83,7 +83,7 @@ Non-exhaustive list of things open or in-progress...
   - [x] Emergency Feature
   - [x] Server Discovery
   - [x] Logging
-  - [ ] Common Errors
+  - [x] Common Errors
   - [ ] Local Configuration
   - [x] Remote Configuration
   - [ ] ...
