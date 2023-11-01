@@ -45,6 +45,12 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
 
 Head over to the [extended documentation](https://docs.nefarius.at/projects/Vicius/) for examples and detailed explanations.
 
+## Downloads
+
+You can get [unsigned build snapshots here](https://buildbot.nefarius.at/builds/vicius/).
+
+Signed stable releases will be provided on the repository releases page.
+
 ## Screenshots
 
 ![Updater_yiFLglPhgk.png](assets/Updater_yiFLglPhgk.png)
