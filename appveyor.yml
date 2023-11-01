@@ -23,6 +23,9 @@ before_build:
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\vīcĭus.rc" --resource.file-version --resource.product-version
 build:
   project: $(APPVEYOR_BUILD_FOLDER)\vīcĭus.sln
+artifacts:
+- path: bin\**\*.exe
+  name: Updater
 deploy:
 - provider: Environment
   name: BUILDBOT
