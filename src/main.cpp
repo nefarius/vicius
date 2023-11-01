@@ -356,10 +356,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         case WizardPage::SingleVersionSummary:
             {
                 isBackDisabled = false;
-
-                // makes sure we support retrying a failed download
-                cfg.ResetReleaseDownloadState();
-
+                
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H1);
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
@@ -380,6 +377,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::SetCursorPos(ImVec2(530, navigateButtonOffsetY));
                 if (ImGui::Button("Next"))
                 {
+                    instStep = DownloadAndInstallStep::Begin;
                     currentPage = WizardPage::DownloadAndInstall;
                 }
 
