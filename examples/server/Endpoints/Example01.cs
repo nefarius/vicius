@@ -76,7 +76,7 @@ internal sealed class Example01Endpoint : EndpointWithoutRequest
                         {
                             0, // regular success
                             3010, // success, but reboot required
-                            1602 // failure (user cancelled) - you normally wouldn't want that as a success code, just an example
+                            // 1602 // failure (user cancelled) - you normally wouldn't want that as a success code, just an example
                         }
                     }
                 }

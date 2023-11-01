@@ -484,11 +484,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     if (statusCode < CURL_LAST)
                     {
                         const auto curlCode = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(statusCode));
-                        ImGui::Text("Download failed, cURL error: %s", curlCode.data());
+                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, cURL error: %s", curlCode.data());
                     }
                     else
                     {
-                        ImGui::Text("Download failed, HTTP error code: %d", statusCode);
+                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, HTTP error code: %d", statusCode);
                     }
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
@@ -540,7 +540,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
                 case DownloadAndInstallStep::InstallLaunchFailed:
 
-                    ImGui::Text("Error! Failed to launch setup");
+                    ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Could not launch setup.");
 
                     isCancelDisabled = false;
                     isBackDisabled = false;
@@ -602,7 +602,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     break;
                 case DownloadAndInstallStep::InstallFailed:
 
-                    ImGui::Text("Error! Installation failed");
+                    ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed.");
 
                     isCancelDisabled = false;
                     isBackDisabled = false;
