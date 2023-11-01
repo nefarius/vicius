@@ -35,12 +35,6 @@
 #define NV_S_USER_POSTPONED         204
 #define NV_S_POSTPONE_PERIOD        205
 
-//
-// Other/Internal
-// 
-
-#define NV_POSTPONE_TS_VALUE_NAME       L"LastTimestamp"
-
 
 //
 // Functions

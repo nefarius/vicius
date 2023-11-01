@@ -2,6 +2,8 @@
 #include "Common.h"
 #include "InstanceConfig.hpp"
 
+#define NV_POSTPONE_TS_VALUE_NAME   L"LastTimestamp"
+
 
 models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) : appInstance(hInstance), remote()
 {
