@@ -356,7 +356,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         case WizardPage::SingleVersionSummary:
             {
                 isBackDisabled = false;
-                
+
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H1);
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
@@ -540,7 +540,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
                 case DownloadAndInstallStep::InstallLaunchFailed:
 
-                    ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Could not launch setup.");
+                    ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Could not launch setup, error %s",
+                                winapi::GetLastErrorStdStr().c_str());
+
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
+                    ImGui::Text("Press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
+
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 15);
+                    ImGui::Text("Press the 'Cancel' button to abort and close.");
 
                     isCancelDisabled = false;
                     isBackDisabled = false;
@@ -602,7 +609,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     break;
                 case DownloadAndInstallStep::InstallFailed:
 
-                    ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed.");
+                    ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed, error %s",
+                                winapi::GetLastErrorStdStr().c_str());
+
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
+                    ImGui::Text("Press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
+
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 15);
+                    ImGui::Text("Press the 'Cancel' button to abort and close.");
 
                     isCancelDisabled = false;
                     isBackDisabled = false;
