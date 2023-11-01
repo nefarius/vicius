@@ -17,7 +17,7 @@ install:
 - cmd: git submodule -q update --init
 - cmd: vcpkg integrate install
 - cmd: vcpkg update
-- ps: Setup-VS2022
+- ps: Setup-VS2022 $env:PLATFORM
 before_build:
 - cmd: nuget restore
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\vīcĭus.rc" --resource.file-version --resource.product-version
