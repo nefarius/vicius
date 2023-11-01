@@ -540,7 +540,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
                 case DownloadAndInstallStep::InstallLaunchFailed:
 
-                    ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Could not launch setup, error %s",
+                    ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Could not launch setup, error %s.",
                                 winapi::GetLastErrorStdStr().c_str());
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
@@ -609,8 +609,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     break;
                 case DownloadAndInstallStep::InstallFailed:
 
-                    ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed, error %s",
-                                winapi::GetLastErrorStdStr().c_str());
+                    if (GetLastError() == ERROR_SUCCESS)
+                    {
+                        ImGui::Text(
+                            ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed with an unexpected exit code.");
+                    }
+                    else
+                    {
+                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed, error %s.",
+                                    winapi::GetLastErrorStdStr().c_str());
+                    }
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
                     ImGui::Text("Press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
