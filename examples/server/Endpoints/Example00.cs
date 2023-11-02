@@ -17,7 +17,7 @@ internal sealed class Example00Endpoint : EndpointWithoutRequest
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        UpdateResponse response = new UpdateResponse
+        UpdateResponse response = new()
         {
             Instance = new UpdateConfig
             {
