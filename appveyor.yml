@@ -24,7 +24,7 @@ before_build:
 build:
   project: $(APPVEYOR_BUILD_FOLDER)\vīcĭus.sln
 after_build:
-  - cmd: upx -9 -o .\bin\%PLATFORM%\Updater_packed.exe .\bin\%PLATFORM%\*.exe || exit 0
+  - cmd: upx -9 -o .\bin\%PLATFORM%\Updater_packed.exe .\bin\%PLATFORM%\*.exe || ver > nul
 artifacts:
 - path: bin\**\*.exe
   name: Updater
