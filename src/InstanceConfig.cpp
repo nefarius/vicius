@@ -244,8 +244,14 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             const auto valueName = ConvertAnsiToWide(cfg.value);
 
             winreg::RegKey key;
+            REGSAM flags = KEY_READ;
 
-            if (const winreg::RegResult result = key.TryOpen(hive, subKey, KEY_READ); !result)
+            if (cfg.view > RegistryView::Default)
+            {
+                flags |= static_cast<REGSAM>(cfg.view);
+            }
+
+            if (const winreg::RegResult result = key.TryOpen(hive, subKey, flags); !result)
             {
                 spdlog::error("Failed to open {}\\{} key", magic_enum::enum_name(cfg.hive), cfg.key);
                 return std::make_tuple(false, "Failed to open registry key for reading");
