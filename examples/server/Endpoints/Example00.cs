@@ -21,7 +21,7 @@ internal sealed class Example00Endpoint : EndpointWithoutRequest
         {
             Instance = new UpdateConfig
             {
-                EmergencyUrl = "https://docs.nefarius.at/projects/Vicius/Example-Landing-Page/"
+                EmergencyUrl = "https://docs.nefarius.at/projects/Vicius/Examples/Landing-Page/"
             }
         };
 
