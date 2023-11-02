@@ -192,6 +192,17 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 models::InstanceConfig::~InstanceConfig()
 {
     RestClient::disable();
+
+    // clean up release resources
+    for (const auto& release : remote.releases)
+    {
+        // delete local setup copy
+        if (DeleteFileA(release.localTempFilePath.string().c_str()) == 0)
+        {
+            spdlog::warn("Failed to delete temporary file {}, error {}",
+                         release.localTempFilePath.string(), GetLastError());
+        }
+    }
 }
 
 std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)

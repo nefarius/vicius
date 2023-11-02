@@ -574,13 +574,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         CloseHandle(updateProcessInfo.hProcess);
                         CloseHandle(updateProcessInfo.hThread);
                         RtlZeroMemory(&updateProcessInfo, sizeof(updateProcessInfo));
-
-                        if (DeleteFileA(cfg.GetLocalReleaseTempFilePath().string().c_str()) == 0)
-                        {
-                            spdlog::warn("Failed to delete temporary file {}, error {}",
-                                         cfg.GetLocalReleaseTempFilePath().string(), GetLastError());
-                        }
-
+                        
                         if (cfg.ExitCodeCheck().has_value())
                         {
                             const auto [skipCheck, successCodes] = cfg.ExitCodeCheck().value();
