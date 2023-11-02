@@ -69,15 +69,34 @@ namespace models
                                  {RegistryHive::HKCR, magic_enum::enum_name(RegistryHive::HKCR)},
                                  })
 
+    /**
+     * \brief https://learn.microsoft.com/en-us/windows/win32/winprog64/accessing-an-alternate-registry-view
+     */
+    enum class RegistryView
+    {
+        Default,
+        WOW64_64KEY = 0x0100,
+        WOW64_32KEY = 0x0200,
+        Invalid = -1
+    };
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(RegistryView, {
+                                 {RegistryView::Invalid, nullptr},
+                                 {RegistryView::Default, magic_enum::enum_name(RegistryView::Default)},
+                                 {RegistryView::WOW64_64KEY, magic_enum::enum_name(RegistryView::WOW64_64KEY)},
+                                 {RegistryView::WOW64_32KEY, magic_enum::enum_name(RegistryView::WOW64_32KEY)},
+                                 })
+
     class RegistryValueConfig
     {
     public:
+        RegistryView view{RegistryView::Default};
         RegistryHive hive;
         std::string key;
         std::string value;
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RegistryValueConfig, hive, key, value)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RegistryValueConfig, view, hive, key, value)
 
     class FileVersionConfig
     {

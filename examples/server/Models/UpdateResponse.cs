@@ -96,6 +96,34 @@ public enum RegistryHive
 }
 
 /// <summary>
+///     The alternate registry view to apply. 
+/// </summary>
+/// <remarks>https://learn.microsoft.com/en-us/windows/win32/winprog64/accessing-an-alternate-registry-view</remarks>
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+public enum RegistryView
+{
+    /// <summary>
+    ///     Default behavior (no flags set).
+    /// </summary>
+    [EnumMember(Value = nameof(Default))]
+    Default,
+
+    /// <summary>
+    ///     Access a 64-bit key from either a 32-bit or 64-bit application.
+    /// </summary>
+    [EnumMember(Value = nameof(WOW64_64KEY))]
+    WOW64_64KEY,
+
+    /// <summary>
+    ///     Access a 32-bit key from either a 32-bit or 64-bit application.
+    /// </summary>
+    [EnumMember(Value = nameof(WOW64_32KEY))]
+    WOW64_32KEY
+}
+
+/// <summary>
 ///     Possible product version detection parameters.
 /// </summary>
 [JsonDerivedType(typeof(RegistryValueConfig), nameof(RegistryValueConfig))]
@@ -112,6 +140,12 @@ public abstract class ProductVersionDetectionImplementation
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class RegistryValueConfig : ProductVersionDetectionImplementation
 {
+    /// <summary>
+    ///     The alternate view.
+    /// </summary>
+    [Required]
+    public RegistryView View { get; set; } = RegistryView.Default;
+    
     /// <summary>
     ///     The hive.
     /// </summary>
