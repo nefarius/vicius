@@ -196,6 +196,11 @@ models::InstanceConfig::~InstanceConfig()
     // clean up release resources
     for (const auto& release : remote.releases)
     {
+        if (release.localTempFilePath.empty())
+        {
+            continue;
+        }
+
         // delete local setup copy
         if (DeleteFileA(release.localTempFilePath.string().c_str()) == 0)
         {
