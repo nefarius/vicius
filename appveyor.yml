@@ -19,12 +19,13 @@ install:
 - cmd: vcpkg update
 - ps: Setup-VS2022 $env:PLATFORM
 before_build:
+- cmd: echo Platform is %PLATFORM%
 - cmd: nuget restore
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\vīcĭus.rc" --resource.file-version --resource.product-version
 build:
   project: $(APPVEYOR_BUILD_FOLDER)\vīcĭus.sln
 after_build:
-  - cmd: if not %PLATFORM%==ARM64 upx -9 -o .\bin\%PLATFORM%\Updater_packed.exe .\bin\%PLATFORM%\*.exe
+- cmd: if not %PLATFORM%==ARM64 upx -9 -o .\bin\%PLATFORM%\Updater_packed.exe .\bin\%PLATFORM%\*.exe
 artifacts:
 - path: bin\**\*.exe
   name: Updater
