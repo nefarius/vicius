@@ -69,6 +69,7 @@ Non-exhaustive list of things open or in-progress...
 
 - [x] Implement "postpone" choice behaviour
 - [ ] Add retry-logic (e.g. retry failed downloads etc.)
+- [ ] Add some fallback code if the temp directory isn't available
 - [ ] Handle all known error-cases
   - [x] Server response errors
   - [x] Release download errors
