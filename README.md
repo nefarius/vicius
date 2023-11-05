@@ -19,7 +19,7 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
 
 ## Motivation
 
-Dealing with software update mechanics has been a steady companion for almost 10 years by now, so it's about time to learn from all the mistakes, hardships and shortcomings the various products used have put me through all this time 😅 I knew I could do better, so in the end I did! 💪
+Dealing with software update mechanics has been a steady companion for almost 10 years by now, so it's about time to learn from all the mistakes, hardships and shortcomings the various products used have put me through all this time 😅 If you want something done right, you gotta do it yourself 💪
 
 ## Features
 
