@@ -340,3 +340,4 @@ ASALocalRun/
 healthchecksdb
 **/vcpkg_installed
 **/imgui.ini
+include/*.h

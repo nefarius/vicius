@@ -5,6 +5,11 @@
  */
 
 
+#if __has_include("ViciusPreCustomizeMe.h")
+# include "ViciusPreCustomizeMe.h"
+#endif
+
+
 //
 // URL template (or absolute URL) where to find the update information
 // The {} will be replaced with the "manufacturer/product" sub-path
@@ -88,3 +93,8 @@
 // Uncomment to always run install steps on launch
 // 
 //#define NV_FLAGS_ALWAYS_RUN_INSTALL
+
+
+#if __has_include("ViciusPostCustomizeMe.h")
+# include "ViciusPostCustomizeMe.h"
+#endif
