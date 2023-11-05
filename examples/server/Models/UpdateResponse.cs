@@ -127,9 +127,13 @@ public enum RegistryView
 ///     Possible product version detection parameters.
 /// </summary>
 [JsonDerivedType(typeof(RegistryValueConfig), nameof(RegistryValueConfig))]
+[KnownType(typeof(RegistryValueConfig))]
 [JsonDerivedType(typeof(FileVersionConfig), nameof(FileVersionConfig))]
+[KnownType(typeof(FileVersionConfig))]
 [JsonDerivedType(typeof(FileSizeConfig), nameof(FileSizeConfig))]
+[KnownType(typeof(FileSizeConfig))]
 [JsonDerivedType(typeof(FileChecksumConfig), nameof(FileChecksumConfig))]
+[KnownType(typeof(FileChecksumConfig))]
 public abstract class ProductVersionDetectionImplementation
 {
 }
