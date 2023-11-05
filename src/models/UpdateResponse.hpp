@@ -139,6 +139,8 @@ namespace models
         std::optional<ProductVersionDetectionMethod> detectionMethod;
         /** The detection method for the installed software version */
         std::optional<json> detection;
+        /** URL of the error article */
+        std::optional<std::string> errorFallbackUrl;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
@@ -146,7 +148,8 @@ namespace models
         windowTitle,
         productName,
         detectionMethod,
-        detection
+        detection,
+        errorFallbackUrl
     )
 
     /**
@@ -163,6 +166,8 @@ namespace models
         ProductVersionDetectionMethod detectionMethod{ProductVersionDetectionMethod::Invalid};
         /** The detection method for the installed software version */
         json detection;
+        /** URL of the error article */
+        std::string errorFallbackUrl;
 
         MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME)
         {
@@ -194,7 +199,8 @@ namespace models
         windowTitle,
         productName,
         detectionMethod,
-        detection
+        detection,
+        errorFallbackUrl
     )
 
     /**

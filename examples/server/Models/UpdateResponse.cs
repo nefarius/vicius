@@ -252,6 +252,11 @@ public sealed class SharedConfig
     ///     The details of the selected <see cref="DetectionMethod" />.
     /// </summary>
     public ProductVersionDetectionImplementation? Detection { get; set; }
+    
+    /// <summary>
+    ///     URL pointing to a help article opening when the user was presented with an error dialog.
+    /// </summary>
+    public string? ErrorFallbackUrl { get; set; }
 }
 
 /// <summary>
@@ -284,6 +289,12 @@ public sealed class MergedConfig
     /// </summary>
     [Required]
     public required ProductVersionDetectionImplementation Detection { get; set; }
+    
+    /// <summary>
+    ///     URL pointing to a help article opening when the user was presented with an error dialog.
+    /// </summary>
+    [Required]
+    public required string ErrorFallbackUrl { get; set; }
 }
 
 /// <summary>
