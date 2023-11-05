@@ -436,6 +436,11 @@ public sealed class UpdateConfig
     ///     URL pointing to a help article opening when the user clicks the help button.
     /// </summary>
     public string? HelpUrl { get; set; }
+
+    /// <summary>
+    ///     URL pointing to a help article opening when the user was presented with an error dialog.
+    /// </summary>
+    public string? ErrorFallbackUrl { get; set; }
 }
 
 /// <summary>

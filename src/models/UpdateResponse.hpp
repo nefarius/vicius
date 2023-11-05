@@ -304,6 +304,8 @@ namespace models
         std::optional<ExitCodeCheck> exitCode;
         /** URL of a help article */
         std::optional<std::string> helpUrl;
+        /** URL of the error article */
+        std::optional<std::string> errorFallbackUrl;
 
         /**
          * \brief Converts the version string to a SemVer type.
