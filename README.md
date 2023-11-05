@@ -70,7 +70,6 @@ Non-exhaustive list of things open or in-progress...
 
 ### Must-haves
 
-- [x] Implement "postpone" choice behaviour
 - [ ] Add retry-logic (e.g. retry failed downloads etc.)
 - [ ] Add some fallback code if the temp directory isn't available
 - [ ] Handle all known error-cases
@@ -121,6 +120,7 @@ Non-exhaustive list of things open or in-progress...
 
 ### Done
 
+- [x] Implement "postpone" choice behaviour
 - [x] Implement Task Scheduler
   - [x] Registration
   - [x] Removal
