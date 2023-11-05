@@ -254,9 +254,9 @@ public sealed class SharedConfig
     public ProductVersionDetectionImplementation? Detection { get; set; }
     
     /// <summary>
-    ///     URL pointing to a help article opening when the user was presented with an error dialog.
+    ///     URL pointing to a help article opening when an update error occurred.
     /// </summary>
-    public string? ErrorFallbackUrl { get; set; }
+    public string? InstallationErrorUrl { get; set; }
 }
 
 /// <summary>
@@ -291,10 +291,10 @@ public sealed class MergedConfig
     public required ProductVersionDetectionImplementation Detection { get; set; }
     
     /// <summary>
-    ///     URL pointing to a help article opening when the user was presented with an error dialog.
+    ///     URL pointing to a help article opening when an update error occurred.
     /// </summary>
     [Required]
-    public required string ErrorFallbackUrl { get; set; }
+    public required string InstallationErrorUrl { get; set; }
 }
 
 /// <summary>

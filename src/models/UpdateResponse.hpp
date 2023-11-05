@@ -140,7 +140,7 @@ namespace models
         /** The detection method for the installed software version */
         std::optional<json> detection;
         /** URL of the error article */
-        std::optional<std::string> errorFallbackUrl;
+        std::optional<std::string> installationErrorUrl;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
@@ -149,7 +149,7 @@ namespace models
         productName,
         detectionMethod,
         detection,
-        errorFallbackUrl
+        installationErrorUrl
     )
 
     /**
@@ -167,7 +167,7 @@ namespace models
         /** The detection method for the installed software version */
         json detection;
         /** URL of the error article */
-        std::string errorFallbackUrl;
+        std::string installationErrorUrl;
 
         MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME)
         {
@@ -200,7 +200,7 @@ namespace models
         productName,
         detectionMethod,
         detection,
-        errorFallbackUrl
+        installationErrorUrl
     )
 
     /**

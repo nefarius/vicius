@@ -174,8 +174,8 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             if (shared.detection.has_value())
                 merged.detection = shared.detection.value();
 
-            if (shared.errorFallbackUrl.has_value())
-                merged.errorFallbackUrl = shared.errorFallbackUrl.value();
+            if (shared.installationErrorUrl.has_value())
+                merged.installationErrorUrl = shared.installationErrorUrl.value();
         }
 
         return std::make_tuple(true, "OK");
