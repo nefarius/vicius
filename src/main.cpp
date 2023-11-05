@@ -227,6 +227,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     STARTUPINFOA info = {sizeof(STARTUPINFOA)};
     PROCESS_INFORMATION updateProcessInfo{};
     DWORD status = ERROR_SUCCESS;
+    std::once_flag errorUrlTriggered;
 
     sf::Vector2i grabbedOffset;
     auto grabbedWindow = false;
@@ -540,6 +541,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
                 case DownloadAndInstallStep::InstallLaunchFailed:
 
+                    std::call_once(errorUrlTriggered, [](models::InstanceConfig inst)
+                    {
+                        if (!inst.GetInstallErrorUrl().has_value())
+                        {
+                            return;
+                        }
+
+                        ShellExecuteA(
+                            nullptr,
+                            "open",
+                            inst.GetInstallErrorUrl().value().c_str(),
+                            nullptr,
+                            nullptr,
+                            SW_SHOWNORMAL
+                        );
+                    }, cfg);
+
                     ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Could not launch setup, error %s.",
                                 winapi::GetLastErrorStdStr().c_str());
 
@@ -574,7 +592,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         CloseHandle(updateProcessInfo.hProcess);
                         CloseHandle(updateProcessInfo.hThread);
                         RtlZeroMemory(&updateProcessInfo, sizeof(updateProcessInfo));
-                        
+
                         if (cfg.ExitCodeCheck().has_value())
                         {
                             const auto [skipCheck, successCodes] = cfg.ExitCodeCheck().value();
@@ -602,6 +620,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     break;
                 case DownloadAndInstallStep::InstallFailed:
+
+                    std::call_once(errorUrlTriggered, [](models::InstanceConfig inst)
+                    {
+                        if (!inst.GetInstallErrorUrl().has_value())
+                        {
+                            return;
+                        }
+
+                        ShellExecuteA(
+                            nullptr,
+                            "open",
+                            inst.GetInstallErrorUrl().value().c_str(),
+                            nullptr,
+                            nullptr,
+                            SW_SHOWNORMAL
+                        );
+                    }, cfg);
 
                     if (GetLastError() == ERROR_SUCCESS)
                     {

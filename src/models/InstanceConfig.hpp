@@ -293,6 +293,15 @@ namespace models
         }
 
         /**
+         * \brief Gets the help URL for installation failures, if provided.
+         * \return The optional help URL, if set.
+         */
+        std::optional<std::string> GetInstallErrorUrl()
+        {            
+            return merged.installationErrorUrl.empty() ? std::nullopt : std::optional(merged.installationErrorUrl);
+        }
+
+        /**
          * \brief Stores the current timestamp in a volatile registry key.
          */
         void SetPostponeData();
