@@ -277,6 +277,10 @@ namespace models
             return remote.instance.has_value() ? remote.instance.value().exitCode : std::nullopt;
         }
 
+        /**
+         * \brief Attempts to display the UAC info dialog.
+         * \param force True to ignore silent flags, false otherwise (default).
+         */
         void TryDisplayUACDialog(bool force = false) const;
 
         /**

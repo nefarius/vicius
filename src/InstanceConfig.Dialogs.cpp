@@ -47,6 +47,22 @@ void models::InstanceConfig::TryDisplayErrorDialog(
         return;
     }
 
+    // launch error fallback URL, if set
+    if (remote.instance.has_value() && remote.instance.value().errorFallbackUrl.has_value())
+    {
+        spdlog::debug("Error fallback URL ({}) is set, invoking open action",
+                      remote.instance.value().errorFallbackUrl.value());
+
+        ShellExecuteA(
+            nullptr,
+            "open",
+            remote.instance.value().errorFallbackUrl.value().c_str(),
+            nullptr,
+            nullptr,
+            SW_SHOWNORMAL
+        );
+    }
+
     int nClickedButton;
 
     const auto windowTitle = ConvertAnsiToWide(merged.windowTitle);
