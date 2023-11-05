@@ -26,6 +26,7 @@ vīcĭus is a self-contained C++20 executable acting as a software update agent.
 - **(Almost) zero configuration**  
   The bare minimum configuration can be provided by simply compiling in the server URL by adjusting the `CustomizeMe.h` header file. This does not mean you need to maintain one build for every product you wanna support; you will get **multi-tenancy out of the box** by simply naming the resulting executable after the following scheme: `manufacturer_product_Updater.exe`, e.g. `nefarius_HidHide_Updater.exe` will build the server path as `https://example.org/api/nefarius/HidHide/updates.json` (or however it is defined in `CustomizeMe.h`) automatically!
   - All alternative, more sophisticated configuration options [are described in the extended documentation](https://docs.nefarius.at/projects/Vicius/Server-Discovery/).
+  - If you wish to completely avoid touching the cloned sources [have a look at the optional includes](include).
 - **Sane defaults**  
   We hate wasting time writing configuration files as much as the next person; most configuration options are either optional or have sane default fallback values you can depend on.
 - **Self-updater**  
