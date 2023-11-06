@@ -3,7 +3,6 @@
 #include "WizardPage.h"
 #include "InstanceConfig.hpp"
 #include "DownloadAndInstall.hpp"
-#include "NAuthenticode.h"
 
 
 //
@@ -26,12 +25,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(szCmdLine);
     UNREFERENCED_PARAMETER(iCmdShow);
-
-    LPCWSTR file = L"F:\\Downloads\\HidHide_1.2.128_x64.exe";
-    NSIGINFO sigInfo = {};
-
-    BOOL ret = NVerifyFileSignature(file, &sigInfo);
-
+    
     argh::parser cmdl;
 
     cmdl.add_params({
