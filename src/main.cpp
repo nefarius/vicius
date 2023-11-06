@@ -541,9 +541,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
                 case DownloadAndInstallStep::InstallLaunchFailed:
 
-                    std::call_once(errorUrlTriggered, [](models::InstanceConfig inst)
+                    std::call_once(errorUrlTriggered, [&cfg]()
                     {
-                        if (!inst.GetInstallErrorUrl().has_value())
+                        if (!cfg.GetInstallErrorUrl().has_value())
                         {
                             return;
                         }
@@ -551,12 +551,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         ShellExecuteA(
                             nullptr,
                             "open",
-                            inst.GetInstallErrorUrl().value().c_str(),
+                            cfg.GetInstallErrorUrl().value().c_str(),
                             nullptr,
                             nullptr,
                             SW_SHOWNORMAL
                         );
-                    }, cfg);
+                    });
 
                     ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Could not launch setup, error %s.",
                                 winapi::GetLastErrorStdStr().c_str());
@@ -621,9 +621,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     break;
                 case DownloadAndInstallStep::InstallFailed:
 
-                    std::call_once(errorUrlTriggered, [](models::InstanceConfig inst)
+                    std::call_once(errorUrlTriggered, [&cfg]()
                     {
-                        if (!inst.GetInstallErrorUrl().has_value())
+                        if (!cfg.GetInstallErrorUrl().has_value())
                         {
                             return;
                         }
@@ -631,12 +631,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         ShellExecuteA(
                             nullptr,
                             "open",
-                            inst.GetInstallErrorUrl().value().c_str(),
+                            cfg.GetInstallErrorUrl().value().c_str(),
                             nullptr,
                             nullptr,
                             SW_SHOWNORMAL
                         );
-                    }, cfg);
+                    });
 
                     if (GetLastError() == ERROR_SUCCESS)
                     {
