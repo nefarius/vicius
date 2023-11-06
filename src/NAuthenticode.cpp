@@ -66,7 +66,7 @@ LPWSTR NDupString(LPCWSTR lpszString, int nLen)
     auto lpszOutString = static_cast<LPWSTR>(NHeapAlloc((2 + nLen) * sizeof(WCHAR)));
 
     if ((lpszOutString != nullptr) && (nLen != 0))
-        wcsncpy(lpszOutString, lpszString, nLen + 1);
+        wcsncpy_s(lpszOutString, nLen, lpszString, nLen + 1);
 
     return lpszOutString;
 }
@@ -350,8 +350,9 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
                     LPTSTR lpszPointer = pSigInfo->lpszSerial;
 
                     for (DWORD dwCount = pCertContext->pCertInfo->SerialNumber.cbData; dwCount != 0; dwCount--)
-                        lpszPointer += _stprintf(lpszPointer, _T("%02X"),
-                                                 pCertContext->pCertInfo->SerialNumber.pbData[dwCount - 1]);
+                        lpszPointer += _stprintf_s(lpszPointer, pCertContext->pCertInfo->SerialNumber.cbData,
+                                                   _T("%02X"),
+                                                   pCertContext->pCertInfo->SerialNumber.pbData[dwCount - 1]);
                 }
             }
 
