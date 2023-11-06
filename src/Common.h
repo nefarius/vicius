@@ -70,4 +70,5 @@ namespace winapi
 {
     DWORD IsAppRunningAsAdminMode(PBOOL IsAdmin);
     std::string GetLastErrorStdStr(DWORD errorCode = 0);
+    BOOL VerifyEmbeddedSignature(LPCWSTR pwszSourceFile);
 }
