@@ -63,10 +63,11 @@ LPWSTR NDupString(LPCWSTR lpszString, int nLen)
     if (nLen == -1)
         nLen = static_cast<int>(wcslen(lpszString));
 
-    auto lpszOutString = static_cast<LPWSTR>(NHeapAlloc((2 + nLen) * sizeof(WCHAR)));
+    const auto sizeBytes = (2 + nLen) * sizeof(WCHAR);
+    const auto lpszOutString = static_cast<LPWSTR>(NHeapAlloc(sizeBytes));
 
     if ((lpszOutString != nullptr) && (nLen != 0))
-        wcsncpy_s(lpszOutString, nLen, lpszString, nLen + 1);
+        wcsncpy_s(lpszOutString, nLen + 1, lpszString, nLen + 1);
 
     return lpszOutString;
 }
