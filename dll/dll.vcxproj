@@ -266,6 +266,6 @@
   </ImportGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="del &quot;$(OutDir)selfupdater.dll&quot;" />
-    <Exec Command="upx -9 -o &quot;$(OutDir)selfupdater.dll&quot; &quot;$(OutDir)selfupdater_orig.dll&quot;" />
+    <Exec Command="if not $(Platform)==ARM64 upx -9 -o &quot;$(OutDir)selfupdater.dll&quot; &quot;$(OutDir)selfupdater_orig.dll&quot;" />
   </Target>
 </Project>
