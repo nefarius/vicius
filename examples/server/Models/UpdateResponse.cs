@@ -177,10 +177,15 @@ public sealed class RegistryValueConfig : ProductVersionDetectionImplementation
 public sealed class FileVersionConfig : ProductVersionDetectionImplementation
 {
     /// <summary>
-    ///     The absolute local path to the file to read.
+    ///     The absolute local path to the file to read or an inja template.
     /// </summary>
     [Required]
-    public required string Path { get; set; }
+    public required string Input { get; set; }
+
+    /// <summary>
+    ///     Optional inja template data.
+    /// </summary>
+    public Dictionary<string, string>? Data { get; set; }
 }
 
 /// <summary>
@@ -190,10 +195,15 @@ public sealed class FileVersionConfig : ProductVersionDetectionImplementation
 public sealed class FileSizeConfig : ProductVersionDetectionImplementation
 {
     /// <summary>
-    ///     The absolute local path to the file to read.
+    ///     The absolute local path to the file to read or an inja template.
     /// </summary>
     [Required]
-    public required string Path { get; set; }
+    public required string Input { get; set; }
+    
+    /// <summary>
+    ///     Optional inja template data.
+    /// </summary>
+    public Dictionary<string, string>? Data { get; set; }
 
     /// <summary>
     ///     The expected file size in bytes. If the file versions do not match, the product is flagged as outdated.
@@ -209,10 +219,15 @@ public sealed class FileSizeConfig : ProductVersionDetectionImplementation
 public sealed class FileChecksumConfig : ProductVersionDetectionImplementation
 {
     /// <summary>
-    ///     The absolute local path to the file to read.
+    ///     The absolute local path to the file to read or an inja template.
     /// </summary>
     [Required]
-    public required string Path { get; set; }
+    public required string Input { get; set; }
+    
+    /// <summary>
+    ///     Optional inja template data.
+    /// </summary>
+    public Dictionary<string, string>? Data { get; set; }
 
     /// <summary>
     ///     The hashing algorithm to use.
