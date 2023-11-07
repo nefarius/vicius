@@ -8,13 +8,22 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
     inja::Environment env;
 
     // provides reading environment variable, example: envar("PROGRAMDATA") -> C:\ProgramData
-    env.add_callback("envar", 1, [](const inja::Arguments& args)
+    env.add_callback("envar", [](const inja::Arguments& args)
     {
+        if (args.empty())
+        {
+            return std::string{};
+        }
+
         const auto envarName = args.at(0)->get<std::string>();
 
         std::string envarValue(MAX_PATH, '\0');
 
-        GetEnvironmentVariableA(envarName.c_str(), envarValue.data(), static_cast<DWORD>(envarValue.size()));
+        if (!GetEnvironmentVariableA(envarName.c_str(), envarValue.data(), static_cast<DWORD>(envarValue.size())))
+        {
+            // return fallback/default value on failure, if provided
+            return args.size() > 1 ? args.at(1)->get<std::string>() : std::string{};
+        }
 
         // strip redundant NULLs
         envarValue.erase(std::ranges::find(envarValue, '\0'), envarValue.end());
