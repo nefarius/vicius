@@ -57,12 +57,13 @@ IDR_FONT_RUDA_REGULAR   FONT                    "fonts\\Ruda-Regular.ttf"
 IDR_FONT_FK             FONT                    "fonts\\forkawesome-webfont.ttf"
 
 
+
 /////////////////////////////////////////////////////////////////////////////
 //
 // RCDATA
 //
 
-IDR_DLL_SELF_UPDATER    RCDATA                  "selfupdater\\x64\\selfupdater.dll"
+IDR_DLL_SELF_UPDATER    RCDATA                  SELF_UPDATER_PATH
 
 
 /////////////////////////////////////////////////////////////////////////////
