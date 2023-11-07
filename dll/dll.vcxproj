@@ -99,26 +99,26 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <TargetName>selfupdater</TargetName>
+    <TargetName>selfupdater_orig</TargetName>
     <OutDir>$(SolutionDir)src\selfupdater\$(PlatformShortName)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <TargetName>selfupdater</TargetName>
+    <TargetName>selfupdater_orig</TargetName>
     <OutDir>$(SolutionDir)src\selfupdater\$(PlatformShortName)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
-    <TargetName>selfupdater</TargetName>
+    <TargetName>selfupdater_orig</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <TargetName>selfupdater</TargetName>
+    <TargetName>selfupdater_orig</TargetName>
     <OutDir>$(SolutionDir)src\selfupdater\$(PlatformShortName)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <TargetName>selfupdater</TargetName>
+    <TargetName>selfupdater_orig</TargetName>
     <OutDir>$(SolutionDir)src\selfupdater\$(PlatformShortName)\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
-    <TargetName>selfupdater</TargetName>
+    <TargetName>selfupdater_orig</TargetName>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
@@ -264,4 +264,8 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="del &quot;$(OutDir)selfupdater.dll&quot;" />
+    <Exec Command="upx -9 -o &quot;$(OutDir)selfupdater.dll&quot; &quot;$(OutDir)selfupdater_orig.dll&quot;" />
+  </Target>
 </Project>
