@@ -17,6 +17,7 @@
     "hash-library",
     "spdlog",
     "scope-guard",
-    "curlpp"
+    "curlpp",
+    "inja"
   ]
 }
