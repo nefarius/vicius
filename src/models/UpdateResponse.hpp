@@ -101,29 +101,32 @@ namespace models
     class FileVersionConfig
     {
     public:
-        std::string path;
+        std::string input;
+        std::optional<json> data;
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileVersionConfig, path)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileVersionConfig, input, data)
 
     class FileSizeConfig
     {
     public:
-        std::string path;
+        std::string input;
+        std::optional<json> data;
         size_t size;
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileSizeConfig, path, size)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileSizeConfig, input, data, size)
 
     class FileChecksumConfig
     {
     public:
-        std::string path;
+        std::string input;
+        std::optional<json> data;
         ChecksumAlgorithm algorithm;
         std::string hash;
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileChecksumConfig, path, algorithm, hash)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileChecksumConfig, input, data, algorithm, hash)
 
     /**
      * \brief Parameters that might be provided by both the server and the local configuration.

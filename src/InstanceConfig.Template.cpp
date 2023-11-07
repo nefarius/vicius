@@ -31,6 +31,91 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         return envarValue;
     });
 
+    // reads a registry value, mandatory params:
+    // - view
+    // - hive
+    // - key
+    // - value
+    //
+    // optional param:
+    // - default/fallback value if not found
+    env.add_callback("regval", [](const inja::Arguments& args)
+    {
+        std::string defaultRet{};
+
+        if (args.size() < 4)
+        {
+            return defaultRet;
+        }
+
+        if (args.size() > 4)
+        {
+            defaultRet = args.at(4)->get<std::string>();
+        }
+
+        const auto viewName = args.at(0)->get<std::string>();
+        const auto view = magic_enum::enum_cast<RegistryView>(viewName);
+        const auto hiveName = args.at(1)->get<std::string>();
+        const auto subKeyValue = args.at(2)->get<std::string>();
+        const auto subKey = ConvertAnsiToWide(subKeyValue);
+        const auto valueNameValue = args.at(3)->get<std::string>();
+        const auto valueName = ConvertAnsiToWide(valueNameValue);
+
+        HKEY hive = nullptr;
+
+        const auto regHive = magic_enum::enum_cast<RegistryHive>(hiveName);
+
+        if (!regHive.has_value())
+        {
+            spdlog::error("Unsupported hive provided");
+            return defaultRet;
+        }
+
+        switch (regHive.value())
+        {
+        case RegistryHive::HKCU:
+            hive = HKEY_CURRENT_USER;
+            break;
+        case RegistryHive::HKLM:
+            hive = HKEY_LOCAL_MACHINE;
+            break;
+        case RegistryHive::HKCR:
+            hive = HKEY_CLASSES_ROOT;
+            break;
+        default:
+            spdlog::error("Unsupported hive provided");
+            return defaultRet;
+        }
+
+        winreg::RegKey key;
+        REGSAM flags = KEY_READ;
+
+        if (view.has_value() && view > RegistryView::Default)
+        {
+            flags |= static_cast<REGSAM>(view.value());
+        }
+
+        if (const winreg::RegResult result = key.TryOpen(hive, subKey, flags); !result)
+        {
+            spdlog::error("Failed to open {}\\{} key", hiveName, subKeyValue);
+            return defaultRet;
+        }
+
+        const auto& resource = key.TryGetStringValue(valueName);
+
+        if (!resource.IsValid())
+        {
+            spdlog::error("Failed to access value {}", valueNameValue);
+            return defaultRet;
+        }
+
+        std::string value = ConvertWideToANSI(resource.GetValue());
+
+        spdlog::debug("value = {}", value);
+
+        return value;
+    });
+
     try
     {
         auto rendered = env.render(tpl, data);

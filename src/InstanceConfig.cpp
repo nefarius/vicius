@@ -214,6 +214,16 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 {
     const auto& release = GetSelectedRelease();
 
+    /*
+    json data;
+    data["view"] = "Default";
+    data["hive"] = "HKLM";
+    data["key"] = R"(SOFTWARE\Nefarius Software Solutions e.U.\HidHide)";
+    data["value"] = "Path";
+
+    const auto retVal = RenderInjaTemplate("{{ regval(view, hive, key, value) }}", data);
+    */
+
     switch (merged.detectionMethod)
     {
     //
@@ -293,12 +303,12 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             try
             {
-                isOutdated = release.GetSemVersion() > util::GetVersionFromFile(cfg.path);
+                isOutdated = release.GetSemVersion() > util::GetVersionFromFile(cfg.input);
                 spdlog::debug("isOutdated = {}", isOutdated);
             }
             catch (...)
             {
-                spdlog::error("Failed to get version resource from {}", cfg.path);
+                spdlog::error("Failed to get version resource from {}", cfg.input);
                 return std::make_tuple(false, "Failed to read file version resource");
             }
 
@@ -314,14 +324,14 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             try
             {
-                const std::filesystem::path file{cfg.path};
+                const std::filesystem::path file{cfg.input};
 
                 isOutdated = file_size(file) != cfg.size;
                 spdlog::debug("isOutdated = {}", isOutdated);
             }
             catch (...)
             {
-                spdlog::error("Failed to get file size from {}", cfg.path);
+                spdlog::error("Failed to get file size from {}", cfg.input);
                 return std::make_tuple(false, "Failed to read file size");
             }
 
@@ -335,17 +345,17 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             spdlog::debug("Running product detection via file checksum");
             const auto& cfg = merged.GetFileChecksumConfig();
 
-            if (!std::filesystem::exists(cfg.path))
+            if (!std::filesystem::exists(cfg.input))
             {
-                spdlog::error("File {} doesn't exist", cfg.path);
+                spdlog::error("File {} doesn't exist", cfg.input);
                 return std::make_tuple(false, "File to hash not found");
             }
 
-            std::ifstream file(cfg.path, std::ios::binary);
+            std::ifstream file(cfg.input, std::ios::binary);
 
             if (!file.is_open())
             {
-                spdlog::error("Failed to open file {}", cfg.path);
+                spdlog::error("Failed to open file {}", cfg.input);
                 return std::make_tuple(false, "Failed to open file");
             }
 
@@ -370,7 +380,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                         {
                             if (file.fail())
                             {
-                                spdlog::error("Failed to read file {} to end", cfg.path);
+                                spdlog::error("Failed to read file {} to end", cfg.input);
                                 return std::make_tuple(false, "Failed to read file");
                             }
                         }
@@ -398,7 +408,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                         {
                             if (file.fail())
                             {
-                                spdlog::error("Failed to read file {} to end", cfg.path);
+                                spdlog::error("Failed to read file {} to end", cfg.input);
                                 return std::make_tuple(false, "Failed to read file");
                             }
                         }
@@ -426,7 +436,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                         {
                             if (file.fail())
                             {
-                                spdlog::error("Failed to read file {} to end", cfg.path);
+                                spdlog::error("Failed to read file {} to end", cfg.input);
                                 return std::make_tuple(false, "Failed to read file");
                             }
                         }
