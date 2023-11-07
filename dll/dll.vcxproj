@@ -265,7 +265,11 @@
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <!-- UPX needs the output file to not exist -->
     <Exec Command="del &quot;$(OutDir)selfupdater.dll&quot;" />
+    <!-- pack DLL on every platform but ARM64 (not supported by UPX) -->
     <Exec Command="if not $(Platform)==ARM64 upx -9 -o &quot;$(OutDir)selfupdater.dll&quot; &quot;$(OutDir)selfupdater_orig.dll&quot;" />
+    <!-- copy verbatim DLL to target directory for embedding -->
+    <Exec Command="if $(Platform)==ARM64 copy &quot;$(OutDir)selfupdater_orig.dll&quot; &quot;$(OutDir)selfupdater.dll&quot;" />
   </Target>
 </Project>
