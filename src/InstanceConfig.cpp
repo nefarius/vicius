@@ -217,14 +217,18 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
     inja::Environment env;
 
-    env.add_callback("envar", 1, [](inja::Arguments& args)
+    // provides reading environment variable, example: envar("PROGRAMDATA") -> C:\ProgramData
+    env.add_callback("envar", 1, [](const inja::Arguments& args)
     {
         const auto envarName = args.at(0)->get<std::string>();
 
         std::string envarValue(MAX_PATH, '\0');
 
-        GetEnvironmentVariableA(envarName.c_str(), envarValue.data(), (DWORD)envarValue.size());
-        
+        GetEnvironmentVariableA(envarName.c_str(), envarValue.data(), static_cast<DWORD>(envarValue.size()));
+
+        // strip redundant NULLs
+        envarValue.erase(std::ranges::find(envarValue, '\0'), envarValue.end());
+
         return envarValue;
     });
 
