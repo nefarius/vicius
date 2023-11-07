@@ -31,9 +31,18 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         return envarValue;
     });
 
-    auto rendered = env.render(tpl, data);
+    try
+    {
+        auto rendered = env.render(tpl, data);
 
-    spdlog::debug("rendered = {}", rendered);
+        spdlog::debug("rendered = {}", rendered);
 
-    return rendered;
+        return rendered;
+    }
+    catch (const std::exception& ex)
+    {
+        spdlog::error("Failed to render inja template, error {}", ex.what());
+
+        return std::string{};
+    }
 }
