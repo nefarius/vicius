@@ -23,7 +23,6 @@ internal sealed class Example02Endpoint : EndpointWithoutRequest
             {
                 ProductName = "HidHide",
                 WindowTitle = "HidHide Updater",
-                DetectionMethod = ProductVersionDetectionMethod.FileVersion,
                 // this example uses the version string in the local .sys file
                 // the user might have changed the installation local so the path is dynamically resolved using a template
                 Detection = new FileVersionConfig

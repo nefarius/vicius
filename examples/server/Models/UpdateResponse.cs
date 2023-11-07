@@ -96,7 +96,7 @@ public enum RegistryHive
 }
 
 /// <summary>
-///     The alternate registry view to apply. 
+///     The alternate registry view to apply.
 /// </summary>
 /// <remarks>https://learn.microsoft.com/en-us/windows/win32/winprog64/accessing-an-alternate-registry-view</remarks>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
@@ -149,7 +149,7 @@ public sealed class RegistryValueConfig : ProductVersionDetectionImplementation
     /// </summary>
     [Required]
     public RegistryView View { get; set; } = RegistryView.Default;
-    
+
     /// <summary>
     ///     The hive.
     /// </summary>
@@ -199,7 +199,7 @@ public sealed class FileSizeConfig : ProductVersionDetectionImplementation
     /// </summary>
     [Required]
     public required string Input { get; set; }
-    
+
     /// <summary>
     ///     Optional inja template data.
     /// </summary>
@@ -223,7 +223,7 @@ public sealed class FileChecksumConfig : ProductVersionDetectionImplementation
     /// </summary>
     [Required]
     public required string Input { get; set; }
-    
+
     /// <summary>
     ///     Optional inja template data.
     /// </summary>
@@ -248,6 +248,8 @@ public sealed class FileChecksumConfig : ProductVersionDetectionImplementation
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
 public sealed class SharedConfig
 {
+    private ProductVersionDetectionImplementation? _detection;
+
     /// <summary>
     ///     The process window title visible in the taskbar.
     /// </summary>
@@ -261,13 +263,29 @@ public sealed class SharedConfig
     /// <summary>
     ///     The implementation to use to detect the locally installed product version to compare release versions against.
     /// </summary>
-    public ProductVersionDetectionMethod? DetectionMethod { get; set; }
+    public ProductVersionDetectionMethod? DetectionMethod { get; private set; }
 
     /// <summary>
     ///     The details of the selected <see cref="DetectionMethod" />.
     /// </summary>
-    public ProductVersionDetectionImplementation? Detection { get; set; }
-    
+    public ProductVersionDetectionImplementation? Detection
+    {
+        get => _detection;
+        set
+        {
+            DetectionMethod = value switch
+            {
+                RegistryValueConfig _ => ProductVersionDetectionMethod.RegistryValue,
+                FileVersionConfig _ => ProductVersionDetectionMethod.FileVersion,
+                FileSizeConfig _ => ProductVersionDetectionMethod.FileSize,
+                FileChecksumConfig _ => ProductVersionDetectionMethod.FileChecksum,
+                _ => DetectionMethod
+            };
+
+            _detection = value;
+        }
+    }
+
     /// <summary>
     ///     URL pointing to a help article opening when an update error occurred.
     /// </summary>
@@ -304,7 +322,7 @@ public sealed class MergedConfig
     /// </summary>
     [Required]
     public required ProductVersionDetectionImplementation Detection { get; set; }
-    
+
     /// <summary>
     ///     URL pointing to a help article opening when an update error occurred.
     /// </summary>
@@ -411,7 +429,7 @@ public sealed class UpdateRelease
     /// <summary>
     ///     Setup exit code parameters.
     /// </summary>
-    /// <remarks>You can use <see cref="UpdateConfig.ExitCode"/> instead to apply to all releases.</remarks>
+    /// <remarks>You can use <see cref="UpdateConfig.ExitCode" /> instead to apply to all releases.</remarks>
     public ExitCodeCheck? ExitCode { get; set; }
 
     /// <summary>

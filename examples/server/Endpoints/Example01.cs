@@ -33,7 +33,6 @@ internal sealed class Example01Endpoint : EndpointWithoutRequest
             {
                 ProductName = ".NET Runtime",
                 WindowTitle = ".NET Runtime Updater",
-                DetectionMethod = ProductVersionDetectionMethod.RegistryValue,
                 Detection = new RegistryValueConfig
                 {
                     Hive = RegistryHive.HKLM,
