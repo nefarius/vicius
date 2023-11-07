@@ -312,6 +312,8 @@ namespace models
          */
         bool IsInPostponePeriod();
 
+        std::string RenderInjaTemplate(const std::string& tpl, const json& data) const;
+
         InstanceConfig() : authority(Authority::Remote)
         {
         }
