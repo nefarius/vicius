@@ -312,6 +312,12 @@ namespace models
          */
         bool IsInPostponePeriod();
 
+        /**
+         * \brief Uses the template engine to render a string consisting of inja syntax.
+         * \param tpl The template string.
+         * \param data The data to process in the template.
+         * \return The rendered string.
+         */
         std::string RenderInjaTemplate(const std::string& tpl, const json& data) const;
 
         InstanceConfig() : authority(Authority::Remote)
