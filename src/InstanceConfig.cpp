@@ -303,7 +303,8 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             try
             {
-                isOutdated = release.GetSemVersion() > util::GetVersionFromFile(cfg.input);
+                const auto& rendered = RenderInjaTemplate(cfg.input, cfg.data);
+                isOutdated = release.GetSemVersion() > util::GetVersionFromFile(rendered);
                 spdlog::debug("isOutdated = {}", isOutdated);
             }
             catch (...)
