@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Common.h"
 #include "InstanceConfig.hpp"
+#include <inja/inja.hpp>
 
 #define NV_POSTPONE_TS_VALUE_NAME   L"LastTimestamp"
 
@@ -213,6 +214,19 @@ models::InstanceConfig::~InstanceConfig()
 std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 {
     const auto& release = GetSelectedRelease();
+
+    inja::Environment env;
+
+    env.add_callback("envar", 1, [](inja::Arguments& args)
+    {
+        const auto envarName = args.at(0)->get<std::string>();
+
+        std::string envarValue(MAX_PATH, '\0');
+
+        GetEnvironmentVariableA(envarName.c_str(), envarValue.data(), (DWORD)envarValue.size());
+        
+        return envarValue;
+    });
 
     switch (merged.detectionMethod)
     {
