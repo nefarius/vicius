@@ -222,18 +222,6 @@ public sealed class FileChecksumConfig : ProductVersionDetectionImplementation
     ///     Optional inja template data.
     /// </summary>
     public Dictionary<string, string>? Data { get; set; }
-
-    /// <summary>
-    ///     The hashing algorithm to use.
-    /// </summary>
-    [Required]
-    public required ChecksumAlgorithm Algorithm { get; set; }
-
-    /// <summary>
-    ///     The expected hash string. If the hashes do not match, the product is flagged as outdated.
-    /// </summary>
-    [Required]
-    public required string Hash { get; set; }
 }
 
 /// <summary>
@@ -445,6 +433,12 @@ public sealed class UpdateRelease
     ///     The size value (in bytes) used in product detection. This can differ from <see cref="DownloadSize" />.
     /// </summary>
     public long? DetectionSize { get; set; }
+    
+    /// <summary>
+    ///     The version used in product detection. This can differ from <see cref="Version"/>.
+    /// </summary>
+    [JsonSchemaType(typeof(string))]
+    public Version? DetectionVersion { get; set; }
 }
 
 /// <summary>

@@ -269,6 +269,8 @@ namespace models
         std::optional<ChecksumParameters> detectionChecksum;
         /** Size of the remote file in bytes */
         std::optional<size_t> detectionSize;
+        /** The version to use in product detection */
+        std::optional<std::string> detectionVersion;
 
         /** Full pathname of the local temporary file */
         std::filesystem::path localTempFilePath{};

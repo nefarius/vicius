@@ -2,16 +2,16 @@
 
 using Nefarius.Vicius.Example.Server.Models;
 
-namespace Nefarius.Vicius.Example.Server.Endpoints;
+namespace Nefarius.Vicius.Example.Server.Endpoints.Detection;
 
 /// <summary>
 ///     Demos sophisticated product detection using the template engine.
 /// </summary>
-internal sealed class Example02Endpoint : EndpointWithoutRequest
+internal sealed class FileChecksumEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/contoso/Example02/updates.json");
+        Get("api/contoso/FileChecksum/updates.json");
         AllowAnonymous();
     }
 
@@ -24,8 +24,8 @@ internal sealed class Example02Endpoint : EndpointWithoutRequest
                 ProductName = "HidHide",
                 WindowTitle = "HidHide Updater",
                 // this example uses the version string in the local .sys file
-                // the user might have changed the installation location so the path is dynamically resolved using a template
-                Detection = new FileVersionConfig
+                // the user might have changed the installation local so the path is dynamically resolved using a template
+                Detection = new FileChecksumConfig()
                 {
                     Input =
                         @"{{ regval(view, hive, key, value) }}{% if envar(procArchName) == ""AMD64"" %}x64{% else %}x86{% endif %}\{{ product }}\{{ product }}.sys",
@@ -47,6 +47,12 @@ internal sealed class Example02Endpoint : EndpointWithoutRequest
                     Name = "HidHide Update",
                     PublishedAt = DateTimeOffset.Parse("2023-11-02"),
                     Version = System.Version.Parse("1.4.186"),
+                    // this is required if we use FileChecksumConfig
+                    DetectionChecksum = new ChecksumParameters()
+                    {
+                        ChecksumAlg = ChecksumAlgorithm.SHA1,
+                        Checksum = "4D771F18CF09B49CDBA0340CEA1F8BD6D11B92FA"
+                    },
                     Summary = """
                               ## How to install
 

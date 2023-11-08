@@ -2,16 +2,16 @@
 
 using Nefarius.Vicius.Example.Server.Models;
 
-namespace Nefarius.Vicius.Example.Server.Endpoints;
+namespace Nefarius.Vicius.Example.Server.Endpoints.Detection;
 
 /// <summary>
 ///     Demos sophisticated product detection using the template engine.
 /// </summary>
-internal sealed class Example02Endpoint : EndpointWithoutRequest
+internal sealed class FileSizeEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/contoso/Example02/updates.json");
+        Get("api/contoso/FileSize/updates.json");
         AllowAnonymous();
     }
 
@@ -23,9 +23,9 @@ internal sealed class Example02Endpoint : EndpointWithoutRequest
             {
                 ProductName = "HidHide",
                 WindowTitle = "HidHide Updater",
-                // this example uses the version string in the local .sys file
+                // this example uses the size in bytes of the local .sys file
                 // the user might have changed the installation location so the path is dynamically resolved using a template
-                Detection = new FileVersionConfig
+                Detection = new FileSizeConfig()
                 {
                     Input =
                         @"{{ regval(view, hive, key, value) }}{% if envar(procArchName) == ""AMD64"" %}x64{% else %}x86{% endif %}\{{ product }}\{{ product }}.sys",
@@ -47,6 +47,8 @@ internal sealed class Example02Endpoint : EndpointWithoutRequest
                     Name = "HidHide Update",
                     PublishedAt = DateTimeOffset.Parse("2023-11-02"),
                     Version = System.Version.Parse("1.4.186"),
+                    // we need this value if we use FileSizeConfig as detection mechanism
+                    DetectionSize = 66584,
                     Summary = """
                               ## How to install
 

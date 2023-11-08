@@ -2,16 +2,16 @@
 
 using Nefarius.Vicius.Example.Server.Models;
 
-namespace Nefarius.Vicius.Example.Server.Endpoints;
+namespace Nefarius.Vicius.Example.Server.Endpoints.Detection;
 
 /// <summary>
 ///     Demos sophisticated product detection using the template engine.
 /// </summary>
-internal sealed class Example02Endpoint : EndpointWithoutRequest
+internal sealed class FileVersionEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/contoso/Example02/updates.json");
+        Get("api/contoso/FileVersion/updates.json");
         AllowAnonymous();
     }
 
@@ -24,18 +24,13 @@ internal sealed class Example02Endpoint : EndpointWithoutRequest
                 ProductName = "HidHide",
                 WindowTitle = "HidHide Updater",
                 // this example uses the version string in the local .sys file
-                // the user might have changed the installation location so the path is dynamically resolved using a template
+                // the system drive might differ from default so we query for it when building the path
                 Detection = new FileVersionConfig
                 {
-                    Input =
-                        @"{{ regval(view, hive, key, value) }}{% if envar(procArchName) == ""AMD64"" %}x64{% else %}x86{% endif %}\{{ product }}\{{ product }}.sys",
+                    Input = @"{{ envar(windir) }}\System32\drivers\{{ product }}.sys",
                     Data = new Dictionary<string, string>
                     {
-                        { "view", "Default" },
-                        { "hive", "HKLM" },
-                        { "key", @"SOFTWARE\Nefarius Software Solutions e.U.\HidHide" },
-                        { "value", "Path" },
-                        { "procArchName", "PROCESSOR_ARCHITECTURE" },
+                        { "windir", "WINDIR" },
                         { "product", "HidHide" }
                     }
                 }
@@ -47,6 +42,8 @@ internal sealed class Example02Endpoint : EndpointWithoutRequest
                     Name = "HidHide Update",
                     PublishedAt = DateTimeOffset.Parse("2023-11-02"),
                     Version = System.Version.Parse("1.4.186"),
+                    // the file version used in detection can differ from the setup version 
+                    DetectionVersion = System.Version.Parse("1.2.98"),
                     Summary = """
                               ## How to install
 

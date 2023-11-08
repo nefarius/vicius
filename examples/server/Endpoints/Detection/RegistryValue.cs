@@ -2,16 +2,16 @@
 
 using Nefarius.Vicius.Example.Server.Models;
 
-namespace Nefarius.Vicius.Example.Server.Endpoints;
+namespace Nefarius.Vicius.Example.Server.Endpoints.Detection;
 
 /// <summary>
-///     Demos sophisticated product detection using the template engine.
+///     Demos product detection using a registry query.
 /// </summary>
-internal sealed class Example02Endpoint : EndpointWithoutRequest
+internal sealed class RegistryValueEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/contoso/Example02/updates.json");
+        Get("api/contoso/RegistryValue/updates.json");
         AllowAnonymous();
     }
 
@@ -23,21 +23,12 @@ internal sealed class Example02Endpoint : EndpointWithoutRequest
             {
                 ProductName = "HidHide",
                 WindowTitle = "HidHide Updater",
-                // this example uses the version string in the local .sys file
-                // the user might have changed the installation location so the path is dynamically resolved using a template
-                Detection = new FileVersionConfig
+                // this example the value of a registry key to get the local version
+                Detection = new RegistryValueConfig
                 {
-                    Input =
-                        @"{{ regval(view, hive, key, value) }}{% if envar(procArchName) == ""AMD64"" %}x64{% else %}x86{% endif %}\{{ product }}\{{ product }}.sys",
-                    Data = new Dictionary<string, string>
-                    {
-                        { "view", "Default" },
-                        { "hive", "HKLM" },
-                        { "key", @"SOFTWARE\Nefarius Software Solutions e.U.\HidHide" },
-                        { "value", "Path" },
-                        { "procArchName", "PROCESSOR_ARCHITECTURE" },
-                        { "product", "HidHide" }
-                    }
+                    Hive = RegistryHive.HKLM,
+                    Key = @"SOFTWARE\Nefarius Software Solutions e.U.\HidHide",
+                    Value = "Version"
                 }
             },
             Releases =
