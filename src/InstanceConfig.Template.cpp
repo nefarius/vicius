@@ -83,7 +83,6 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
             hive = HKEY_CLASSES_ROOT;
             break;
         case RegistryHive::Invalid:
-        default:
             spdlog::error("Unsupported hive provided");
             return defaultRet;
         }
