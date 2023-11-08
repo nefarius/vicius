@@ -41,6 +41,8 @@ Dealing with software update mechanics has been a steady companion for almost 10
   The updater process is only invoked on demand (at user logon and once per day via Task Scheduler) and doesn't keep running in the background.
 - **Respects your time**  
   Busy fragging in a game? We won't bother you with any popup windows until you're ready.
+- **Powerful template engine included**  
+  Sometimes finding the local resource of interest to check the product version can be more challenging than just having a static, boring file path. You can use [inja](https://github.com/pantor/inja) templates to build your own path resolving logic, all while never having to leave your JSON strings!
 
 ## Prerequisites
 
