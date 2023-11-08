@@ -404,7 +404,7 @@ public sealed class UpdateRelease
     public DateTimeOffset PublishedAt { get; set; }
 
     /// <summary>
-    ///     The direct URL to the new product setup.
+    ///     The URL to the new product setup. Redirects are supported.
     /// </summary>
     [Required]
     public string DownloadUrl { get; set; } = null!;
@@ -437,13 +437,12 @@ public sealed class UpdateRelease
     public bool? Disabled { get; set; }
 
     /// <summary>
-    ///     The file hash to use in product detection.
+    ///     The file hash to use in product detection. This can differ from <see cref="Checksum"/>.
     /// </summary>
     public ChecksumParameters? DetectionChecksum { get; set; }
 
     /// <summary>
-    ///     The size value (in bytes) used in product detection. This is almost always a different value than
-    ///     <see cref="DownloadSize" />.
+    ///     The size value (in bytes) used in product detection. This can differ from <see cref="DownloadSize" />.
     /// </summary>
     public long? DetectionSize { get; set; }
 }
@@ -467,7 +466,7 @@ public sealed class UpdateConfig
     public Version? LatestVersion { get; set; }
 
     /// <summary>
-    ///     Direct URL to the latest updater binary.
+    ///     The URL to the latest updater binary. Redirects are supported.
     /// </summary>
     public string? LatestUrl { get; set; }
 
