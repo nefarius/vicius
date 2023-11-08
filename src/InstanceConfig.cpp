@@ -271,7 +271,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             {
                 const semver::version localVersion{ConvertWideToANSI(value)};
 
-                isOutdated = release.GetSemVersion() > localVersion;
+                isOutdated = release.GetDetectionSemVersion() > localVersion;
                 spdlog::debug("isOutdated = {}", isOutdated);
             }
             catch (const std::exception& e)
@@ -294,7 +294,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             try
             {
-                isOutdated = release.GetSemVersion() > util::GetVersionFromFile(filePath);
+                isOutdated = release.GetDetectionSemVersion() > util::GetVersionFromFile(filePath);
                 spdlog::debug("isOutdated = {}", isOutdated);
             }
             catch (...)

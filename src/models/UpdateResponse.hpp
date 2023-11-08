@@ -291,6 +291,29 @@ namespace models
                 return semver::version{0, 0, 0};
             }
         }
+
+        /**
+         * \brief Gets the detection version, if provided.
+         * \return The parsed version.
+         */
+        std::optional<semver::version> GetDetectionSemVersion() const
+        {
+            if (!detectionVersion.has_value())
+            {
+                // fallback value is mandatory
+                return GetSemVersion();
+            }
+
+            try
+            {
+                // trim whitespaces and potential "v" prefix
+                return semver::version{detectionVersion.value()};
+            }
+            catch (...)
+            {
+                return std::nullopt;
+            }
+        }
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
@@ -306,7 +329,8 @@ namespace models
         checksum,
         disabled,
         detectionChecksum,
-        detectionSize
+        detectionSize,
+        detectionVersion
     )
 
     /**
@@ -349,7 +373,7 @@ namespace models
             {
                 return semver::version{0, 0, 0};
             }
-        }        
+        }
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
