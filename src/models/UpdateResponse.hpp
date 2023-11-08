@@ -247,7 +247,7 @@ namespace models
     public:
         /** The release display name */
         std::string name;
-        /** The version as a 3-digit SemVer or 4-digit string */
+        /** The version as a 3-digit SemVer (1.0.0) or 4-digit (1.0.0.0) string */
         std::string version;
         /** The update summary/changelog, supports Markdown */
         std::string summary;
