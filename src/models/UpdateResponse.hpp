@@ -250,8 +250,8 @@ namespace models
         std::string publishedAt;
         /** URL of the new setup/release download */
         std::string downloadUrl;
-        /** Size of the remote file */
-        std::optional<size_t> downloadSize;
+        /** Size of the remote file in bytes */
+        std::optional<size_t> size;
         /** The launch arguments (CLI arguments) if any */
         std::optional<std::string> launchArguments;
         /** The exit code parameters */
@@ -289,7 +289,7 @@ namespace models
         summary,
         publishedAt,
         downloadUrl,
-        downloadSize,
+        size,
         launchArguments,
         exitCode,
         checksum

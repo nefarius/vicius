@@ -204,12 +204,6 @@ public sealed class FileSizeConfig : ProductVersionDetectionImplementation
     ///     Optional inja template data.
     /// </summary>
     public Dictionary<string, string>? Data { get; set; }
-
-    /// <summary>
-    ///     The expected file size in bytes. If the file versions do not match, the product is flagged as outdated.
-    /// </summary>
-    [Required]
-    public required long Size { get; set; }
 }
 
 /// <summary>
