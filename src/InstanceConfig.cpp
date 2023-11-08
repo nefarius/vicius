@@ -214,16 +214,6 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 {
     const auto& release = GetSelectedRelease();
 
-    /*
-    json data;
-    data["view"] = "Default";
-    data["hive"] = "HKLM";
-    data["key"] = R"(SOFTWARE\Nefarius Software Solutions e.U.\HidHide)";
-    data["value"] = "Path";
-
-    const auto retVal = RenderInjaTemplate("{{ regval(view, hive, key, value) }}", data);
-    */
-
     switch (merged.detectionMethod)
     {
     //
