@@ -292,9 +292,28 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             const auto& cfg = merged.GetFileVersionConfig();
             const auto& filePath = RenderInjaTemplate(cfg.input, cfg.data);
 
+            if (cfg.statement == VersionResource::Invalid)
+            {
+                spdlog::error("Invalid resource statement provided");
+                return std::make_tuple(false, "Invalid resource statement provided");
+            }
+
             try
             {
-                isOutdated = release.GetDetectionSemVersion() > util::GetVersionFromFile(filePath);
+                switch (cfg.statement)
+                {
+                case VersionResource::FILEVERSION:
+                    isOutdated = release.GetDetectionSemVersion() > winapi::GetWin32ResourceFileVersion(filePath);
+                    break;
+                case VersionResource::PRODUCTVERSION:
+                    isOutdated = release.GetDetectionSemVersion() > winapi::GetWin32ResourceProductVersion(filePath);
+                    break;
+                default:
+                    spdlog::warn("Unexpected version resource statement");
+                    isOutdated = true;
+                    break;
+                }
+                
                 spdlog::debug("isOutdated = {}", isOutdated);
             }
             catch (...)

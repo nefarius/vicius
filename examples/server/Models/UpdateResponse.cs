@@ -170,6 +170,31 @@ public sealed class RegistryValueConfig : ProductVersionDetectionImplementation
 }
 
 /// <summary>
+///     Describes which version resource fixed-value to read.
+/// </summary>
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+public enum VersionResource
+{
+    /// <summary>
+    ///     Binary version number for the file. The version consists of two 32-bit integers, defined by four 16-bit integers.
+    ///     For example, "FILEVERSION 3,10,0,61" is translated into two doublewords: 0x0003000a and 0x0000003d, in that order.
+    ///     Therefore, if version is defined by the DWORD values dw1 and dw2, they need to appear in the FILEVERSION statement
+    ///     as follows: HIWORD(dw1), LOWORD(dw1), HIWORD(dw2), LOWORD(dw2).
+    /// </summary>
+    [EnumMember(Value = nameof(FILEVERSION))]
+    FILEVERSION,
+
+    /// <summary>
+    ///     Binary version number for the product with which the file is distributed. The version parameter is two 32-bit
+    ///     integers, defined by four 16-bit integers. For more information about version, see the FILEVERSION description.
+    /// </summary>
+    [EnumMember(Value = nameof(PRODUCTVERSION))]
+    PRODUCTVERSION,
+}
+
+/// <summary>
 ///     Reads the version resource of the specified local file and matches it against the selected
 ///     <see cref="UpdateRelease" /> version.
 /// </summary>
@@ -182,6 +207,12 @@ public sealed class FileVersionConfig : ProductVersionDetectionImplementation
     [Required]
     public required string Input { get; set; }
 
+    /// <summary>
+    ///     The <see cref="VersionResource"/> to read.
+    /// </summary>
+    [Required]
+    public required VersionResource Statement { get; set; } = VersionResource.PRODUCTVERSION;
+    
     /// <summary>
     ///     Optional inja template data.
     /// </summary>
@@ -425,7 +456,7 @@ public sealed class UpdateRelease
     public bool? Disabled { get; set; }
 
     /// <summary>
-    ///     The file hash to use in product detection. This can differ from <see cref="Checksum"/>.
+    ///     The file hash to use in product detection. This can differ from <see cref="Checksum" />.
     /// </summary>
     public ChecksumParameters? DetectionChecksum { get; set; }
 
@@ -433,9 +464,9 @@ public sealed class UpdateRelease
     ///     The size value (in bytes) used in product detection. This can differ from <see cref="DownloadSize" />.
     /// </summary>
     public long? DetectionSize { get; set; }
-    
+
     /// <summary>
-    ///     The version used in product detection. This can differ from <see cref="Version"/>.
+    ///     The version used in product detection. This can differ from <see cref="Version" />.
     /// </summary>
     [JsonSchemaType(typeof(string))]
     public Version? DetectionVersion { get; set; }

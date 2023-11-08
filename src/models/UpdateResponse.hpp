@@ -87,6 +87,9 @@ namespace models
                                  {RegistryView::WOW64_32KEY, magic_enum::enum_name(RegistryView::WOW64_32KEY)},
                                  })
 
+    /**
+     * \brief Parameters for querying the registry.
+     */
     class RegistryValueConfig
     {
     public:
@@ -98,17 +101,42 @@ namespace models
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(RegistryValueConfig, view, hive, key, value)
 
+    /**
+     * \brief VERSIONINFO resource fixed-info.
+     */
+    enum class VersionResource
+    {
+        FILEVERSION,
+        PRODUCTVERSION,
+        Invalid = -1
+    };
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(VersionResource, {
+                                 {VersionResource::Invalid, nullptr},
+                                 {VersionResource::FILEVERSION, magic_enum::enum_name(VersionResource::FILEVERSION)},
+                                 {VersionResource::PRODUCTVERSION,
+                                 magic_enum::enum_name(VersionResource::PRODUCTVERSION)},
+                                 })
+
+    /**
+     * \brief Parameters for reading a file version resource.
+     */
     class FileVersionConfig
     {
     public:
         /** The inja template */
         std::string input;
+        /** The statement */
+        VersionResource statement{VersionResource::PRODUCTVERSION};
         /** The optional inja template data */
-        std::optional<json> data;
+        std::optional<json> data;        
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileVersionConfig, input, data)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileVersionConfig, input, statement, data)
 
+    /**
+     * \brief Parameters for reading a file size.
+     */
     class FileSizeConfig
     {
     public:
@@ -121,6 +149,9 @@ namespace models
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileSizeConfig, input, data)
 
+    /**
+     * \brief Parameters for hashing a file.
+     */
     class FileChecksumConfig
     {
     public:
