@@ -300,16 +300,16 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
         {
             spdlog::debug("Running product detection via file version");
             const auto& cfg = merged.GetFileVersionConfig();
+            const auto& filePath = RenderInjaTemplate(cfg.input, cfg.data);
 
             try
             {
-                const auto& rendered = RenderInjaTemplate(cfg.input, cfg.data);
-                isOutdated = release.GetSemVersion() > util::GetVersionFromFile(rendered);
+                isOutdated = release.GetSemVersion() > util::GetVersionFromFile(filePath);
                 spdlog::debug("isOutdated = {}", isOutdated);
             }
             catch (...)
             {
-                spdlog::error("Failed to get version resource from {}", cfg.input);
+                spdlog::error("Failed to get version resource from {}", filePath);
                 return std::make_tuple(false, "Failed to read file version resource");
             }
 
@@ -323,11 +323,18 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             spdlog::debug("Running product detection via file size");
             const auto& cfg = merged.GetFileSizeConfig();
 
+            if (!release.detectionSize.has_value())
+            {
+                spdlog::error("Selected release is missing size data");
+                return std::make_tuple(false, "Selected release is missing size data");
+            }
+
             try
             {
-                const std::filesystem::path file{cfg.input};
+                const auto& filePath = RenderInjaTemplate(cfg.input, cfg.data);
+                const std::filesystem::path file{filePath};
 
-                isOutdated = file_size(file) != cfg.size;
+                isOutdated = file_size(file) != release.detectionSize.value();
                 spdlog::debug("isOutdated = {}", isOutdated);
             }
             catch (...)
@@ -345,24 +352,35 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
         {
             spdlog::debug("Running product detection via file checksum");
             const auto& cfg = merged.GetFileChecksumConfig();
+            const auto& filePath = RenderInjaTemplate(cfg.input, cfg.data);
 
-            if (!std::filesystem::exists(cfg.input))
+            if (!release.detectionChecksum.has_value())
             {
-                spdlog::error("File {} doesn't exist", cfg.input);
+                spdlog::error("Selected release is missing checksum data");
+                return std::make_tuple(false, "Selected release is missing checksum data");
+            }
+
+            if (!std::filesystem::exists(filePath))
+            {
+                spdlog::error("File {} doesn't exist", filePath);
                 return std::make_tuple(false, "File to hash not found");
             }
 
-            std::ifstream file(cfg.input, std::ios::binary);
+            std::ifstream file(filePath, std::ios::binary);
 
             if (!file.is_open())
             {
-                spdlog::error("Failed to open file {}", cfg.input);
+                spdlog::error("Failed to open file {}", filePath);
                 return std::make_tuple(false, "Failed to open file");
             }
 
+            // improve hashing speed
             constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
 
-            switch (cfg.algorithm)
+            // checksum detection data of release
+            const auto& hashCfg = release.detectionChecksum.value();
+
+            switch (hashCfg.checksumAlg)
             {
             case ChecksumAlgorithm::MD5:
                 {
@@ -381,13 +399,13 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                         {
                             if (file.fail())
                             {
-                                spdlog::error("Failed to read file {} to end", cfg.input);
+                                spdlog::error("Failed to read file {} to end", filePath);
                                 return std::make_tuple(false, "Failed to read file");
                             }
                         }
                     }
 
-                    isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+                    isOutdated = !util::icompare(alg.getHash(), hashCfg.checksum);
                     spdlog::debug("isOutdated = {}", isOutdated);
 
                     return std::make_tuple(true, "OK");
@@ -409,13 +427,13 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                         {
                             if (file.fail())
                             {
-                                spdlog::error("Failed to read file {} to end", cfg.input);
+                                spdlog::error("Failed to read file {} to end", filePath);
                                 return std::make_tuple(false, "Failed to read file");
                             }
                         }
                     }
 
-                    isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+                    isOutdated = !util::icompare(alg.getHash(), hashCfg.checksum);
                     spdlog::debug("isOutdated = {}", isOutdated);
 
                     return std::make_tuple(true, "OK");
@@ -437,13 +455,13 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                         {
                             if (file.fail())
                             {
-                                spdlog::error("Failed to read file {} to end", cfg.input);
+                                spdlog::error("Failed to read file {} to end", filePath);
                                 return std::make_tuple(false, "Failed to read file");
                             }
                         }
                     }
 
-                    isOutdated = !util::icompare(alg.getHash(), cfg.hash);
+                    isOutdated = !util::icompare(alg.getHash(), hashCfg.checksum);
                     spdlog::debug("isOutdated = {}", isOutdated);
 
                     return std::make_tuple(true, "OK");

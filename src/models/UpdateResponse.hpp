@@ -101,7 +101,9 @@ namespace models
     class FileVersionConfig
     {
     public:
+        /** The inja template */
         std::string input;
+        /** The optional inja template data */
         std::optional<json> data;
     };
 
@@ -110,23 +112,26 @@ namespace models
     class FileSizeConfig
     {
     public:
+        /** The inja template */
         std::string input;
+        /** The optional inja template data */
         std::optional<json> data;
-        size_t size;
+        /** The size to compare to is taken from the selected release */
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileSizeConfig, input, data, size)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileSizeConfig, input, data)
 
     class FileChecksumConfig
     {
     public:
+        /** The inja template */
         std::string input;
+        /** The optional inja template data */
         std::optional<json> data;
-        ChecksumAlgorithm algorithm;
-        std::string hash;
+        /** The algorithm and hash to compare to is taken from the selected release */
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileChecksumConfig, input, data, algorithm, hash)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileChecksumConfig, input, data)
 
     /**
      * \brief Parameters that might be provided by both the server and the local configuration.
@@ -251,7 +256,7 @@ namespace models
         /** URL of the new setup/release download */
         std::string downloadUrl;
         /** Size of the remote file in bytes */
-        std::optional<size_t> size;
+        std::optional<size_t> downloadSize;
         /** The launch arguments (CLI arguments) if any */
         std::optional<std::string> launchArguments;
         /** The exit code parameters */
@@ -260,6 +265,10 @@ namespace models
         std::optional<ChecksumParameters> checksum;
         /** If set, this release is ignored and not presented to the user */
         std::optional<bool> disabled;
+        /** The file hash to use in product detection */
+        std::optional<ChecksumParameters> detectionChecksum;
+        /** Size of the remote file in bytes */
+        std::optional<size_t> detectionSize;
 
         /** Full pathname of the local temporary file */
         std::filesystem::path localTempFilePath{};
@@ -289,10 +298,13 @@ namespace models
         summary,
         publishedAt,
         downloadUrl,
-        size,
+        downloadSize,
         launchArguments,
         exitCode,
-        checksum
+        checksum,
+        disabled,
+        detectionChecksum,
+        detectionSize
     )
 
     /**

@@ -435,6 +435,17 @@ public sealed class UpdateRelease
     ///     Skips/disables this release on the client if set.
     /// </summary>
     public bool? Disabled { get; set; }
+
+    /// <summary>
+    ///     The file hash to use in product detection.
+    /// </summary>
+    public ChecksumParameters? DetectionChecksum { get; set; }
+
+    /// <summary>
+    ///     The size value (in bytes) used in product detection. This is almost always a different value than
+    ///     <see cref="DownloadSize" />.
+    /// </summary>
+    public long? DetectionSize { get; set; }
 }
 
 /// <summary>
