@@ -307,7 +307,7 @@ namespace models
             try
             {
                 // trim whitespaces and potential "v" prefix
-                return semver::version{detectionVersion.value()};
+                return semver::version{util::trim(detectionVersion.value(), "v \t")};
             }
             catch (...)
             {
