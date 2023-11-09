@@ -148,9 +148,33 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
                 break;
             }
         case REG_EXPAND_SZ:
-            break;
+            {
+                const auto ret = key.TryGetExpandStringValue(valueName);
+
+                if (!ret.IsValid())
+                {
+                    spdlog::error("Failed to access value {}", valueNameValue);
+                    return defaultRet;
+                }
+
+                // TODO: implement me
+
+                break;
+            }
         case REG_MULTI_SZ:
-            break;
+           {
+                const auto ret = key.TryGetMultiStringValue(valueName);
+
+                if (!ret.IsValid())
+                {
+                    spdlog::error("Failed to access value {}", valueNameValue);
+                    return defaultRet;
+                }
+
+                // TODO: implement me
+
+                break;
+            }
         case REG_QWORD:
             {
                 const auto ret = key.TryGetQwordValue(valueName);
