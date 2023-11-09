@@ -102,21 +102,96 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
             return defaultRet;
         }
 
-        const auto& resource = key.TryGetStringValue(valueName);
+        const auto& type = key.TryQueryValueType(valueName);
 
-        if (!resource.IsValid())
+        if (!type.IsValid())
         {
-            spdlog::error("Failed to access value {}", valueNameValue);
+            spdlog::error("Couldn't get type of vale {}", valueNameValue);
             return defaultRet;
         }
 
-        std::string value = ConvertWideToANSI(resource.GetValue());
+        std::stringstream valStream;
+
+        switch (type.GetValue())
+        {
+        case REG_BINARY:
+            {
+                const auto ret = key.TryGetBinaryValue(valueName);
+
+                if (!ret.IsValid())
+                {
+                    spdlog::error("Failed to access value {}", valueNameValue);
+                    return defaultRet;
+                }
+
+                // convert to hex stream string
+                valStream << std::hex << std::setfill('0');
+                for (int i = 0; i < ret.GetValue().size(); ++i)
+                {
+                    valStream << std::setw(2) << static_cast<unsigned>(ret.GetValue().data()[i]);
+                }
+
+                break;
+            }
+        case REG_DWORD:
+            {
+                const auto ret = key.TryGetDwordValue(valueName);
+
+                if (!ret.IsValid())
+                {
+                    spdlog::error("Failed to access value {}", valueNameValue);
+                    return defaultRet;
+                }
+
+                valStream << ret.GetValue();
+
+                break;
+            }
+        case REG_EXPAND_SZ:
+            break;
+        case REG_MULTI_SZ:
+            break;
+        case REG_QWORD:
+            {
+                const auto ret = key.TryGetQwordValue(valueName);
+
+                if (!ret.IsValid())
+                {
+                    spdlog::error("Failed to access value {}", valueNameValue);
+                    return defaultRet;
+                }
+
+                valStream << ret.GetValue();
+
+                break;
+            }
+        case REG_SZ:
+            {
+                const auto ret = key.TryGetStringValue(valueName);
+
+                if (!ret.IsValid())
+                {
+                    spdlog::error("Failed to access value {}", valueNameValue);
+                    return defaultRet;
+                }
+
+                valStream << ConvertWideToANSI(ret.GetValue());
+
+                break;
+            }
+        default:
+            spdlog::error("Unsupported value type {} detected", type.GetValue());
+            return defaultRet;
+        }
+
+        std::string value = valStream.str();
 
         spdlog::debug("value = {}", value);
 
         return value;
     });
 
+    // reads a key value from a section of an INI file
     env.add_callback("inival", [](const inja::Arguments& args)
     {
         std::string defaultRet{};
