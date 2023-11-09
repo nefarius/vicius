@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "InstanceConfig.hpp"
 #include <inja/inja.hpp>
+#include "inipp.h"
 
 
 std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, const json& data) const
@@ -114,6 +115,46 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         spdlog::debug("value = {}", value);
 
         return value;
+    });
+
+    env.add_callback("inival", [](const inja::Arguments& args)
+    {
+        std::string defaultRet{};
+
+        if (args.size() < 3)
+        {
+            return defaultRet;
+        }
+
+        if (args.size() > 3)
+        {
+            defaultRet = args.at(3)->get<std::string>();
+        }
+
+        const auto filePath = args.at(0)->get<std::string>();
+        const auto section = args.at(1)->get<std::string>();
+        const auto keyName = args.at(2)->get<std::string>();
+
+        try
+        {
+            inipp::Ini<char> ini;
+            std::ifstream is(filePath);
+            ini.parse(is);
+
+            std::string value;
+            if (!inipp::get_value(ini.sections[section], keyName, value))
+            {
+                spdlog::warn("Section {} not found", section);
+                return defaultRet;
+            }
+
+            return value;
+        }
+        catch (const std::exception& e)
+        {
+            spdlog::error("Failed to read INI file {}, error {}", filePath, e.what());
+            return defaultRet;
+        }
     });
 
     try

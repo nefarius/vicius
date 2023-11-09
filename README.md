@@ -170,6 +170,7 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [A modern C++ scope guard that is easy to use but hard to misuse](https://github.com/ricab/scope_guard)
 - [Fast C++ logging library](https://github.com/gabime/spdlog)
 - [A Template Engine for Modern C++](https://github.com/pantor/inja)
+- [Simple C++ ini parser](https://github.com/mcmtroffaes/inipp)
 
 ### Literature & references
 

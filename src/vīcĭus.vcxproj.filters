@@ -107,6 +107,9 @@
     <ClInclude Include="NAuthenticode.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inipp.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="vīcĭus.rc">
