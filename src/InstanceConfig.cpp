@@ -212,6 +212,12 @@ models::InstanceConfig::~InstanceConfig()
 
 std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
 {
+    if (remote.releases.empty())
+    {
+        spdlog::error("Server provided no releases, no data to compare to");
+        return std::make_tuple(false, "Server provided no releases, no data to compare to");
+    }
+
     const auto& release = GetSelectedRelease();
 
     switch (merged.detectionMethod)
@@ -292,6 +298,12 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             const auto& cfg = merged.GetFileVersionConfig();
             const auto& filePath = RenderInjaTemplate(cfg.input, cfg.data);
 
+            if (!std::filesystem::exists(filePath))
+            {
+                spdlog::error("File {} doesn't exist", filePath);
+                return std::make_tuple(false, "File to hash not found");
+            }
+
             if (cfg.statement == VersionResource::Invalid)
             {
                 spdlog::error("Invalid resource statement provided");
@@ -313,7 +325,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                     isOutdated = true;
                     break;
                 }
-                
+
                 spdlog::debug("isOutdated = {}", isOutdated);
             }
             catch (...)
@@ -341,6 +353,13 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             try
             {
                 const auto& filePath = RenderInjaTemplate(cfg.input, cfg.data);
+
+                if (!std::filesystem::exists(filePath))
+                {
+                    spdlog::error("File {} doesn't exist", filePath);
+                    return std::make_tuple(false, "File to hash not found");
+                }
+
                 const std::filesystem::path file{filePath};
 
                 isOutdated = file_size(file) != release.detectionSize.value();

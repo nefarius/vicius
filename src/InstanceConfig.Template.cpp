@@ -137,8 +137,25 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
 
         try
         {
+            if (std::filesystem::file_size(filePath) <= 3)
+            {
+                spdlog::warn("File {} is too small for successful parsing", filePath);
+                return defaultRet;
+            }
+
             inipp::Ini<char> ini;
             std::ifstream is(filePath);
+
+            char a, b, c;
+            a = is.get();
+            b = is.get();
+            c = is.get();
+            // checks for UTF-8 BOM presence and skips it (1st found section extraction will fail otherwise)
+            if (a != static_cast<char>(0xEF) || b != static_cast<char>(0xBB) || c != static_cast<char>(0xBF))
+            {
+                is.seekg(0);
+            }
+
             ini.parse(is);
 
             std::string value;

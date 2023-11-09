@@ -396,20 +396,20 @@ public sealed class UpdateRelease
     ///     Simple display name of the release.
     /// </summary>
     [Required]
-    public string Name { get; set; } = null!;
+    public required string Name { get; set; } = null!;
 
     /// <summary>
     ///     Semantic version of the release.
     /// </summary>
     [Required]
     [JsonSchemaType(typeof(string))]
-    public Version Version { get; set; } = null!;
+    public required Version Version { get; set; } = null!;
 
     /// <summary>
     ///     Summary/changelog/description of the release. Supports Markdown syntax.
     /// </summary>
     [Required]
-    public string Summary { get; set; } = null!;
+    public required string Summary { get; set; } = null!;
 
     /// <summary>
     ///     The release publish timestamp.
@@ -419,13 +419,13 @@ public sealed class UpdateRelease
     ///     order of the release.
     /// </remarks>
     [Required]
-    public DateTimeOffset PublishedAt { get; set; }
+    public required DateTimeOffset PublishedAt { get; set; }
 
     /// <summary>
     ///     The URL to the new product setup. Redirects are supported.
     /// </summary>
     [Required]
-    public string DownloadUrl { get; set; } = null!;
+    public required string DownloadUrl { get; set; } = null!;
 
     /// <summary>
     ///     Optional size (in bytes) of the download target. If this is not set, the UI will simply display "N/A" until the

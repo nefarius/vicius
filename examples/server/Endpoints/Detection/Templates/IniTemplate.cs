@@ -31,6 +31,18 @@ internal sealed class IniTemplateEndpoint : EndpointWithoutRequest
                         { "key", "Dir_0" }
                     }
                 }
+            },
+            Releases =
+            {
+                new UpdateRelease()
+                {
+                    Name = "Demo",
+                    Summary = "Demo",
+                    Version = System.Version.Parse("2.0.0"),
+                    DownloadUrl = "https://example.com",
+                    PublishedAt = DateTimeOffset.Now,
+                    DetectionSize = 4096
+                }
             }
         };
 
