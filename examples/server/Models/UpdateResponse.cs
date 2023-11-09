@@ -210,8 +210,7 @@ public sealed class FileVersionConfig : ProductVersionDetectionImplementation
     /// <summary>
     ///     The <see cref="VersionResource"/> to read.
     /// </summary>
-    [Required]
-    public required VersionResource Statement { get; set; } = VersionResource.PRODUCTVERSION;
+    public VersionResource Statement { get; set; } = VersionResource.PRODUCTVERSION;
     
     /// <summary>
     ///     Optional inja template data.
