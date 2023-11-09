@@ -125,11 +125,13 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
                 }
 
                 // convert to hex stream string
-                valStream << std::hex << std::setfill('0');
+                json j = json::array();
                 for (int i = 0; i < ret.GetValue().size(); ++i)
                 {
-                    valStream << std::setw(2) << static_cast<unsigned>(ret.GetValue().data()[i]);
+                    j.emplace_back(ret.GetValue().data()[i]);
                 }
+
+                valStream << j;
 
                 break;
             }
