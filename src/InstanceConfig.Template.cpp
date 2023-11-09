@@ -173,7 +173,13 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
                     return defaultRet;
                 }
 
-                // TODO: implement me
+                json j = json::array();
+                for (int i = 0; i < ret.GetValue().size(); ++i)
+                {
+                    j.emplace_back(ConvertWideToANSI(ret.GetValue()[i]));
+                }
+
+                valStream << j;
 
                 break;
             }
