@@ -27,6 +27,7 @@ internal sealed class FileSizeEndpoint : EndpointWithoutRequest
                 // the user might have changed the installation location so the path is dynamically resolved using a template
                 Detection = new FileSizeConfig()
                 {
+                    // gets expanded to e.g.: C:\Program Files\Nefarius Software Solutions\HidHide\x64\HidHide\HidHide.sys
                     Input =
                         @"{{ regval(view, hive, key, value) }}{% if envar(procArchName) == ""AMD64"" %}x64{% else %}x86{% endif %}\{{ product }}\{{ product }}.sys",
                     Data = new Dictionary<string, string>

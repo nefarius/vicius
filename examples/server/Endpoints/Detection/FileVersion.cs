@@ -27,6 +27,7 @@ internal sealed class FileVersionEndpoint : EndpointWithoutRequest
                 // the system drive might differ from default so we query for it when building the path
                 Detection = new FileVersionConfig
                 {
+                    // gets expanded to e.g.: C:\Windows\System32\drivers\HidHide.sys
                     Input = @"{{ envar(windir) }}\System32\drivers\{{ product }}.sys",
                     Data = new Dictionary<string, string>
                     {
