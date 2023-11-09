@@ -180,3 +180,4 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [How can I run a child process that requires elevation and wait?](https://stackoverflow.com/a/4893508)
 - [Execute from Alternate Streams](https://gist.github.com/api0cradle/cdd2d0d0ec9abb686f0e89306e277b8f)
 - [Vista Goodies in C++: Showing Friendly Messages with Task Dialogs](https://www.codeproject.com/articles/16753/vista-goodies-in-c-showing-friendly-messages-with)
+- [How to retrieve files digital signature information?](https://stackoverflow.com/a/15030232)
