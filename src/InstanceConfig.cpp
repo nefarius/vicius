@@ -308,7 +308,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                 case VersionResource::PRODUCTVERSION:
                     isOutdated = release.GetDetectionSemVersion() > winapi::GetWin32ResourceProductVersion(filePath);
                     break;
-                default:
+                case VersionResource::Invalid:
                     spdlog::warn("Unexpected version resource statement");
                     isOutdated = true;
                     break;
