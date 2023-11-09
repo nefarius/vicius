@@ -159,12 +159,24 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
                     return defaultRet;
                 }
 
-                // TODO: implement me
+                std::wstring expandedValue(SHRT_MAX, '\0');
+
+                if (ExpandEnvironmentStrings(ret.GetValue().c_str(), expandedValue.data(), SHRT_MAX))
+                {
+                    // strip redundant NULLs
+                    expandedValue.erase(std::ranges::find(expandedValue, '\0'), expandedValue.end());
+                    valStream << ConvertWideToANSI(expandedValue);
+                }
+                else
+                {
+                    spdlog::warn("Failed to expand string {}", ConvertWideToANSI(ret.GetValue()));
+                    valStream << ConvertWideToANSI(ret.GetValue());
+                }
 
                 break;
             }
         case REG_MULTI_SZ:
-           {
+            {
                 const auto ret = key.TryGetMultiStringValue(valueName);
 
                 if (!ret.IsValid())
