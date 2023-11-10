@@ -503,6 +503,9 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             break;
         }
+    //
+    // Evaluate custom expression
+    // 
     case ProductVersionDetectionMethod::CustomExpression:
         {
             spdlog::debug("Running product detection via custom expression");
