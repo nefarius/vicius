@@ -503,6 +503,32 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             break;
         }
+    case ProductVersionDetectionMethod::CustomExpression:
+        {
+            spdlog::debug("Running product detection via custom expression");
+            const auto& cfg = merged.GetCustomExpressionConfig();
+
+            if (cfg.input.empty())
+            {
+                spdlog::error("Custom expression is missing inja template");
+                return std::make_tuple(false, "Custom expression is missing inja template");
+            }
+
+            json data;
+            // provides entire local state to parser
+            data["instance"] = cfg;
+            // provides user-supplied data under fixed variable name
+            data["parameters"] = cfg.data;
+
+            // expected return value of "true" for outdated and "false" for up2date
+            const auto& result = RenderInjaTemplate(cfg.input, data);
+
+            // string to boolean conversion
+            std::istringstream(result) >> std::boolalpha >> isOutdated;
+            spdlog::debug("isOutdated = {}", isOutdated);
+
+            break;
+        }
     case ProductVersionDetectionMethod::Invalid:
         spdlog::error("Invalid detection method specified");
         return std::make_tuple(false, "Invalid detection method");
