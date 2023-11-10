@@ -515,8 +515,9 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             }
 
             json data;
-            // provides entire local state to parser
-            data["instance"] = cfg;
+            // provides local state to parser
+            data["merged"] = merged;
+            data["remote"] = remote;
             // provides user-supplied data under fixed variable name
             data["parameters"] = cfg.data;
 

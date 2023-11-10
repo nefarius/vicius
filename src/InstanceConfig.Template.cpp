@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "InstanceConfig.hpp"
+//#define INJA_NOEXCEPTION
 #include <inja/inja.hpp>
 #include "inipp.h"
 
@@ -293,6 +294,13 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         }
     });
 
+    env.add_void_callback("log", 1, [](const inja::Arguments& args)
+    {
+        const auto logMessage = args.at(0)->get<std::string>();
+
+        spdlog::debug(logMessage);
+    });
+
     try
     {
         auto rendered = env.render(tpl, data);
@@ -301,7 +309,7 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
 
         return rendered;
     }
-    catch (const std::exception& ex)
+    catch (const inja::ParserError& ex)
     {
         spdlog::error("Failed to render inja template, error {}", ex.what());
 
