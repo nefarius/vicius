@@ -207,13 +207,23 @@ static BOOL NCryptDecodeObject(__in LPCSTR lpszObjectId, __in_bcount(cbEncoded) 
 static BOOL NCryptDecodeObject(__in LPCSTR lpszObjectId, __in PCRYPT_ATTR_BLOB pObject,
                                __inout DWORD& dwBuffer, __out void* pBuffer = nullptr, __in DWORD dwFlags = 0)
 {
-    if ((pObject == nullptr) || ((dwBuffer == 0) && (pBuffer != nullptr)) || ((dwBuffer != 0) && (pBuffer == nullptr)))
+    if ((pObject == nullptr)
+        || ((dwBuffer == 0) && (pBuffer != nullptr))
+        || ((dwBuffer != 0) && (pBuffer == nullptr)))
     {
         SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
     }
 
-    return CryptDecodeObject(SIG_ENCODING, lpszObjectId, pObject->pbData, pObject->cbData, dwFlags, pBuffer, &dwBuffer);
+    return CryptDecodeObject(
+        SIG_ENCODING,
+        lpszObjectId,
+        pObject->pbData,
+        pObject->cbData,
+        dwFlags,
+        pBuffer,
+        &dwBuffer
+    );
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -229,12 +239,20 @@ static BOOL WGetSignTimestamp(PCRYPT_ATTRIBUTES pAttributes, SYSTEMTIME& stTime,
             DWORD dwSize = sizeof(FILETIME);
             FILETIME ftCert;
 
-            if (NCryptDecodeObject(lpszObjId, &pAttributes->rgAttr[dwAttr].rgValue[0], dwSize, &ftCert))
+            if (NCryptDecodeObject(
+                lpszObjId,
+                &pAttributes->rgAttr[dwAttr].rgValue[0],
+                dwSize,
+                &ftCert
+            ))
             {
                 FILETIME ftLocal;
 
-                if (FileTimeToLocalFileTime(&ftCert, &ftLocal) && FileTimeToSystemTime(&ftLocal, &stTime))
+                if (FileTimeToLocalFileTime(&ftCert, &ftLocal)
+                    && FileTimeToSystemTime(&ftLocal, &stTime))
+                {
                     return TRUE;
+                }
             }
         }
     }
@@ -246,17 +264,21 @@ static BOOL WGetSignTimestamp(PCRYPT_ATTRIBUTES pAttributes, SYSTEMTIME& stTime,
 static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtData, NSIGINFO* pSigInfo)
 {
     if (pSigInfo != nullptr)
+    {
         memset(pSigInfo, 0, sizeof(NSIGINFO));
+    }
 
     GUID guidAction = WINTRUST_ACTION_GENERIC_VERIFY_V2;
     BOOL bVerified = FALSE;
 
-    LONG lRet = WinVerifyTrust(static_cast<HWND>(INVALID_HANDLE_VALUE), &guidAction, &wtData);
+    const LONG lRet = WinVerifyTrust(static_cast<HWND>(INVALID_HANDLE_VALUE), &guidAction, &wtData);
 
     if (lRet != 0)
     {
         if (pSigInfo != nullptr)
+        {
             pSigInfo->lValidationResult = lRet;
+        }
 
         return FALSE;
     }
@@ -267,34 +289,77 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
     HCERTSTORE hStore = nullptr;
     HCRYPTMSG hMsg = nullptr;
 
-    if (!CryptQueryObject(CERT_QUERY_OBJECT_FILE, lpszFileName, CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED,
-                          CERT_QUERY_FORMAT_FLAG_BINARY, 0, nullptr, nullptr, nullptr, &hStore, &hMsg, nullptr))
+    if (!CryptQueryObject(
+        CERT_QUERY_OBJECT_FILE,
+        lpszFileName,
+        CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED,
+        CERT_QUERY_FORMAT_FLAG_BINARY,
+        0,
+        nullptr,
+        nullptr,
+        nullptr,
+        &hStore,
+        &hMsg,
+        nullptr))
+    {
         return FALSE;
+    }
 
     PCMSG_SIGNER_INFO pSignerInfo = nullptr, pCounterSignerInfo = nullptr;
-    DWORD dwSignerInfo = 0, dwCounterSignerInfo = 0;
+    DWORD dwSignerInfo = 0;
 
-    if (CryptMsgGetParam(hMsg, CMSG_SIGNER_INFO_PARAM, 0, nullptr, &dwSignerInfo) && (dwSignerInfo != 0))
-        pSignerInfo = static_cast<PCMSG_SIGNER_INFO>(NHeapAlloc(dwSignerInfo));
-
-    if ((pSignerInfo != nullptr) && CryptMsgGetParam(hMsg, CMSG_SIGNER_INFO_PARAM, 0, pSignerInfo, &dwSignerInfo))
+    if (CryptMsgGetParam(
+        hMsg,
+        CMSG_SIGNER_INFO_PARAM,
+        0,
+        nullptr,
+        &dwSignerInfo
+    ) && (dwSignerInfo != 0))
     {
+        pSignerInfo = static_cast<PCMSG_SIGNER_INFO>(NHeapAlloc(dwSignerInfo));
+    }
+
+    if ((pSignerInfo != nullptr)
+        && CryptMsgGetParam(
+            hMsg,
+            CMSG_SIGNER_INFO_PARAM,
+            0,
+            pSignerInfo,
+            &dwSignerInfo
+        ))
+    {
+        DWORD dwCounterSignerInfo = 0;
+
         for (DWORD dwAttr = 0; dwAttr < pSignerInfo->AuthAttrs.cAttr; dwAttr++)
         {
             if ((strcmp(SPC_SP_OPUS_INFO_OBJID, pSignerInfo->AuthAttrs.rgAttr[dwAttr].pszObjId) != 0))
+            {
                 continue;
+            }
 
             PSPC_SP_OPUS_INFO pOpus = nullptr;
             DWORD dwData = 0;
 
-            if (NCryptDecodeObject(SPC_SP_OPUS_INFO_OBJID, &pSignerInfo->AuthAttrs.rgAttr[dwAttr].rgValue[0], dwData) &&
-                (dwData != 0))
+            if (NCryptDecodeObject(
+                SPC_SP_OPUS_INFO_OBJID,
+                &pSignerInfo->AuthAttrs.rgAttr[dwAttr].rgValue[0],
+                dwData
+            ) && (dwData != 0))
+            {
                 pOpus = static_cast<PSPC_SP_OPUS_INFO>(NHeapAlloc(dwData));
+            }
 
             if ((pOpus != nullptr) && NCryptDecodeObject(
-                SPC_SP_OPUS_INFO_OBJID, &pSignerInfo->AuthAttrs.rgAttr[dwAttr].rgValue[0], dwData, pOpus))
+                SPC_SP_OPUS_INFO_OBJID,
+                &pSignerInfo->AuthAttrs.rgAttr[dwAttr].rgValue[0],
+                dwData,
+                pOpus
+            ))
             {
-                pSigInfo->lpszProgramName = NConvertW2T(pOpus->pwszProgramName);
+                if (pOpus->pwszProgramName != nullptr)
+                {
+                    pSigInfo->lpszProgramName = NConvertW2T(pOpus->pwszProgramName);
+                }
 
                 if (pOpus->pPublisherInfo != nullptr)
                 {
@@ -326,7 +391,9 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
             }
 
             if (pOpus != nullptr)
+            {
                 NHeapFree(pOpus);
+            }
 
             break;
         }
@@ -336,8 +403,14 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
         ci.Issuer = pSignerInfo->Issuer;
         ci.SerialNumber = pSignerInfo->SerialNumber;
 
-        PCCERT_CONTEXT pCertContext = CertFindCertificateInStore(hStore, SIG_ENCODING, 0, CERT_FIND_SUBJECT_CERT, &ci,
-                                                                 nullptr);
+        const PCCERT_CONTEXT pCertContext = CertFindCertificateInStore(
+            hStore,
+            SIG_ENCODING,
+            0,
+            CERT_FIND_SUBJECT_CERT,
+            &ci,
+            nullptr
+        );
 
         if (pCertContext != nullptr)
         {
@@ -351,50 +424,95 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
                     LPTSTR lpszPointer = pSigInfo->lpszSerial;
 
                     for (DWORD dwCount = pCertContext->pCertInfo->SerialNumber.cbData; dwCount != 0; dwCount--)
-                        lpszPointer += _stprintf_s(lpszPointer, pCertContext->pCertInfo->SerialNumber.cbData,
-                                                   _T("%02X"),
-                                                   pCertContext->pCertInfo->SerialNumber.pbData[dwCount - 1]);
+                    {
+                        lpszPointer += _stprintf_s(
+                            lpszPointer,
+                            pCertContext->pCertInfo->SerialNumber.cbData,
+                            _T("%02X"),
+                            pCertContext->pCertInfo->SerialNumber.pbData[dwCount - 1]
+                        );
+                    }
                 }
             }
 
-            if (!NCertGetNameString(pCertContext, CERT_NAME_FRIENDLY_DISPLAY_TYPE, CERT_NAME_ISSUER_FLAG,
-                                    &pSigInfo->lpszFriendlyName))
+            if (!NCertGetNameString(
+                pCertContext,
+                CERT_NAME_FRIENDLY_DISPLAY_TYPE,
+                CERT_NAME_ISSUER_FLAG,
+                &pSigInfo->lpszFriendlyName
+            ))
+            {
                 pSigInfo->lpszFriendlyName = nullptr;
+            }
 
-            if (!NCertGetNameString(pCertContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, CERT_NAME_ISSUER_FLAG,
-                                    &pSigInfo->lpszAuthority))
+            if (!NCertGetNameString(
+                pCertContext,
+                CERT_NAME_SIMPLE_DISPLAY_TYPE,
+                CERT_NAME_ISSUER_FLAG,
+                &pSigInfo->lpszAuthority
+            ))
+            {
                 pSigInfo->lpszAuthority = nullptr;
+            }
 
-            if (!NCertGetNameString(pCertContext, CERT_NAME_SIMPLE_DISPLAY_TYPE, 0, &pSigInfo->lpszPublisher))
+            if (!NCertGetNameString(
+                pCertContext,
+                CERT_NAME_SIMPLE_DISPLAY_TYPE,
+                0,
+                &pSigInfo->lpszPublisher
+            ))
+            {
                 pSigInfo->lpszPublisher = nullptr;
+            }
 
-            if (!NCertGetNameString(pCertContext, CERT_NAME_URL_TYPE, 0, &pSigInfo->lpszPublisherUrl))
+            if (!NCertGetNameString(
+                pCertContext,
+                CERT_NAME_URL_TYPE,
+                0,
+                &pSigInfo->lpszPublisherUrl
+            ))
+            {
                 pSigInfo->lpszPublisherUrl = nullptr;
+            }
 
-            if (!NCertGetNameString(pCertContext, CERT_NAME_EMAIL_TYPE, 0, &pSigInfo->lpszPublisherEmail))
+            if (!NCertGetNameString(
+                pCertContext,
+                CERT_NAME_EMAIL_TYPE,
+                0,
+                &pSigInfo->lpszPublisherEmail
+            ))
+            {
                 pSigInfo->lpszPublisherEmail = nullptr;
+            }
 
             CertFreeCertificateContext(pCertContext);
         }
 
         for (DWORD dwAttr = 0, dwData; dwAttr < pSignerInfo->AuthAttrs.cAttr; dwAttr++)
         {
-            if ((strcmp(szOID_RSA_signingTime, pSignerInfo->AuthAttrs.rgAttr[dwAttr].pszObjId) == 0) && (pSignerInfo->
-                AuthAttrs.rgAttr[dwAttr].cValue != 0))
+            if ((strcmp(szOID_RSA_signingTime, pSignerInfo->AuthAttrs.rgAttr[dwAttr].pszObjId) == 0)
+                && (pSignerInfo->AuthAttrs.rgAttr[dwAttr].cValue != 0
+                ))
             {
                 FILETIME ftCert;
 
                 dwData = sizeof(FILETIME);
 
-                if (NCryptDecodeObject(szOID_RSA_signingTime, &pSignerInfo->AuthAttrs.rgAttr[dwAttr].rgValue[0], dwData,
-                                       &ftCert))
+                if (NCryptDecodeObject(
+                    szOID_RSA_signingTime,
+                    &pSignerInfo->AuthAttrs.rgAttr[dwAttr].rgValue[0],
+                    dwData,
+                    &ftCert
+                ))
                 {
                     FILETIME ftLocal;
 
                     if (!FileTimeToLocalFileTime(&ftCert, &ftLocal))
                     {
                         if (!FileTimeToSystemTime(&ftLocal, &pSigInfo->stSigTime))
+                        {
                             memset(&pSigInfo->stSigTime, 0, sizeof(SYSTEMTIME));
+                        }
                     }
                 }
             }
@@ -404,14 +522,26 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
         {
             if (strcmp(pSignerInfo->UnauthAttrs.rgAttr[dwAttr].pszObjId, szOID_RSA_counterSign) == 0)
             {
-                if (NCryptDecodeObject(PKCS7_SIGNER_INFO, &pSignerInfo->UnauthAttrs.rgAttr[dwAttr].rgValue[0],
-                                       dwCounterSignerInfo) && (dwCounterSignerInfo != 0))
+                if (NCryptDecodeObject(
+                        PKCS7_SIGNER_INFO,
+                        &pSignerInfo->UnauthAttrs.rgAttr[dwAttr].rgValue[0],
+                        dwCounterSignerInfo
+                    ) && (dwCounterSignerInfo != 0)
+                )
+                {
                     pCounterSignerInfo = static_cast<PCMSG_SIGNER_INFO>(NHeapAlloc(dwCounterSignerInfo));
+                }
 
-                if ((pCounterSignerInfo != nullptr) && !NCryptDecodeObject(
-                    PKCS7_SIGNER_INFO, &pSignerInfo->UnauthAttrs.rgAttr[dwAttr].rgValue[0], dwCounterSignerInfo,
-                    pCounterSignerInfo))
+                if ((pCounterSignerInfo != nullptr)
+                    && !NCryptDecodeObject(
+                        PKCS7_SIGNER_INFO,
+                        &pSignerInfo->UnauthAttrs.rgAttr[dwAttr].rgValue[0],
+                        dwCounterSignerInfo,
+                        pCounterSignerInfo
+                    ))
+                {
                     pCounterSignerInfo = static_cast<PCMSG_SIGNER_INFO>(NHeapFree(pCounterSignerInfo));
+                }
 
                 break;
             }
@@ -419,25 +549,38 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
 
         if (pCounterSignerInfo != nullptr)
         {
-            pSigInfo->bHasSigTime = WGetSignTimestamp(&pCounterSignerInfo->AuthAttrs, pSigInfo->stSigTime,
-                                                      szOID_RSA_signingTime);
+            pSigInfo->bHasSigTime = WGetSignTimestamp(
+                &pCounterSignerInfo->AuthAttrs,
+                pSigInfo->stSigTime,
+                szOID_RSA_signingTime
+            );
 
             if (!pSigInfo->bHasSigTime)
+            {
                 memset(&pSigInfo->stSigTime, 0, sizeof(SYSTEMTIME));
+            }
         }
     }
 
     if (pSignerInfo != nullptr)
+    {
         NHeapFree(pSignerInfo);
+    }
 
     if (pCounterSignerInfo != nullptr)
+    {
         NHeapFree(pCounterSignerInfo);
+    }
 
     if (hStore != nullptr)
+    {
         CertCloseStore(hStore, 0);
+    }
 
     if (hMsg != nullptr)
+    {
         CryptMsgClose(hMsg);
+    }
 
     return TRUE;
 }
@@ -446,29 +589,38 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
 BOOL NVerifyFileSignature(LPCTSTR lpszFileName, NSIGINFO* pSigInfo, HANDLE hHandle)
 {
     if (pSigInfo != nullptr)
+    {
         memset(pSigInfo, 0, sizeof(NSIGINFO));
+    }
 
     if (lpszFileName == nullptr)
+    {
         return FALSE;
+    }
 
     if ((lpszFileName[0] != 0) && (_tcsnicmp(lpszFileName, _T("\\??\\"), 4) == 0))
+    {
         lpszFileName += 4;
+    }
 
     if (lpszFileName[0] == 0)
+    {
         return FALSE;
+    }
 
     LPWSTR lpwszFileName = NConvertT2W(lpszFileName);
 
     if (lpwszFileName == nullptr)
+    {
         return FALSE;
+    }
 
     BOOL bOK = FALSE;
 
     __try
     {
         // be very careful... 
-        WINTRUST_FILE_INFO wtFileInfo;
-        memset(&wtFileInfo, 0, sizeof(WINTRUST_FILE_INFO));
+        WINTRUST_FILE_INFO wtFileInfo = {};
 
         wtFileInfo.cbStruct = sizeof(WINTRUST_FILE_INFO);
         wtFileInfo.pcwszFilePath = lpwszFileName;
@@ -476,8 +628,7 @@ BOOL NVerifyFileSignature(LPCTSTR lpszFileName, NSIGINFO* pSigInfo, HANDLE hHand
         if (hHandle != INVALID_HANDLE_VALUE)
             wtFileInfo.hFile = hHandle;
 
-        WINTRUST_DATA wtData;
-        memset(&wtData, 0, sizeof(WINTRUST_DATA));
+        WINTRUST_DATA wtData = {};
         wtData.cbStruct = sizeof(WINTRUST_DATA);
         wtData.dwUIChoice = WTD_UI_NONE;
         wtData.fdwRevocationChecks = WTD_REVOKE_WHOLECHAIN;
@@ -526,13 +677,20 @@ BOOL NCheckFileCertificates(HANDLE hFile, VOID (*pCallback)(PCCERT_CONTEXT, LPVO
 {
     DWORD dwCerts = 0;
 
-    if (!ImageEnumerateCertificates(hFile, CERT_SECTION_TYPE_ANY, &dwCerts, nullptr, 0))
+    if (!ImageEnumerateCertificates(
+        hFile,
+        CERT_SECTION_TYPE_ANY,
+        &dwCerts,
+        nullptr,
+        0
+    ))
+    {
         return FALSE;
+    }
 
     for (DWORD dwCount = 0; dwCount < dwCerts; dwCount++)
     {
-        WIN_CERTIFICATE wcHdr;
-        memset(&wcHdr, 0, sizeof(WIN_CERTIFICATE));
+        WIN_CERTIFICATE wcHdr = {};
         wcHdr.dwLength = 0;
         wcHdr.wRevision = WIN_CERT_REVISION_1_0;
 
@@ -541,7 +699,7 @@ BOOL NCheckFileCertificates(HANDLE hFile, VOID (*pCallback)(PCCERT_CONTEXT, LPVO
 
         DWORD dwLen = sizeof(WIN_CERTIFICATE) + wcHdr.dwLength;
 
-        auto pWinCert = static_cast<WIN_CERTIFICATE*>(NHeapAlloc(dwLen));
+        const auto pWinCert = static_cast<WIN_CERTIFICATE*>(NHeapAlloc(dwLen));
 
         if (pWinCert == nullptr)
             return FALSE;
@@ -554,15 +712,21 @@ BOOL NCheckFileCertificates(HANDLE hFile, VOID (*pCallback)(PCCERT_CONTEXT, LPVO
         }
 
         // extract the PKCS7 signed data     
-        CRYPT_VERIFY_MESSAGE_PARA cvmp;
-        memset(&cvmp, 0, sizeof(CRYPT_VERIFY_MESSAGE_PARA));
+        CRYPT_VERIFY_MESSAGE_PARA cvmp = {};
         cvmp.cbSize = sizeof(CRYPT_VERIFY_MESSAGE_PARA);
         cvmp.dwMsgAndCertEncodingType = SIG_ENCODING;
 
         PCCERT_CONTEXT pCertContext = nullptr;
 
-        if (!CryptVerifyMessageSignature(&cvmp, dwCount, pWinCert->bCertificate, pWinCert->dwLength, nullptr, nullptr,
-                                         &pCertContext))
+        if (!CryptVerifyMessageSignature(
+            &cvmp,
+            dwCount,
+            pWinCert->bCertificate,
+            pWinCert->dwLength,
+            nullptr,
+            nullptr,
+            &pCertContext
+        ))
         {
             NHeapFree(pWinCert);
             return FALSE;
@@ -570,7 +734,9 @@ BOOL NCheckFileCertificates(HANDLE hFile, VOID (*pCallback)(PCCERT_CONTEXT, LPVO
 
         // Now, pass this context on to our callback function (if any)
         if (pCallback != nullptr)
+        {
             pCallback(pCertContext, pParam);
+        }
 
         if (!CertFreeCertificateContext(pCertContext))
         {
