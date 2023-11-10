@@ -5,7 +5,7 @@ using Nefarius.Vicius.Example.Server.Models;
 namespace Nefarius.Vicius.Example.Server.Endpoints.Detection;
 
 /// <summary>
-///     Demos sophisticated product detection using the template engine.
+///     Demos custom expression method using the template engine.
 /// </summary>
 internal sealed class CustomExpressionEndpoint : EndpointWithoutRequest
 {
@@ -23,7 +23,6 @@ internal sealed class CustomExpressionEndpoint : EndpointWithoutRequest
             {
                 Detection = new CustomExpressionConfig()
                 {
-                    //Input = @"{% if int(parameters.value) == 2 %}true{% else %}false{% endif %}",
                     Input = @"{% if remote.releases.0.name == ""Demo"" %}true{% else %}false{% endif %}",
                     Data = new Dictionary<string, string>
                     {
