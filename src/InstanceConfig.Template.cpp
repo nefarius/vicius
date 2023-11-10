@@ -315,4 +315,10 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
 
         return std::string{};
     }
+    catch (const std::exception& ex)
+    {
+        spdlog::error("Failed to render inja template, error {}", ex.what());
+
+        return std::string{};
+    }
 }
