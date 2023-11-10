@@ -36,6 +36,7 @@ namespace models
         FileVersion,
         FileSize,
         FileChecksum,
+        CustomExpression,
         Invalid = -1
     };
 
@@ -49,6 +50,8 @@ namespace models
                                  magic_enum::enum_name(ProductVersionDetectionMethod::FileSize)},
                                  {ProductVersionDetectionMethod::FileChecksum,
                                  magic_enum::enum_name(ProductVersionDetectionMethod::FileChecksum)},
+                                 {ProductVersionDetectionMethod::CustomExpression,
+                                 magic_enum::enum_name(ProductVersionDetectionMethod::CustomExpression)},
                                  })
 
     /**
@@ -129,7 +132,7 @@ namespace models
         /** The statement */
         VersionResource statement{VersionResource::PRODUCTVERSION};
         /** The optional inja template data */
-        std::optional<json> data;        
+        std::optional<json> data;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileVersionConfig, input, statement, data)
@@ -163,6 +166,20 @@ namespace models
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FileChecksumConfig, input, data)
+
+    /**
+     * \brief A custom expression to evaluate.
+     */
+    class CustomExpressionConfig
+    {
+    public:
+        /** The inja template */
+        std::string input;
+        /** The optional inja template data */
+        std::optional<json> data;
+    };
+
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CustomExpressionConfig, input, data)
 
     /**
      * \brief Parameters that might be provided by both the server and the local configuration.
@@ -230,6 +247,11 @@ namespace models
         FileChecksumConfig GetFileChecksumConfig() const
         {
             return detection.get<FileChecksumConfig>();
+        }
+
+        CustomExpressionConfig GetCustomExpressionConfig() const
+        {
+            return detection.get<CustomExpressionConfig>();
         }
     };
 

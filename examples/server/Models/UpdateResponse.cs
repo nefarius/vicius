@@ -65,7 +65,13 @@ public enum ProductVersionDetectionMethod
     ///     Calculates and compares the hash of a given file.
     /// </summary>
     [EnumMember(Value = nameof(FileChecksum))]
-    FileChecksum
+    FileChecksum,
+    
+    /// <summary>
+    ///     Custom inja expression.
+    /// </summary>
+    [EnumMember(Value = nameof(CustomExpression))]
+    CustomExpression
 }
 
 /// <summary>
@@ -134,6 +140,8 @@ public enum RegistryView
 [KnownType(typeof(FileSizeConfig))]
 [JsonDerivedType(typeof(FileChecksumConfig), nameof(FileChecksumConfig))]
 [KnownType(typeof(FileChecksumConfig))]
+[JsonDerivedType(typeof(CustomExpressionConfig), nameof(CustomExpressionConfig))]
+[KnownType(typeof(CustomExpressionConfig))]
 public abstract class ProductVersionDetectionImplementation
 {
 }
@@ -255,9 +263,28 @@ public sealed class FileChecksumConfig : ProductVersionDetectionImplementation
 }
 
 /// <summary>
+///     A custom expression to evaluate.
+/// </summary>
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+public sealed class CustomExpressionConfig : ProductVersionDetectionImplementation
+{
+    /// <summary>
+    ///     The inja template.
+    /// </summary>
+    [Required]
+    public required string Input { get; set; }
+
+    /// <summary>
+    ///     Optional inja template data.
+    /// </summary>
+    public Dictionary<string, string>? Data { get; set; }
+}
+
+/// <summary>
 ///     Parameters that might be provided by both the server and the local configuration.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
 public sealed class SharedConfig
 {
     private ProductVersionDetectionImplementation? _detection;
@@ -291,6 +318,7 @@ public sealed class SharedConfig
                 FileVersionConfig _ => ProductVersionDetectionMethod.FileVersion,
                 FileSizeConfig _ => ProductVersionDetectionMethod.FileSize,
                 FileChecksumConfig _ => ProductVersionDetectionMethod.FileChecksum,
+                CustomExpressionConfig _ => ProductVersionDetectionMethod.CustomExpression,
                 _ => DetectionMethod
             };
 
