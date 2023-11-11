@@ -181,3 +181,5 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [Execute from Alternate Streams](https://gist.github.com/api0cradle/cdd2d0d0ec9abb686f0e89306e277b8f)
 - [Vista Goodies in C++: Showing Friendly Messages with Task Dialogs](https://www.codeproject.com/articles/16753/vista-goodies-in-c-showing-friendly-messages-with)
 - [How to retrieve files digital signature information?](https://stackoverflow.com/a/15030232)
+- [Windows Authenticode Portable Executable Signature Format](http://download.microsoft.com/download/9/c/5/9c5b2167-8017-4bae-9fde-d599bac8184a/authenticode_pe.docx)
+- [How To Get Information from Authenticode Signed Executables](https://gist.github.com/dougpuob/1cb6c2f16c95d1e7f324d23e76c80f8e)

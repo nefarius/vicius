@@ -3,6 +3,7 @@
 #include <curl/curl.h>
 
 #include "UpdateResponse.hpp"
+#include "NAuthenticode.h"
 
 using json = nlohmann::json;
 
@@ -57,6 +58,7 @@ namespace models
         std::optional<std::shared_future<int>> downloadTask;
         int selectedRelease{0};
         bool isSilent{false};
+        NSIGINFO appSigInfo{};
 
         int DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
 

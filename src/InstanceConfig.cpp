@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Common.h"
 #include "InstanceConfig.hpp"
-#include "NAuthenticode.h"
 
 #define NV_POSTPONE_TS_VALUE_NAME   L"LastTimestamp"
 
@@ -111,15 +110,21 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     authority = Authority::Remote;
     spdlog::debug("authority = {}", magic_enum::enum_name(authority));
 
-    NSIGINFO sigInf = {};
-    if (!NVerifyFileSignature(ConvertAnsiToWide(appPath.string()).c_str(), &sigInf))
+    if (!NVerifyFileSignature(ConvertAnsiToWide(appPath.string()).c_str(), &appSigInfo))
     {
-        spdlog::warn("Couldn't get signature information for {}", appPath.string());
+        switch (appSigInfo.lValidationResult)
+        {
+        case TRUST_E_NOSIGNATURE:
+            spdlog::warn("Executable {} has no signature", appPath.string());
+            break;
+        default:
+            spdlog::warn("Grabbing signature information for {} failed unexpectedly", appPath.string());
+            break;
+        }
     }
 
     // TODO: implement me!
 
-    NCertFreeSigInfo(&sigInf);    
 
     //
     // Merge from config file, if available
@@ -202,6 +207,11 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
 models::InstanceConfig::~InstanceConfig()
 {
+    if (appSigInfo.lValidationResult == ERROR_SUCCESS)
+    {
+        NCertFreeSigInfo(&appSigInfo);
+    }
+
     RestClient::disable();
 
     // clean up release resources
