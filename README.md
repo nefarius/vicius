@@ -77,6 +77,9 @@ Non-exhaustive list of things open or in-progress...
 ### Must-haves
 
 - [ ] Add [Authenticode](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/authenticode) signature checks
+  - [ ] Crypto primitives
+  - [ ] Model types
+  - [ ] Business logic
 - [ ] Add retry-logic (e.g. retry failed downloads etc.)
 - [ ] Add some fallback code if the temp directory isn't available
 - [ ] Handle all known error-cases
@@ -122,6 +125,7 @@ Non-exhaustive list of things open or in-progress...
       Currently only the user executing the updater will run registrations, which is sufficient for most cases
 - [ ] Postpone update dialog popping up if the product is currently in use
 - [ ] Allow using a HTTP proxy address via configuration
+- [ ] Add SAL annotations
 
 ### Done
 

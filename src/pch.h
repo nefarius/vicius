@@ -13,6 +13,7 @@
 #include <comdef.h>
 #include <ole2.h>
 #include <taskschd.h>
+#include <wincrypt.h>
 
 // 
 // ImGui, Fonts
@@ -70,3 +71,4 @@
 #include "UniUtil.h"
 #include "resource.h"
 #include "CustomizeMe.h"
+#include "Crypto.h"
