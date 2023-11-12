@@ -13,6 +13,7 @@ internal sealed class AdvancedExampleEndpoint : EndpointWithoutRequest
     {
         Get("api/contoso/Advanced/updates.json");
         AllowAnonymous();
+        Options(x => x.WithTags("Examples"));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

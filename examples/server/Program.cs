@@ -14,6 +14,12 @@ bld.Services.AddFastEndpoints().SwaggerDocument(o =>
     {
         s.Title = "vīcĭus updater API";
         s.Version = "v1";
+        o.AutoTagPathSegmentIndex = 0;
+        o.TagDescriptions = t =>
+        {
+            t["Schemas"] = "Schema definitions";
+            t["Examples"] = "Example update configurations";
+        };
     };
 });
 

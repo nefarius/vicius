@@ -19,6 +19,7 @@ internal sealed class SchemaEndpoint : EndpointWithoutRequest
     {
         Get("api/vicius/master/schema.json");
         AllowAnonymous();
+        Options(x => x.WithTags("Schemas"));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

@@ -13,6 +13,7 @@ internal sealed class RegistryValueEndpoint : EndpointWithoutRequest
     {
         Get("api/contoso/RegistryValue/updates.json");
         AllowAnonymous();
+        Options(x => x.WithTags("Examples"));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

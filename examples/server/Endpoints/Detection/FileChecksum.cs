@@ -13,6 +13,7 @@ internal sealed class FileChecksumEndpoint : EndpointWithoutRequest
     {
         Get("api/contoso/FileChecksum/updates.json");
         AllowAnonymous();
+        Options(x => x.WithTags("Examples"));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

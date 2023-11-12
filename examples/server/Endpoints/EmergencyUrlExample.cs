@@ -13,6 +13,7 @@ internal sealed class EmergencyUrlExampleEndpoint : EndpointWithoutRequest
     {
         Get("api/contoso/EmergencyUrl/updates.json");
         AllowAnonymous();
+        Options(x => x.WithTags("Examples"));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

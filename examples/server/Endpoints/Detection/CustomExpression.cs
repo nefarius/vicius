@@ -13,6 +13,7 @@ internal sealed class CustomExpressionEndpoint : EndpointWithoutRequest
     {
         Get("api/contoso/CustomExpression/updates.json");
         AllowAnonymous();
+        Options(x => x.WithTags("Examples"));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

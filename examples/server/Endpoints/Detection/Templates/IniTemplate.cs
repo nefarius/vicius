@@ -13,6 +13,7 @@ internal sealed class IniTemplateEndpoint : EndpointWithoutRequest
     {
         Get("api/contoso/INI/updates.json");
         AllowAnonymous();
+        Options(x => x.WithTags("Examples"));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

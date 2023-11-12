@@ -13,6 +13,7 @@ internal sealed class FileSizeEndpoint : EndpointWithoutRequest
     {
         Get("api/contoso/FileSize/updates.json");
         AllowAnonymous();
+        Options(x => x.WithTags("Examples"));
     }
 
     public override async Task HandleAsync(CancellationToken ct)
