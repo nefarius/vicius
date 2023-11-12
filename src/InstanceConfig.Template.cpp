@@ -1,7 +1,8 @@
 #include "pch.h"
 #include "InstanceConfig.hpp"
-//#define INJA_NOEXCEPTION
+#pragma warning(disable: 4244)
 #include <inja/inja.hpp>
+#pragma warning(default: 4244)
 #include "inipp.h"
 
 
