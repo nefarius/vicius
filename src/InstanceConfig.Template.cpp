@@ -417,6 +417,10 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         j["count"] = std::to_string(results.size());
         j["results"] = results;
 
+        std::string value = j.dump(4, ' ', false, json::error_handler_t::replace);
+
+        spdlog::debug("value = {}", value);
+
         return j;
     });
 

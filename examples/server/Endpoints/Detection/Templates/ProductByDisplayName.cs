@@ -27,8 +27,8 @@ internal sealed class ProductByDisplayNameEndpoint : EndpointWithoutRequest
                     Input = @"{% set query=productBy(parameters.value, parameters.product) %}{{ log(query.results.0.installLocation) }}",
                     Data = new Dictionary<string, string>
                     {
-                        { "value", "DisplayName" },
-                        { "product", "HidHide" }
+                        { "value", "Publisher" },
+                        { "product", "Blackmagic" }
                     }
                 }
             },
