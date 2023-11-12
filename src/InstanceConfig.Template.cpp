@@ -341,7 +341,8 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
             const auto subKeyPath = std::format(R"({}\{})", ConvertWideToANSI(baseKey), ConvertWideToANSI(subKeyName));
 
             winreg::RegKey subKey;
-            const winreg::RegResult subResult = subKey.TryOpen(HKEY_LOCAL_MACHINE, ConvertAnsiToWide(subKeyPath), flags);
+            const winreg::RegResult subResult = subKey.
+                TryOpen(HKEY_LOCAL_MACHINE, ConvertAnsiToWide(subKeyPath), flags);
 
             if (subResult.Failed())
             {
@@ -383,6 +384,26 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
             if (const auto& ret = subKey.TryGetStringValue(L"DisplayVersion"); ret)
             {
                 entry["displayVersion"] = ConvertWideToANSI(ret.GetValue());
+            }
+
+            if (const auto& ret = subKey.TryGetStringValue(L"Publisher"); ret)
+            {
+                entry["publisher"] = ConvertWideToANSI(ret.GetValue());
+            }
+
+            if (const auto& ret = subKey.TryGetStringValue(L"InstallSource"); ret)
+            {
+                entry["installSource"] = ConvertWideToANSI(ret.GetValue());
+            }
+
+            if (const auto& ret = subKey.TryGetStringValue(L"InstallDate"); ret)
+            {
+                entry["installDate"] = ConvertWideToANSI(ret.GetValue());
+            }
+
+            if (const auto& ret = subKey.TryGetStringValue(L"UninstallString"); ret)
+            {
+                entry["uninstallString"] = ConvertWideToANSI(ret.GetValue());
             }
 
             results.push_back(entry);
