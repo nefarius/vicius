@@ -298,8 +298,37 @@ public enum SignatureComparisonPolicy
     /// <summary>
     ///     Fails with an error when the remote setup signature doesn't match the expected value.
     /// </summary>
+    /// <remarks>
+    ///     If <see cref="SignatureVerificationStrategy.FromUpdaterBinary" /> is configured and the updater binary is not
+    ///     signed properly, applying updates will always fail with an error.
+    /// </remarks>
     [EnumMember(Value = nameof(Strict))]
     Strict
+}
+
+/// <summary>
+///     The strategy on how to verify if the setup signature is trusted.
+/// </summary>
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+public enum SignatureVerificationStrategy
+{
+    /// <summary>
+    ///     Extract the signature information from the updater binary and use that info to validate the signed setup.
+    /// </summary>
+    /// <remarks>
+    ///     If <see cref="SignatureComparisonPolicy.Strict" /> is configured and the updater binary is not signed properly,
+    ///     applying updates will always fail with an error.
+    /// </remarks>
+    [EnumMember(Value = nameof(FromUpdaterBinary))]
+    FromUpdaterBinary,
+
+    /// <summary>
+    ///     Use the information provided in the <see cref="SharedConfig" /> to validate the signed setup.
+    /// </summary>
+    [EnumMember(Value = nameof(FromConfiguration))]
+    FromConfiguration
 }
 
 /// <summary>

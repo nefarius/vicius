@@ -200,6 +200,24 @@ namespace models
                                  })
 
     /**
+     * \brief The strategy on how to verify if the setup signature is trusted.
+     */
+    enum class SignatureVerificationStrategy
+    {
+        FromUpdaterBinary,
+        FromConfiguration,
+        Invalid = -1
+    };
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(SignatureVerificationStrategy, {
+                                 {SignatureVerificationStrategy::Invalid, nullptr},
+                                 {SignatureVerificationStrategy::FromUpdaterBinary,
+                                 magic_enum::enum_name(SignatureVerificationStrategy::FromUpdaterBinary)},
+                                 {SignatureVerificationStrategy::FromConfiguration,
+                                 magic_enum::enum_name(SignatureVerificationStrategy::FromConfiguration)},
+                                 })
+
+    /**
      * \brief Parameters that might be provided by both the server and the local configuration.
      */
     class SharedConfig
