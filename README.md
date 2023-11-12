@@ -76,10 +76,6 @@ Non-exhaustive list of things open or in-progress...
 
 ### Must-haves
 
-- [ ] Add [Authenticode](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/authenticode) signature checks
-  - [ ] Crypto primitives
-  - [ ] Model types
-  - [ ] Business logic
 - [ ] Add retry-logic (e.g. retry failed downloads etc.)
 - [ ] Add some fallback code if the temp directory isn't available
 - [ ] Handle all known error-cases
@@ -113,6 +109,10 @@ Non-exhaustive list of things open or in-progress...
 
 ### Nice-to-haves
 
+- [ ] Add [Authenticode](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/authenticode) signature checks
+  - [ ] Crypto primitives
+  - [ ] Model types
+  - [ ] Business logic
 - [ ] Design Beta-Release support
 - [ ] Make app icon customizable
 - [ ] Add "Light" theme
