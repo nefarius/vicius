@@ -406,6 +406,11 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
                 entry["uninstallString"] = ConvertWideToANSI(ret.GetValue());
             }
 
+            if (const auto& ret = subKey.TryGetDwordValue(L"Language"); ret)
+            {
+                entry["language"] = std::to_string(ret.GetValue());
+            }
+
             results.push_back(entry);
         }
 
