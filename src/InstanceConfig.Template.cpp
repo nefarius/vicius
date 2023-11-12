@@ -303,6 +303,82 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         spdlog::debug("inja log message: {}", logMessage);
     });
 
+    env.add_callback("productByDisplayName", 1, [](const inja::Arguments& args)
+    {
+        const auto expression = args.at(0)->get<std::string>();
+        json j = json::object();
+        j["count"] = 0;
+        json results = json::array();
+
+        winreg::RegKey key;
+        REGSAM flags = KEY_READ;
+
+        const auto baseKey = LR"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall)";
+
+        if (const winreg::RegResult result = key.TryOpen(HKEY_LOCAL_MACHINE, baseKey, flags); !result)
+        {
+            spdlog::error("Failed to open uninstall key");
+            j["error"] = "Failed to open uninstall key";
+            return j.dump();
+        }
+
+        const auto enumRet = key.TryEnumSubKeys();
+
+        if (!enumRet.IsValid())
+        {
+            spdlog::error("Failed to enumerate sub-keys");
+            j["error"] = "Failed to enumerate sub-keys";
+            return j.dump();
+        }
+
+        for (const auto& subKeyName : enumRet.GetValue())
+        {
+            const auto subKeyPath = std::format(R"({}\{})", ConvertWideToANSI(baseKey), ConvertWideToANSI(subKeyName));
+
+            winreg::RegKey subKey;
+            const winreg::RegResult subResult = subKey.TryOpen(HKEY_LOCAL_MACHINE, ConvertAnsiToWide(subKeyPath), flags);
+
+            if (subResult.Failed())
+            {
+                continue;
+            }
+
+            const auto& value = subKey.TryGetStringValue(L"DisplayName");
+
+            if (!value.IsValid())
+            {
+                continue;
+            }
+
+            std::string displayName = ConvertWideToANSI(value.GetValue());
+            std::regex productRegex(expression, std::regex_constants::icase);
+            auto matchesBegin = std::sregex_iterator(displayName.begin(), displayName.end(), productRegex);
+            auto matchesEnd = std::sregex_iterator();
+
+            if (matchesBegin == matchesEnd)
+            {
+                continue;
+            }
+
+            json entry = json::object();
+
+            entry["displayName"] = displayName;
+
+            if (const auto& ilRet = subKey.TryGetStringValue(L"InstallLocation"); ilRet)
+            {
+                entry["installLocation"] = ConvertWideToANSI(ilRet.GetValue());
+            }
+
+            results.push_back(entry);
+        }
+
+        j["count"] = results.size();
+        j["results"] = results;
+
+        return j.dump();
+    });
+
+
     try
     {
         auto rendered = env.render(tpl, data);
