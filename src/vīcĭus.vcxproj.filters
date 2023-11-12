@@ -137,6 +137,12 @@
     <ClInclude Include="models\MergedConfig.hpp">
       <Filter>Header Files\Models</Filter>
     </ClInclude>
+    <ClInclude Include="models\UpdateRelease.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\UpdateConfig.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="vīcĭus.rc">

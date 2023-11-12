@@ -325,6 +325,8 @@
     <ClInclude Include="models\ProductDetection.hpp" />
     <ClInclude Include="models\SharedConfig.hpp" />
     <ClInclude Include="models\SignatureValidation.hpp" />
+    <ClInclude Include="models\UpdateConfig.hpp" />
+    <ClInclude Include="models\UpdateRelease.hpp" />
     <ClInclude Include="NAuthenticode.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
