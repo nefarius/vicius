@@ -24,7 +24,7 @@ public sealed class ExitCodeCheck
     ///     One or more exit codes that signify success.
     /// </summary>
     [Required]
-    public List<int> SuccessCodes { get; set; } = new();
+    public List<int> SuccessCodes { get; } = new();
 }
 
 /// <summary>
