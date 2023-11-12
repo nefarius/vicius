@@ -2,6 +2,8 @@
 
 namespace models
 {
+    class ExitCodeCheck;
+
     /**
      * \brief Update instance configuration. Parameters applying to the entire product/tenant.
      */
