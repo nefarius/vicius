@@ -54,8 +54,7 @@ namespace crypto
                     );
                     if (!fResult)
                     {
-                        _tprintf(_T("CryptDecodeObject failed with %x\n"),
-                                 GetLastError());
+                        spdlog::error("CryptDecodeObject failed with {0:#x}", GetLastError());
                         __leave;
                     }
 
@@ -63,7 +62,7 @@ namespace crypto
                     OpusInfo = static_cast<PSPC_SP_OPUS_INFO>(LocalAlloc(LPTR, dwData));
                     if (!OpusInfo)
                     {
-                        _tprintf(_T("Unable to allocate memory for Publisher Info.\n"));
+                        spdlog::error("Unable to allocate memory for Publisher Info");
                         __leave;
                     }
 
@@ -80,8 +79,7 @@ namespace crypto
 
                     if (!fResult)
                     {
-                        _tprintf(_T("CryptDecodeObject failed with %x\n"),
-                                 GetLastError());
+                        spdlog::error("CryptDecodeObject failed with {0:#x}", GetLastError());
                         __leave;
                     }
 
@@ -186,8 +184,7 @@ namespace crypto
 
                 if (!fResult)
                 {
-                    _tprintf(_T("CryptDecodeObject failed with %x\n"),
-                             GetLastError());
+                    spdlog::error("CryptDecodeObject failed with {0:#x}", GetLastError());
                     break;
                 }
 
@@ -232,7 +229,7 @@ namespace crypto
                 0
             )))
             {
-                _tprintf(_T("CertGetNameString failed.\n"));
+                spdlog::error("CertGetNameString failed with {0:#x}", GetLastError());
                 __leave;
             }
 
@@ -240,7 +237,7 @@ namespace crypto
             szName = static_cast<LPTSTR>(LocalAlloc(LPTR, dwData * sizeof(TCHAR)));
             if (!szName)
             {
-                _tprintf(_T("Unable to allocate memory for issuer name.\n"));
+                spdlog::error("Unable to allocate memory for timestamp info");
                 __leave;
             }
 
@@ -254,7 +251,7 @@ namespace crypto
                 dwData
             )))
             {
-                _tprintf(_T("CertGetNameString failed.\n"));
+                spdlog::error("CertGetNameString failed with {0:#x}", GetLastError());
                 __leave;
             }
 
@@ -273,7 +270,7 @@ namespace crypto
                 0
             )))
             {
-                _tprintf(_T("CertGetNameString failed.\n"));
+                spdlog::error("CertGetNameString failed with {0:#x}", GetLastError());
                 __leave;
             }
 
@@ -281,7 +278,7 @@ namespace crypto
             szName = static_cast<LPTSTR>(LocalAlloc(LPTR, dwData * sizeof(TCHAR)));
             if (!szName)
             {
-                _tprintf(_T("Unable to allocate memory for subject name.\n"));
+                spdlog::error("Unable to allocate memory for timestamp info");
                 __leave;
             }
 
@@ -295,7 +292,7 @@ namespace crypto
                 dwData
             )))
             {
-                _tprintf(_T("CertGetNameString failed.\n"));
+                spdlog::error("CertGetNameString failed with {0:#x}", GetLastError());
                 __leave;
             }
 
@@ -343,8 +340,7 @@ namespace crypto
 
                     if (!fResult)
                     {
-                        _tprintf(_T("CryptDecodeObject failed with %x\n"),
-                                 GetLastError());
+                        spdlog::error("CryptDecodeObject failed with {0:#x}", GetLastError());
                         __leave;
                     }
 
@@ -352,7 +348,7 @@ namespace crypto
                     *pCounterSignerInfo = static_cast<PCMSG_SIGNER_INFO>(LocalAlloc(LPTR, dwSize));
                     if (!*pCounterSignerInfo)
                     {
-                        _tprintf(_T("Unable to allocate memory for timestamp info.\n"));
+                        spdlog::error("Unable to allocate memory for timestamp info");
                         __leave;
                     }
 
@@ -370,8 +366,7 @@ namespace crypto
 
                     if (!fResult)
                     {
-                        _tprintf(_T("CryptDecodeObject failed with %x\n"),
-                                 GetLastError());
+                        spdlog::error("CryptDecodeObject failed with {0:#x}", GetLastError());
                         __leave;
                     }
 
