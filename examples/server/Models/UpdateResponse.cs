@@ -66,7 +66,7 @@ public enum ProductVersionDetectionMethod
     /// </summary>
     [EnumMember(Value = nameof(FileChecksum))]
     FileChecksum,
-    
+
     /// <summary>
     ///     Custom inja expression.
     /// </summary>
@@ -199,7 +199,7 @@ public enum VersionResource
     ///     integers, defined by four 16-bit integers. For more information about version, see the FILEVERSION description.
     /// </summary>
     [EnumMember(Value = nameof(PRODUCTVERSION))]
-    PRODUCTVERSION,
+    PRODUCTVERSION
 }
 
 /// <summary>
@@ -216,10 +216,10 @@ public sealed class FileVersionConfig : ProductVersionDetectionImplementation
     public required string Input { get; set; }
 
     /// <summary>
-    ///     The <see cref="VersionResource"/> to read.
+    ///     The <see cref="VersionResource" /> to read.
     /// </summary>
     public VersionResource Statement { get; set; } = VersionResource.PRODUCTVERSION;
-    
+
     /// <summary>
     ///     Optional inja template data.
     /// </summary>
@@ -278,6 +278,28 @@ public sealed class CustomExpressionConfig : ProductVersionDetectionImplementati
     ///     Optional inja template data.
     /// </summary>
     public Dictionary<string, string>? Data { get; set; }
+}
+
+/// <summary>
+///     The policy to abide by when comparing signatures.
+/// </summary>
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+[Newtonsoft.Json.JsonConverter(typeof(StringEnumConverter))]
+public enum SignatureComparisonPolicy
+{
+    /// <summary>
+    ///     Allows the user to make the decision to continue when the remote setup signature doesn't match the expected value.
+    ///     This is the default.
+    /// </summary>
+    [EnumMember(Value = nameof(Relaxed))]
+    Relaxed,
+
+    /// <summary>
+    ///     Fails with an error when the remote setup signature doesn't match the expected value.
+    /// </summary>
+    [EnumMember(Value = nameof(Strict))]
+    Strict
 }
 
 /// <summary>

@@ -182,6 +182,24 @@ namespace models
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CustomExpressionConfig, input, data)
 
     /**
+     * \brief The policy to abide by when comparing signatures.
+     */
+    enum class SignatureComparisonPolicy
+    {
+        Relaxed,
+        Strict,
+        Invalid = -1
+    };
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(SignatureComparisonPolicy, {
+                                 {SignatureComparisonPolicy::Invalid, nullptr},
+                                 {SignatureComparisonPolicy::Relaxed,
+                                 magic_enum::enum_name(SignatureComparisonPolicy::Relaxed)},
+                                 {SignatureComparisonPolicy::Strict,
+                                 magic_enum::enum_name(SignatureComparisonPolicy::Strict)},
+                                 })
+
+    /**
      * \brief Parameters that might be provided by both the server and the local configuration.
      */
     class SharedConfig
