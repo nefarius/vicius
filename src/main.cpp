@@ -25,7 +25,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(szCmdLine);
     UNREFERENCED_PARAMETER(iCmdShow);
-    
+
     argh::parser cmdl;
 
     cmdl.add_params({
@@ -372,7 +372,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     false,
                     windowFlags
                 );
-                markdown::RenderChangelog(release.summary);
+                markdown::RenderChangelog(
+                    release.summary.empty()
+                        ? "This release contains no summary."
+                        : release.summary
+                );
                 ImGui::EndChild();
 
                 ImGui::SetCursorPos(ImVec2(530, navigateButtonOffsetY));
