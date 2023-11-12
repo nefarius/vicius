@@ -25,6 +25,12 @@
     <Filter Include="Source Files\Models">
       <UniqueIdentifier>{14461cff-a272-4ec8-8ee3-389549834389}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Authenticode">
+      <UniqueIdentifier>{ac6d2972-a5be-4322-a7d8-1d8610a8f438}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Authenticode">
+      <UniqueIdentifier>{3e1f3b27-7fcd-4ec5-85a7-5db19419cddf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -60,14 +66,14 @@
     <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NAuthenticode.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="InstanceConfig.Template.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
     <ClCompile Include="Crypto.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Authenticode</Filter>
+    </ClCompile>
+    <ClCompile Include="NAuthenticode.cpp">
+      <Filter>Source Files\Authenticode</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -107,14 +113,14 @@
     <ClInclude Include="pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="NAuthenticode.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="inipp.h">
       <Filter>Header Files\3rd</Filter>
     </ClInclude>
     <ClInclude Include="Crypto.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Authenticode</Filter>
+    </ClInclude>
+    <ClInclude Include="NAuthenticode.h">
+      <Filter>Header Files\Authenticode</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

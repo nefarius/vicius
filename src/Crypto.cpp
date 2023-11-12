@@ -11,23 +11,6 @@ typedef struct
     LPWSTR lpszMoreInfoLink;
 } SPROG_PUBLISHERINFO, *PSPROG_PUBLISHERINFO;
 
-BOOL
-GetDateOfTimeStamp(
-    PCMSG_SIGNER_INFO pSignerInfo,
-    SYSTEMTIME* st
-);
-
-BOOL
-PrintCertificateInfo(
-    PCCERT_CONTEXT pCertContext
-);
-
-BOOL
-GetTimeStampSignerInfo(
-    PCMSG_SIGNER_INFO pSignerInfo,
-    PCMSG_SIGNER_INFO* pCounterSignerInfo
-);
-
 static LPWSTR AllocateAndCopyWideString(LPCWSTR inputString)
 {
     LPWSTR outputString = nullptr;
@@ -331,6 +314,122 @@ BOOL PrintCertificateInfo(PCCERT_CONTEXT pCertContext)
     return fReturn;
 }
 
+BOOL ExtractCertificateInfo(PCCERT_CONTEXT pCertContext, crypto::PSIGNATURE_INFORMATION info)
+{
+    BOOL fReturn = FALSE;
+    LPTSTR szName = nullptr;
+    DWORD dwData;
+
+    __try
+    {
+        // Print Serial Number.
+        _tprintf(_T("Serial Number: "));
+        dwData = pCertContext->pCertInfo->SerialNumber.cbData;
+        // allocate two wide characters per serial byte and NULL terminator
+        info->SerialNumber = static_cast<LPTSTR>(LocalAlloc(LPTR, ((dwData * 2) + 1) * sizeof(TCHAR)));
+        LPTSTR lpszPointer = info->SerialNumber;
+
+        for(DWORD n = 0; n < dwData; n++)
+        {
+            lpszPointer += _stprintf_s(
+                lpszPointer,
+                dwData,
+                _T("%02X"),
+                pCertContext->pCertInfo->SerialNumber.pbData[dwData - (n + 1)]
+            );
+
+            //_tprintf(_T("%02x "),
+            //         pCertContext->pCertInfo->SerialNumber.pbData[dwData - (n + 1)]);
+        }
+
+        // Get Issuer name size.
+        if (!(dwData = CertGetNameString(
+            pCertContext,
+            CERT_NAME_SIMPLE_DISPLAY_TYPE,
+            CERT_NAME_ISSUER_FLAG,
+            nullptr,
+            nullptr,
+            0
+        )))
+        {
+            spdlog::error("CertGetNameString failed with {0:#x}", GetLastError());
+            __leave;
+        }
+
+        // Allocate memory for Issuer name.
+        szName = static_cast<LPTSTR>(LocalAlloc(LPTR, dwData * sizeof(TCHAR)));
+        if (!szName)
+        {
+            spdlog::error("Unable to allocate memory for timestamp info");
+            __leave;
+        }
+
+        // Get Issuer name.
+        if (!(CertGetNameString(
+            pCertContext,
+            CERT_NAME_SIMPLE_DISPLAY_TYPE,
+            CERT_NAME_ISSUER_FLAG,
+            nullptr,
+            szName,
+            dwData
+        )))
+        {
+            spdlog::error("CertGetNameString failed with {0:#x}", GetLastError());
+            __leave;
+        }
+
+        info->IssuerName = AllocateAndCopyWideString(szName);
+        LocalFree(szName);
+        szName = nullptr;
+
+        // Get Subject name size.
+        if (!(dwData = CertGetNameString(
+            pCertContext,
+            CERT_NAME_SIMPLE_DISPLAY_TYPE,
+            0,
+            nullptr,
+            nullptr,
+            0
+        )))
+        {
+            spdlog::error("CertGetNameString failed with {0:#x}", GetLastError());
+            __leave;
+        }
+
+        // Allocate memory for subject name.
+        szName = static_cast<LPTSTR>(LocalAlloc(LPTR, dwData * sizeof(TCHAR)));
+        if (!szName)
+        {
+            spdlog::error("Unable to allocate memory for timestamp info");
+            __leave;
+        }
+
+        // Get subject name.
+        if (!(CertGetNameString(
+            pCertContext,
+            CERT_NAME_SIMPLE_DISPLAY_TYPE,
+            0,
+            nullptr,
+            szName,
+            dwData
+        )))
+        {
+            spdlog::error("CertGetNameString failed with {0:#x}", GetLastError());
+            __leave;
+        }
+
+        info->SubjectName = AllocateAndCopyWideString(szName);
+
+        fReturn = TRUE;
+    }
+    __finally
+    {
+        if (szName != nullptr) LocalFree(szName);
+    }
+
+    return fReturn;
+}
+
 BOOL GetTimeStampSignerInfo(PCMSG_SIGNER_INFO pSignerInfo, PCMSG_SIGNER_INFO* pCounterSignerInfo)
 {
     PCCERT_CONTEXT pCertContext = nullptr;
@@ -409,4 +508,204 @@ BOOL GetTimeStampSignerInfo(PCMSG_SIGNER_INFO pSignerInfo, PCMSG_SIGNER_INFO* pC
 
 namespace crypto
 {
+    bool ExtractSignatureInformation(LPCWSTR filePath, PSIGNATURE_INFORMATION info)
+    {
+        WCHAR szFileName[MAX_PATH];
+        HCERTSTORE hStore = nullptr;
+        HCRYPTMSG hMsg = nullptr;
+        PCCERT_CONTEXT pCertContext = nullptr;
+        BOOL fResult = FALSE;
+        DWORD dwEncoding, dwContentType, dwFormatType;
+        PCMSG_SIGNER_INFO pSignerInfo = nullptr;
+        PCMSG_SIGNER_INFO pCounterSignerInfo = nullptr;
+        DWORD dwSignerInfo;
+        CERT_INFO CertInfo;
+        SPROG_PUBLISHERINFO ProgPubInfo;
+        SYSTEMTIME st;
+
+        ZeroMemory(&ProgPubInfo, sizeof(ProgPubInfo));
+        __try
+        {
+            lstrcpynW(szFileName, filePath, MAX_PATH);
+
+            // Get message handle and store handle from the signed file.
+            fResult = CryptQueryObject(
+                CERT_QUERY_OBJECT_FILE,
+                szFileName,
+                CERT_QUERY_CONTENT_FLAG_PKCS7_SIGNED_EMBED,
+                CERT_QUERY_FORMAT_FLAG_BINARY,
+                0,
+                &dwEncoding,
+                &dwContentType,
+                &dwFormatType,
+                &hStore,
+                &hMsg,
+                nullptr
+            );
+
+            if (!fResult)
+            {
+                spdlog::error("CryptQueryObject failed with {0:#x}", GetLastError());
+                __leave;
+            }
+
+            // Get signer information size.
+            fResult = CryptMsgGetParam(
+                hMsg,
+                CMSG_SIGNER_INFO_PARAM,
+                0,
+                nullptr,
+                &dwSignerInfo
+            );
+
+            if (!fResult)
+            {
+                spdlog::error("CryptMsgGetParam failed with {0:#x}", GetLastError());
+                __leave;
+            }
+
+            // Allocate memory for signer information.
+            pSignerInfo = static_cast<PCMSG_SIGNER_INFO>(LocalAlloc(LPTR, dwSignerInfo));
+            if (!pSignerInfo)
+            {
+                spdlog::error("Unable to allocate memory for Signer Info");
+                __leave;
+            }
+
+            // Get Signer Information.
+            fResult = CryptMsgGetParam(
+                hMsg,
+                CMSG_SIGNER_INFO_PARAM,
+                0,
+                pSignerInfo,
+                &dwSignerInfo
+            );
+
+            if (!fResult)
+            {
+                spdlog::error("CryptMsgGetParam failed with {0:#x}", GetLastError());
+                __leave;
+            }
+
+            // Get program name and publisher information from
+            // signer info structure.
+            if (GetProgAndPublisherInfo(pSignerInfo, &ProgPubInfo))
+            {
+                if (ProgPubInfo.lpszProgramName != nullptr)
+                {
+                    info->ProgramName = AllocateAndCopyWideString(ProgPubInfo.lpszProgramName);
+                }
+
+                if (ProgPubInfo.lpszPublisherLink != nullptr)
+                {
+                    info->PublisherLink = AllocateAndCopyWideString(ProgPubInfo.lpszPublisherLink);
+                }
+
+                if (ProgPubInfo.lpszMoreInfoLink != nullptr)
+                {
+                    info->MoreInfoLink = AllocateAndCopyWideString(ProgPubInfo.lpszMoreInfoLink);
+                }
+            }
+
+            _tprintf(_T("\n"));
+
+            // Search for the signer certificate in the temporary
+            // certificate store.
+            CertInfo.Issuer = pSignerInfo->Issuer;
+            CertInfo.SerialNumber = pSignerInfo->SerialNumber;
+
+            pCertContext = CertFindCertificateInStore(
+                hStore,
+                ENCODING,
+                0,
+                CERT_FIND_SUBJECT_CERT,
+                &CertInfo,
+                nullptr
+            );
+
+            if (!pCertContext)
+            {
+                _tprintf(_T("CertFindCertificateInStore failed with %x\n"),
+                         GetLastError());
+                __leave;
+            }
+
+            // Print Signer certificate information.
+            _tprintf(_T("Signer Certificate:\n\n"));
+            ExtractCertificateInfo(pCertContext, info);
+            _tprintf(_T("\n"));
+
+            // Get the timestamp certificate signerinfo structure.
+            if (GetTimeStampSignerInfo(pSignerInfo, &pCounterSignerInfo))
+            {
+                // Search for Timestamp certificate in the temporary
+                // certificate store.
+                CertInfo.Issuer = pCounterSignerInfo->Issuer;
+                CertInfo.SerialNumber = pCounterSignerInfo->SerialNumber;
+
+                pCertContext = CertFindCertificateInStore(
+                    hStore,
+                    ENCODING,
+                    0,
+                    CERT_FIND_SUBJECT_CERT,
+                    &CertInfo,
+                    nullptr
+                );
+
+                if (!pCertContext)
+                {
+                    _tprintf(_T("CertFindCertificateInStore failed with %x\n"),
+                             GetLastError());
+                    __leave;
+                }
+
+                // TODO: test and implement me
+
+                // Print timestamp certificate information.
+                //_tprintf(_T("TimeStamp Certificate:\n\n"));
+                //ExtractCertificateInfo(pCertContext, info);
+                //_tprintf(_T("\n"));
+
+                // Find Date of timestamp.
+                if (GetDateOfTimeStamp(pCounterSignerInfo, &st))
+                {
+                    _tprintf(_T("Date of TimeStamp : %02d/%02d/%04d %02d:%02d\n"),
+                             st.wMonth,
+                             st.wDay,
+                             st.wYear,
+                             st.wHour,
+                             st.wMinute);
+                }
+                _tprintf(_T("\n"));
+            }
+        }
+        __finally
+        {
+            // Clean up.
+            if (ProgPubInfo.lpszProgramName != nullptr)
+                LocalFree(ProgPubInfo.lpszProgramName);
+            if (ProgPubInfo.lpszPublisherLink != nullptr)
+                LocalFree(ProgPubInfo.lpszPublisherLink);
+            if (ProgPubInfo.lpszMoreInfoLink != nullptr)
+                LocalFree(ProgPubInfo.lpszMoreInfoLink);
+
+            if (pSignerInfo != nullptr) LocalFree(pSignerInfo);
+            if (pCounterSignerInfo != nullptr) LocalFree(pCounterSignerInfo);
+            if (pCertContext != nullptr) CertFreeCertificateContext(pCertContext);
+            if (hStore != nullptr) CertCloseStore(hStore, 0);
+            if (hMsg != nullptr) CryptMsgClose(hMsg);
+        }
+
+        return fResult;
+    }
+
+    void FreeSignatureInformation(PSIGNATURE_INFORMATION info)
+    {
+        if (info->ProgramName != nullptr)
+            LocalFree(info->ProgramName);
+        if (info->PublisherLink != nullptr)
+            LocalFree(info->PublisherLink);
+        if (info->MoreInfoLink != nullptr)
+            LocalFree(info->MoreInfoLink);
+    }
 }
