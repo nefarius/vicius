@@ -11,7 +11,7 @@ internal sealed class HelpUrlExampleEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/contoso/HelpUrlExample/updates.json");
+        Get("api/contoso/HelpUrl/updates.json");
         AllowAnonymous();
     }
 
@@ -21,7 +21,18 @@ internal sealed class HelpUrlExampleEndpoint : EndpointWithoutRequest
         {
             Instance = new UpdateConfig
             {
-                HelpUrl = "https://docs.nefarius.at/projects/Vicius/Examples/Landing-Page/"
+                HelpUrl = "https://docs.nefarius.at/projects/Vicius/Examples/Help-Page/"
+            },
+            Releases =
+            {
+                new UpdateRelease
+                {
+                    Name = "Demo Update",
+                    PublishedAt = DateTimeOffset.UtcNow.AddDays(-3),
+                    Version = System.Version.Parse("2.0.0"),
+                    Summary = "",
+                    DownloadUrl = ""
+                }
             }
         };
 

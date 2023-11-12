@@ -11,7 +11,7 @@ internal sealed class AdvancedExampleEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/contoso/AdvancedExample/updates.json");
+        Get("api/contoso/Advanced/updates.json");
         AllowAnonymous();
     }
 

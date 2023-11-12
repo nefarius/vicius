@@ -11,7 +11,7 @@ internal sealed class MinimalExampleEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/contoso/MinimalExample/updates.json");
+        Get("api/contoso/Minimal/updates.json");
         AllowAnonymous();
     }
 
