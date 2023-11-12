@@ -2,7 +2,6 @@
 #include "Common.h"
 #include "ADL.hpp"
 #include "CommonTypes.hpp"
-#include "SignatureValidation.hpp"
 #include "SharedConfig.hpp"
 #include "UpdateRelease.hpp"
 #include "UpdateConfig.hpp"
