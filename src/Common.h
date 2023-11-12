@@ -64,6 +64,7 @@ namespace util
     bool icompare_pred(unsigned char a, unsigned char b);
     bool icompare(const std::string& a, const std::string& b);
     bool IsAdmin(int& errorCode);
+    void toCamelCase(std::string & s);
 }
 
 namespace winapi

@@ -133,6 +133,20 @@ namespace util
 
         return true;
     }
+
+    void util::toCamelCase(std::string& s)
+    {
+        char previous = ' ';
+        auto f = [&](char current)
+        {
+            const char result = (std::isblank(previous) && std::isupper(current))
+                                    ? std::tolower(current)
+                                    : current;
+            previous = current;
+            return result;
+        };
+        std::ranges::transform(s, s.begin(), f);
+    }
 }
 
 namespace winapi

@@ -306,7 +306,7 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
     // searches for installed products by regular expression
     env.add_callback("productBy", 2, [](const inja::Arguments& args)
     {
-        const auto targetValue = args.at(0)->get<std::string>();
+        auto targetValue = args.at(0)->get<std::string>();
         const auto expression = args.at(1)->get<std::string>();
 
         json j = json::object();
@@ -370,11 +370,18 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
 
             json entry = json::object();
 
+            util::toCamelCase(targetValue);
+
             entry[targetValue] = displayName;
 
             //
             // Query for well-known properties
             // 
+
+            if (const auto& ret = subKey.TryGetStringValue(L"DisplayName"); ret)
+            {
+                entry["displayName"] = ConvertWideToANSI(ret.GetValue());
+            }
 
             if (const auto& ret = subKey.TryGetStringValue(L"InstallLocation"); ret)
             {
