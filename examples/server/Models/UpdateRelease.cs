@@ -110,6 +110,11 @@ public sealed class UpdateRelease
     /// <summary>
     ///     Optional checksum/hashing settings to perform after download.
     /// </summary>
+    /// <remarks>
+    ///     This simply hashes the file contents and compares them, there is no cryptographic signature validation
+    ///     performed. It can be used to ensure that the file hasn't been corrupted in transit but doesn't say anything about
+    ///     the authenticity or origin of the file.
+    /// </remarks>
     public ChecksumParameters? Checksum { get; set; }
 
     /// <summary>
