@@ -7,11 +7,11 @@ namespace Nefarius.Vicius.Example.Server.Endpoints;
 /// <summary>
 ///     Demoing only the emergency feature, see https://docs.nefarius.at/projects/Vicius/Emergency-Feature/
 /// </summary>
-internal sealed class Example00Endpoint : EndpointWithoutRequest
+internal sealed class EmergencyUrlExampleEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/contoso/Example00/updates.json");
+        Get("api/contoso/EmergencyUrlExample/updates.json");
         AllowAnonymous();
     }
 

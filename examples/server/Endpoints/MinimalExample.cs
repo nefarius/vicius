@@ -7,11 +7,11 @@ namespace Nefarius.Vicius.Example.Server.Endpoints;
 /// <summary>
 ///     Demos a single release update configuration with registry-based product version detection.
 /// </summary>
-internal sealed class Example01Endpoint : EndpointWithoutRequest
+internal sealed class MinimalExampleEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/contoso/Example01/updates.json");
+        Get("api/contoso/MinimalExample/updates.json");
         AllowAnonymous();
     }
 

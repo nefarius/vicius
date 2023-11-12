@@ -7,11 +7,11 @@ namespace Nefarius.Vicius.Example.Server.Endpoints;
 /// <summary>
 ///     Demos sophisticated product detection using the template engine.
 /// </summary>
-internal sealed class Example02Endpoint : EndpointWithoutRequest
+internal sealed class AdvancedExampleEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/contoso/Example02/updates.json");
+        Get("api/contoso/AdvancedExample/updates.json");
         AllowAnonymous();
     }
 
