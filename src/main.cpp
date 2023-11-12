@@ -52,6 +52,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         if (const auto autoRet = cfg.RegisterAutostart(); !std::get<0>(autoRet))
         {
             // TODO: better fallback action?
+
             spdlog::critical("Failed to register in autostart");
             cfg.TryDisplayErrorDialog("Failed to register in autostart", std::get<1>(autoRet));
             return NV_E_AUTOSTART;
@@ -71,6 +72,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         if (const auto extRet = cfg.ExtractSelfUpdater(); !std::get<0>(extRet))
         {
             // TODO: better fallback action?
+
             spdlog::critical("Failed to extract self-updater, error: {}", std::get<1>(extRet));
             cfg.TryDisplayErrorDialog("Failed to extract self-updater", std::get<1>(extRet));
             return NV_E_EXTRACT_SELF_UPDATE;
@@ -91,6 +93,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             spdlog::error("Failed to (re-)create Scheduled Task, error: {}, HRESULT: {}", std::get<1>(ret),
                           ConvertWideToANSI(err.ErrorMessage()));
             cfg.TryDisplayErrorDialog("Failed to create scheduled task", std::get<1>(ret));
+
             // TODO: anything else we can do in this case?
         }
     }
@@ -101,6 +104,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         if (const auto autoRet = cfg.RemoveAutostart(); !std::get<0>(autoRet))
         {
             // TODO: better fallback action?
+
             spdlog::critical("Failed to de-register from autostart");
             cfg.TryDisplayErrorDialog("Failed to de-register from autostart", std::get<1>(autoRet));
             return NV_E_AUTOSTART;
@@ -109,6 +113,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         if (const auto taskRet = cfg.RemoveScheduledTask(); FAILED(std::get<0>(taskRet)))
         {
             // TODO: better fallback action?
+
             spdlog::critical("Failed to delete scheduled task, error: {}", std::get<1>(taskRet));
             cfg.TryDisplayErrorDialog("Failed to delete scheduled task", std::get<1>(taskRet));
             return NV_E_SCHEDULED_TASK;
@@ -119,6 +124,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     if (const auto ret = cfg.RequestUpdateInfo(); !std::get<0>(ret))
     {
         // TODO: add fallback actions
+
         spdlog::critical("Failed to get server response");
         cfg.TryDisplayErrorDialog("Failed to get server response", std::get<1>(ret));
         return NV_E_SERVER_RESPONSE;
@@ -148,6 +154,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     if (const auto ret = cfg.IsInstalledVersionOutdated(isOutdated); !std::get<0>(ret))
     {
         // TODO: add error handling
+
         spdlog::critical("Failed to detect installed product version");
         cfg.TryDisplayErrorDialog("Failed to detect installed product version", std::get<1>(ret));
         return NV_E_PRODUCT_DETECTION;
