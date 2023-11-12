@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CommonTypes.hpp"
+
 using json = nlohmann::json;
 
 namespace models
