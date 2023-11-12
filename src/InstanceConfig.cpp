@@ -110,6 +110,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     authority = Authority::Remote;
     spdlog::debug("authority = {}", magic_enum::enum_name(authority));
 
+    /*
     if (!NVerifyFileSignature(ConvertAnsiToWide(appPath.string()).c_str(), &appSigInfo))
     {
         switch (appSigInfo.lValidationResult)
@@ -125,9 +126,9 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     // TODO: implement me!
 
-
     crypto::SIGNATURE_INFORMATION sigInf = {};
     crypto::ExtractSignatureInformation(ConvertAnsiToWide(appPath.string()).c_str(), &sigInf);
+    */
 
     //
     // Merge from config file, if available
