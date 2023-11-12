@@ -303,11 +303,14 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         spdlog::debug("inja log message: {}", logMessage);
     });
 
-    env.add_callback("productByDisplayName", 1, [](const inja::Arguments& args)
+    // searches for installed products by regular expression
+    env.add_callback("productBy", 2, [](const inja::Arguments& args)
     {
-        const auto expression = args.at(0)->get<std::string>();
+        const auto targetValue = args.at(0)->get<std::string>();
+        const auto expression = args.at(1)->get<std::string>();
+
         json j = json::object();
-        j["count"] = 0;
+        j["count"] = std::to_string(0);
         json results = json::array();
 
         winreg::RegKey key;
@@ -319,7 +322,7 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         {
             spdlog::error("Failed to open uninstall key");
             j["error"] = "Failed to open uninstall key";
-            return j.dump();
+            return j;
         }
 
         const auto enumRet = key.TryEnumSubKeys();
@@ -328,11 +331,13 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         {
             spdlog::error("Failed to enumerate sub-keys");
             j["error"] = "Failed to enumerate sub-keys";
-            return j.dump();
+            return j;
         }
 
+        // enumerate each sub-key (each represents an installed product)
         for (const auto& subKeyName : enumRet.GetValue())
         {
+            // build full new path
             const auto subKeyPath = std::format(R"({}\{})", ConvertWideToANSI(baseKey), ConvertWideToANSI(subKeyName));
 
             winreg::RegKey subKey;
@@ -343,13 +348,15 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
                 continue;
             }
 
-            const auto& value = subKey.TryGetStringValue(L"DisplayName");
+            // attempts to extract the value by name provided by the caller
+            const auto& value = subKey.TryGetStringValue(ConvertAnsiToWide(targetValue));
 
             if (!value.IsValid())
             {
                 continue;
             }
 
+            // regex match to queried value
             std::string displayName = ConvertWideToANSI(value.GetValue());
             std::regex productRegex(expression, std::regex_constants::icase);
             auto matchesBegin = std::sregex_iterator(displayName.begin(), displayName.end(), productRegex);
@@ -362,20 +369,29 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
 
             json entry = json::object();
 
-            entry["displayName"] = displayName;
+            entry[targetValue] = displayName;
 
-            if (const auto& ilRet = subKey.TryGetStringValue(L"InstallLocation"); ilRet)
+            //
+            // Query for well-known properties
+            // 
+
+            if (const auto& ret = subKey.TryGetStringValue(L"InstallLocation"); ret)
             {
-                entry["installLocation"] = ConvertWideToANSI(ilRet.GetValue());
+                entry["installLocation"] = ConvertWideToANSI(ret.GetValue());
+            }
+
+            if (const auto& ret = subKey.TryGetStringValue(L"DisplayVersion"); ret)
+            {
+                entry["displayVersion"] = ConvertWideToANSI(ret.GetValue());
             }
 
             results.push_back(entry);
         }
 
-        j["count"] = results.size();
+        j["count"] = std::to_string(results.size());
         j["results"] = results;
 
-        return j.dump();
+        return j;
     });
 
 

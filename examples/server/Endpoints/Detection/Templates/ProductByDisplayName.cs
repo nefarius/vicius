@@ -24,10 +24,11 @@ internal sealed class ProductByDisplayNameEndpoint : EndpointWithoutRequest
             {
                 Detection = new CustomExpressionConfig()
                 {
-                    Input = @"{% set result=productByDisplayName(parameters.product) %}{{ log(result.count) }}",
+                    Input = @"{% set query=productBy(parameters.value, parameters.product) %}{{ log(query.results.0.installLocation) }}",
                     Data = new Dictionary<string, string>
                     {
-                        { "product", @"DaVinci" }
+                        { "value", "DisplayName" },
+                        { "product", "HidHide" }
                     }
                 }
             },
