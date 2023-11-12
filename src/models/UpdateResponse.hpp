@@ -1,6 +1,6 @@
 #pragma once
-#include "Common.h"
-#include "ADL.hpp"
+#include "../Common.h"
+#include "../ADL.hpp"
 #include "SharedConfig.hpp"
 #include "UpdateRelease.hpp"
 #include "UpdateConfig.hpp"
