@@ -319,7 +319,12 @@
     <ClInclude Include="IconsForkAwesome.h" />
     <ClInclude Include="imgui_markdown.h" />
     <ClInclude Include="inipp.h" />
+    <ClInclude Include="models\CommonTypes.hpp" />
     <ClInclude Include="models\InstanceConfig.hpp" />
+    <ClInclude Include="models\MergedConfig.hpp" />
+    <ClInclude Include="models\ProductDetection.hpp" />
+    <ClInclude Include="models\SharedConfig.hpp" />
+    <ClInclude Include="models\SignatureValidation.hpp" />
     <ClInclude Include="NAuthenticode.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />

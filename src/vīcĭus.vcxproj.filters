@@ -122,6 +122,21 @@
     <ClInclude Include="NAuthenticode.h">
       <Filter>Header Files\Authenticode</Filter>
     </ClInclude>
+    <ClInclude Include="models\CommonTypes.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\ProductDetection.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\SignatureValidation.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\SharedConfig.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\MergedConfig.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="vīcĭus.rc">

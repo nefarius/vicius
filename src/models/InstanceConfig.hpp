@@ -3,6 +3,7 @@
 #include <curl/curl.h>
 
 #include "UpdateResponse.hpp"
+#include "MergedConfig.hpp"
 #include "NAuthenticode.h"
 
 using json = nlohmann::json;
