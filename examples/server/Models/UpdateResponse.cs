@@ -332,6 +332,29 @@ public enum SignatureVerificationStrategy
 }
 
 /// <summary>
+///     Authenticode signature details.
+/// </summary>
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
+public sealed class SignatureConfig
+{
+    /// <summary>
+    ///     The issuer name (CA display name).
+    /// </summary>
+    public string? IssuerName { get; set; }
+    
+    /// <summary>
+    ///     The subject name (e.g. friendly signer company name).
+    /// </summary>
+    public string? SubjectName { get; set; }
+    
+    /// <summary>
+    ///     The signing certificate serial number as a hex-string. The format depends on the CA used.
+    /// </summary>
+    public string? SerialNumber { get; set; }
+}
+
+/// <summary>
 ///     Parameters that might be provided by both the server and the local configuration.
 /// </summary>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]

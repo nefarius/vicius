@@ -218,6 +218,24 @@ namespace models
                                  })
 
     /**
+     * \brief Authenticode signature details.
+     */
+    class SignatureConfig
+    {
+    public:
+        std::optional<std::string> issuerName;
+        std::optional<std::string> subjectName;
+        std::optional<std::string> serialNumber;
+    };
+
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
+        SignatureConfig,
+        issuerName,
+        subjectName,
+        serialNumber
+    )
+
+    /**
      * \brief Parameters that might be provided by both the server and the local configuration.
      */
     class SharedConfig
