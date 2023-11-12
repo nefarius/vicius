@@ -23,6 +23,15 @@ internal sealed class HelpUrlExampleEndpoint : EndpointWithoutRequest
             {
                 HelpUrl = "https://docs.nefarius.at/projects/Vicius/Examples/Help-Page/"
             },
+            Shared = new SharedConfig
+            {
+                Detection = new RegistryValueConfig
+                {
+                    Hive = RegistryHive.HKLM,
+                    Key = @"SOFTWARE\Nefarius Software Solutions e.U.\HidHide",
+                    Value = "Version"
+                }
+            },
             Releases =
             {
                 new UpdateRelease

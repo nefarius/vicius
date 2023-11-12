@@ -349,7 +349,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 if (cfg.GetHelpUrl().has_value())
                 {
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
-                    if (ImGui::Button(ICON_FK_QUESTION " Display help page"))
+                    if (ImGui::Button(ICON_FK_QUESTION " Open help web page"))
                     {
                         ShellExecuteA(nullptr, "open", cfg.GetHelpUrl().value().c_str(), nullptr, nullptr,
                                       SW_SHOWNORMAL);
