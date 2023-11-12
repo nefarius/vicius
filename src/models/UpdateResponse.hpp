@@ -127,7 +127,7 @@ namespace models
     class FileVersionConfig
     {
     public:
-        /** The inja template */
+        /** The path or inja template */
         std::string input;
         /** The statement */
         VersionResource statement{VersionResource::PRODUCTVERSION};
@@ -143,7 +143,7 @@ namespace models
     class FileSizeConfig
     {
     public:
-        /** The inja template */
+        /** The path or inja template */
         std::string input;
         /** The optional inja template data */
         std::optional<json> data;
@@ -158,7 +158,7 @@ namespace models
     class FileChecksumConfig
     {
     public:
-        /** The inja template */
+        /** The path or inja template */
         std::string input;
         /** The optional inja template data */
         std::optional<json> data;
