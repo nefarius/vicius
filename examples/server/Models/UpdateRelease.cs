@@ -125,6 +125,11 @@ public sealed class UpdateRelease
     /// <summary>
     ///     The file hash to use in product detection. This can differ from <see cref="Checksum" />.
     /// </summary>
+    /// <remarks>
+    ///     This simply hashes the file contents and compares them, there is no cryptographic signature validation
+    ///     performed. It can be used to ensure that the file hasn't been corrupted in transit but doesn't say anything about
+    ///     the authenticity or origin of the file.
+    /// </remarks>
     public ChecksumParameters? DetectionChecksum { get; set; }
 
     /// <summary>
