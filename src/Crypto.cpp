@@ -320,7 +320,7 @@ namespace crypto
         {
             *pCounterSignerInfo = nullptr;
 
-            // Loop through unathenticated attributes for
+            // Loop through unauthenticated attributes for
             // szOID_RSA_counterSign OID.
             for (DWORD n = 0; n < pSignerInfo->UnauthAttrs.cAttr; n++)
             {
