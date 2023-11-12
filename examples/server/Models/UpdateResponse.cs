@@ -24,5 +24,5 @@ public sealed class UpdateResponse
     ///     The available update releases.
     /// </summary>
     [Required]
-    public List<UpdateRelease> Releases { get; set; } = new();
+    public List<UpdateRelease> Releases { get; } = new();
 }
