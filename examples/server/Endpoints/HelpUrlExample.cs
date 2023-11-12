@@ -5,7 +5,7 @@ using Nefarius.Vicius.Example.Server.Models;
 namespace Nefarius.Vicius.Example.Server.Endpoints;
 
 /// <summary>
-///     Demoing only the emergency feature, see https://docs.nefarius.at/projects/Vicius/Emergency-Feature/
+///     Demoing showing the help button and help URL.
 /// </summary>
 internal sealed class HelpUrlExampleEndpoint : EndpointWithoutRequest
 {

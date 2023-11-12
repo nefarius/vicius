@@ -5,7 +5,7 @@ using Nefarius.Vicius.Example.Server.Models;
 namespace Nefarius.Vicius.Example.Server.Endpoints.Detection;
 
 /// <summary>
-///     Demos sophisticated product detection using the template engine.
+///     Demos product detection using a file hash/checksum.
 /// </summary>
 internal sealed class FileChecksumEndpoint : EndpointWithoutRequest
 {

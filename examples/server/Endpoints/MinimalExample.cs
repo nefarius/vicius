@@ -5,7 +5,7 @@ using Nefarius.Vicius.Example.Server.Models;
 namespace Nefarius.Vicius.Example.Server.Endpoints;
 
 /// <summary>
-///     Demos a single release update configuration with registry-based product version detection.
+///     Demos a simple single release update configuration with registry-based product version detection.
 /// </summary>
 internal sealed class MinimalExampleEndpoint : EndpointWithoutRequest
 {
