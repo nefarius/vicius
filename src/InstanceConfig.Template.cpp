@@ -370,10 +370,6 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
 
             json entry = json::object();
 
-            util::toCamelCase(targetValue);
-
-            entry[targetValue] = displayName;
-
             //
             // Query for well-known properties
             // 
@@ -416,6 +412,13 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
             if (const auto& ret = subKey.TryGetDwordValue(L"Language"); ret)
             {
                 entry["language"] = std::to_string(ret.GetValue());
+            }
+
+            util::toCamelCase(targetValue);
+
+            if (!entry.contains(targetValue))
+            {
+                entry[targetValue] = displayName;
             }
 
             results.push_back(entry);
