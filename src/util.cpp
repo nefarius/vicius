@@ -134,7 +134,7 @@ namespace util
         return true;
     }
 
-    void util::toCamelCase(std::string& s)
+    void toCamelCase(std::string& s)
     {
         char previous = ' ';
         auto f = [&](char current)
@@ -146,6 +146,19 @@ namespace util
             return result;
         };
         std::ranges::transform(s, s.begin(), f);
+    }
+
+    void toSemVerCompatible(std::string& s)
+    {
+        // for 4 digit version we gonna cheat and convert it to a valid semantic version
+        if (std::ranges::count_if(s, [](char c) { return c == '.'; }) > 2)
+        {
+            s = std::regex_replace(
+                s,
+                std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"),
+                "$1.$2.$3-rc.$4"
+            );
+        }
     }
 }
 
