@@ -549,14 +549,22 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             // provides user-supplied data under fixed variable name
             data["parameters"] = cfg.data;
 
-            // expected return value of "true" for outdated and "false" for up2date
-            const auto& result = RenderInjaTemplate(cfg.input, data);
+            try
+            {
+                // expected return value of "true" for outdated and "false" for up2date
+                const auto& result = RenderInjaTemplate(cfg.input, data);
 
-            // string to boolean conversion
-            std::istringstream(result) >> std::boolalpha >> isOutdated;
-            spdlog::debug("isOutdated = {}", isOutdated);
+                // string to boolean conversion
+                std::istringstream(result) >> std::boolalpha >> isOutdated;
+                spdlog::debug("isOutdated = {}", isOutdated);
 
-            return std::make_tuple(true, "OK");
+                return std::make_tuple(true, "OK");
+            }
+            catch (const std::exception& ex)
+            {
+                spdlog::error("Parsing custom expression failed, error: {}", ex.what());
+                return std::make_tuple(false, "Parsing custom expression failed");
+            }
         }
     case ProductVersionDetectionMethod::Invalid:
         spdlog::error("Invalid detection method specified");
