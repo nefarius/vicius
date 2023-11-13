@@ -556,7 +556,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             std::istringstream(result) >> std::boolalpha >> isOutdated;
             spdlog::debug("isOutdated = {}", isOutdated);
 
-            break;
+            return std::make_tuple(true, "OK");
         }
     case ProductVersionDetectionMethod::Invalid:
         spdlog::error("Invalid detection method specified");

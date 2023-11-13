@@ -414,6 +414,16 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
                 entry["language"] = std::to_string(ret.GetValue());
             }
 
+            if (const auto& ret = subKey.TryGetDwordValue(L"MajorVersion"); ret)
+            {
+                entry["majorVersion"] = std::to_string(ret.GetValue());
+            }
+
+            if (const auto& ret = subKey.TryGetDwordValue(L"MinorVersion"); ret)
+            {
+                entry["minorVersion"] = std::to_string(ret.GetValue());
+            }
+
             util::toCamelCase(targetValue);
 
             if (!entry.contains(targetValue))
@@ -434,6 +444,113 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         return j;
     });
 
+    // checks if two semantic version values are equal
+    env.add_callback("versionEq", 2, [](const inja::Arguments& args)
+    {
+        try
+        {
+            auto lhsValue = args.at(0)->get<std::string>();
+            const auto& rhsValue = args.at(1)->get<std::string>();
+
+            const size_t dotCount = std::ranges::count_if(lhsValue, [](char c) { return c == '.'; });
+
+            // for 4 digit version we gonna cheat and convert it to a valid semantic version
+            if (dotCount > 2)
+            {
+                lhsValue = std::regex_replace(
+                    lhsValue,
+                    std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"),
+                    "$1.$2.$3-rc.$4"
+                );
+            }
+
+            spdlog::debug("lhs = {}", lhsValue);
+            spdlog::debug("rhs = {}", rhsValue);
+
+            const semver::version lhs{lhsValue};
+            const semver::version rhs{rhsValue};
+
+            return lhs == rhs;
+        }
+        catch (const std::exception& ex)
+        {
+            spdlog::error("Version conversion failed, error {}", ex.what());
+        }
+
+        return false;
+    });
+
+    // checks if the first semantic version value is greater than the second
+    env.add_callback("versionGt", 2, [](const inja::Arguments& args)
+    {
+        try
+        {
+            auto lhsValue = args.at(0)->get<std::string>();
+            const auto& rhsValue = args.at(1)->get<std::string>();
+
+            const size_t dotCount = std::ranges::count_if(lhsValue, [](char c) { return c == '.'; });
+
+            // for 4 digit version we gonna cheat and convert it to a valid semantic version
+            if (dotCount > 2)
+            {
+                lhsValue = std::regex_replace(
+                    lhsValue,
+                    std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"),
+                    "$1.$2.$3-rc.$4"
+                );
+            }
+
+            spdlog::debug("lhs = {}", lhsValue);
+            spdlog::debug("rhs = {}", rhsValue);
+
+            const semver::version lhs{lhsValue};
+            const semver::version rhs{rhsValue};
+
+            return lhs > rhs;
+        }
+        catch (const std::exception& ex)
+        {
+            spdlog::error("Version conversion failed, error {}", ex.what());
+        }
+
+        return false;
+    });
+
+    // checks if the first semantic version value is lower than the second
+    env.add_callback("versionLt", 2, [](const inja::Arguments& args)
+    {
+        try
+        {
+            auto lhsValue = args.at(0)->get<std::string>();
+            const auto& rhsValue = args.at(1)->get<std::string>();
+
+            const size_t dotCount = std::ranges::count_if(lhsValue, [](char c) { return c == '.'; });
+
+            // for 4 digit version we gonna cheat and convert it to a valid semantic version
+            if (dotCount > 2)
+            {
+                lhsValue = std::regex_replace(
+                    lhsValue,
+                    std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"),
+                    "$1.$2.$3-rc.$4"
+                );
+            }
+
+            spdlog::debug("lhs = {}", lhsValue);
+            spdlog::debug("rhs = {}", rhsValue);
+
+            const semver::version lhs{lhsValue};
+            const semver::version rhs{rhsValue};
+
+            return lhs < rhs;
+        }
+        catch (const std::exception& ex)
+        {
+            spdlog::error("Version conversion failed, error {}", ex.what());
+        }
+
+        return false;
+    });
 
     try
     {
