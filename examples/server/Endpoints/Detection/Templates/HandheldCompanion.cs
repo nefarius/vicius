@@ -58,7 +58,7 @@ internal sealed class HandheldCompanionEndpoint : EndpointWithoutRequest
                 {
                     Name = "Demo",
                     Summary = "Demo",
-                    Version = System.Version.Parse("0.18.0"),
+                    Version = System.Version.Parse("0.18.0.6"),
                     DownloadUrl = "https://example.com",
                     PublishedAt = DateTimeOffset.Now,
                     DetectionSize = 4096

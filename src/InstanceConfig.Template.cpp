@@ -450,15 +450,23 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         try
         {
             auto lhsValue = args.at(0)->get<std::string>();
-            const auto& rhsValue = args.at(1)->get<std::string>();
-
-            const size_t dotCount = std::ranges::count_if(lhsValue, [](char c) { return c == '.'; });
-
+            auto rhsValue = args.at(1)->get<std::string>();
+            
             // for 4 digit version we gonna cheat and convert it to a valid semantic version
-            if (dotCount > 2)
+            if (std::ranges::count_if(lhsValue, [](char c) { return c == '.'; }) > 2)
             {
                 lhsValue = std::regex_replace(
                     lhsValue,
+                    std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"),
+                    "$1.$2.$3-rc.$4"
+                );
+            }
+
+            // for 4 digit version we gonna cheat and convert it to a valid semantic version
+            if (std::ranges::count_if(rhsValue, [](char c) { return c == '.'; }) > 2)
+            {
+                rhsValue = std::regex_replace(
+                    rhsValue,
                     std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"),
                     "$1.$2.$3-rc.$4"
                 );
@@ -486,15 +494,23 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         try
         {
             auto lhsValue = args.at(0)->get<std::string>();
-            const auto& rhsValue = args.at(1)->get<std::string>();
-
-            const size_t dotCount = std::ranges::count_if(lhsValue, [](char c) { return c == '.'; });
-
+            auto rhsValue = args.at(1)->get<std::string>();
+            
             // for 4 digit version we gonna cheat and convert it to a valid semantic version
-            if (dotCount > 2)
+            if (std::ranges::count_if(lhsValue, [](char c) { return c == '.'; }) > 2)
             {
                 lhsValue = std::regex_replace(
                     lhsValue,
+                    std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"),
+                    "$1.$2.$3-rc.$4"
+                );
+            }
+
+            // for 4 digit version we gonna cheat and convert it to a valid semantic version
+            if (std::ranges::count_if(rhsValue, [](char c) { return c == '.'; }) > 2)
+            {
+                rhsValue = std::regex_replace(
+                    rhsValue,
                     std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"),
                     "$1.$2.$3-rc.$4"
                 );
@@ -522,15 +538,23 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         try
         {
             auto lhsValue = args.at(0)->get<std::string>();
-            const auto& rhsValue = args.at(1)->get<std::string>();
-
-            const size_t dotCount = std::ranges::count_if(lhsValue, [](char c) { return c == '.'; });
-
+            auto rhsValue = args.at(1)->get<std::string>();
+            
             // for 4 digit version we gonna cheat and convert it to a valid semantic version
-            if (dotCount > 2)
+            if (std::ranges::count_if(lhsValue, [](char c) { return c == '.'; }) > 2)
             {
                 lhsValue = std::regex_replace(
                     lhsValue,
+                    std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"),
+                    "$1.$2.$3-rc.$4"
+                );
+            }
+
+            // for 4 digit version we gonna cheat and convert it to a valid semantic version
+            if (std::ranges::count_if(rhsValue, [](char c) { return c == '.'; }) > 2)
+            {
+                rhsValue = std::regex_replace(
+                    rhsValue,
                     std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"),
                     "$1.$2.$3-rc.$4"
                 );
