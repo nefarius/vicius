@@ -76,6 +76,7 @@ Non-exhaustive list of things open or in-progress...
 
 ### Must-haves
 
+- [ ] Allow setting the download directory
 - [ ] Add retry-logic (e.g. retry failed downloads etc.)
 - [ ] Add some fallback code if the temp directory isn't available
 - [ ] Handle all known error-cases
