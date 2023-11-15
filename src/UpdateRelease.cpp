@@ -7,9 +7,10 @@ semver::version models::UpdateRelease::GetSemVersion() const
 {
     try
     {
+        // trim whitespaces and potential "v" prefix
         std::string value = util::trim(version, "v \t");
         util::toSemVerCompatible(value);
-        // trim whitespaces and potential "v" prefix
+        
         return semver::version{value};
     }
     catch (...)
@@ -28,9 +29,10 @@ std::optional<semver::version> models::UpdateRelease::GetDetectionSemVersion() c
 
     try
     {
-        const std::string value = util::trim(detectionVersion.value(), "v \t");
-
         // trim whitespaces and potential "v" prefix
+        std::string value = util::trim(detectionVersion.value(), "v \t");
+        util::toSemVerCompatible(value);
+        
         return semver::version{value};
     }
     catch (...)
