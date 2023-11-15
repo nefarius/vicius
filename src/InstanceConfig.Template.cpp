@@ -525,6 +525,25 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
         return false;
     });
 
+    // checks if a file exists
+    env.add_callback("exists", 1, [](const inja::Arguments& args)
+    {
+        try
+        {
+            const auto filePathValue = args.at(0)->get<std::string>();
+            spdlog::debug("filePathValue = {}", filePathValue);
+            const std::filesystem::path filePath{filePathValue};
+
+            return exists(filePath);
+        }
+        catch (const std::exception& ex)
+        {
+            spdlog::error("File existence check failed, error {}", ex.what());
+        }
+
+        return false;
+    });
+
     try
     {
         auto rendered = env.render(tpl, data);
