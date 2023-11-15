@@ -426,6 +426,7 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
 
             util::toCamelCase(targetValue);
 
+            // avoid duplicates
             if (!entry.contains(targetValue))
             {
                 entry[targetValue] = displayName;
