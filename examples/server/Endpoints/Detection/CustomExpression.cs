@@ -39,8 +39,7 @@ internal sealed class CustomExpressionEndpoint : EndpointWithoutRequest
                     Summary = "Demo",
                     Version = System.Version.Parse("2.0.0"),
                     DownloadUrl = "https://example.com",
-                    PublishedAt = DateTimeOffset.Now,
-                    DetectionSize = 4096
+                    PublishedAt = DateTimeOffset.Now
                 }
             }
         };

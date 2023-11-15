@@ -12,6 +12,7 @@
 #define NV_CLI_PARAM_LOG_LEVEL      "--log-level"
 #define NV_CLI_SKIP_SELF_UPDATE     "--skip-self-update"
 #define NV_CLI_SILENT               "--silent"
+#define NV_CLI_SILENT_UPDATE        "--silent-update"
 #define NV_CLI_IGNORE_BUSY_STATE    "--ignore-busy-state"
 #define NV_CLI_PARAM_LOG_TO_FILE    "--log-to-file"
 #define NV_CLI_PARAM_SERVER_URL     "--server-url"
