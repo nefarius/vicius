@@ -147,6 +147,7 @@ Non-exhaustive list of things open or in-progress...
   - [x] `FileVersion`
   - [x] `FileSize`
   - [x] `FileChecksum`
+  - [x] `CustomExpression`
 - [x] Add some logging
 - [x] Tidy up and improve includes
   - [x] Optimize build times
