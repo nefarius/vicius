@@ -85,6 +85,9 @@ Non-exhaustive list of things open or in-progress...
   - [ ] ...
 - [ ] Finalize local updater config JSON format
 - [ ] Add silent update option
+  - [x] Docs
+  - [x] Types
+  - [ ] Implementation
 - [ ] [Documentation](https://docs.nefarius.at/projects/Vicius/)
   - [ ] About page
   - [x] JSON Schemas
