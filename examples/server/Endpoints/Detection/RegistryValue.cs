@@ -20,6 +20,10 @@ internal sealed class RegistryValueEndpoint : EndpointWithoutRequest
     {
         UpdateResponse response = new()
         {
+            Instance = new UpdateConfig
+            {
+                HelpUrl = "https://docs.nefarius.at/projects/Vicius/Examples/Help-Page/"
+            },
             Shared = new SharedConfig
             {
                 ProductName = "HidHide",

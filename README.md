@@ -62,9 +62,9 @@ Signed stable releases will be provided [on the repository releases page](../../
 
 ## Screenshots
 
-![Updater_yiFLglPhgk.png](assets/Updater_yiFLglPhgk.png)
+![Updater_hvX29x1uTo.png](assets/Updater_hvX29x1uTo.png)
 
-![Updater_7FQbC2u1wg.png](assets/Updater_7FQbC2u1wg.png)
+![Updater_ToHYBbidzI.png](assets/Updater_ToHYBbidzI.png)
 
 ![Updater_mc9y7o4qcL.png](assets/Updater_mc9y7o4qcL.png)
 

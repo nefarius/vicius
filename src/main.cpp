@@ -332,7 +332,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::PushFont(G_Font_H2);
 
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
-                if (ImGui::Button(ICON_FK_DOWNLOAD " Download and install now"))
+                if (ImGui::Button(ICON_FK_DOWNLOAD " Display update details now"))
                 {
                     currentPage = cfg.HasSingleRelease()
                                       ? WizardPage::SingleVersionSummary
@@ -387,8 +387,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 );
                 ImGui::EndChild();
 
-                ImGui::SetCursorPos(ImVec2(530, navigateButtonOffsetY));
-                if (ImGui::Button("Next"))
+                ImGui::SetCursorPos(ImVec2(425, navigateButtonOffsetY));
+                if (ImGui::Button("Download and install"))
                 {
                     instStep = DownloadAndInstallStep::Begin;
                     currentPage = WizardPage::DownloadAndInstall;
