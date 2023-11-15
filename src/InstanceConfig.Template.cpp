@@ -28,8 +28,7 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
             return args.size() > 1 ? args.at(1)->get<std::string>() : std::string{};
         }
 
-        // strip redundant NULLs
-        envarValue.erase(std::ranges::find(envarValue, '\0'), envarValue.end());
+        util::stripNulls(envarValue);
 
         return envarValue;
     });
@@ -165,8 +164,7 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
 
                 if (ExpandEnvironmentStrings(ret.GetValue().c_str(), expandedValue.data(), SHRT_MAX))
                 {
-                    // strip redundant NULLs
-                    expandedValue.erase(std::ranges::find(expandedValue, '\0'), expandedValue.end());
+                    util::stripNulls(expandedValue);
                     valStream << ConvertWideToANSI(expandedValue);
                 }
                 else

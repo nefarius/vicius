@@ -333,6 +333,7 @@
     <ClInclude Include="UniUtil.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="models\UpdateResponse.hpp" />
+    <ClInclude Include="Util.h" />
     <ClInclude Include="WizardPage.h" />
   </ItemGroup>
   <ItemGroup>

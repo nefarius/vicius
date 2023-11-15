@@ -67,6 +67,8 @@ namespace util
     bool IsAdmin(int& errorCode);
     void toCamelCase(std::string & s);
     void toSemVerCompatible(std::string & s);
+    void stripNulls(std::string & s);
+    void stripNulls(std::wstring & s);
 }
 
 namespace winapi

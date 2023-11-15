@@ -160,6 +160,16 @@ namespace util
             );
         }
     }
+
+    void stripNulls(std::string& s)
+    {
+        s.erase(std::ranges::find(s, '\0'), s.end());
+    }
+
+    void stripNulls(std::wstring& s)
+    {
+        s.erase(std::ranges::find(s, L'\0'), s.end());
+    }
 }
 
 namespace winapi

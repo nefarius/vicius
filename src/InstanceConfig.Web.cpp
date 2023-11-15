@@ -49,8 +49,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         return -1;
     }
 
-    // strip redundant NULLs
-    tempFile.erase(std::ranges::find(tempFile, '\0'), tempFile.end());
+    util::stripNulls(tempFile);
 
     spdlog::debug("tempFile = {}", tempFile);
 
