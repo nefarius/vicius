@@ -8,6 +8,7 @@ namespace models
 {
     /**
      * \brief Parameters that might be provided by both the server and the local configuration.
+     * \remarks Keep in sync with MergedConfig.
      */
     class SharedConfig
     {
