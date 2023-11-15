@@ -300,7 +300,9 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             try
             {
-                const semver::version localVersion{ConvertWideToANSI(value)};
+                std::string nVersion = ConvertWideToANSI(value);
+                util::toSemVerCompatible(nVersion);
+                const semver::version localVersion{nVersion};
 
                 isOutdated = release.GetDetectionSemVersion() > localVersion;
                 spdlog::debug("isOutdated = {}", isOutdated);

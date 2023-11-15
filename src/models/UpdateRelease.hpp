@@ -76,8 +76,10 @@ namespace models
         {
             try
             {
+                std::string value = util::trim(version, "v \t");
+                util::toSemVerCompatible(value);
                 // trim whitespaces and potential "v" prefix
-                return semver::version{util::trim(version, "v \t")};
+                return semver::version{value};
             }
             catch (...)
             {
@@ -99,8 +101,10 @@ namespace models
 
             try
             {
+                std::string value = util::trim(detectionVersion.value(), "v \t");
+                util::toSemVerCompatible(value);
                 // trim whitespaces and potential "v" prefix
-                return semver::version{util::trim(detectionVersion.value(), "v \t")};
+                return semver::version{value};
             }
             catch (...)
             {
