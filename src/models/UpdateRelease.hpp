@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CommonTypes.hpp"
+#include "../ADL.hpp"
 
 namespace models
 {
@@ -72,45 +73,13 @@ namespace models
          * \brief Converts the version string to a SemVer type.
          * \return The parsed version.
          */
-        semver::version GetSemVersion() const
-        {
-            try
-            {
-                std::string value = util::trim(version, "v \t");
-                util::toSemVerCompatible(value);
-                // trim whitespaces and potential "v" prefix
-                return semver::version{value};
-            }
-            catch (...)
-            {
-                return semver::version{0, 0, 0};
-            }
-        }
+        semver::version GetSemVersion() const;
 
         /**
          * \brief Gets the detection version, if provided.
          * \return The parsed version.
          */
-        std::optional<semver::version> GetDetectionSemVersion() const
-        {
-            if (!detectionVersion.has_value())
-            {
-                // fallback value is mandatory
-                return GetSemVersion();
-            }
-
-            try
-            {
-                std::string value = util::trim(detectionVersion.value(), "v \t");
-                util::toSemVerCompatible(value);
-                // trim whitespaces and potential "v" prefix
-                return semver::version{value};
-            }
-            catch (...)
-            {
-                return std::nullopt;
-            }
-        }
+        std::optional<semver::version> GetDetectionSemVersion() const;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(

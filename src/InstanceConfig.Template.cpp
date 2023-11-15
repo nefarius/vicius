@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Util.h"
 #include "InstanceConfig.hpp"
 #pragma warning(disable: 4244)
 #include <inja/inja.hpp>

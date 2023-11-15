@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Common.h"
+#include "Util.h"
 #include "WizardPage.h"
 #include "InstanceConfig.hpp"
 #include "DownloadAndInstall.hpp"

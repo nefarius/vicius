@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Common.h"
+#include "Util.h"
 #include "InstanceConfig.hpp"
 
 #define NV_POSTPONE_TS_VALUE_NAME   L"LastTimestamp"
