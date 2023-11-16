@@ -33,19 +33,30 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     SetCommonHeaders(conn);
 
-    // pre-allocate buffers
-    std::string tempPath(MAX_PATH, '\0');
-    std::string tempFile(MAX_PATH, '\0');
+    std::string downloadLocation;
 
-    if (GetTempPathA(MAX_PATH, tempPath.data()) == 0)
+    if (!merged.downloadLocation.empty())
     {
-        spdlog::error("Failed to get path to temporary directory, error", GetLastError());
-        return -1;
+        if (winapi::DirectoryCreate(merged.downloadLocation))
+        {
+            downloadLocation = merged.downloadLocation;
+        }
+        else
+        {
+            spdlog::error("Failed to create download location {}, defaulting to TEMP path",
+                          merged.downloadLocation);
+
+            winapi::GetTemporaryPath(downloadLocation);
+        }
+    }
+    else
+    {
+        winapi::GetTemporaryPath(downloadLocation);
     }
 
-    spdlog::debug("tempPath = {}", tempPath);
+    std::string tempFile(MAX_PATH, '\0');
 
-    if (GetTempFileNameA(tempPath.c_str(), "VICIUS", 0, tempFile.data()) == 0)
+    if (GetTempFileNameA(downloadLocation.c_str(), "VICIUS", 0, tempFile.data()) == 0)
     {
         spdlog::error("Failed to get temporary file name, error", GetLastError());
         return -1;
