@@ -541,7 +541,7 @@ namespace winapi
         return false;
     }
 
-    bool GetTemporaryPath(std::string& path)
+    bool GetUserTemporaryPath(std::string& path)
     {
         std::string tempPath(MAX_PATH, '\0');
         // this expands typically to %TEMP% or %LOCALAPPDATA%\Temp

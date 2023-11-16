@@ -46,12 +46,12 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             spdlog::error("Failed to create download location {}, defaulting to TEMP path",
                           merged.downloadLocation);
 
-            winapi::GetTemporaryPath(downloadLocation);
+            winapi::GetUserTemporaryPath(downloadLocation);
         }
     }
     else
     {
-        winapi::GetTemporaryPath(downloadLocation);
+        winapi::GetUserTemporaryPath(downloadLocation);
     }
 
     std::string tempFile(MAX_PATH, '\0');
