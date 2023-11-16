@@ -139,6 +139,13 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     if (code != 200)
     {
         spdlog::error("GET request failed with code {}", code);
+
+        // clean up local file since we re-download it when the user decides to retry
+        if (DeleteFileA(release.localTempFilePath.string().c_str()) == 0)
+        {
+            spdlog::warn("Failed to delete temporary file {}, error {}, message {}",
+                         release.localTempFilePath.string(), GetLastError(), winapi::GetLastErrorStdStr());
+        }
     }
 
     return code;
