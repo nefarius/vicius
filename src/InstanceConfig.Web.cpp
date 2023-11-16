@@ -177,6 +177,9 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
             if (shared.installationErrorUrl.has_value())
                 merged.installationErrorUrl = shared.installationErrorUrl.value();
+
+            if (shared.downloadLocation.has_value())
+                merged.downloadLocation = shared.downloadLocation.value();
         }
 
         return std::make_tuple(true, "OK");
