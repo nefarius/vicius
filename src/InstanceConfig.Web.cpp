@@ -67,13 +67,17 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         }
 
         // build new absolute path, e.g. "C:\ProgramData\Updater\downloads"
-        const std::filesystem::path targetDirectory = std::filesystem::path(programDataDir) / manufacturer / product /
-            "downloads";
+        const std::filesystem::path subDir =
+            manufacturer.empty()
+                ? appFilename
+                : std::filesystem::path(manufacturer) / product;
+        const std::filesystem::path targetDirectory = std::filesystem::path(programDataDir) / subDir / "downloads";
 
         // ensure this location can be created
         if (!winapi::DirectoryCreate(targetDirectory.string()))
         {
-            spdlog::error("Failed to build fallback download location, error", GetLastError());
+            spdlog::error("Failed to create fallback download location {}, error",
+                targetDirectory.string(), GetLastError());
             return -1;
         }
 

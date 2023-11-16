@@ -52,4 +52,9 @@ public sealed class SharedConfig
     ///     URL pointing to a help article opening when an update error occurred.
     /// </summary>
     public string? InstallationErrorUrl { get; set; }
+
+    /// <summary>
+    ///     The preferred setup download directory.
+    /// </summary>
+    public string? DownloadLocation { get; set; }
 }

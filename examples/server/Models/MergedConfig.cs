@@ -39,4 +39,10 @@ public sealed class MergedConfig
     /// </summary>
     [Required]
     public required string InstallationErrorUrl { get; set; }
+
+    /// <summary>
+    ///     The preferred setup download directory.
+    /// </summary>
+    [Required]
+    public required string DownloadLocation { get; set; }
 }
