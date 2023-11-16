@@ -54,6 +54,32 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         winapi::GetUserTemporaryPath(downloadLocation);
     }
 
+    // if we're still empty, the previous methods all failed
+    if (downloadLocation.empty())
+    {
+        std::string programDataDir;
+
+        // fallback to writable location for all users
+        if (!winapi::GetProgramDataPath(programDataDir))
+        {
+            spdlog::error("Failed to get %ProgramData% directory, error", GetLastError());
+            return -1;
+        }
+
+        // build new absolute path, e.g. "C:\ProgramData\Updater\downloads"
+        const std::filesystem::path targetDirectory = std::filesystem::path(programDataDir) / manufacturer / product /
+            "downloads";
+
+        // ensure this location can be created
+        if (!winapi::DirectoryCreate(targetDirectory.string()))
+        {
+            spdlog::error("Failed to build fallback download location, error", GetLastError());
+            return -1;
+        }
+
+        downloadLocation = targetDirectory.string();
+    }
+
     std::string tempFile(MAX_PATH, '\0');
 
     if (GetTempFileNameA(downloadLocation.c_str(), "VICIUS", 0, tempFile.data()) == 0)
