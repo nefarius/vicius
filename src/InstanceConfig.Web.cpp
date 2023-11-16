@@ -66,7 +66,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             return -1;
         }
 
-        // build new absolute path, e.g. "C:\ProgramData\Updater\downloads"
+        // build new absolute path, e.g. "C:\ProgramData\nefarius\HidHide\downloads" or "C:\ProgramData\Updater\downloads"
         const std::filesystem::path subDir =
             manufacturer.empty()
                 ? appFilename
