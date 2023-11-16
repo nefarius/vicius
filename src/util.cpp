@@ -557,4 +557,21 @@ namespace winapi
 
         return true;
     }
+
+    bool GetProgramDataPath(std::string& path)
+    {
+        std::string tempPath(MAX_PATH, '\0');
+
+        if (!GetEnvironmentVariableA("ProgramData", tempPath.data(), MAX_PATH))
+        {
+            spdlog::error("Failed to get path to ProgramData directory, error", GetLastError());
+            return false;
+        }
+
+        spdlog::debug("tempPath = {}", tempPath);
+        util::stripNulls(tempPath);
+        path = tempPath;
+
+        return true;
+    }
 }
