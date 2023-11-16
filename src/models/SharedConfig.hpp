@@ -23,6 +23,8 @@ namespace models
         std::optional<json> detection;
         /** URL of the error article */
         std::optional<std::string> installationErrorUrl;
+        /** The setup download location */
+        std::optional<std::string> downloadLocation;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
@@ -31,6 +33,7 @@ namespace models
         productName,
         detectionMethod,
         detection,
-        installationErrorUrl
+        installationErrorUrl,
+        downloadLocation
     )
 }

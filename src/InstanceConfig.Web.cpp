@@ -20,6 +20,7 @@ void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) cons
 
 int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, const int releaseIndex)
 {
+    UNREFERENCED_PARAMETER(releaseIndex);
     const auto conn = new RestClient::Connection("");
 
     conn->SetTimeout(5);

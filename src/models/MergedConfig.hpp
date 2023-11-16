@@ -23,6 +23,8 @@ namespace models
         json detection;
         /** URL of the error article */
         std::string installationErrorUrl;
+        /** The setup download location */
+        std::string downloadLocation;
 
         MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME)
         {
@@ -60,6 +62,7 @@ namespace models
         productName,
         detectionMethod,
         detection,
-        installationErrorUrl
+        installationErrorUrl,
+        downloadLocation
     )
 }
