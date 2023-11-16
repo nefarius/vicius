@@ -1,6 +1,7 @@
 ﻿using FastEndpoints;
 
 using Nefarius.Vicius.Example.Server.Models;
+using Nefarius.Vicius.Example.Server.Shared;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints;
 
@@ -33,17 +34,7 @@ internal sealed class HelpUrlExampleEndpoint : EndpointWithoutRequest
                     Value = "Version"
                 }
             },
-            Releases =
-            {
-                new UpdateRelease
-                {
-                    Name = "Demo Update",
-                    PublishedAt = DateTimeOffset.UtcNow.AddDays(-3),
-                    Version = System.Version.Parse("2.0.0"),
-                    Summary = "",
-                    DownloadUrl = ""
-                }
-            }
+            Releases = { Examples.MinimalDemoRelease }
         };
 
         await SendOkAsync(response, ct);

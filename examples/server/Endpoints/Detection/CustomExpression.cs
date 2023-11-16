@@ -1,6 +1,7 @@
 ﻿using FastEndpoints;
 
 using Nefarius.Vicius.Example.Server.Models;
+using Nefarius.Vicius.Example.Server.Shared;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints.Detection;
 
@@ -31,17 +32,7 @@ internal sealed class CustomExpressionEndpoint : EndpointWithoutRequest
                     }
                 }
             },
-            Releases =
-            {
-                new UpdateRelease()
-                {
-                    Name = "Demo",
-                    Summary = "Demo",
-                    Version = System.Version.Parse("2.0.0"),
-                    DownloadUrl = "https://example.com",
-                    PublishedAt = DateTimeOffset.Now
-                }
-            }
+            Releases = { Examples.MinimalDemoRelease }
         };
 
         await SendOkAsync(response, ct);
