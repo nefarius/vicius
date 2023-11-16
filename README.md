@@ -49,7 +49,7 @@ Dealing with software update mechanics has been a steady companion for almost 10
 - Windows 7 or later (x86, x86_64, ARM64)
 - An NTFS formatted volume
 - An Internet connection
-- Your software updates packaged in some sort of setup or self-extractor
+- Your software updates packaged in some sort of setup or self-extractor  
   Use something like [WiX](https://wixtoolset.org/), [Inno Setup](https://jrsoftware.org/isinfo.php), [Advanced Installer](https://www.advancedinstaller.com/), [NSIS](https://nsis.sourceforge.io/Download) or similar to package your updates into setups.
 
 ## Documentation
