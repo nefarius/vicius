@@ -1,0 +1,23 @@
+{
+    "shared": {
+        "productName": "Handheld Companion",
+        "detectionMethod": "CustomExpression",
+        "detection": {
+            "$type": "CustomExpressionConfig",
+            "input": "{% set result=productBy(parameters.value, parameters.product) %}{% if int(result.count) > 0 %}{% if versionLt(result.results.0.displayVersion, remote.releases.0.version) %}true{% else %}false{% endif %}{% else %}true{% endif %}",
+            "data": {
+                "value": "DisplayName",
+                "product": "Handheld Companion"
+            }
+        }
+    },
+    "releases": [
+        {
+            "name": "Build 0.18.0.6",
+            "version": "0.18.0.6",
+            "summary": "## What's Changed\r\n\r\n**Improvements**\r\n- **Improved ROG Ally OEM buttons compatibility**, making ASUS Optimization service installation no longer mandatory. Back paddles now supports both short and long press.",
+            "publishedAt": "2023-11-03T08:02:33Z",
+            "downloadUrl": "https://github.com/Valkirie/HandheldCompanion/releases/download/0.18.0.6/HandheldCompanion-0.18.0.6.exe"
+        }
+    ]
+}
