@@ -3,7 +3,6 @@
         "productName": "Handheld Companion",
         "detectionMethod": "CustomExpression",
         "detection": {
-            "$type": "CustomExpressionConfig",
             "input": "{% set result=productBy(parameters.value, parameters.product) %}{% if int(result.count) > 0 %}{% if versionLt(result.results.0.displayVersion, remote.releases.0.version) %}true{% else %}false{% endif %}{% else %}true{% endif %}",
             "data": {
                 "value": "DisplayName",
