@@ -183,6 +183,7 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [Fast C++ logging library](https://github.com/gabime/spdlog)
 - [A Template Engine for Modern C++](https://github.com/pantor/inja)
 - [Simple C++ ini parser](https://github.com/mcmtroffaes/inipp)
+- [MimeTypes](https://github.com/lasselukkari/MimeTypes)
 
 ### Literature & references
 

@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Util.h"
 #include "InstanceConfig.hpp"
-#define _CRT_SECURE_NO_WARNINGS
+#include "MimeTypes.h"
 
 
 void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) const
@@ -62,7 +62,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         // fallback to writable location for all users
         if (!winapi::GetProgramDataPath(programDataDir))
         {
-            spdlog::error("Failed to get %ProgramData% directory, error", GetLastError());
+            spdlog::error("Failed to get %ProgramData% directory, error: {0:#x}", GetLastError());
             return -1;
         }
 
@@ -76,8 +76,8 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         // ensure this location can be created
         if (!winapi::DirectoryCreate(targetDirectory.string()))
         {
-            spdlog::error("Failed to create fallback download location {}, error",
-                targetDirectory.string(), GetLastError());
+            spdlog::error("Failed to create fallback download location {}, error: {:#x}",
+                          targetDirectory.string(), GetLastError());
             return -1;
         }
 
@@ -88,7 +88,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     if (GetTempFileNameA(downloadLocation.c_str(), "VICIUS", 0, tempFile.data()) == 0)
     {
-        spdlog::error("Failed to get temporary file name, error", GetLastError());
+        spdlog::error("Failed to get temporary file name, error: {:#x}", GetLastError());
         return -1;
     }
 
@@ -131,9 +131,43 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     conn->SetWriteFunction(writeCallback);
 
-    auto [code, body, _] = conn->get(release.downloadUrl);
+    auto [code, body, headers] = conn->get(release.downloadUrl);
 
     outStream.close();
+
+    // try to grab original filename
+    const auto& cd = headers["Content-Disposition"];
+
+    if (!cd.empty())
+    {
+        std::regex productRegex("attachment; filename=(.*)", std::regex_constants::icase);
+        auto matchesBegin = std::sregex_iterator(cd.begin(), cd.end(), productRegex);
+        auto matchesEnd = std::sregex_iterator();
+
+        if (matchesBegin != matchesEnd)
+        {
+            const std::smatch& match = *matchesBegin;
+            std::filesystem::path attachmentName(match[1].str());
+
+            std::filesystem::path newLocation = release.localTempFilePath;
+            //newLocation.replace_extension(attachmentName.extension());
+            newLocation.replace_filename(attachmentName);
+
+            spdlog::debug("Renaming {} to {}", release.localTempFilePath.string(), newLocation.string());
+
+            // some setups with bootstrappers (like InnoSetup) require the original .exe extension
+            // otherwise it will fail to launch itself elevated with a "ShellExecuteEx failed" error.
+            if (!MoveFileA(release.localTempFilePath.string().c_str(), newLocation.string().c_str()))
+            {
+                spdlog::error("Failed to rename {} to {}, error: {:#x}",
+                    release.localTempFilePath.string(), newLocation.string(), GetLastError());
+            }
+            else
+            {
+                release.localTempFilePath = newLocation;
+            }
+        }
+    }    
 
     // TODO: error handling, retry?
     if (code != 200)
@@ -143,7 +177,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         // clean up local file since we re-download it when the user decides to retry
         if (DeleteFileA(release.localTempFilePath.string().c_str()) == 0)
         {
-            spdlog::warn("Failed to delete temporary file {}, error {}, message {}",
+            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}",
                          release.localTempFilePath.string(), GetLastError(), winapi::GetLastErrorStdStr());
         }
     }

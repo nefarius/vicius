@@ -291,6 +291,7 @@
   <ItemGroup>
     <ClCompile Include="Crypto.cpp" />
     <ClCompile Include="InstanceConfig.Template.cpp" />
+    <ClCompile Include="MimeTypes.cpp" />
     <ClCompile Include="NAuthenticode.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -320,6 +321,7 @@
     <ClInclude Include="IconsForkAwesome.h" />
     <ClInclude Include="imgui_markdown.h" />
     <ClInclude Include="inipp.h" />
+    <ClInclude Include="MimeTypes.h" />
     <ClInclude Include="models\CommonTypes.hpp" />
     <ClInclude Include="models\InstanceConfig.hpp" />
     <ClInclude Include="models\MergedConfig.hpp" />

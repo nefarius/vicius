@@ -18,6 +18,7 @@
     "spdlog",
     "scope-guard",
     "curlpp",
-    "inja"
+    "inja",
+    "ada-url"
   ]
 }

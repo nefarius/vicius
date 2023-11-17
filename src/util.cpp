@@ -547,7 +547,7 @@ namespace winapi
         // this expands typically to %TEMP% or %LOCALAPPDATA%\Temp
         if (GetTempPathA(MAX_PATH, tempPath.data()) == 0)
         {
-            spdlog::error("Failed to get path to temporary directory, error", GetLastError());
+            spdlog::error("Failed to get path to temporary directory, error: {0:#x}", GetLastError());
             return false;
         }
 
@@ -564,7 +564,7 @@ namespace winapi
 
         if (!GetEnvironmentVariableA("ProgramData", tempPath.data(), MAX_PATH))
         {
-            spdlog::error("Failed to get path to ProgramData directory, error", GetLastError());
+            spdlog::error("Failed to get path to ProgramData directory, error: {0:#x}", GetLastError());
             return false;
         }
 

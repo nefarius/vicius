@@ -114,7 +114,7 @@ bool models::InstanceConfig::RunSelfUpdater() const
 			&pi
 		))
 		{
-			spdlog::error("Failed to run updater process, error: {}", GetLastError());
+			spdlog::error("Failed to run updater process, error: {0:#x}", GetLastError());
 			return false;
 		}
 
@@ -155,7 +155,7 @@ bool models::InstanceConfig::RunSelfUpdater() const
 
 		if (!ShellExecuteExA(&shExInfo))
 		{
-			spdlog::error("Failed to run elevated updater process, error: {}", GetLastError());
+			spdlog::error("Failed to run elevated updater process, error: {0:#x}", GetLastError());
 			return false;
 		}
 

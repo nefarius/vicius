@@ -539,7 +539,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                             &updateProcessInfo
                         ))
                         {
-                            spdlog::error("Failed to launch {}, error {}, message {}",
+                            spdlog::error("Failed to launch {}, error {:#x}, message {}",
                                           tempFile.string(), GetLastError(), winapi::GetLastErrorStdStr());
                             instStep = DownloadAndInstallStep::InstallLaunchFailed;
                         }

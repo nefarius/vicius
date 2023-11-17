@@ -78,6 +78,9 @@
     <ClCompile Include="UpdateRelease.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
+    <ClCompile Include="MimeTypes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -148,6 +151,9 @@
     </ClInclude>
     <ClInclude Include="Util.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MimeTypes.h">
+      <Filter>Header Files\3rd</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

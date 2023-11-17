@@ -230,7 +230,7 @@ models::InstanceConfig::~InstanceConfig()
         // delete local setup copy
         if (DeleteFileA(release.localTempFilePath.string().c_str()) == 0)
         {
-            spdlog::warn("Failed to delete temporary file {}, error {}, message {}",
+            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}",
                          release.localTempFilePath.string(), GetLastError(), winapi::GetLastErrorStdStr());
         }
     }
