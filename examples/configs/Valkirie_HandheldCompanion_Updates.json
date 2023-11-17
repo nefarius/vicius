@@ -1,5 +1,6 @@
 {
     "shared": {
+        "windowTitle": "Handheld Companion Updater",
         "productName": "Handheld Companion",
         "detectionMethod": "CustomExpression",
         "detection": {
