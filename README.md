@@ -197,3 +197,4 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [How To Get Information from Authenticode Signed Executables](https://gist.github.com/dougpuob/1cb6c2f16c95d1e7f324d23e76c80f8e)
 - [VERSIONINFO resource](https://learn.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource)
 - [Semantic Versioning 2.0.0](https://semver.org/)
+- [Windows Platform Comparison Environment Variable Reference](http://web.archive.org/web/20120101144026/http://www.scriptlogic.com/support/CustomScripts/environmentVariableReference.html)
