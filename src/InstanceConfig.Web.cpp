@@ -140,33 +140,50 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     // try to grab original filename
     const auto& cd = headers["Content-Disposition"];
 
+    // attempt to get true filename
     if (!cd.empty())
     {
-        std::regex productRegex("attachment; filename=(.*)", std::regex_constants::icase);
-        auto matchesBegin = std::sregex_iterator(cd.begin(), cd.end(), productRegex);
-        auto matchesEnd = std::sregex_iterator();
+        std::vector<std::string> arguments;
+        char dl = ';';
+        size_t start = 0, end = 0;
 
-        if (matchesBegin != matchesEnd)
+        // extract tokens
+        while ((start = cd.find_first_not_of(dl, end)) != std::string::npos)
         {
-            const std::smatch& match = *matchesBegin;
-            std::filesystem::path attachmentName(match[1].str());
+            end = cd.find(dl, start);
+            arguments.push_back(cd.substr(start, end - start));
+        }
 
-            std::filesystem::path newLocation = release.localTempFilePath;
-            //newLocation.replace_extension(attachmentName.extension());
-            newLocation.replace_filename(attachmentName);
+        if (arguments.size() >= 2)
+        {
+            const auto& filename = arguments[1];
 
-            spdlog::debug("Renaming {} to {}", release.localTempFilePath.string(), newLocation.string());
+            std::regex productRegex("filename=(.*)", std::regex_constants::icase);
+            auto matchesBegin = std::sregex_iterator(filename.begin(), filename.end(), productRegex);
+            auto matchesEnd = std::sregex_iterator();
 
-            // some setups with bootstrappers (like InnoSetup) require the original .exe extension
-            // otherwise it will fail to launch itself elevated with a "ShellExecuteEx failed" error.
-            if (!MoveFileA(release.localTempFilePath.string().c_str(), newLocation.string().c_str()))
+            if (matchesBegin != matchesEnd)
             {
-                spdlog::error("Failed to rename {} to {}, error: {:#x}",
-                              release.localTempFilePath.string(), newLocation.string(), GetLastError());
-            }
-            else
-            {
-                release.localTempFilePath = newLocation;
+                const std::smatch& match = *matchesBegin;
+                std::filesystem::path attachmentName(match[1].str());
+
+                std::filesystem::path newLocation = release.localTempFilePath;
+                //newLocation.replace_extension(attachmentName.extension());
+                newLocation.replace_filename(attachmentName);
+
+                spdlog::debug("Renaming {} to {}", release.localTempFilePath.string(), newLocation.string());
+
+                // some setups with bootstrappers (like InnoSetup) require the original .exe extension
+                // otherwise it will fail to launch itself elevated with a "ShellExecuteEx failed" error.
+                if (!MoveFileA(release.localTempFilePath.string().c_str(), newLocation.string().c_str()))
+                {
+                    spdlog::error("Failed to rename {} to {}, error: {:#x}",
+                                  release.localTempFilePath.string(), newLocation.string(), GetLastError());
+                }
+                else
+                {
+                    release.localTempFilePath = newLocation;
+                }
             }
         }
     }

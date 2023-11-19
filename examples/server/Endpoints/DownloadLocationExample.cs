@@ -38,7 +38,7 @@ internal sealed class DownloadLocationExampleEndpoint : EndpointWithoutRequest
                 {
                     Name = ".NET Runtime Demo Update",
                     PublishedAt = DateTimeOffset.UtcNow.AddDays(-3),
-                    Version = System.Version.Parse("7.0.14"),
+                    Version = System.Version.Parse("9.0.14"),
                     // Markdown support in summary (changelog, description)
                     Summary = """
                               ## Features
