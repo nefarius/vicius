@@ -93,7 +93,7 @@ Now you can build from the command line pointing the compiler to the directory o
 msbuild .\src\vīcĭus.vcxproj /p:Configuration=Release /p:CustomIncludes="${PWD}\include\Valkirie\HandheldCompanion\" /p:UpdaterName=Valkirie_HandheldCompanion_Updater
 ```
 
-This will build the binary `Valkirie_HandheldCompanion_Updater.exe` with the server URL of your custom header file baked into it!
+This will produce the binary `Valkirie_HandheldCompanion_Updater.exe` with the server URL of your custom header file baked into it!
 
 You're of course free to put the custom header files anywhere on your system (like your own private repository), they do not need to be put under the project root directory.
 
