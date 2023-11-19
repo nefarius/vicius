@@ -35,16 +35,18 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     std::string downloadLocation;
 
-    if (!merged.downloadLocation.empty())
+    if (!merged.downloadLocation.input.empty())
     {
-        if (winapi::DirectoryCreate(merged.downloadLocation))
+        const auto& rendered = RenderInjaTemplate(merged.downloadLocation.input, merged.downloadLocation.data);
+
+        if (winapi::DirectoryCreate(rendered))
         {
-            downloadLocation = merged.downloadLocation;
+            downloadLocation = rendered;
         }
         else
         {
             spdlog::error("Failed to create download location {}, defaulting to TEMP path",
-                          merged.downloadLocation);
+                          rendered);
 
             winapi::GetUserTemporaryPath(downloadLocation);
         }
@@ -160,14 +162,14 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             if (!MoveFileA(release.localTempFilePath.string().c_str(), newLocation.string().c_str()))
             {
                 spdlog::error("Failed to rename {} to {}, error: {:#x}",
-                    release.localTempFilePath.string(), newLocation.string(), GetLastError());
+                              release.localTempFilePath.string(), newLocation.string(), GetLastError());
             }
             else
             {
                 release.localTempFilePath = newLocation;
             }
         }
-    }    
+    }
 
     // TODO: error handling, retry?
     if (code != 200)

@@ -44,5 +44,5 @@ public sealed class MergedConfig
     ///     The preferred setup download directory.
     /// </summary>
     [Required]
-    public required string DownloadLocation { get; set; }
+    public required DownloadLocationConfig DownloadLocation { get; set; }
 }

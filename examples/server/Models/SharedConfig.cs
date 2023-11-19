@@ -56,5 +56,5 @@ public sealed class SharedConfig
     /// <summary>
     ///     The preferred setup download directory.
     /// </summary>
-    public string? DownloadLocation { get; set; }
+    public DownloadLocationConfig? DownloadLocation { get; set; }
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProductDetection.hpp"
+#include "DownloadLocationConfig.h"
 
 using json = nlohmann::json;
 
@@ -24,7 +25,7 @@ namespace models
         /** URL of the error article */
         std::optional<std::string> installationErrorUrl;
         /** The setup download location */
-        std::optional<std::string> downloadLocation;
+        std::optional<DownloadLocationConfig> downloadLocation;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(

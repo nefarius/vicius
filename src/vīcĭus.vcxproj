@@ -323,6 +323,7 @@
     <ClInclude Include="inipp.h" />
     <ClInclude Include="MimeTypes.h" />
     <ClInclude Include="models\CommonTypes.hpp" />
+    <ClInclude Include="models\DownloadLocationConfig.h" />
     <ClInclude Include="models\InstanceConfig.hpp" />
     <ClInclude Include="models\MergedConfig.hpp" />
     <ClInclude Include="models\ProductDetection.hpp" />

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProductDetection.hpp"
+#include "DownloadLocationConfig.h"
 
 using json = nlohmann::json;
 
@@ -24,7 +25,7 @@ namespace models
         /** URL of the error article */
         std::string installationErrorUrl;
         /** The setup download location */
-        std::string downloadLocation;
+        DownloadLocationConfig downloadLocation;
 
         MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME)
         {

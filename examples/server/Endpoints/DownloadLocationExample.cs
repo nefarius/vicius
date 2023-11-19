@@ -30,7 +30,7 @@ internal sealed class DownloadLocationExampleEndpoint : EndpointWithoutRequest
                     Key = @"SOFTWARE\dotnet\Setup\InstalledVersions\x64\sharedhost",
                     Value = "Version"
                 },
-                DownloadLocation = @"C:\temp\test"
+                DownloadLocation = new DownloadLocationConfig { Input = @"C:\temp\test" }
             },
             Releases =
             {
@@ -66,7 +66,7 @@ internal sealed class DownloadLocationExampleEndpoint : EndpointWithoutRequest
                         SuccessCodes =
                         {
                             0, // regular success
-                            3010, // success, but reboot required
+                            3010 // success, but reboot required
                             // 1602 // failure (user cancelled) - you normally wouldn't want that as a success code, just an example
                         }
                     }

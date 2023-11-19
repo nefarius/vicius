@@ -155,6 +155,9 @@
     <ClInclude Include="MimeTypes.h">
       <Filter>Header Files\3rd</Filter>
     </ClInclude>
+    <ClInclude Include="models\DownloadLocationConfig.h">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="vīcĭus.rc">
