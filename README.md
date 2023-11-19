@@ -72,6 +72,31 @@ Signed stable releases will be provided [on the repository releases page](../../
 
 ![Updater_EMJNlbXitT.png](assets/Updater_EMJNlbXitT.png)
 
+## How to build
+
+Set up Visual Studio 2022 or newer with the C++ Desktop Development workload.
+
+### Multi-tenant build example
+
+You do not have to touch the checked out sources if you wish to customize your build. One simple way is outlined below:
+
+Assuming a manufacturer name `Valkirie` and product name `HandheldCompanion`, create the following folder structure and file `.\include\Valkirie\HandheldCompanion\ViciusPostCustomizeMe.h` and override the server url in there like so:
+
+```cpp
+#undef NV_API_URL_TEMPLATE
+#define NV_API_URL_TEMPLATE     "https://raw.githubusercontent.com/nefarius/vicius/master/examples/configs/Valkirie_HandheldCompanion_Updates.json"
+```
+
+Now you can build from the command line pointing the compiler to the directory of your header(s) like so:
+
+```PowerShell
+msbuild .\src\vīcĭus.vcxproj /p:Configuration=Release /p:CustomIncludes="${PWD}\include\Valkirie\HandheldCompanion\" /p:UpdaterName=Valkirie_HandheldCompanion_Updater
+```
+
+This will build the binary `Valkirie_HandheldCompanion_Updater.exe` with the server URL of your custom header file baked into it!
+
+You're of course free to put the custom header files anywhere on your system (like your own private repository), they do not need to be put under the project root directory.
+
 ## TODOs
 
 Non-exhaustive list of things open or in-progress...
