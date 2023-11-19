@@ -12,16 +12,16 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FastEndpoints" Version="5.19.2"/>
-        <PackageReference Include="FastEndpoints.Swagger" Version="5.19.2"/>
-        <PackageReference Include="Nefarius.Utilities.AspNetCore" Version="1.11.0"/>
-        <PackageReference Include="NJsonSchema.CodeGeneration" Version="10.9.0"/>
+        <PackageReference Include="FastEndpoints" Version="5.19.2" />
+        <PackageReference Include="FastEndpoints.Swagger" Version="5.19.2" />
+        <PackageReference Include="Nefarius.Utilities.AspNetCore" Version="1.15.0" />
+        <PackageReference Include="NJsonSchema.CodeGeneration" Version="10.9.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <TrimmerRootAssembly Include="System.IO.FileSystem"/>
-        <TrimmerRootAssembly Include="System.Xml.XPath.XDocument"/>
-        <TrimmerRootAssembly Include="System.Xml.Linq"/>
+        <TrimmerRootAssembly Include="System.IO.FileSystem" />
+        <TrimmerRootAssembly Include="System.Xml.XPath.XDocument" />
+        <TrimmerRootAssembly Include="System.Xml.Linq" />
     </ItemGroup>
     
 </Project>
