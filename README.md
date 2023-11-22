@@ -84,7 +84,7 @@ Assuming a manufacturer name `Valkirie` and product name `HandheldCompanion`, cr
 
 ```cpp
 #undef NV_API_URL_TEMPLATE
-#define NV_API_URL_TEMPLATE     "https://raw.githubusercontent.com/nefarius/vicius/master/examples/configs/Valkirie_HandheldCompanion_Updates.json"
+#define NV_API_URL_TEMPLATE     "https://raw.githubusercontent.com/Valkirie/HandheldCompanion/main/Valkirie_HandheldCompanion_Updates.json"
 ```
 
 Now you can build from the command line pointing the compiler to the directory of your header(s) like so:
