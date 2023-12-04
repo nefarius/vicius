@@ -7,6 +7,7 @@ using Newtonsoft.Json.Serialization;
 
 using NJsonSchema;
 using NJsonSchema.Generation;
+using NJsonSchema.NewtonsoftJson.Generation;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints;
 
@@ -24,7 +25,7 @@ internal sealed class SchemaEndpoint : EndpointWithoutRequest
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        JsonSchemaGeneratorSettings settings = new()
+        NewtonsoftJsonSchemaGeneratorSettings settings = new()
         {
             SerializerSettings = new JsonSerializerSettings
             {
