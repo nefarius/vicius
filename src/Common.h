@@ -16,6 +16,8 @@
 #define NV_CLI_IGNORE_BUSY_STATE    "--ignore-busy-state"
 #define NV_CLI_PARAM_LOG_TO_FILE    "--log-to-file"
 #define NV_CLI_PARAM_SERVER_URL     "--server-url"
+#define NV_CLI_NO_SCHEDULED_TASK    "--no-scheduled-task"
+#define NV_CLI_NO_AUTOSTART         "--no-autostart"
 
 //
 // App error exit codes
