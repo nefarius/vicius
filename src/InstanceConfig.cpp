@@ -99,6 +99,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     if (cmdl({NV_CLI_PARAM_CHANNEL}))
     {
         const auto channelArg = cmdl(NV_CLI_PARAM_CHANNEL).str();
+        /* strips "..", "/" and "\" */
         std::regex pathRegex(R"([\.{2}\/\\])");
         channel = std::regex_replace(channelArg, pathRegex, "");
     }
