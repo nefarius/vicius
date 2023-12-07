@@ -96,6 +96,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     spdlog::debug("serverUrlTemplate = {}", serverUrlTemplate);
 
+    // optional update channel
     if (cmdl({NV_CLI_PARAM_CHANNEL}))
     {
         const auto channelArg = cmdl(NV_CLI_PARAM_CHANNEL).str();
