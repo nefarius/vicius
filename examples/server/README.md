@@ -7,8 +7,8 @@ You found the example backend implementation! 🎉
 Tag it with your own registry, of course 😉 
 
 ```PowerShell
-podman build -t nefarius.azurecr.io/nefarius-vicius-server:latest .
-podman push nefarius.azurecr.io/nefarius-vicius-server:latest
+docker build -t nefarius.azurecr.io/nefarius-vicius-server:latest .
+docker push nefarius.azurecr.io/nefarius-vicius-server:latest
 ```
 
 ## Sources & 3rd party credits
