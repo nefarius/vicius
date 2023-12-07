@@ -69,6 +69,7 @@ namespace models
         std::string serverUrlTemplate;
         std::string filenameRegex;
         Authority authority;
+        std::string channel;
 
         std::filesystem::path GetAppPath() const { return appPath; }
         semver::version GetAppVersion() const { return appVersion; }

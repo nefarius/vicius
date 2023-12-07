@@ -96,6 +96,15 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     spdlog::debug("serverUrlTemplate = {}", serverUrlTemplate);
 
+    if (cmdl({NV_CLI_PARAM_CHANNEL}))
+    {
+        const auto channelArg = cmdl(NV_CLI_PARAM_CHANNEL).str();
+        std::regex pathRegex(R"([\.{2}\/\\])");
+        channel = std::regex_replace(channelArg, pathRegex, "");
+    }
+
+    spdlog::debug("channel = {}", channel);
+
     appPath = util::GetImageBasePathW();
     spdlog::debug("appPath = {}", appPath.string());
 
@@ -152,6 +161,12 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
             filenameRegex = data.value("/instance/filenameRegex"_json_pointer, filenameRegex);
             authority = data.value("/instance/authority"_json_pointer, authority);
 
+            // CLI arg takes priority
+            if (channel.empty())
+            {
+                channel = data.value("/instance/channel"_json_pointer, channel);
+            }
+
             // populate shared config first either from JSON file or with built-in defaults
             if (data.contains("shared"))
             {
@@ -202,8 +217,12 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     // first try to build "manufacturer/product" and use filename as 
     // fallback if extraction via regex didn't yield any results
     tenantSubPath = (!manufacturer.empty() && !product.empty())
-                        ? std::format("{}/{}", manufacturer, product)
-                        : appFilename;
+                        ? channel.empty()
+                              ? std::format("{}/{}", manufacturer, product)
+                              : std::format("{}/{}/{}", manufacturer, product, channel)
+                        : channel.empty()
+                        ? appFilename
+                        : std::format("{}/{}", channel, appFilename);
     spdlog::debug("tenantSubPath = {}", tenantSubPath);
 
     updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
