@@ -70,6 +70,7 @@ namespace models
         std::string filenameRegex;
         Authority authority;
         std::string channel;
+        std::map<std::string, std::string> additionalHeaders;
 
         std::filesystem::path GetAppPath() const { return appPath; }
         semver::version GetAppVersion() const { return appVersion; }

@@ -122,6 +122,20 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     authority = Authority::Remote;
     spdlog::debug("authority = {}", magic_enum::enum_name(authority));
 
+    // parse optional additional HTTP headers
+    for (auto& param : cmdl.params("add-header"))
+    {
+        std::string kvp = param.second;
+        std::ranges::replace(kvp, '=', ' ');
+        std::stringstream keyValue(kvp);
+
+        std::string name, value;
+        keyValue >> name;
+        keyValue >> value;
+
+        additionalHeaders.insert(std::make_pair(name, value));
+    }
+
     /*
     if (!NVerifyFileSignature(ConvertAnsiToWide(appPath.string()).c_str(), &appSigInfo))
     {

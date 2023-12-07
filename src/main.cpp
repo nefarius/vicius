@@ -33,7 +33,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         NV_CLI_PARAM_LOG_LEVEL,
         NV_CLI_PARAM_LOG_TO_FILE,
         NV_CLI_PARAM_SERVER_URL,
-        NV_CLI_PARAM_CHANNEL
+        NV_CLI_PARAM_CHANNEL,
+        NV_CLI_PARAM_ADD_HEADER
     });
 
     if (!util::ParseCommandLineArguments(cmdl))

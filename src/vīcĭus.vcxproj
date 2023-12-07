@@ -316,6 +316,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ADL.hpp" />
+    <ClInclude Include="argh.h" />
     <ClInclude Include="Crypto.h" />
     <ClInclude Include="CustomizeMe.h" />
     <ClInclude Include="DownloadAndInstall.hpp" />

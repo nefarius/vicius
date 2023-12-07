@@ -158,6 +158,9 @@
     <ClInclude Include="models\DownloadLocationConfig.h">
       <Filter>Header Files\Models</Filter>
     </ClInclude>
+    <ClInclude Include="argh.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="vīcĭus.rc">

@@ -19,6 +19,12 @@ void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) cons
     {
         conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Channel", channel);
     }
+    for (const auto& kvp : additionalHeaders)
+    {
+        const auto name = std::format("X-" NV_HTTP_HEADERS_NAME "-{}", kvp.first);
+        const auto value = kvp.second;
+        conn->AppendHeader(name, value);
+    }
 #endif
 }
 

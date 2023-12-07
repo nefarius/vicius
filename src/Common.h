@@ -19,6 +19,7 @@
 #define NV_CLI_NO_SCHEDULED_TASK    "--no-scheduled-task"
 #define NV_CLI_NO_AUTOSTART         "--no-autostart"
 #define NV_CLI_PARAM_CHANNEL        "--channel"
+#define NV_CLI_PARAM_ADD_HEADER     "--add-header"
 
 //
 // App error exit codes

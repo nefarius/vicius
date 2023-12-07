@@ -8,7 +8,6 @@
     "sfml",
     "imgui",
     "imgui-sfml",
-    "argh",
     "restclient-cpp",
     "nlohmann-json",
     "magic-enum",
