@@ -15,6 +15,10 @@ void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) cons
     conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Manufacturer", manufacturer);
     conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Product", product);
     conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Version", appVersion.to_string());
+    if (!channel.empty())
+    {
+        conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Channel", channel);
+    }
 #endif
 }
 
