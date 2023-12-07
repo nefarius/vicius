@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <PropertyGroup>
-        <TargetFramework>net7.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <RootNamespace>Nefarius.Vicius.Example.Server</RootNamespace>
@@ -14,7 +14,7 @@
     <ItemGroup>
         <PackageReference Include="FastEndpoints" Version="5.20.1" />
         <PackageReference Include="FastEndpoints.Swagger" Version="5.20.1" />
-        <PackageReference Include="Nefarius.Utilities.AspNetCore" Version="1.15.0" />
+        <PackageReference Include="Nefarius.Utilities.AspNetCore" Version="1.16.0" />
         <PackageReference Include="NJsonSchema.CodeGeneration" Version="10.9.0" />
     </ItemGroup>
 
