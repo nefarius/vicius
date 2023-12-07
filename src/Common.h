@@ -18,6 +18,7 @@
 #define NV_CLI_PARAM_SERVER_URL     "--server-url"
 #define NV_CLI_NO_SCHEDULED_TASK    "--no-scheduled-task"
 #define NV_CLI_NO_AUTOSTART         "--no-autostart"
+#define NV_CLI_PARAM_CHANNEL        "--channel"
 
 //
 // App error exit codes

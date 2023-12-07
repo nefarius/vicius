@@ -32,7 +32,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     cmdl.add_params({
         NV_CLI_PARAM_LOG_LEVEL,
         NV_CLI_PARAM_LOG_TO_FILE,
-        NV_CLI_PARAM_SERVER_URL
+        NV_CLI_PARAM_SERVER_URL,
+        NV_CLI_PARAM_CHANNEL
     });
 
     if (!util::ParseCommandLineArguments(cmdl))
