@@ -37,7 +37,6 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     const auto ua = std::format("{}/{}", appFilename, appVersion.to_string());
     spdlog::debug("Setting User Agent to {}", ua);
     conn->SetUserAgent(ua);
-    conn->FollowRedirects(true);
     conn->FollowRedirects(true, 5);
     conn->SetFileProgressCallback(progressFn);
 
