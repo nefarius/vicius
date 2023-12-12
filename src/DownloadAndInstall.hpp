@@ -7,7 +7,6 @@ enum class DownloadAndInstallStep
 	DownloadFailed,
 	DownloadSucceeded,
 	PrepareInstall,
-	InstallLaunchFailed,
 	InstallRunning,
 	InstallFailed,
 	InstallSucceeded

@@ -240,8 +240,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     auto instStep = DownloadAndInstallStep::Begin;
     bool isBackDisabled = false;
     bool isCancelDisabled = false;
-    STARTUPINFOA info = {sizeof(STARTUPINFOA)};
-    PROCESS_INFORMATION updateProcessInfo{};
     DWORD status = ERROR_SUCCESS;
     std::once_flag errorUrlTriggered;
 
@@ -428,6 +426,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     totalDownloaded = 0;
 
                     cfg.ResetReleaseDownloadState();
+                    cfg.ResetSetupState();
                 }
 
                 ImGui::Indent(leftBorderIndent);
@@ -521,121 +520,43 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     break;
                 case DownloadAndInstallStep::PrepareInstall:
                     {
-                        const auto& release = cfg.GetSelectedRelease();
-                        const auto& tempFile = cfg.GetLocalReleaseTempFilePath();
+                        cfg.InvokeSetupAsync();
 
-                        std::stringstream launchArgs;
-                        launchArgs << tempFile;
-
-                        if (release.launchArguments.has_value())
-                        {
-                            launchArgs << " " << release.launchArguments.value();
-                        }
-
-                        const auto& args = launchArgs.str();
-
-                        if (!CreateProcessA(
-                            nullptr,
-                            const_cast<LPSTR>(args.c_str()),
-                            nullptr,
-                            nullptr,
-                            TRUE,
-                            0,
-                            nullptr,
-                            nullptr,
-                            &info,
-                            &updateProcessInfo
-                        ))
-                        {
-                            spdlog::error("Failed to launch {}, error {:#x}, message {}",
-                                          tempFile.string(), GetLastError(), winapi::GetLastErrorStdStr());
-                            instStep = DownloadAndInstallStep::InstallLaunchFailed;
-                        }
-                        else
-                        {
-                            spdlog::debug("Setup process launched successfully");
-                            instStep = DownloadAndInstallStep::InstallRunning;
-                        }
+                        spdlog::debug("Setup process launched asynchronously");
+                        instStep = DownloadAndInstallStep::InstallRunning;
 
                         break;
                     }
-                case DownloadAndInstallStep::InstallLaunchFailed:
-
-                    std::call_once(errorUrlTriggered, [&cfg]()
-                    {
-                        if (!cfg.GetInstallErrorUrl().has_value())
-                        {
-                            return;
-                        }
-
-                        ShellExecuteA(
-                            nullptr,
-                            "open",
-                            cfg.GetInstallErrorUrl().value().c_str(),
-                            nullptr,
-                            nullptr,
-                            SW_SHOWNORMAL
-                        );
-                    });
-
-                    ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Could not launch setup, error %s.",
-                                winapi::GetLastErrorStdStr().c_str());
-
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
-                    ImGui::Text("Press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
-
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 15);
-                    ImGui::Text("Press the 'Cancel' button to abort and close.");
-
-                    isCancelDisabled = false;
-                    isBackDisabled = false;
-                    status = NV_E_SETUP_LAUNCH_FAILED;
-
-                // TODO: handle error
-
-                    break;
                 case DownloadAndInstallStep::InstallRunning:
-
-                    if (auto waitResult = WaitForSingleObject(updateProcessInfo.hProcess, 1); waitResult ==
-                        WAIT_TIMEOUT)
                     {
-                        ImGui::Text("Installing...");
-                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
-                        ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
-                    }
-                    else if (waitResult == WAIT_OBJECT_0)
-                    {
+                        bool isRunning = false;
+                        bool hasSetupFinished = false;
+                        bool hasSucceeded = false;
                         DWORD exitCode = 0;
+                        DWORD win32Error = 0;
 
-                        GetExitCodeProcess(updateProcessInfo.hProcess, &exitCode);
-
-                        CloseHandle(updateProcessInfo.hProcess);
-                        CloseHandle(updateProcessInfo.hThread);
-                        RtlZeroMemory(&updateProcessInfo, sizeof(updateProcessInfo));
-
-                        if (cfg.ExitCodeCheck().has_value())
+                        if (cfg.GetSetupStatus(isRunning, hasSetupFinished, hasSucceeded, exitCode, win32Error))
                         {
-                            const auto [skipCheck, successCodes] = cfg.ExitCodeCheck().value();
-
-                            if (skipCheck)
+                            if (isRunning)
                             {
-                                spdlog::debug("Skipping error code check as per configuration");
-                                instStep = DownloadAndInstallStep::InstallSucceeded;
-                                break;
+                                ImGui::Text("Installing...");
+                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+                                ui::IndeterminateProgressBar(
+                                    ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
                             }
-
-                            if (std::ranges::find(successCodes, exitCode) != successCodes.end())
+                            else if (hasSetupFinished)
                             {
-                                spdlog::debug("Exit code {} marked as success-condition", exitCode);
-                                instStep = DownloadAndInstallStep::InstallSucceeded;
-                                break;
+                                SetLastError(win32Error);
+
+                                instStep = hasSucceeded
+                                               ? DownloadAndInstallStep::InstallSucceeded
+                                               : DownloadAndInstallStep::InstallFailed;
                             }
                         }
-
-                        // final fallback
-                        instStep = exitCode == NV_SUCCESS_EXIT_CODE
-                                       ? DownloadAndInstallStep::InstallSucceeded
-                                       : DownloadAndInstallStep::InstallFailed;
+                        else
+                        {
+                            instStep = DownloadAndInstallStep::InstallFailed;
+                        }
                     }
 
                     break;

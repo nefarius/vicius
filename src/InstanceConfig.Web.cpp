@@ -234,6 +234,8 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
                 spdlog::debug("Renaming {} to {}", release.localTempFilePath.string(), newLocation.string());
 
+                DeleteFileA(newLocation.string().c_str());
+
                 // some setups with bootstrappers (like InnoSetup) require the original .exe extension
                 // otherwise it will fail to launch itself elevated with a "ShellExecuteEx failed" error.
                 if (!MoveFileA(release.localTempFilePath.string().c_str(), newLocation.string().c_str()))

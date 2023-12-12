@@ -29,7 +29,7 @@ bool models::InstanceConfig::GetSetupStatus(
     bool& isRunning,
     bool& hasFinished,
     bool& hasSucceeded,
-    DWORD& statusCode,
+    DWORD& exitCode,
     DWORD& win32Error
 ) const
 {
@@ -48,7 +48,7 @@ bool models::InstanceConfig::GetSetupStatus(
         const auto result = (*setupTask).get();
 
         hasSucceeded = std::get<0>(result);
-        statusCode = std::get<1>(result);
+        exitCode = std::get<1>(result);
         win32Error = std::get<2>(result);
     }
 
@@ -64,28 +64,23 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
     const auto& release = this->GetSelectedRelease();
     const auto& tempFile = this->GetLocalReleaseTempFilePath();
 
-    std::stringstream launchArgs;
-    launchArgs << tempFile;
-
-    if (release.launchArguments.has_value())
-    {
-        launchArgs << " " << release.launchArguments.value();
-    }
-
-    const auto& args = launchArgs.str();
-
-    DWORD status = ERROR_SUCCESS;
+    DWORD win32Error = ERROR_SUCCESS;
     DWORD exitCode = 0;
     bool success = false;
 
     if (release.useShellExecute)
     {
+        std::string openFile = tempFile.string();
+        std::string args = release.launchArguments.has_value()
+                               ? release.launchArguments.value()
+                               : std::string{};
+
         SHELLEXECUTEINFOA execInfo = {};
         execInfo.cbSize = sizeof(SHELLEXECUTEINFO);
         execInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
         execInfo.hwnd = NULL;
         execInfo.lpVerb = NULL;
-        execInfo.lpFile = nullptr;
+        execInfo.lpFile = openFile.c_str();
         execInfo.lpParameters = args.c_str();
         execInfo.lpDirectory = NULL;
         execInfo.nShow = SW_SHOW;
@@ -93,10 +88,10 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 
         if (!ShellExecuteExA(&execInfo))
         {
-            status = GetLastError();
+            win32Error = GetLastError();
 
             spdlog::error("Failed to launch {}, error {:#x}, message {}",
-                          tempFile.string(), status, winapi::GetLastErrorStdStr());
+                          tempFile.string(), win32Error, winapi::GetLastErrorStdStr());
 
             goto exit;
         }
@@ -111,6 +106,16 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
         info.cb = sizeof(STARTUPINFOA);
         PROCESS_INFORMATION updateProcessInfo = {};
 
+        std::stringstream launchArgs;
+        launchArgs << tempFile;
+
+        if (release.launchArguments.has_value())
+        {
+            launchArgs << " " << release.launchArguments.value();
+        }
+
+        const auto& args = launchArgs.str();
+
         if (!CreateProcessA(
             nullptr,
             const_cast<LPSTR>(args.c_str()),
@@ -124,10 +129,10 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
             &updateProcessInfo
         ))
         {
-            status = GetLastError();
+            win32Error = GetLastError();
 
             spdlog::error("Failed to launch {}, error {:#x}, message {}",
-                          tempFile.string(), status, winapi::GetLastErrorStdStr());
+                          tempFile.string(), win32Error, winapi::GetLastErrorStdStr());
 
             goto exit;
         }
@@ -171,5 +176,5 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
     }
 
 exit:
-    return std::make_tuple(success, exitCode, status);
+    return std::make_tuple(success, exitCode, win32Error);
 }

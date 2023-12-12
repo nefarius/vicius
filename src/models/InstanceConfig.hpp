@@ -336,7 +336,7 @@ namespace models
             bool& isRunning,
             bool& hasFinished,
             bool& hasSucceeded,
-            DWORD& statusCode,
+            DWORD& exitCode,
             DWORD& win32Error
         ) const;
 
