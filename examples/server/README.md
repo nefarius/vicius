@@ -4,7 +4,7 @@ You found the example backend implementation! 🎉
 
 ## How to build
 
-Tag it with your own registry, of course 😉 
+Tag it with your own registry, of course 😉
 
 ```PowerShell
 docker build -t nefarius.azurecr.io/nefarius-vicius-server:latest .

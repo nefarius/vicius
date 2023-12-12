@@ -1,4 +1,6 @@
-﻿using FastEndpoints;
+﻿using System.Text.RegularExpressions;
+
+using FastEndpoints;
 
 using Nefarius.Vicius.Example.Server.Models;
 using Nefarius.Vicius.Example.Server.Services;
@@ -7,7 +9,7 @@ using Octokit;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints.Products;
 
-internal sealed class HidHideUpdatesEndpoint(GitHubApiService githubApiService) : EndpointWithoutRequest
+internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiService) : EndpointWithoutRequest
 {
     public override void Configure()
     {
@@ -15,6 +17,9 @@ internal sealed class HidHideUpdatesEndpoint(GitHubApiService githubApiService) 
         AllowAnonymous();
         Options(x => x.WithTags("Production"));
     }
+
+    [GeneratedRegex(@"<!--[\s\S\n]*?-->")]
+    private partial Regex CommentRegex();
 
     public override async Task HandleAsync(CancellationToken ct)
     {
@@ -34,18 +39,21 @@ internal sealed class HidHideUpdatesEndpoint(GitHubApiService githubApiService) 
             return;
         }
 
+        string summary = CommentRegex().Replace(release.Body, string.Empty);
+
         UpdateResponse response = new()
         {
             Shared = new SharedConfig
             {
                 ProductName = "HidHide",
                 WindowTitle = "HidHide Updater",
-                Detection = new RegistryValueConfig
-                {
-                    Hive = RegistryHive.HKLM,
-                    Key = @"SOFTWARE\Nefarius Software Solutions e.U.\HidHide",
-                    Value = "Version"
-                }
+                Detection =
+                    new RegistryValueConfig
+                    {
+                        Hive = RegistryHive.HKLM,
+                        Key = @"SOFTWARE\Nefarius Software Solutions e.U.\HidHide",
+                        Value = "Version"
+                    }
             },
             Releases =
             {
@@ -54,7 +62,7 @@ internal sealed class HidHideUpdatesEndpoint(GitHubApiService githubApiService) 
                     Name = release.Name,
                     PublishedAt = release.CreatedAt,
                     Version = System.Version.Parse(release.TagName.Replace("v", string.Empty)),
-                    Summary = release.Body,
+                    Summary = summary,
                     DownloadUrl = asset.BrowserDownloadUrl,
                     ExitCode = new ExitCodeCheck
                     {
