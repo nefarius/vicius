@@ -11,7 +11,7 @@ semver::version models::UpdateRelease::GetSemVersion() const
         std::string value = util::trim(version, "v \t");
         util::toSemVerCompatible(value);
         
-        return semver::version{value};
+        return semver::version::parse(value);
     }
     catch (...)
     {
@@ -33,7 +33,7 @@ std::optional<semver::version> models::UpdateRelease::GetDetectionSemVersion() c
         std::string value = util::trim(detectionVersion.value(), "v \t");
         util::toSemVerCompatible(value);
         
-        return semver::version{value};
+        return semver::version::parse(value);
     }
     catch (...)
     {

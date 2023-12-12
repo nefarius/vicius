@@ -35,7 +35,7 @@
 // Utility packages
 // 
 #include "argh.h"
-#include <neargye/semver.hpp>
+#include <semver/semver.hpp>
 #include <magic_enum.hpp>
 #include <winreg/WinReg.hpp>
 #include <hash-library/md5.h>

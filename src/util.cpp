@@ -55,7 +55,7 @@ namespace util
             delete[] verData;
         }
 
-        return semver::version{versionString.str()};
+        return semver::version::parse(versionString.str());
     }
 
     bool ParseCommandLineArguments(argh::parser& cmdl)
@@ -208,7 +208,7 @@ namespace winapi
             delete[] verData;
         }
 
-        return semver::version{versionString.str()};
+        return semver::version::parse(versionString.str());
     }
 
     semver::version GetWin32ResourceProductVersion(const std::filesystem::path& filePath)
@@ -244,7 +244,7 @@ namespace winapi
             delete[] verData;
         }
 
-        return semver::version{versionString.str()};
+        return semver::version::parse(versionString.str());
     }
 
     DWORD IsAppRunningAsAdminMode(PBOOL IsAdmin)

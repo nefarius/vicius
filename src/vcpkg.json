@@ -11,7 +11,7 @@
     "restclient-cpp",
     "nlohmann-json",
     "magic-enum",
-    "neargye-semver",
+    "z4kn4fein-semver",
     "winreg",
     "hash-library",
     "spdlog",

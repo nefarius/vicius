@@ -14,7 +14,7 @@ void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) cons
 #if !defined(NV_FLAGS_NO_VENDOR_HEADERS)
     conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Manufacturer", manufacturer);
     conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Product", product);
-    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Version", appVersion.to_string());
+    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Version", appVersion.str());
     if (!channel.empty())
     {
         conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Channel", channel);
@@ -34,7 +34,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     const auto conn = new RestClient::Connection("");
 
     conn->SetTimeout(5);
-    const auto ua = std::format("{}/{}", appFilename, appVersion.to_string());
+    const auto ua = std::format("{}/{}", appFilename, appVersion.str());
     spdlog::debug("Setting User Agent to {}", ua);
     conn->SetUserAgent(ua);
     conn->FollowRedirects(true, 5);
@@ -218,7 +218,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     const auto conn = new RestClient::Connection("");
 
     conn->SetTimeout(5);
-    const auto ua = std::format("{}/{}", appFilename, appVersion.to_string());
+    const auto ua = std::format("{}/{}", appFilename, appVersion.str());
     spdlog::debug("Setting User Agent to {}", ua);
     conn->SetUserAgent(ua);
     conn->FollowRedirects(true);

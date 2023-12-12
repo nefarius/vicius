@@ -111,7 +111,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     spdlog::debug("appPath = {}", appPath.string());
 
     appVersion = util::GetVersionFromFile(appPath);
-    spdlog::debug("appVersion = {}", appVersion.to_string());
+    spdlog::debug("appVersion = {}", appVersion.str());
 
     appFilename = appPath.stem().string();
     spdlog::debug("appFilename = {}", appFilename);
@@ -338,7 +338,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             {
                 std::string nVersion = ConvertWideToANSI(value);
                 util::toSemVerCompatible(nVersion);
-                const semver::version localVersion{nVersion};
+                const semver::version localVersion = semver::version::parse(nVersion);
 
                 isOutdated = release.GetDetectionSemVersion() > localVersion;
                 spdlog::debug("isOutdated = {}", isOutdated);

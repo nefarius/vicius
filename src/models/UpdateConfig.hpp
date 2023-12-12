@@ -38,7 +38,7 @@ namespace models
 
             try
             {
-                return semver::version{latestVersion.value()};
+                return semver::version::parse(latestVersion.value());
             }
             catch (...) // couldn't convert version string
             {

@@ -458,8 +458,8 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
             spdlog::debug("lhs = {}", lhsValue);
             spdlog::debug("rhs = {}", rhsValue);
 
-            const semver::version lhs{lhsValue};
-            const semver::version rhs{rhsValue};
+            const semver::version lhs = semver::version::parse(lhsValue);
+            const semver::version rhs = semver::version::parse(rhsValue);
 
             return lhs == rhs;
         }
@@ -485,8 +485,8 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
             spdlog::debug("lhs = {}", lhsValue);
             spdlog::debug("rhs = {}", rhsValue);
 
-            const semver::version lhs{lhsValue};
-            const semver::version rhs{rhsValue};
+            const semver::version lhs = semver::version::parse(lhsValue);
+            const semver::version rhs = semver::version::parse(rhsValue);
 
             return lhs > rhs;
         }
@@ -512,8 +512,8 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
             spdlog::debug("lhs = {}", lhsValue);
             spdlog::debug("rhs = {}", rhsValue);
 
-            const semver::version lhs{lhsValue};
-            const semver::version rhs{rhsValue};
+            const semver::version lhs = semver::version::parse(lhsValue);
+            const semver::version rhs = semver::version::parse(rhsValue);
 
             return lhs < rhs;
         }
