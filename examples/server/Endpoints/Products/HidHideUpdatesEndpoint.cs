@@ -7,15 +7,8 @@ using Octokit;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints.Products;
 
-internal sealed class HidHideUpdatesEndpoint : EndpointWithoutRequest
+internal sealed class HidHideUpdatesEndpoint(GitHubApiService githubApiService) : EndpointWithoutRequest
 {
-    private readonly GitHubApiService _githubApiService;
-
-    public HidHideUpdatesEndpoint(GitHubApiService githubApiService)
-    {
-        _githubApiService = githubApiService;
-    }
-
     public override void Configure()
     {
         Get("api/nefarius/HidHide/updates.json");
@@ -25,7 +18,7 @@ internal sealed class HidHideUpdatesEndpoint : EndpointWithoutRequest
 
     public override async Task HandleAsync(CancellationToken ct)
     {
-        Release? release = await _githubApiService.GetLatestRelease("nefarius", "HidHide");
+        Release? release = await githubApiService.GetLatestRelease("nefarius", "HidHide");
 
         if (release is null)
         {
