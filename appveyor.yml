@@ -7,6 +7,8 @@ platform:
 - ARM64
 configuration:
 - Release
+environment:
+  UpdaterName: contoso_EmergencyUrl_Updater
 test: off
 skip_commits:
   files:
@@ -24,7 +26,7 @@ before_build:
 build:
   project: $(APPVEYOR_BUILD_FOLDER)\vīcĭus.sln
 after_build:
-- cmd: if not %PLATFORM%==arm64 upx -9 -o .\bin\%PLATFORM%\Updater_packed.exe .\bin\%PLATFORM%\*.exe
+- cmd: if not %PLATFORM%==arm64 upx -9 -o .\bin\%PLATFORM%\%UpdaterName%_packed.exe .\bin\%PLATFORM%\*.exe
 artifacts:
 - path: bin\**\*.exe
   name: Updater
