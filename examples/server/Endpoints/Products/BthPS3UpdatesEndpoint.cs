@@ -74,6 +74,7 @@ internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiSe
                     Version = System.Version.Parse(release.TagName.Replace("setup-v", string.Empty)),
                     Summary = summary,
                     DownloadUrl = asset.BrowserDownloadUrl,
+                    UseShellExecute = true,
                     ExitCode = new ExitCodeCheck
                     {
                         SuccessCodes =

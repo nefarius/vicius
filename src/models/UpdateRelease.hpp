@@ -65,6 +65,8 @@ namespace models
         std::optional<size_t> detectionSize;
         /** The version to use in product detection */
         std::optional<std::string> detectionVersion;
+        /** Use ShellExecute API instead of CreateProcess */
+        std::optional<bool> useShellExecute;
 
         /** Full pathname of the local temporary file */
         std::filesystem::path localTempFilePath{};
@@ -96,6 +98,7 @@ namespace models
         disabled,
         detectionChecksum,
         detectionSize,
-        detectionVersion
+        detectionVersion,
+        useShellExecute
     )
 }

@@ -142,4 +142,9 @@ public sealed class UpdateRelease
     /// </summary>
     [JsonSchemaType(typeof(string))]
     public Version? DetectionVersion { get; set; }
+
+    /// <summary>
+    ///     Whether to use the ShellExecute API over CreateProcess.
+    /// </summary>
+    public bool? UseShellExecute { get; set; }
 }
