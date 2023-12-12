@@ -291,6 +291,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Crypto.cpp" />
+    <ClCompile Include="InstanceConfig.Setup.cpp" />
     <ClCompile Include="InstanceConfig.Template.cpp" />
     <ClCompile Include="MimeTypes.cpp" />
     <ClCompile Include="NAuthenticode.cpp" />

@@ -57,6 +57,7 @@ namespace models
         UpdateResponse remote;
 
         std::optional<std::shared_future<int>> downloadTask;
+        std::optional<std::shared_future<std::tuple<bool, DWORD, DWORD>>> setupTask;
         int selectedRelease{0};
         bool isSilent{false};
         NSIGINFO appSigInfo{};
@@ -64,6 +65,8 @@ namespace models
         int DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
 
         void SetCommonHeaders(RestClient::Connection* conn) const;
+
+        std::tuple<bool, DWORD, DWORD> ExecuteSetup();
 
     public:
         std::string serverUrlTemplate;
@@ -302,7 +305,7 @@ namespace models
          * \return The optional help URL, if set.
          */
         std::optional<std::string> GetInstallErrorUrl()
-        {            
+        {
             return merged.installationErrorUrl.empty() ? std::nullopt : std::optional(merged.installationErrorUrl);
         }
 
@@ -324,6 +327,18 @@ namespace models
          * \return The rendered string.
          */
         std::string RenderInjaTemplate(const std::string& tpl, const json& data) const;
+
+        bool InvokeSetupAsync();
+
+        void ResetSetupState();
+
+        [[nodiscard]] bool GetSetupStatus(
+            bool& isRunning,
+            bool& hasFinished,
+            bool& hasSucceeded,
+            DWORD& statusCode,
+            DWORD& win32Error
+        ) const;
 
         InstanceConfig() : authority(Authority::Remote)
         {
