@@ -39,7 +39,8 @@ internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiS
             return;
         }
 
-        string summary = CommentRegex().Replace(release.Body, string.Empty);
+        // strips out comment blocks and redundant newlines
+        string summary = CommentRegex().Replace(release.Body, string.Empty).Trim('\r', '\n');
 
         UpdateResponse response = new()
         {

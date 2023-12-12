@@ -9,15 +9,17 @@ ImFont* G_Font_H3 = nullptr;
 ImGui::MarkdownConfig mdConfig;
 
 
-void LinkClickedCallback(ImGui::MarkdownLinkCallbackData data_)
+// ReSharper disable once CppPassValueParameterByConstReference
+void LinkClickedCallback(ImGui::MarkdownLinkCallbackData data)
 {
-	std::string url(data_.link, data_.linkLength);
-	if (!data_.isImage)
+	std::string url(data.link, data.linkLength);
+	if (!data.isImage)
 	{
 		ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 	}
 }
 
+// ReSharper disable once CppParameterMayBeConst
 void FormatChangelogCallback(const ImGui::MarkdownFormatInfo& markdownFormatInfo, bool start)
 {
 	defaultMarkdownFormatCallback(markdownFormatInfo, start);
@@ -50,7 +52,7 @@ void FormatChangelogCallback(const ImGui::MarkdownFormatInfo& markdownFormatInfo
 inline ImGui::MarkdownImageData ImageCallback(ImGui::MarkdownLinkCallbackData data)
 {
 	// In your application you would load an image based on data_ input. Here we just use the imgui font texture.
-	ImTextureID image = ImGui::GetIO().Fonts->TexID;
+    const ImTextureID image = ImGui::GetIO().Fonts->TexID;
 	// > C++14 can use ImGui::MarkdownImageData imageData{ true, false, image, ImVec2( 40.0f, 20.0f ) };
 	ImGui::MarkdownImageData imageData;
 	imageData.isValid = true;
