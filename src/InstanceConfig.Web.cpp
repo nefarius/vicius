@@ -56,6 +56,9 @@ void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) cons
         case PROCESSOR_ARCHITECTURE_INTEL:
             arch = "x86";
             break;
+        default:
+            arch = "<unknown>";
+            break;
         }
 
         conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture", arch);
