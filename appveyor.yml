@@ -21,7 +21,7 @@ install:
 - cmd: vcpkg update
 - ps: Setup-VS2022 $env:PLATFORM
 before_build:
-- cmd: nuget restore
+- cmd: nuget restore vīcĭus.sln
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\vīcĭus.rc" --resource.file-version --resource.product-version
 build:
   project: $(APPVEYOR_BUILD_FOLDER)\vīcĭus.sln
