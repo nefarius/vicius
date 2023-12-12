@@ -12,7 +12,7 @@ ImGui::MarkdownConfig mdConfig;
 // ReSharper disable once CppPassValueParameterByConstReference
 static void LinkClickedCallback(ImGui::MarkdownLinkCallbackData data)
 {
-	std::string url(data.link, data.linkLength);
+    const std::string url(data.link, data.linkLength);
 	if (!data.isImage)
 	{
 		ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
