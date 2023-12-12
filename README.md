@@ -201,7 +201,7 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [cURLpp](https://github.com/jpbarrette/curlpp)
 - [JSON for Modern C++](https://github.com/nlohmann/json)
 - [Magic Enum C++](https://github.com/Neargye/magic_enum)
-- [Semantic Versioning for modern C++](https://github.com/Neargye/semver)
+- [Semantic Versioning library for modern C++](https://github.com/z4kn4fein/cpp-semver)
 - [WinReg](https://github.com/GiovanniDicanio/WinReg)
 - [Portable C++ Hashing Library](https://github.com/stbrumme/hash-library)
 - [A modern C++ scope guard that is easy to use but hard to misuse](https://github.com/ricab/scope_guard)
