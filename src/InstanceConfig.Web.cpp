@@ -192,6 +192,8 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     conn->SetWriteFunction(writeCallback);
 
+    spdlog::debug("Starting release download from {}", release.downloadUrl);
+
     auto [code, body, headers] = conn->get(release.downloadUrl);
 
     outStream.close();
