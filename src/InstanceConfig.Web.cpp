@@ -58,7 +58,7 @@ void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) cons
             break;
         }
 
-        conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture", channel);
+        conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture", arch);
     }
 
     //
