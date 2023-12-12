@@ -5,6 +5,7 @@ using FastEndpoints.Swagger;
 
 using Nefarius.Utilities.AspNetCore;
 using Nefarius.Vicius.Example.Server.Converters;
+using Nefarius.Vicius.Example.Server.Services;
 
 WebApplicationBuilder bld = WebApplication.CreateBuilder().Setup();
 bld.Services.AddFastEndpoints().SwaggerDocument(o =>
@@ -19,9 +20,13 @@ bld.Services.AddFastEndpoints().SwaggerDocument(o =>
         {
             t["Schemas"] = "Schema definitions";
             t["Examples"] = "Example update configurations";
+            t["Production"] = "Real-world product update configurations";
         };
     };
 });
+
+bld.Services.AddMemoryCache();
+bld.Services.AddSingleton<GitHubApiService>();
 
 WebApplication app = bld.Build().Setup();
 

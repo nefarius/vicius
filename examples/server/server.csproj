@@ -16,6 +16,7 @@
         <PackageReference Include="FastEndpoints.Swagger" Version="5.20.1" />
         <PackageReference Include="Nefarius.Utilities.AspNetCore" Version="1.16.0" />
         <PackageReference Include="NJsonSchema.CodeGeneration" Version="10.9.0" />
+        <PackageReference Include="Octokit" Version="9.0.0" />
     </ItemGroup>
 
     <ItemGroup>
