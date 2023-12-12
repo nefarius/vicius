@@ -18,7 +18,7 @@
 // 
 #if defined(NDEBUG)
 // this value will be used for RELEASE builds
-#define NV_API_URL_TEMPLATE     "https://vicius.api.nefarius.systems/api/contoso/EmergencyUrl/updates.json"
+#define NV_API_URL_TEMPLATE     "https://vicius.api.nefarius.systems/api/{}/updates.json"
 #else
 // this value will be used for DEBUG builds
 #define NV_API_URL_TEMPLATE     "http://localhost:5200/api/{}/updates.json"
