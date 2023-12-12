@@ -233,6 +233,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         SendMessage(window.getSystemHandle(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
     }
 
+    cfg.SetWindowHandle(window.getSystemHandle());
+
     // TODO: try best compromise to display window when user is busy
     //SendMessage(window.getSystemHandle(), WM_SYSCOMMAND, SC_MINIMIZE, 0);
 

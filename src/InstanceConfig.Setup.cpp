@@ -78,7 +78,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
         SHELLEXECUTEINFOA execInfo = {};
         execInfo.cbSize = sizeof(SHELLEXECUTEINFO);
         execInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-        execInfo.hwnd = NULL;
+        execInfo.hwnd = this->windowHandle;
         execInfo.lpVerb = NULL;
         execInfo.lpFile = openFile.c_str();
         execInfo.lpParameters = args.c_str();

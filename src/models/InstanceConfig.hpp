@@ -36,6 +36,7 @@ namespace models
     class InstanceConfig
     {
         HINSTANCE appInstance{};
+        HWND windowHandle{};
         /** Full pathname of the updater process file */
         std::filesystem::path appPath;
         /** The updater application version */
@@ -74,6 +75,11 @@ namespace models
         Authority authority;
         std::string channel;
         std::map<std::string, std::string> additionalHeaders;
+
+        void SetWindowHandle(const HWND hWnd)
+        {
+            windowHandle = hWnd;
+        }
 
         std::filesystem::path GetAppPath() const { return appPath; }
         semver::version GetAppVersion() const { return appVersion; }
