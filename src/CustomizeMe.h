@@ -12,7 +12,7 @@
 
 //
 // URL template (or absolute URL) where to find the update information
-// The {} will be replaced with the "manufacturer/product" sub-path
+// The {} will be replaced with the "manufacturer/product(/channel)" sub-path
 // CAUTION: set NV_FLAGS_NO_SERVER_URL_RESOURCE to enforce these values
 // See also https://docs.nefarius.at/projects/Vicius/Server-Discovery/
 // 
