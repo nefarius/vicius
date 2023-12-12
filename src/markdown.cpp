@@ -10,7 +10,7 @@ ImGui::MarkdownConfig mdConfig;
 
 
 // ReSharper disable once CppPassValueParameterByConstReference
-void LinkClickedCallback(ImGui::MarkdownLinkCallbackData data)
+static void LinkClickedCallback(ImGui::MarkdownLinkCallbackData data)
 {
 	std::string url(data.link, data.linkLength);
 	if (!data.isImage)
@@ -20,7 +20,7 @@ void LinkClickedCallback(ImGui::MarkdownLinkCallbackData data)
 }
 
 // ReSharper disable once CppParameterMayBeConst
-void FormatChangelogCallback(const ImGui::MarkdownFormatInfo& markdownFormatInfo, bool start)
+static void FormatChangelogCallback(const ImGui::MarkdownFormatInfo& markdownFormatInfo, bool start)
 {
 	defaultMarkdownFormatCallback(markdownFormatInfo, start);
 
