@@ -19,12 +19,59 @@ void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) cons
     {
         conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Channel", channel);
     }
+    
+    //
+    // Report updater process architecture
+    // 
+
+    conn->AppendHeader(
+        "X-" NV_HTTP_HEADERS_NAME "-Process-Architecture",
+#if defined(_M_AMD64)
+                "x64"
+#elif defined(_M_ARM64)
+        "arm64"
+#else
+        "x86"
+#endif
+    );
+
+    //
+    // Report OS/CPU architecture
+    // 
+
+    SYSTEM_INFO si = {};
+
+    if (winapi::SafeGetNativeSystemInfo(&si))
+    {
+        std::string arch;
+
+        switch (si.wProcessorArchitecture)
+        {
+        case PROCESSOR_ARCHITECTURE_AMD64:
+            arch = "x64";
+            break;
+        case PROCESSOR_ARCHITECTURE_ARM64:
+            arch = "arm64";
+            break;
+        case PROCESSOR_ARCHITECTURE_INTEL:
+            arch = "x86";
+            break;
+        }
+
+        conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture", channel);
+    }
+
+    //
+    // Custom headers passed via CLI
+    // 
+
     for (const auto& kvp : additionalHeaders)
     {
         const auto name = std::format("X-" NV_HTTP_HEADERS_NAME "-{}", kvp.first);
         const auto value = kvp.second;
         conn->AppendHeader(name, value);
     }
+
 #endif
 }
 

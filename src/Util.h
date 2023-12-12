@@ -50,4 +50,6 @@ namespace winapi
      * \return True on success, false otherwise.
      */
     bool GetProgramDataPath(std::string& path);
+
+    BOOL SafeGetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo);
 }
