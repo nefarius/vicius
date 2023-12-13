@@ -77,7 +77,6 @@ internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiSe
                     LaunchArguments = """
                                       FILTERNOTFOUND="1"
                                       """,
-                    UseShellExecute = true,
                     ExitCode = new ExitCodeCheck
                     {
                         SuccessCodes =

@@ -63,14 +63,19 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 {
     const auto& release = this->GetSelectedRelease();
     const auto& tempFile = this->GetLocalReleaseTempFilePath();
+    std::string openFile = tempFile.string();
 
     DWORD win32Error = ERROR_SUCCESS;
     DWORD exitCode = 0;
     bool success = false;
+    DWORD binType = 0;
 
-    if (release.useShellExecute)
+    BOOL isExecutable = GetBinaryTypeA(openFile.c_str(), &binType);
+
+    spdlog::debug("isExecutable = {}, binType = {}", isExecutable, binType);
+
+    if (!isExecutable)
     {
-        std::string openFile = tempFile.string();
         std::string args = release.launchArguments.has_value()
                                ? release.launchArguments.value()
                                : std::string{};
