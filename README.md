@@ -160,6 +160,8 @@ Non-exhaustive list of things open or in-progress...
 
 ### Done
 
+<details><summary>Expand me!</summary>
+
 - [x] Allow setting the download directory
 - [x] Implement "postpone" choice behaviour
 - [x] Implement Task Scheduler
@@ -181,6 +183,8 @@ Non-exhaustive list of things open or in-progress...
   - [x] Optimize build times
   - [x] Use pre-compiled headers?
 - [x] Support environment variables or custom placeholders in path strings and alike
+
+</details>
 
 ## Sources & 3rd party credits
 
