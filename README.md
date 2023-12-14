@@ -114,7 +114,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Add silent update option
   - [x] Docs
   - [x] Types
-  - [ ] Implementation (see #15)
+  - [ ] Implementation (see [#15](../../issues/15))
 - [ ] [Documentation](https://docs.nefarius.at/projects/Vicius/)
   - [ ] About page
   - [x] JSON Schemas
