@@ -115,18 +115,6 @@ Non-exhaustive list of things open or in-progress...
   - [x] Docs
   - [x] Types
   - [ ] Implementation (see [#15](../../issues/15))
-- [ ] [Documentation](https://docs.nefarius.at/projects/Vicius/)
-  - [ ] About page
-  - [x] JSON Schemas
-  - [x] Specify supported Command Line Arguments
-  - [x] Exit Codes
-  - [x] Emergency Feature
-  - [x] Server Discovery
-  - [x] Logging
-  - [x] Common Errors
-  - [ ] Local Configuration
-  - [x] Remote Configuration
-  - [ ] ...
 - [ ] Add message box dialog if the user launches the updater with no args
   - [x] Standard text if we are up to date
   - [ ] Inform if Betas are available
@@ -162,6 +150,17 @@ Non-exhaustive list of things open or in-progress...
 
 <details><summary>Expand me!</summary>
 
+- [x] [Documentation](https://docs.nefarius.at/projects/Vicius/)
+  - [x] About page
+  - [x] JSON Schemas
+  - [x] Specify supported Command Line Arguments
+  - [x] Exit Codes
+  - [x] Emergency Feature
+  - [x] Server Discovery
+  - [x] Logging
+  - [x] Common Errors
+  - [x] Local Configuration
+  - [x] Remote Configuration
 - [x] Allow setting the download directory
 - [x] Implement "postpone" choice behaviour
 - [x] Implement Task Scheduler
