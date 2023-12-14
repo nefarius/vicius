@@ -140,7 +140,7 @@ Non-exhaustive list of things open or in-progress...
 ### Nice-to-haves
 
 - [ ] Localization
-- [ ] Add [Authenticode](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/authenticode) signature checks
+- [ ] Add [Authenticode](https://learn.microsoft.com/en-us/windows-hardware/drivers/install/authenticode) signature checks (see [#7](../../issues/7))
   - [ ] Crypto primitives
   - [ ] Model types
   - [ ] Business logic
