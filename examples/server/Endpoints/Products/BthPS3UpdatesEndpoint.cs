@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
 using FastEndpoints;
 
@@ -9,12 +10,15 @@ using Octokit;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints.Products;
 
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 internal class BthPS3UpdatesEndpointRequest
 {
     [FromHeader("X-Vicius-OS-Architecture")]
     public string OsArchitecture { get; set; } = null!;
 }
 
+[SuppressMessage("ReSharper", "InconsistentNaming")]
 internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiService)
     : Endpoint<BthPS3UpdatesEndpointRequest>
 {
