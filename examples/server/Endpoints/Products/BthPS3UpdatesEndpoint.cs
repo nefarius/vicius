@@ -14,6 +14,12 @@ namespace Nefarius.Vicius.Example.Server.Endpoints.Products;
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 internal class BthPS3UpdatesEndpointRequest
 {
+    /// <summary>
+    ///     Gets the Operating System CPU architecture the updater is running on.
+    ///     Possible values are: <c>x64</c> for Intel/AMD 64-Bit, <c>arm64</c> for ARM 64-Bit or <c>x86</c> for Intel/AMD
+    ///     32-Bit.
+    /// </summary>
+    /// <example>x64</example>
     [FromHeader("X-Vicius-OS-Architecture")]
     public string OsArchitecture { get; set; } = null!;
 }
