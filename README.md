@@ -99,6 +99,8 @@ You're of course free to put the custom header files anywhere on your system (li
 
 ## TODOs
 
+For more details [check the issue tracker](../../issues).
+
 Non-exhaustive list of things open or in-progress...
 
 ### Must-haves
