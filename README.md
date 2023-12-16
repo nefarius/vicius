@@ -78,7 +78,7 @@ Set up Visual Studio 2022 or newer with the C++ Desktop Development workload.
 
 ### Multi-tenant build example
 
-You do not have to touch the checked out sources if you wish to customize your build. One simple way is outlined below:
+You do not have to touch the checked out sources if you wish to customize your build.
 
 Assuming a manufacturer name `Valkirie` and product name `HandheldCompanion`, create the following folder structure and file `.\include\Valkirie\HandheldCompanion\ViciusPostCustomizeMe.h` and override the server url in there like so:
 
