@@ -105,11 +105,6 @@ Non-exhaustive list of things open or in-progress...
 
 - [ ] Add retry-logic (e.g. retry failed downloads etc.)
 - [ ] Add some fallback code if the temp directory isn't available
-- [ ] Handle all known error-cases
-  - [x] Server response errors
-  - [x] Release download errors
-  - [x] Setup launch errors
-  - [ ] ...
 - [ ] Finalize local updater config JSON format
 - [ ] Add silent update option
   - [x] Docs
@@ -136,7 +131,6 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Make app icon customizable
 - [ ] Add "Light" theme
 - [ ] Make UI DPI-aware
-- [ ] Add embedded images support for Markdown widget
 - [ ] Support closing and restarting applications before and after the main update
 - [ ] Support running prerequisites installation before main update
 - [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
@@ -150,6 +144,10 @@ Non-exhaustive list of things open or in-progress...
 
 <details><summary>Expand me!</summary>
 
+- [x] Handle all known error-cases
+  - [x] Server response errors
+  - [x] Release download errors
+  - [x] Setup launch errors
 - [x] [Documentation](https://docs.nefarius.at/projects/Vicius/)
   - [x] About page
   - [x] JSON Schemas
