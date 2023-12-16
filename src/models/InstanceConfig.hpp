@@ -76,7 +76,7 @@ namespace models
         std::string channel;
         std::map<std::string, std::string> additionalHeaders;
 
-        void SetWindowHandle(const HWND hWnd)
+        void SetWindowHandle(_In_ const HWND hWnd)
         {
             windowHandle = hWnd;
         }
