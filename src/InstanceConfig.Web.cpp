@@ -4,7 +4,7 @@
 #include "MimeTypes.h"
 
 
-void models::InstanceConfig::SetCommonHeaders(RestClient::Connection* conn) const
+void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* conn) const
 {
     //
     // If a backend server is used, it can alter the response based on 

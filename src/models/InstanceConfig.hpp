@@ -65,7 +65,7 @@ namespace models
 
         int DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
 
-        void SetCommonHeaders(RestClient::Connection* conn) const;
+        void SetCommonHeaders(_Inout_ RestClient::Connection* conn) const;
 
         std::tuple<bool, DWORD, DWORD> ExecuteSetup();
 
@@ -164,6 +164,7 @@ namespace models
          * \brief Checks if we have one single update release.
          * \return True if single update release, false otherwise.
          */
+        _Must_inspect_result_
         [[nodiscard]] bool HasSingleRelease() const
         {
             return remote.releases.size() == 1;
@@ -173,6 +174,7 @@ namespace models
          * \brief Checks if we have multiple update releases.
          * \return True if multiple update releases, false otherwise.
          */
+        _Must_inspect_result_
         [[nodiscard]] bool HasMultipleReleases() const
         {
             return remote.releases.size() > 1;
@@ -192,6 +194,7 @@ namespace models
          * \param statusCode The HTTP status code (set when hasFinished is true).
          * \return True if a download has been invoked, false otherwise.
          */
+        _Must_inspect_result_
         [[nodiscard]] bool GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, int& statusCode) const;
 
         /**
