@@ -51,5 +51,15 @@ namespace winapi
      */
     bool GetProgramDataPath(std::string& path);
 
+    /**
+     * \brief Retrieves information about the current system to an application running under WOW64. 
+     * If the function is called from a 64-bit application, it is equivalent to the GetSystemInfo 
+     * function. If the function is called from an x86 or x64 application running on a 64-bit system 
+     * that does not have an Intel64 or x64 processor (such as ARM64), it will return information as 
+     * if the system is x86 only if x86 emulation is supported (or x64 if x64 emulation is also 
+     * supported).
+     * \param lpSystemInfo A pointer to a SYSTEM_INFO structure that receives the information.
+     * \return TRUE on success, FALSE otherwise.
+     */
     BOOL SafeGetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo);
 }
