@@ -19,7 +19,9 @@
 // 
 // ImGui, Fonts
 // 
+#if 0
 #define IMGUI_USER_CONFIG "ImGuiConfiguration.h"
+#endif
 #include "imgui.h"
 #if 0
 #include "imgui_freetype.h"

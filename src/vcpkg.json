@@ -6,7 +6,13 @@
   "supports": "!(arm | uwp)",
   "dependencies": [
     "sfml",
-    "imgui",
+    {
+      "name": "imgui",
+      "features": [
+        "freetype",
+        "wchar32"
+      ]
+    },
     "imgui-sfml",
     "restclient-cpp",
     "nlohmann-json",
@@ -17,7 +23,6 @@
     "spdlog",
     "scope-guard",
     "curlpp",
-    "inja",
-    "freetype"
+    "inja"
   ]
 }
