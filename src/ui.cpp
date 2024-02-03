@@ -6,6 +6,7 @@
 extern ImFont* G_Font_H1;
 extern ImFont* G_Font_H2;
 extern ImFont* G_Font_H3;
+extern ImFont* G_Font_Default;
 
 extern ImGui::MarkdownConfig mdConfig;
 

@@ -6,10 +6,12 @@
 ImFont* G_Font_H1 = nullptr;
 ImFont* G_Font_H2 = nullptr;
 ImFont* G_Font_H3 = nullptr;
+ImFont* G_Font_Default = nullptr;
 
 ImGui::MarkdownConfig mdConfig;
 
 
+#if 0
 // ReSharper disable once CppPassValueParameterByConstReference
 static void LinkClickedCallback(ImGui::MarkdownLinkCallbackData data)
 {
@@ -72,7 +74,62 @@ inline ImGui::MarkdownImageData ImageCallback(ImGui::MarkdownLinkCallbackData da
 
 	return imageData;
 }
+#endif
 
+struct changelog : public imgui_md
+{
+    ImFont* get_font() const override
+    {
+        switch (m_hlevel)
+        {
+        case 1:
+            return G_Font_H1;
+        case 2:
+            return G_Font_H2;
+        case 3:
+            return G_Font_H3;
+        default:
+        case 0:
+            return G_Font_Default;
+        }
+    };
+
+    void open_url() const override
+    {
+        ShellExecuteA(nullptr, "open", m_href.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+    }
+
+    bool get_image(image_info& nfo) const override
+    {
+        //use m_href to identify images
+        //nfo.texture_id = g_texture1;
+        nfo.size = {40, 20};
+        nfo.uv0 = {0, 0};
+        nfo.uv1 = {1, 1};
+        nfo.col_tint = {1, 1, 1, 1};
+        nfo.col_border = {0, 0, 0, 0};
+        return true;
+    }
+
+    void html_div(const std::string& dclass, bool e) override
+    {
+        if (dclass == "red")
+        {
+            if (e)
+            {
+                m_table_border = false;
+                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+            }
+            else
+            {
+                ImGui::PopStyleColor();
+                m_table_border = true;
+            }
+        }
+    }
+};
+
+#if 0
 void markdown::RenderChangelog(const std::string& markdown)
 {
 	mdConfig.linkCallback = LinkClickedCallback;
@@ -86,3 +143,11 @@ void markdown::RenderChangelog(const std::string& markdown)
 	mdConfig.formatCallback = FormatChangelogCallback;
 	Markdown(markdown.c_str(), markdown.length(), mdConfig);
 }
+#else
+void markdown::RenderChangelog(const std::string& markdown)
+{
+    static changelog cl_render;
+
+    cl_render.print(markdown.c_str(), markdown.c_str() + markdown.length());
+}
+#endif

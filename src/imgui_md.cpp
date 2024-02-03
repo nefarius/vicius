@@ -23,7 +23,6 @@
  * IN THE SOFTWARE.
  */
 
-#include "pch.h"
 #include "imgui_md.h"
 
 imgui_md::imgui_md()
