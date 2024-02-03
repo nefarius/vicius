@@ -212,6 +212,7 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [A Template Engine for Modern C++](https://github.com/pantor/inja)
 - [Simple C++ ini parser](https://github.com/mcmtroffaes/inipp)
 - [MimeTypes](https://github.com/lasselukkari/MimeTypes)
+- [Markdown renderer for Dear ImGui using MD4C parser](https://github.com/mekhontsev/imgui_md)
 
 ### Literature & references
 
