@@ -2,6 +2,12 @@
 #include "Common.h"
 #include "imgui_md.h"
 #include <SFML/Graphics/Texture.hpp>
+#include <curlpp/cURLpp.hpp>
+#include <curlpp/Easy.hpp>
+#include <curlpp/Options.hpp>
+#include <restclient-cpp/restclient.h>
+#include <map>
+#include <restclient-cpp/connection.h>
 
 
 ImFont* G_Font_H1 = nullptr;
@@ -79,6 +85,12 @@ inline ImGui::MarkdownImageData ImageCallback(ImGui::MarkdownLinkCallbackData da
 
 struct changelog : public imgui_md
 {
+    std::map<std::string, std::shared_ptr<sf::Texture>> _images;
+
+    explicit changelog(const std::map<std::string, std::shared_ptr<sf::Texture>>& images) : _images(images)
+    {
+    }
+
     ImFont* get_font() const override
     {
         switch (m_hlevel)
@@ -93,21 +105,48 @@ struct changelog : public imgui_md
         case 0:
             return G_Font_Default;
         }
-    };
+    }
 
     void open_url() const override
     {
         ShellExecuteA(nullptr, "open", m_href.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
     }
 
+    std::shared_ptr<sf::Texture> GetImageTexture(const std::string& url)
+    {
+        if (!_images.contains(url))
+        {
+            const auto conn = new RestClient::Connection("");
+            conn->FollowRedirects(true, 5);
+
+            const RestClient::Response response = conn->get(url);
+
+            if (response.code != 200)
+                return nullptr;
+
+            auto res = std::make_shared<sf::Texture>();
+            //res->loadFromMemory(response.body.data(), response.body.length());
+            res->loadFromFile("F:\\Downloads\\6871_kanna_confused.png");
+
+            _images.emplace(url, res);
+            return res;
+        }
+
+        return _images[url];
+    }
+
     bool get_image(image_info& nfo) const override
     {
-        //static sf::Texture texture;
-        //texture.loadFromFile("F:\\Downloads\\6871_kanna_confused.png");
-        
-        //use m_href to identify images
-        //nfo.texture_id = &texture;
-        nfo.size = {40, 20};
+        const auto texture = const_cast<changelog*>(this)->GetImageTexture(m_href);
+
+        if (texture != nullptr)
+        {
+            nfo.texture_id = texture.get();
+            const auto size = texture->getSize();
+            nfo.size = {size.x * 1.0f, size.y * 1.0f};
+        }
+
+        //nfo.size = {40, 20};
         nfo.uv0 = {0, 0};
         nfo.uv1 = {1, 1};
         nfo.col_tint = {1, 1, 1, 1};
@@ -150,7 +189,8 @@ void markdown::RenderChangelog(const std::string& markdown)
 #else
 void markdown::RenderChangelog(const std::string& markdown)
 {
-    static changelog cl_render;
+    static std::map<std::string, std::shared_ptr<sf::Texture>> images;
+    static changelog cl_render(images);
 
     cl_render.print(markdown.c_str(), markdown.c_str() + markdown.length());
 }
