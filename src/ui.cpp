@@ -116,27 +116,33 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels)
 	// Base font
 	io.Fonts->AddFontFromMemoryTTF(ruda_regular_data, ruda_regular_size, sizePixels, &font_cfg);
 
-	// Fork Awesome merge config
-	static constexpr ImWchar icon_ranges[] = { ICON_MIN_FK, ICON_MAX_FK, 0 };
+	// Base font + Fork Awesome merged (default font)
+	static constexpr ImWchar fk_range[] = { ICON_MIN_FK, ICON_MAX_FK, 0 };
 	ImFontConfig fk_cfg;
 	fk_cfg.FontDataOwnedByAtlas = false;
 	fk_cfg.MergeMode = true; // merge with default font
 	fk_cfg.GlyphMinAdvanceX = sizePixels;
+	io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels, &fk_cfg, fk_range);
 
-	// Base font + Fork Awesome merged (default font)
-	io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels, &fk_cfg, icon_ranges);
+    // Base font + Fork Awesome + Emojis merged
+    static ImWchar emj_range[] = { 0x1, 0x1FFFF, 0 };
+    static ImFontConfig emj_cfg;
+    emj_cfg.OversampleH = emj_cfg.OversampleV = 1;
+    emj_cfg.MergeMode = true;
+    emj_cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", sizePixels, &emj_cfg, emj_range);
 
 	// Bold headings H2
 	io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.2f, &font_cfg);
-	G_Font_H2 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.2f, &fk_cfg, icon_ranges);
+	G_Font_H2 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.2f, &fk_cfg, fk_range);
 
 	// Bold headings H3 (smaller)
 	io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.0f, &font_cfg);
-	G_Font_H3 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.0f, &fk_cfg, icon_ranges);
+	G_Font_H3 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.0f, &fk_cfg, fk_range);
 
 	// Bold headings H1
 	io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.5f, &font_cfg);
-	G_Font_H1 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.5f, &fk_cfg, icon_ranges);
+	G_Font_H1 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.5f, &fk_cfg, fk_range);
 	
 	ImGui::SFML::UpdateFontTexture();
 }
