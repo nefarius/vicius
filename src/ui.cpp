@@ -130,11 +130,11 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels)
 	io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.2f, &font_cfg);
 	G_Font_H2 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.2f, &fk_cfg, icon_ranges);
 
-	// Bold H3 (smaller)
+	// Bold headings H3 (smaller)
 	io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.0f, &font_cfg);
 	G_Font_H3 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.0f, &fk_cfg, icon_ranges);
 
-	// bold heading H1
+	// Bold headings H1
 	io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.5f, &font_cfg);
 	G_Font_H1 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.5f, &fk_cfg, icon_ranges);
 	
