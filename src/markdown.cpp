@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Common.h"
 #include "imgui_md.h"
+#include <SFML/Graphics/Texture.hpp>
 
 
 ImFont* G_Font_H1 = nullptr;
@@ -101,8 +102,11 @@ struct changelog : public imgui_md
 
     bool get_image(image_info& nfo) const override
     {
+        //static sf::Texture texture;
+        //texture.loadFromFile("F:\\Downloads\\6871_kanna_confused.png");
+        
         //use m_href to identify images
-        //nfo.texture_id = g_texture1;
+        //nfo.texture_id = &texture;
         nfo.size = {40, 20};
         nfo.uv0 = {0, 0};
         nfo.uv1 = {1, 1};
