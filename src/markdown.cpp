@@ -2,6 +2,7 @@
 #include "Common.h"
 #include "imgui_md.h"
 #include <SFML/Graphics/Texture.hpp>
+#include <SFML/OpenGL.hpp>
 #include <curlpp/cURLpp.hpp>
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>
@@ -10,12 +11,14 @@
 #include <restclient-cpp/connection.h>
 
 
+// Fonts shared throughout app
 ImFont* G_Font_H1 = nullptr;
 ImFont* G_Font_H2 = nullptr;
 ImFont* G_Font_H3 = nullptr;
 ImFont* G_Font_Default = nullptr;
 
-ImGui::MarkdownConfig mdConfig;
+// Mapping of image URLs -> OpenGL textures
+static std::map<std::string, std::shared_ptr<sf::Texture>> G_ImageTextures;
 
 
 #if 0
@@ -83,6 +86,9 @@ inline ImGui::MarkdownImageData ImageCallback(ImGui::MarkdownLinkCallbackData da
 }
 #endif
 
+/**
+ * \brief Markdown parser and render widget.
+ */
 struct changelog : public imgui_md
 {
     std::map<std::string, std::shared_ptr<sf::Texture>> _images;
@@ -112,6 +118,23 @@ struct changelog : public imgui_md
         ShellExecuteA(nullptr, "open", m_href.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
     }
 
+    /**
+     * \brief sf::Texture handle to ImTextureID.
+     * \param glTextureHandle The SFML Texture object native handle.
+     * \return The ImGui Texture ID.
+     */
+    static ImTextureID ConvertGlTextureHandleToImTextureId(GLuint glTextureHandle)
+    {
+        ImTextureID textureID = nullptr;
+        std::memcpy(&textureID, &glTextureHandle, sizeof(GLuint));
+        return textureID;
+    }
+
+    /**
+     * \brief Downloads a remote image resource and caches it in memory.
+     * \param url The href of the image.
+     * \return Smart pointer of SFML texture or null.
+     */
     std::shared_ptr<sf::Texture> GetImageTexture(const std::string& url)
     {
         if (!_images.contains(url))
@@ -125,8 +148,7 @@ struct changelog : public imgui_md
                 return nullptr;
 
             auto res = std::make_shared<sf::Texture>();
-            //res->loadFromMemory(response.body.data(), response.body.length());
-            res->loadFromFile("F:\\Downloads\\6871_kanna_confused.png");
+            res->loadFromMemory(response.body.data(), response.body.length());
 
             _images.emplace(url, res);
             return res;
@@ -135,27 +157,28 @@ struct changelog : public imgui_md
         return _images[url];
     }
 
+    /**
+     * \brief Pulls the texture for the requested image to render.
+     * \param nfo Image info to fill out.
+     * \return True on success, false otherwise.
+     */
     bool get_image(image_info& nfo) const override
     {
-        const auto texture = const_cast<changelog*>(this)->GetImageTexture(m_href);
-        /*auto texture = std::make_shared<sf::Texture>();
-            //res->loadFromMemory(response.body.data(), response.body.length());
-            texture->loadFromFile("F:\\Downloads\\6871_kanna_confused.png");
-            */
-
-        if (texture != nullptr)
+        if (const auto texture = const_cast<changelog*>(this)->GetImageTexture(m_href); texture != nullptr)
         {
-            nfo.texture_id = texture;
+            const ImTextureID textureID = ConvertGlTextureHandleToImTextureId(texture->getNativeHandle());
             const auto size = texture->getSize();
+
+            nfo.texture_id = textureID;
             nfo.size = {size.x * 1.0f, size.y * 1.0f};
+            nfo.uv0 = {0, 0};
+            nfo.uv1 = {1, 1};
+            nfo.col_tint = {1, 1, 1, 1};
+            nfo.col_border = {0, 0, 0, 0};
+            return true;
         }
 
-        //nfo.size = {40, 20};
-        nfo.uv0 = {0, 0};
-        nfo.uv1 = {1, 1};
-        nfo.col_tint = {1, 1, 1, 1};
-        nfo.col_border = {0, 0, 0, 0};
-        return true;
+        return false;
     }
 
     void html_div(const std::string& dclass, bool e) override
@@ -176,26 +199,13 @@ struct changelog : public imgui_md
     }
 };
 
-#if 0
+/**
+ * \brief Parses a provided Markdown body string and renders it onto an ImGui widget.
+ * \param markdown The Markdown document body.
+ */
 void markdown::RenderChangelog(const std::string& markdown)
 {
-	mdConfig.linkCallback = LinkClickedCallback;
-	mdConfig.tooltipCallback = nullptr;
-	mdConfig.imageCallback = ImageCallback;
-	mdConfig.linkIcon = ICON_FK_LINK;
-	mdConfig.headingFormats[0] = {G_Font_H1, false};
-	mdConfig.headingFormats[1] = {G_Font_H2, false};
-	mdConfig.headingFormats[2] = {G_Font_H3, false};
-	mdConfig.userData = nullptr;
-	mdConfig.formatCallback = FormatChangelogCallback;
-	Markdown(markdown.c_str(), markdown.length(), mdConfig);
-}
-#else
-void markdown::RenderChangelog(const std::string& markdown)
-{
-    static std::map<std::string, std::shared_ptr<sf::Texture>> images;
-    static changelog cl_render(images);
+    static changelog cl_render(G_ImageTextures);
 
     cl_render.print(markdown.c_str(), markdown.c_str() + markdown.length());
 }
-#endif

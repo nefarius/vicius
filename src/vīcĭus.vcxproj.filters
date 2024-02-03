@@ -110,9 +110,6 @@
     <ClInclude Include="IconsForkAwesome.h">
       <Filter>Header Files\3rd</Filter>
     </ClInclude>
-    <ClInclude Include="imgui_markdown.h">
-      <Filter>Header Files\3rd</Filter>
-    </ClInclude>
     <ClInclude Include="WizardPage.h">
       <Filter>Header Files</Filter>
     </ClInclude>

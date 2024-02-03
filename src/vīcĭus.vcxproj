@@ -339,7 +339,6 @@
     <ClInclude Include="DownloadAndInstall.hpp" />
     <ClInclude Include="IconsForkAwesome.h" />
     <ClInclude Include="ImGuiConfig.h" />
-    <ClInclude Include="imgui_markdown.h" />
     <ClInclude Include="imgui_md.h" />
     <ClInclude Include="inipp.h" />
     <ClInclude Include="md4c.h" />

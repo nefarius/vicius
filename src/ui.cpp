@@ -8,7 +8,6 @@ extern ImFont* G_Font_H2;
 extern ImFont* G_Font_H3;
 extern ImFont* G_Font_Default;
 
-extern ImGui::MarkdownConfig mdConfig;
 
 /**
  * \brief https://github.com/ocornut/imgui/issues/707#issuecomment-1372640066
