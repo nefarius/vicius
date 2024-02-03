@@ -122,23 +122,6 @@ struct changelog : public imgui_md
 
         return false;
     }
-
-    void html_div(const std::string& dclass, bool e) override
-    {
-        if (dclass == "red")
-        {
-            if (e)
-            {
-                m_table_border = false;
-                ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
-            }
-            else
-            {
-                ImGui::PopStyleColor();
-                m_table_border = true;
-            }
-        }
-    }
 };
 
 /**
