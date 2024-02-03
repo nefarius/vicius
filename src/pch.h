@@ -21,7 +21,9 @@
 // 
 #define IMGUI_USER_CONFIG "ImGuiConfiguration.h"
 #include "imgui.h"
+#if 0
 #include "imgui_freetype.h"
+#endif
 #include "imgui-SFML.h"
 #include "imgui_markdown.h"
 #include "IconsForkAwesome.h"

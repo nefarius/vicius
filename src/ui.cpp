@@ -124,6 +124,7 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels)
 	fk_cfg.GlyphMinAdvanceX = sizePixels;
 	io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels, &fk_cfg, fk_range);
 
+#if 0
     // Base font + Fork Awesome + Emojis merged
     static ImWchar emj_range[] = { 0x1, 0x1FFFF, 0 };
     static ImFontConfig emj_cfg;
@@ -131,6 +132,7 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels)
     emj_cfg.MergeMode = true;
     emj_cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
     io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", sizePixels, &emj_cfg, emj_range);
+#endif
 
 	// Bold headings H2
 	io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.2f, &font_cfg);
