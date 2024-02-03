@@ -138,10 +138,14 @@ struct changelog : public imgui_md
     bool get_image(image_info& nfo) const override
     {
         const auto texture = const_cast<changelog*>(this)->GetImageTexture(m_href);
+        /*auto texture = std::make_shared<sf::Texture>();
+            //res->loadFromMemory(response.body.data(), response.body.length());
+            texture->loadFromFile("F:\\Downloads\\6871_kanna_confused.png");
+            */
 
         if (texture != nullptr)
         {
-            nfo.texture_id = texture.get();
+            nfo.texture_id = texture;
             const auto size = texture->getSize();
             nfo.size = {size.x * 1.0f, size.y * 1.0f};
         }

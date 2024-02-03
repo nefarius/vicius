@@ -19,6 +19,8 @@
 // 
 // ImGui, Fonts
 // 
+#include "ImGuiConfig.h"
+#define IMGUI_USER_CONFIG "ImGuiConfig.h"
 #include "imgui.h"
 #include "imgui_freetype.h"
 #include "imgui-SFML.h"
