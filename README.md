@@ -195,7 +195,7 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [Simple and Fast Multimedia Library](https://www.sfml-dev.org/)
 - [ImGui-SFML](https://github.com/SFML/imgui-sfml)
 - [Argh! A minimalist argument handler](https://github.com/adishavit/argh)
-- [Markdown for Dear ImGui](https://github.com/juliettef/imgui_markdown)
+- [Markdown renderer for Dear ImGui using MD4C parser](https://github.com/mekhontsev/imgui_md)
 - [IconFontCppHeaders](https://github.com/juliettef/IconFontCppHeaders)
 - [Ruda Font](https://fonts.google.com/specimen/Ruda)
 - [Fork Awesome](https://forkaweso.me/Fork-Awesome/)
@@ -212,7 +212,6 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [A Template Engine for Modern C++](https://github.com/pantor/inja)
 - [Simple C++ ini parser](https://github.com/mcmtroffaes/inipp)
 - [MimeTypes](https://github.com/lasselukkari/MimeTypes)
-- [Markdown renderer for Dear ImGui using MD4C parser](https://github.com/mekhontsev/imgui_md)
 
 ### Literature & references
 
