@@ -47,6 +47,7 @@ Dealing with software update mechanics has been a steady companion for almost 10
 ## Prerequisites
 
 - Windows 7 or later (x86, x86_64, ARM64)
+  - **Note:** currently anything below Windows 10 is untested and low priority
 - An NTFS formatted volume
 - An Internet connection
 - Your software updates packaged in some sort of setup or self-extractor  
