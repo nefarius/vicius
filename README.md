@@ -216,6 +216,8 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 ### Literature & references
 
 - [Using Icon Fonts](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-icon-fonts)
+  - [imgui_freetype](https://github.com/ocornut/imgui/blob/master/misc/freetype/README.md)
+  - [Using Colorful Glyphs/Emojis](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-colorful-glyphsemojis)
 - [DailyTaskScheduler](https://github.com/JohnAliyetti/DailyTaskScheduler)
 - [INFO: Windows Rundll and Rundll32 Interface](https://web.archive.org/web/20150109234931/http://support.microsoft.com/kb/164787)
 - [How can I run a child process that requires elevation and wait?](https://stackoverflow.com/a/4893508)
@@ -227,4 +229,3 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [VERSIONINFO resource](https://learn.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource)
 - [Semantic Versioning 2.0.0](https://semver.org/)
 - [Windows Platform Comparison Environment Variable Reference](http://web.archive.org/web/20120101144026/http://www.scriptlogic.com/support/CustomScripts/environmentVariableReference.html)
-- [imgui_freetype](https://github.com/ocornut/imgui/blob/master/misc/freetype/README.md)
