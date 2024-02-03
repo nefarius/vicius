@@ -87,9 +87,6 @@
     <ClCompile Include="MimeTypes.cpp">
       <Filter>Source Files\3rd</Filter>
     </ClCompile>
-    <ClCompile Include="imgui_freetype.cpp">
-      <Filter>Source Files\3rd</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -169,12 +166,6 @@
     </ClInclude>
     <ClInclude Include="argh.h">
       <Filter>Header Files\3rd</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_freetype.h">
-      <Filter>Header Files\3rd</Filter>
-    </ClInclude>
-    <ClInclude Include="ImGuiConfiguration.h">
-      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
