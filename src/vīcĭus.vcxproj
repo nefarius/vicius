@@ -295,12 +295,12 @@
   <ItemGroup>
     <ClCompile Include="Crypto.cpp" />
     <ClCompile Include="imgui_md.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="InstanceConfig.Setup.cpp" />
     <ClCompile Include="InstanceConfig.Template.cpp" />
     <ClCompile Include="md4c.c">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="MimeTypes.cpp" />
     <ClCompile Include="NAuthenticode.cpp" />
