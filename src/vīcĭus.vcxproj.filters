@@ -31,12 +31,12 @@
     <Filter Include="Header Files\Authenticode">
       <UniqueIdentifier>{3e1f3b27-7fcd-4ec5-85a7-5db19419cddf}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\3rd">
+      <UniqueIdentifier>{ed01f8d0-50bf-48ec-8341-88bcee3d50f6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="markdown.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ui.cpp">
@@ -78,11 +78,17 @@
     <ClCompile Include="UpdateRelease.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
-    <ClCompile Include="MimeTypes.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="InstanceConfig.Setup.cpp">
       <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="markdown.cpp">
+      <Filter>Source Files\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="MimeTypes.cpp">
+      <Filter>Source Files\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_freetype.cpp">
+      <Filter>Source Files\3rd</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -162,6 +168,9 @@
       <Filter>Header Files\Models</Filter>
     </ClInclude>
     <ClInclude Include="argh.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_freetype.h">
       <Filter>Header Files\3rd</Filter>
     </ClInclude>
   </ItemGroup>

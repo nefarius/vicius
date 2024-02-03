@@ -294,6 +294,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Crypto.cpp" />
+    <ClCompile Include="imgui_freetype.cpp" />
     <ClCompile Include="InstanceConfig.Setup.cpp" />
     <ClCompile Include="InstanceConfig.Template.cpp" />
     <ClCompile Include="MimeTypes.cpp" />
@@ -325,6 +326,7 @@
     <ClInclude Include="CustomizeMe.h" />
     <ClInclude Include="DownloadAndInstall.hpp" />
     <ClInclude Include="IconsForkAwesome.h" />
+    <ClInclude Include="imgui_freetype.h" />
     <ClInclude Include="imgui_markdown.h" />
     <ClInclude Include="inipp.h" />
     <ClInclude Include="MimeTypes.h" />

@@ -17,6 +17,7 @@
     "spdlog",
     "scope-guard",
     "curlpp",
-    "inja"
+    "inja",
+    "freetype"
   ]
 }
