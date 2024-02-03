@@ -294,8 +294,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Crypto.cpp" />
+    <ClCompile Include="imgui_md.cpp" />
     <ClCompile Include="InstanceConfig.Setup.cpp" />
     <ClCompile Include="InstanceConfig.Template.cpp" />
+    <ClCompile Include="md4c.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="MimeTypes.cpp" />
     <ClCompile Include="NAuthenticode.cpp" />
     <ClCompile Include="pch.cpp">
@@ -326,7 +330,9 @@
     <ClInclude Include="DownloadAndInstall.hpp" />
     <ClInclude Include="IconsForkAwesome.h" />
     <ClInclude Include="imgui_markdown.h" />
+    <ClInclude Include="imgui_md.h" />
     <ClInclude Include="inipp.h" />
+    <ClInclude Include="md4c.h" />
     <ClInclude Include="MimeTypes.h" />
     <ClInclude Include="models\CommonTypes.hpp" />
     <ClInclude Include="models\DownloadLocationConfig.h" />

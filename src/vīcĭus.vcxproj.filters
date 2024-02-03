@@ -87,6 +87,12 @@
     <ClCompile Include="MimeTypes.cpp">
       <Filter>Source Files\3rd</Filter>
     </ClCompile>
+    <ClCompile Include="md4c.c">
+      <Filter>Source Files\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_md.cpp">
+      <Filter>Source Files\3rd</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
@@ -165,6 +171,12 @@
       <Filter>Header Files\Models</Filter>
     </ClInclude>
     <ClInclude Include="argh.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
+    <ClInclude Include="md4c.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_md.h">
       <Filter>Header Files\3rd</Filter>
     </ClInclude>
   </ItemGroup>
