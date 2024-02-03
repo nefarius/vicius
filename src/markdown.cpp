@@ -3,11 +3,7 @@
 #include "imgui_md.h"
 #include <SFML/Graphics/Texture.hpp>
 #include <SFML/OpenGL.hpp>
-#include <curlpp/cURLpp.hpp>
-#include <curlpp/Easy.hpp>
-#include <curlpp/Options.hpp>
 #include <restclient-cpp/restclient.h>
-#include <map>
 #include <restclient-cpp/connection.h>
 
 
