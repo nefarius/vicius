@@ -10,7 +10,7 @@ using Octokit;
 namespace Nefarius.Vicius.Example.Server.Endpoints.Products;
 
 /// <summary>
-///     Crafts update configuration for <a href="https://github.com/nefarius/HidHide">HidHide</a>. 
+///     Crafts update configuration for <a href="https://github.com/nefarius/HidHide">HidHide</a>.
 /// </summary>
 internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiService) : EndpointWithoutRequest
 {
@@ -74,7 +74,8 @@ internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiS
                         SuccessCodes =
                         {
                             0, // regular success
-                            3010 // success, but reboot required
+                            3010, // success, but reboot required
+                            1641 // The requested operation completed successfully. The system will be restarted so the changes can take effect.
                         }
                     }
                 }
