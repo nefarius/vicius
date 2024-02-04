@@ -106,9 +106,6 @@ Non-exhaustive list of things open or in-progress...
 
 ### Must-haves
 
-- [ ] Add retry-logic (e.g. retry failed downloads etc.)
-- [ ] Add some fallback code if the temp directory isn't available
-- [ ] Finalize local updater config JSON format
 - [ ] Add silent update option
   - [x] Docs
   - [x] Types
@@ -147,6 +144,9 @@ Non-exhaustive list of things open or in-progress...
 
 <details><summary>Expand me!</summary>
 
+- [x] Finalize local updater config JSON format
+- [x] Add retry-logic (e.g. retry failed downloads etc.)
+- [x] Add some fallback code if the temp directory isn't available
 - [x] Handle all known error-cases
   - [x] Server response errors
   - [x] Release download errors
