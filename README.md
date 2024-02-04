@@ -219,6 +219,7 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [Using Icon Fonts](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-icon-fonts)
   - [imgui_freetype](https://github.com/ocornut/imgui/blob/master/misc/freetype/README.md)
   - [Using Colorful Glyphs/Emojis](https://github.com/ocornut/imgui/blob/master/docs/FONTS.md#using-colorful-glyphsemojis)
+- [Image Loading and Displaying Examples](https://github.com/ocornut/imgui/wiki/Image-Loading-and-Displaying-Examples)
 - [DailyTaskScheduler](https://github.com/JohnAliyetti/DailyTaskScheduler)
 - [INFO: Windows Rundll and Rundll32 Interface](https://web.archive.org/web/20150109234931/http://support.microsoft.com/kb/164787)
 - [How can I run a child process that requires elevation and wait?](https://stackoverflow.com/a/4893508)
