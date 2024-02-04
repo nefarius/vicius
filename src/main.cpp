@@ -325,6 +325,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         float navigateButtonOffsetY = 470.0;
         float leftBorderIndent = 40.0;
+        DWORD lastExitCode = 0;
 
         switch (currentPage)
         {
@@ -549,7 +550,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                             else if (hasSetupFinished)
                             {
                                 spdlog::info("Setup finished; succeeded: {}, exitCode: {}, win32Error: {}",
-                                    hasSucceeded, exitCode, win32Error);
+                                             hasSucceeded, exitCode, win32Error);
+
+                                if (win32Error == ERROR_SUCCESS && winapi::IsMsiExecErrorCode(exitCode))
+                                {
+                                    spdlog::error("msiexec failed with {} ({})",
+                                                  winapi::GetLastErrorStdStr(exitCode), exitCode);
+
+                                    lastExitCode = exitCode;
+                                }
+
                                 SetLastError(win32Error);
 
                                 instStep = hasSucceeded
@@ -587,6 +597,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     {
                         ImGui::Text(
                             ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed with an unexpected exit code.");
+
+                        if (winapi::IsMsiExecErrorCode(lastExitCode))
+                        {
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
+                            ImGui::Text("Setup engine error: %s", winapi::GetLastErrorStdStr(lastExitCode).c_str());
+                        }
+                        else
+                        {
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
+                            ImGui::Text("Setup exit code: %d", lastExitCode);
+                        }
                     }
                     else
                     {
