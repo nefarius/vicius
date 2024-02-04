@@ -46,12 +46,14 @@ struct changelog : public imgui_md
 
         std::string real_h_ref;
         real_h_ref.assign(d->src.text, d->src.size);
+        bool is_link = false;
 
         if (matchesBegin != matchesEnd)
         {
             if (const std::smatch& match = *matchesBegin; match.size() > 1)
             {
                 real_h_ref.assign(match[1]);
+                is_link = true;
             }
         }
 
@@ -76,6 +78,11 @@ struct changelog : public imgui_md
 
                 if (ImGui::IsItemHovered())
                 {
+                    if (is_link)
+                    {
+                        ImGui::SetTooltip("%s", real_h_ref.c_str());
+                    }
+
                     if (ImGui::IsMouseReleased(0))
                     {
                         ShellExecuteA(nullptr, "open", real_h_ref.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
