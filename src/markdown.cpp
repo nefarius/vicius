@@ -23,9 +23,64 @@ static std::map<std::string, std::shared_ptr<sf::Texture>> G_ImageTextures;
 struct changelog : public imgui_md
 {
     std::map<std::string, std::shared_ptr<sf::Texture>> _images;
+    std::string m_img_href;
 
     explicit changelog(const std::map<std::string, std::shared_ptr<sf::Texture>>& images) : _images(images)
     {
+    }
+
+    void SPAN_IMG(const MD_SPAN_IMG_DETAIL* d, bool e) override
+    {
+        m_is_image = e;
+
+        m_img_href.assign(d->src.text, d->src.size);
+        auto src = std::string(d->src.text + d->src.size);
+        std::regex matchLinkTarget(
+            R"(\)\]\((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))\))",
+            std::regex_constants::icase
+        );
+        auto matchesBegin = std::sregex_iterator(src.begin(), src.end(), matchLinkTarget);
+        auto matchesEnd = std::sregex_iterator();
+
+        std::string real_h_ref;
+        real_h_ref.assign(d->src.text, d->src.size);
+
+        if (matchesBegin != matchesEnd)
+        {
+            if (const std::smatch& match = *matchesBegin; match.size() > 1)
+            {
+                real_h_ref.assign(match[1]);
+            }
+        }
+
+        if (e)
+        {
+            image_info nfo;
+            if (get_image(nfo))
+            {
+                const float scale = ImGui::GetIO().FontGlobalScale;
+                nfo.size.x *= scale;
+                nfo.size.y *= scale;
+
+                const ImVec2 csz = ImGui::GetContentRegionAvail();
+                if (nfo.size.x > csz.x)
+                {
+                    const float r = nfo.size.y / nfo.size.x;
+                    nfo.size.x = csz.x;
+                    nfo.size.y = csz.x * r;
+                }
+
+                ImGui::Image(nfo.texture_id, nfo.size, nfo.uv0, nfo.uv1, nfo.col_tint, nfo.col_border);
+
+                if (ImGui::IsItemHovered())
+                {
+                    if (ImGui::IsMouseReleased(0))
+                    {
+                        ShellExecuteA(nullptr, "open", real_h_ref.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                    }
+                }
+            }
+        }
     }
 
     ImFont* get_font() const override
@@ -107,7 +162,7 @@ struct changelog : public imgui_md
      */
     bool get_image(image_info& nfo) const override
     {
-        if (const auto texture = const_cast<changelog*>(this)->GetImageTexture(m_href); texture != nullptr)
+        if (const auto texture = const_cast<changelog*>(this)->GetImageTexture(m_img_href); texture != nullptr)
         {
             const ImTextureID textureID = ConvertGlTextureHandleToImTextureId(texture->getNativeHandle());
             const auto size = texture->getSize();
