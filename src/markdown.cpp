@@ -24,9 +24,14 @@ struct changelog : public imgui_md
 {
     std::map<std::string, std::shared_ptr<sf::Texture>> _images;
     std::string m_img_href;
+    std::regex m_regex_link_target;
 
     explicit changelog(const std::map<std::string, std::shared_ptr<sf::Texture>>& images) : _images(images)
     {
+        m_regex_link_target = std::regex(
+            R"(\)\]\((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))\))",
+            std::regex_constants::icase
+        );
     }
 
     void SPAN_IMG(const MD_SPAN_IMG_DETAIL* d, bool e) override
@@ -35,11 +40,8 @@ struct changelog : public imgui_md
 
         m_img_href.assign(d->src.text, d->src.size);
         auto src = std::string(d->src.text + d->src.size);
-        std::regex matchLinkTarget(
-            R"(\)\]\((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))\))",
-            std::regex_constants::icase
-        );
-        auto matchesBegin = std::sregex_iterator(src.begin(), src.end(), matchLinkTarget);
+
+        auto matchesBegin = std::sregex_iterator(src.begin(), src.end(), m_regex_link_target);
         auto matchesEnd = std::sregex_iterator();
 
         std::string real_h_ref;
