@@ -64,7 +64,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     // Defaults and embedded stuff
     // 
 
-    isSilent = cmdl[{NV_CLI_BACKGROUND}] || cmdl[{NV_CLI_SILENT}];
+    isSilent = cmdl[{NV_CLI_BACKGROUND}] || cmdl[{NV_CLI_SILENT}] || cmdl[{NV_CLI_AUTOSTART}];
 
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     // grab our backend URL from string resource
