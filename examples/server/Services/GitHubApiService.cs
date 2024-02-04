@@ -19,7 +19,7 @@ internal sealed class GitHubApiService(IMemoryCache memoryCache)
     /// <returns>A <see cref="Release" /> on success or null.</returns>
     public async Task<Release?> GetLatestRelease(string owner, string name)
     {
-        string key = $"{owner}/{name}";
+        string key = $"{nameof(GitHubApiService)}-{owner}/{name}";
 
         if (memoryCache.TryGetValue(key, out Release? cached))
         {
@@ -28,8 +28,11 @@ internal sealed class GitHubApiService(IMemoryCache memoryCache)
 
         Release? release = await _gitHubClient.Repository.Release.GetLatest(owner, name);
 
-        memoryCache.Set(key, release,
-            new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1) });
+        memoryCache.Set(
+            key,
+            release,
+            new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1) }
+        );
 
         return release;
     }
