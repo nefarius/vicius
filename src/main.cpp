@@ -325,7 +325,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         float navigateButtonOffsetY = 470.0;
         float leftBorderIndent = 40.0;
-        DWORD lastExitCode = 0;
 
         switch (currentPage)
         {
@@ -416,6 +415,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             }
         case WizardPage::DownloadAndInstall:
             {
+                static DWORD lastExitCode = 0;
                 static double totalToDownload = 0;
                 static double totalDownloaded = 0;
 
@@ -447,6 +447,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 // checks if a download is currently running or has been invoked
                 if (!cfg.GetReleaseDownloadStatus(isDownloading, hasFinished, statusCode))
                 {
+                    lastExitCode = 0;
                     totalToDownload = 0;
                     totalDownloaded = 0;
 
@@ -600,13 +601,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                         if (winapi::IsMsiExecErrorCode(lastExitCode))
                         {
-                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 15);
                             ImGui::Text("Setup engine error: %s", winapi::GetLastErrorStdStr(lastExitCode).c_str());
                         }
                         else
                         {
-                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
-                            ImGui::Text("Setup exit code: %d", lastExitCode);
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 15);
+                            ImGui::Text("Setup exit code: %lu", lastExitCode);
                         }
                     }
                     else
