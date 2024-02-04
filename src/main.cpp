@@ -636,7 +636,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     //ImGui::Text("Done!");
 
-                    // TODO: implement me
+                    // TODO: implement me, right now it simply exits
 
                     status = NV_S_UPDATE_FINISHED;
                     ++currentPage;
