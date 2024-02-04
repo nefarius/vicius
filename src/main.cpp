@@ -127,6 +127,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             cfg.TryDisplayErrorDialog("Failed to delete scheduled task", std::get<1>(taskRet));
             return NV_E_SCHEDULED_TASK;
         }
+
+        return NV_S_INSTALL;
     }
 
     // contact update server and get latest state and config
