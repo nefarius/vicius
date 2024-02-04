@@ -269,6 +269,9 @@ models::InstanceConfig::~InstanceConfig()
                          release.localTempFilePath.string(), GetLastError(), winapi::GetLastErrorStdStr());
         }
     }
+
+    // make sure everything ends up on file before shutting down
+    spdlog::default_logger()->flush();
 }
 
 std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
