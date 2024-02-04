@@ -20,6 +20,7 @@
 #define NV_CLI_NO_AUTOSTART         "--no-autostart"
 #define NV_CLI_PARAM_CHANNEL        "--channel"
 #define NV_CLI_PARAM_ADD_HEADER     "--add-header"
+#define NV_CLI_PARAM_OVERRIDE_OK    "--override-success-code"
 
 //
 // App error exit codes

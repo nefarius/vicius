@@ -34,7 +34,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         NV_CLI_PARAM_LOG_TO_FILE,
         NV_CLI_PARAM_SERVER_URL,
         NV_CLI_PARAM_CHANNEL,
-        NV_CLI_PARAM_ADD_HEADER
+        NV_CLI_PARAM_ADD_HEADER,
+        NV_CLI_PARAM_OVERRIDE_OK
     });
 
     if (!util::ParseCommandLineArguments(cmdl))
@@ -89,6 +90,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 #if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
         spdlog::info("Installation tasks finished successfully");
+
+        int successCode = NV_S_INSTALL;
+        if ((cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode))
+        {
+            return successCode;
+        }
+
         return NV_S_INSTALL;
     }
 #endif
