@@ -597,7 +597,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     if (GetLastError() == ERROR_SUCCESS)
                     {
                         ImGui::Text(
-                            ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed with an unexpected exit code.");
+                            ICON_FK_EXCLAMATION_TRIANGLE
+                            " Error! Installation failed with an unexpected exit code (%lu).",
+                            lastExitCode
+                        );
 
                         if (winapi::IsMsiExecErrorCode(lastExitCode))
                         {
