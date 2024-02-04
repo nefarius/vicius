@@ -68,6 +68,7 @@ internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiS
                     Version = System.Version.Parse(release.TagName.Replace("v", string.Empty)),
                     Summary = summary,
                     DownloadUrl = asset.BrowserDownloadUrl,
+                    LaunchArguments = "/exebasicui /qb /norestart",
                     ExitCode = new ExitCodeCheck
                     {
                         SuccessCodes =

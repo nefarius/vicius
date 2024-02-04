@@ -548,6 +548,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                             }
                             else if (hasSetupFinished)
                             {
+                                spdlog::info("Setup finished; succeeded: {}, exitCode: {}, win32Error: {}",
+                                    hasSucceeded, exitCode, win32Error);
                                 SetLastError(win32Error);
 
                                 instStep = hasSucceeded
