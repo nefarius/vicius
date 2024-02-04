@@ -21,6 +21,19 @@ namespace winapi
     semver::version GetWin32ResourceProductVersion(const std::filesystem::path& filePath);
     DWORD IsAppRunningAsAdminMode(PBOOL IsAdmin);
     std::string GetLastErrorStdStr(DWORD errorCode = 0);
+
+    /**
+     * Query if 'errorCode' is an MSI error code.
+     *
+     * @author	Benjamin "Nefarius" Hoeglinger-Stelzer
+     * @date	04.02.2024
+     *
+     * @param 	errorCode	The error code.
+     *
+     * @returns	True if MSI error code, false if not.
+     */
+    bool IsMsiExecErrorCode(DWORD errorCode);
+
     BOOL VerifyEmbeddedSignature(LPCWSTR pwszSourceFile);
 
     /**

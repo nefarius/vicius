@@ -3,6 +3,7 @@
 #include <Softpub.h>
 #include <wintrust.h>
 #include <Shlobj.h>
+#include <Msi.h>
 
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
@@ -310,6 +311,74 @@ namespace winapi
             }
         }
         return std::string("OK");
+    }
+
+    bool IsMsiExecErrorCode(DWORD errorCode)
+    {
+        // https://learn.microsoft.com/en-us/windows/win32/msi/error-codes
+        std::vector<DWORD> codes
+        {
+            ERROR_INVALID_DATA,
+            ERROR_INVALID_PARAMETER,
+            ERROR_CALL_NOT_IMPLEMENTED,
+            ERROR_APPHELP_BLOCK,
+            ERROR_INSTALL_SERVICE_FAILURE,
+            ERROR_INSTALL_USEREXIT,
+            ERROR_INSTALL_FAILURE,
+            ERROR_INSTALL_SUSPEND,
+            ERROR_UNKNOWN_PRODUCT,
+            ERROR_UNKNOWN_FEATURE,
+            ERROR_UNKNOWN_COMPONENT,
+            ERROR_UNKNOWN_PROPERTY,
+            ERROR_INVALID_HANDLE_STATE,
+            ERROR_BAD_CONFIGURATION,
+            ERROR_INDEX_ABSENT,
+            ERROR_INSTALL_SOURCE_ABSENT,
+            ERROR_INSTALL_PACKAGE_VERSION,
+            ERROR_PRODUCT_UNINSTALLED,
+            ERROR_BAD_QUERY_SYNTAX,
+            ERROR_INVALID_FIELD,
+            ERROR_INSTALL_ALREADY_RUNNING,
+            ERROR_INSTALL_PACKAGE_OPEN_FAILED,
+            ERROR_INSTALL_PACKAGE_INVALID,
+            ERROR_INSTALL_UI_FAILURE,
+            ERROR_INSTALL_LOG_FAILURE,
+            ERROR_INSTALL_LANGUAGE_UNSUPPORTED,
+            ERROR_INSTALL_TRANSFORM_FAILURE,
+            ERROR_INSTALL_PACKAGE_REJECTED,
+            ERROR_FUNCTION_NOT_CALLED,
+            ERROR_FUNCTION_FAILED,
+            ERROR_INVALID_TABLE,
+            ERROR_DATATYPE_MISMATCH,
+            ERROR_UNSUPPORTED_TYPE,
+            ERROR_CREATE_FAILED,
+            ERROR_INSTALL_TEMP_UNWRITABLE,
+            ERROR_INSTALL_PLATFORM_UNSUPPORTED,
+            ERROR_INSTALL_NOTUSED,
+            ERROR_PATCH_PACKAGE_OPEN_FAILED,
+            ERROR_PATCH_PACKAGE_INVALID,
+            ERROR_PATCH_PACKAGE_UNSUPPORTED,
+            ERROR_PRODUCT_VERSION,
+            ERROR_INVALID_COMMAND_LINE,
+            ERROR_INSTALL_REMOTE_DISALLOWED,
+            ERROR_SUCCESS_REBOOT_INITIATED,
+            ERROR_PATCH_TARGET_NOT_FOUND,
+            ERROR_PATCH_PACKAGE_REJECTED,
+            ERROR_INSTALL_TRANSFORM_REJECTED,
+            ERROR_INSTALL_REMOTE_PROHIBITED,
+            ERROR_PATCH_REMOVAL_UNSUPPORTED,
+            ERROR_UNKNOWN_PATCH,
+            ERROR_PATCH_NO_SEQUENCE,
+            ERROR_PATCH_REMOVAL_DISALLOWED,
+            ERROR_INVALID_PATCH_XML,
+            ERROR_PATCH_MANAGED_ADVERTISED_PRODUCT,
+            ERROR_INSTALL_SERVICE_SAFEBOOT,
+            ERROR_ROLLBACK_DISABLED,
+            ERROR_INSTALL_REJECTED,
+            ERROR_SUCCESS_REBOOT_REQUIRED
+        };
+
+        return std::ranges::find(codes, errorCode) != codes.end();
     }
 
     BOOL VerifyEmbeddedSignature(LPCWSTR pwszSourceFile)
