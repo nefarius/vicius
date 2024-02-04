@@ -9,6 +9,9 @@ using Octokit;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints.Products;
 
+/// <summary>
+///     Crafts update configuration for <a href="https://github.com/nefarius/HidHide">HidHide</a>. 
+/// </summary>
 internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiService) : EndpointWithoutRequest
 {
     public override void Configure()

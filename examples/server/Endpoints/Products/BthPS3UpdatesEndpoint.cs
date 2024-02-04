@@ -24,6 +24,9 @@ internal class BthPS3UpdatesEndpointRequest
     public string OsArchitecture { get; set; } = null!;
 }
 
+/// <summary>
+///     Crafts update configuration for <a href="https://github.com/nefarius/BthPS3">BthPS3</a>. 
+/// </summary>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiService)
     : Endpoint<BthPS3UpdatesEndpointRequest>
