@@ -7,7 +7,7 @@ namespace Nefarius.Vicius.Example.Server.Services;
 /// <summary>
 ///     Abstracts calls to GitHub REST API and caches them to avoid hitting rate limits.
 /// </summary>
-internal sealed class GitHubApiService(IMemoryCache memoryCache)
+internal sealed class GitHubApiService(IMemoryCache memoryCache, IHostEnvironment environment)
 {
     private readonly GitHubClient _gitHubClient = new(new ProductHeaderValue("Nefarius.Vicius.Server"));
 
@@ -21,18 +21,24 @@ internal sealed class GitHubApiService(IMemoryCache memoryCache)
     {
         string key = $"{nameof(GitHubApiService)}-{owner}/{name}";
 
-        if (memoryCache.TryGetValue(key, out Release? cached))
+        if (!environment.IsDevelopment())
         {
-            return cached;
+            if (memoryCache.TryGetValue(key, out Release? cached))
+            {
+                return cached;
+            }
         }
 
         Release? release = await _gitHubClient.Repository.Release.GetLatest(owner, name);
 
-        memoryCache.Set(
-            key,
-            release,
-            new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1) }
-        );
+        if (!environment.IsDevelopment())
+        {
+            memoryCache.Set(
+                key,
+                release,
+                new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1) }
+            );
+        }
 
         return release;
     }
