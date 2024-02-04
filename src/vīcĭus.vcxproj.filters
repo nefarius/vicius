@@ -81,9 +81,6 @@
     <ClCompile Include="InstanceConfig.Setup.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
-    <ClCompile Include="markdown.cpp">
-      <Filter>Source Files\3rd</Filter>
-    </ClCompile>
     <ClCompile Include="MimeTypes.cpp">
       <Filter>Source Files\3rd</Filter>
     </ClCompile>
@@ -92,6 +89,9 @@
     </ClCompile>
     <ClCompile Include="imgui_md.cpp">
       <Filter>Source Files\3rd</Filter>
+    </ClCompile>
+    <ClCompile Include="markdown.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
