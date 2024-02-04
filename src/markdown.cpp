@@ -79,6 +79,7 @@ struct changelog : public imgui_md
      */
     std::shared_ptr<sf::Texture> GetImageTexture(const std::string& url)
     {
+        // this gets called on every frame so we only download it once and cache it
         if (!_images.contains(url))
         {
             const auto conn = new RestClient::Connection("");
