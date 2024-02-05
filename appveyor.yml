@@ -9,6 +9,7 @@ configuration:
 - Release
 environment:
   UpdaterName: contoso_EmergencyUrl_Updater
+  SKIP_CA: true
 test: off
 skip_commits:
   files:
