@@ -232,3 +232,4 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [Windows Platform Comparison Environment Variable Reference](http://web.archive.org/web/20120101144026/http://www.scriptlogic.com/support/CustomScripts/environmentVariableReference.html)
 - [C++ Library Manager for Windows, Linux, and MacOS](https://github.com/microsoft/vcpkg)
 - [Silently Install EXE and MSI setup applications (Unattended) - How To Guide](https://www.advancedinstaller.com/silent-install-exe-msi-applications.html)
+- [Markdown Guide Basic Syntax](https://markdownguide.offshoot.io/basic-syntax/)
