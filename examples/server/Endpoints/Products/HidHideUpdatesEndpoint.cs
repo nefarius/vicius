@@ -47,6 +47,10 @@ internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiS
 
         UpdateResponse response = new()
         {
+            Instance = new UpdateConfig
+            {
+                HelpUrl = "https://docs.nefarius.at/projects/HidHide/"
+            },
             Shared = new SharedConfig
             {
                 ProductName = "HidHide",
