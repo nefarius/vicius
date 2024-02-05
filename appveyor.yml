@@ -16,6 +16,7 @@ skip_commits:
     - assets/*
     - '**/*.md'
     - '**/*.json'
+    - '**/*.png'
 install:
 - cmd: git submodule -q update --init
 - cmd: vcpkg integrate install
