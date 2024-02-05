@@ -28,7 +28,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     // start boundary - format should be YYYY-MM-DDTHH:MM:SS(+-)(timezone).
     BSTR bstrStart = SysAllocString(ConvertAnsiToWide(timeStr).c_str()); // TODO: make configurable
     // not used currently
-    BSTR bstrEnd = SysAllocString(L"2153-01-01T12:00:00"); // end boundary - ""
+    BSTR bstrEnd = SysAllocString(L"2053-01-01T12:00:00"); // end boundary - ""
     BSTR bstrAuthor = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
 
     std::stringstream argsBuilder;
@@ -223,7 +223,6 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     }
 
     //  Set the time when the trigger is ended
-    /* TODO: we do not use an end date so it never expires
     hr = pDailyTrigger->put_EndBoundary(bstrEnd);
 
     if (FAILED(hr))
@@ -232,7 +231,22 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         pTask->Release();
 
         return std::make_tuple(hr, "Cannot put the end boundary");
-    } */
+    }
+
+    //  Define the interval for the daily trigger. An interval of 2 produces an
+    //  every other day schedule
+    hr = pDailyTrigger->put_DaysInterval(1);
+
+    if (FAILED(hr))
+    {
+        pRootFolder->Release();
+        pDailyTrigger->Release();
+        pTask->Release();
+
+        return std::make_tuple(hr, "Cannot set daily interval");
+    }
+
+#pragma region Actions
 
     //  ------------------------------------------------------
     //  Add an Action to the task. This task will execute bstrExecutablePath.
@@ -314,6 +328,48 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         return std::make_tuple(hr, "Cannot launch arguments for executable action");
     }
 
+#pragma endregion
+
+#pragma region Principal
+
+    //  ------------------------------------------------------
+    //  Create the principal for the task
+    IPrincipal* pPrincipal = NULL;
+    hr = pTask->get_Principal(&pPrincipal);
+    if (FAILED(hr))
+    {
+        pRootFolder->Release();
+        pTask->Release();
+        return std::make_tuple(hr, "Cannot get principal");
+    }
+
+    //  Set up principal information: 
+    hr = pPrincipal->put_Id(_bstr_t(L"Author"));
+    if (FAILED(hr))
+    {
+        return std::make_tuple(hr, "Cannot set principal ID");
+    }
+
+    hr = pPrincipal->put_LogonType(TASK_LOGON_INTERACTIVE_TOKEN);
+    if (FAILED(hr))
+    {
+        return std::make_tuple(hr, "Cannot set logon type");
+    }
+
+    //  Run the task with the least privileges (LUA) 
+    hr = pPrincipal->put_RunLevel(TASK_RUNLEVEL_LUA);
+    pPrincipal->Release();
+    if (FAILED(hr))
+    {
+        pRootFolder->Release();
+        pTask->Release();
+        return std::make_tuple(hr, "Cannot put principal run level");
+    }
+
+#pragma endregion
+
+#pragma region Settings
+
     // Get task settings
     ITaskSettings* pTaskSettings = nullptr;
     hr = pTask->get_Settings(&pTaskSettings);
@@ -343,6 +399,8 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     }
 
     pTaskSettings->Release();
+
+#pragma endregion
 
     //  Register the task in the root folder.
     IRegisteredTask* pRegisteredTask = nullptr;
