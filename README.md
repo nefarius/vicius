@@ -113,12 +113,6 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Add message box dialog if the user launches the updater with no args
   - [x] Standard text if we are up to date
   - [ ] Inform if Betas are available
-- [ ] Finalize UI design
-  - [x] `WizardPage::Start`
-  - [x] `WizardPage::SingleVersionSummary`
-  - [ ] `WizardPage::MultipleVersionsOverview`
-  - [x] `WizardPage::DownloadAndInstall`
-  - [ ] ...
 
 ### Nice-to-haves
 
@@ -128,6 +122,7 @@ Non-exhaustive list of things open or in-progress...
   - [ ] Model types
   - [ ] Business logic
 - [ ] Design Beta-Release support
+  - [ ] `WizardPage::MultipleVersionsOverview`
 - [ ] Make app icon customizable
 - [ ] Add "Light" theme
 - [ ] Make UI DPI-aware
@@ -144,6 +139,10 @@ Non-exhaustive list of things open or in-progress...
 
 <details><summary>Expand me!</summary>
 
+- [x] Finalize UI design
+  - [x] `WizardPage::Start`
+  - [x] `WizardPage::SingleVersionSummary`
+  - [x] `WizardPage::DownloadAndInstall`
 - [x] Finalize local updater config JSON format
 - [x] Add retry-logic (e.g. retry failed downloads etc.)
 - [x] Add some fallback code if the temp directory isn't available
