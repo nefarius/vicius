@@ -67,9 +67,11 @@ Signed stable releases will be provided [on the repository releases page](../../
 
 ## Screenshots
 
-![Updater_hvX29x1uTo.png](assets/Updater_hvX29x1uTo.png)
+![nefarius_HidHide_Updater_z4YFTJStbr.png](assets/nefarius_HidHide_Updater_z4YFTJStbr.png)
 
-![Updater_ToHYBbidzI.png](assets/Updater_ToHYBbidzI.png)
+![nefarius_HidHide_Updater_GDFudys8mB.png](assets/nefarius_HidHide_Updater_GDFudys8mB.png)
+
+![nefarius_HidHide_Updater_T7lQFBKqRw.png](assets/nefarius_HidHide_Updater_T7lQFBKqRw.png)
 
 ![Updater_mc9y7o4qcL.png](assets/Updater_mc9y7o4qcL.png)
 
