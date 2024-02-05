@@ -44,7 +44,7 @@ Dealing with software update mechanics has been a steady companion for almost 10
 - **Powerful template engine included**  
   Sometimes finding the local resource of interest to check the product version can be more challenging than just having a static, boring file path. You can use [inja](https://github.com/pantor/inja) templates to build your own path resolving logic, all while never having to leave your JSON strings!
 - **Expressive modern changelog support**
-  Update summaries a.k.a. changelogs don't have to be boring slabs of text; [Markdown](https://www.markdownguide.org/) is supported! The included fonts are also capable of rendering [Fork Awesome icons](https://forkaweso.me/Fork-Awesome/) and [**system-provided emojis](https://learn.microsoft.com/en-us/typography/font-list/segoe-ui-emoji)! 🎉 🥳 🍕
+  Update summaries a.k.a. changelogs don't have to be boring slabs of text; [Markdown](https://www.markdownguide.org/) is supported! The included fonts are also capable of rendering [Fork Awesome icons](https://forkaweso.me/Fork-Awesome/) and [**system-provided emojis**](https://learn.microsoft.com/en-us/typography/font-list/segoe-ui-emoji)! 🎉 🥳 🍕
 
 ## Prerequisites
 
