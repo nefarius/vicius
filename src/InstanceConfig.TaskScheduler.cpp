@@ -150,6 +150,8 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         return std::make_tuple(hr, "Cannot get identification info");
     }
 
+#pragma region Triggers
+
     // Get the trigger collection to insert the weekly trigger.
     ITriggerCollection* pTriggerCollection = nullptr;
     hr = pTask->get_Triggers(&pTriggerCollection);
@@ -245,6 +247,8 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
 
         return std::make_tuple(hr, "Cannot set daily interval");
     }
+
+#pragma endregion
 
 #pragma region Actions
 
