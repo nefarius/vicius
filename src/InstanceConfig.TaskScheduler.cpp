@@ -27,8 +27,6 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
 
     // start boundary - format should be YYYY-MM-DDTHH:MM:SS(+-)(timezone).
     BSTR bstrStart = SysAllocString(ConvertAnsiToWide(timeStr).c_str()); // TODO: make configurable
-    // not used currently
-    BSTR bstrEnd = SysAllocString(L"2053-01-01T12:00:00"); // end boundary - ""
     BSTR bstrAuthor = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
 
     std::stringstream argsBuilder;
@@ -38,15 +36,14 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     BSTR bstrLaunchArgs = SysAllocString(ConvertAnsiToWide(argsBuilt).c_str());
 
     // clean up all resources when going out of scope
-    sg::make_scope_guard(
-        [bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart, bstrEnd, bstrLaunchArgs]() noexcept
+    auto guard = sg::make_scope_guard(
+        [bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart, bstrLaunchArgs]() noexcept
         {
             if (bstrTaskName) SysFreeString(bstrTaskName);
             if (bstrExecutablePath) SysFreeString(bstrExecutablePath);
             if (bstrId) SysFreeString(bstrId);
             if (bstrAuthor) SysFreeString(bstrAuthor);
             if (bstrStart) SysFreeString(bstrStart);
-            if (bstrEnd) SysFreeString(bstrEnd);
             if (bstrLaunchArgs)SysFreeString(bstrLaunchArgs);
 
             CoUninitialize();
@@ -222,17 +219,6 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("put_StartBoundary failed with {}", ConvertWideToANSI(errMsg));
         return std::make_tuple(hr, "Cannot put the start boundary");
-    }
-
-    //  Set the time when the trigger is ended
-    hr = pDailyTrigger->put_EndBoundary(bstrEnd);
-
-    if (FAILED(hr))
-    {
-        pRootFolder->Release();
-        pTask->Release();
-
-        return std::make_tuple(hr, "Cannot put the end boundary");
     }
 
     //  Define the interval for the daily trigger. An interval of 2 produces an
@@ -442,10 +428,10 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::RemoveScheduledTask() c
 {
     BSTR bstrTaskName = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
 
-    sg::make_scope_guard(
+    auto guard = sg::make_scope_guard(
         [bstrTaskName]() noexcept
         {
-            if (bstrTaskName)SysFreeString(bstrTaskName);
+            if (bstrTaskName) SysFreeString(bstrTaskName);
 
             CoUninitialize();
         });
