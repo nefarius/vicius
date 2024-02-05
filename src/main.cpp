@@ -136,6 +136,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             return NV_E_SCHEDULED_TASK;
         }
 
+        int successCode = NV_S_INSTALL;
+        if ((cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode))
+        {
+            return successCode;
+        }
+
         return NV_S_INSTALL;
     }
 
