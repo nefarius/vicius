@@ -9,14 +9,3 @@
 #else
 #define DLL_API __declspec(dllimport)
 #endif
-
-// This class is exported from the dll
-class DLL_API Cdll {
-public:
-	Cdll(void);
-	// TODO: add your methods here.
-};
-
-extern DLL_API int ndll;
-
-DLL_API int fndll(void);
