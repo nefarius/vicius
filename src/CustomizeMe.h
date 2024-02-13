@@ -28,7 +28,7 @@
 // Regex for file name extraction, assumes "manufacturer_product_Updater" format
 // Matching value does NOT include file extension
 // 
-#define NV_FILENAME_REGEX       R"(^(\w+)_(\w+)_Updater$)"
+#define NV_FILENAME_REGEX       R"(^(\w+)_(\w+)_Updater.*?)"
 
 //
 // Default window title (displayed in taskbar)
