@@ -621,7 +621,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         if (winapi::IsMsiExecErrorCode(lastExitCode))
                         {
                             ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 15);
-                            ImGui::Text("Setup engine error: %s", winapi::GetLastErrorStdStr(lastExitCode).c_str());
+                            ImGui::TextWrapped("Setup engine error: %s", winapi::GetLastErrorStdStr(lastExitCode).c_str());
                         }
                         else
                         {
