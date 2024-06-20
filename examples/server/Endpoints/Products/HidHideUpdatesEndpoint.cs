@@ -2,7 +2,7 @@
 
 using FastEndpoints;
 
-using Nefarius.Vicius.Example.Server.Models;
+using Nefarius.Vicius.Abstractions.Models;
 using Nefarius.Vicius.Example.Server.Services;
 
 using Octokit;

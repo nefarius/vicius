@@ -1,6 +1,6 @@
 ﻿using FastEndpoints;
 
-using Nefarius.Vicius.Example.Server.Models;
+using Nefarius.Vicius.Abstractions.Models;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints.Detection;
 

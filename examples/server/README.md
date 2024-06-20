@@ -2,6 +2,8 @@
 
 You found the example backend implementation! 🎉
 
+I also use this project in production so it can be considered stable.
+
 ## How to build
 
 Tag it with your own registry, of course 😉
@@ -16,3 +18,4 @@ docker push nefarius.azurecr.io/nefarius-vicius-server:latest
 - [NJsonSchema for .NET](https://github.com/RicoSuter/NJsonSchema)
 - [FastEndpoints](https://fast-endpoints.com/)
 - [Nefarius.Utilities.AspNetCore](https://github.com/nefarius/Nefarius.Utilities.AspNetCore)
+- [Nefarius.Vicius.Abstractions](https://github.com/nefarius/Nefarius.Vicius.Abstractions)

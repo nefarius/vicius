@@ -1,6 +1,6 @@
 ﻿using FastEndpoints;
 
-using Nefarius.Vicius.Example.Server.Models;
+using Nefarius.Vicius.Abstractions.Models;
 
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
