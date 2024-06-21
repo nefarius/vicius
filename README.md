@@ -79,6 +79,12 @@ Signed stable releases will be provided [on the repository releases page](../../
 
 Set up Visual Studio 2022 or newer with the C++ Desktop Development workload.
 
+To get binary compression to work [upx](https://upx.github.io/) has to be installed. You can do so via e.g.:
+
+```PowerShell
+winget install upx
+```
+
 ### Multi-tenant build example
 
 You do not have to touch the checked out sources if you wish to customize your build.
