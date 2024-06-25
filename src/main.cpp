@@ -248,15 +248,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // get DPI scale
     HWND hWnd = window.getSystemHandle();
     auto dpi = winapi::GetWindowDPI(hWnd);
-    auto scaleFactor = static_cast<float>(dpi) / 96.f;
+    auto scaleFactor = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
     auto scaledWidth = (windowWidth * scaleFactor);
     auto scaledHeight = (windowHeight * scaleFactor);
     window.setSize(sf::Vector2u(scaledWidth, scaledHeight));
     io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
-
-    ui::ApplyImGuiStyleDark();
-    ui::UpdateUIScaling(scaleFactor);
-    ui::LoadFonts(hInstance);    
+    
+    ui::LoadFonts(hInstance, 16, scaleFactor);
+    ui::ApplyImGuiStyleDark(scaleFactor);
     
     // Set window icon
     if (auto hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)))

@@ -12,7 +12,7 @@ extern ImFont* G_Font_Default;
 /**
  * \brief https://github.com/ocornut/imgui/issues/707#issuecomment-1372640066
  */
-void ui::ApplyImGuiStyleDark()
+void ui::ApplyImGuiStyleDark(float scale)
 {
 	auto& colors = ImGui::GetStyle().Colors;
 	colors[ImGuiCol_WindowBg] = ImVec4{ 0.1f, 0.1f, 0.13f, 1.0f };
@@ -85,17 +85,23 @@ void ui::ApplyImGuiStyleDark()
 	style.FrameRounding = 3;
 	style.PopupRounding = 4;
 	style.ChildRounding = 4;
+
+    style.ScaleAllSizes(scale);
 }
 
 /**
  * \brief Loads fonts used in UI and Markdown widget from embedded resources.
  */
-void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels)
+void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
 {
 	ImFontConfig font_cfg;
 	font_cfg.FontDataOwnedByAtlas = false;
+    font_cfg.RasterizerDensity = scale;
+    font_cfg.OversampleH = 1;
+    font_cfg.OversampleV = 1;
 
-	const ImGuiIO& io = ImGui::GetIO();
+	ImGuiIO& io = ImGui::GetIO();
+    io.FontGlobalScale = scale;
 	io.Fonts->Clear();
 
 	// Ruda bold
@@ -176,29 +182,4 @@ void ui::IndeterminateProgressBar(const ImVec2& size_arg)
     RenderFrame(bb.Min, bb.Max, GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
     bb.Expand(ImVec2(-style.FrameBorderSize, -style.FrameBorderSize));
     RenderRectFilledRangeH(window->DrawList, bb, GetColorU32(ImGuiCol_PlotHistogram), t0, t1, style.FrameRounding);
-}
-
-void ui::UpdateUIScaling(float scale)
-{
-    ImGuiIO& io = ImGui::GetIO();
-    io.FontGlobalScale = scale;
-
-    // Setup Dear ImGui style
-    ImGuiStyle& style = ImGui::GetStyle();
-    const ImGuiStyle styleOld = style; // Backup colors
-    style = ImGuiStyle(); // IMPORTANT: ScaleAllSizes will change the original size, so we should reset all style config
-    style.WindowBorderSize = 1.0f;
-    style.ChildBorderSize = 1.0f;
-    style.PopupBorderSize = 1.0f;
-    style.FrameBorderSize = 1.0f;
-    style.TabBorderSize = 1.0f;
-    style.WindowRounding = 0.0f;
-    style.ChildRounding = 0.0f;
-    style.PopupRounding = 0.0f;
-    style.FrameRounding = 0.0f;
-    style.ScrollbarRounding = 0.0f;
-    style.GrabRounding = 0.0f;
-    style.TabRounding = 0.0f;
-    style.ScaleAllSizes(scale);
-    CopyMemory(style.Colors, styleOld.Colors, sizeof(style.Colors)); // Restore colors
 }
