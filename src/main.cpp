@@ -230,30 +230,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
     }
 
+    //
+    // Main GUI creation
+    // 
+
     constexpr int windowWidth = 640, windowHeight = 512;
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetWindowTitle(), sf::Style::None);
 
     window.setFramerateLimit(60);
     ImGui::SFML::Init(window, false);
 
+    // disable unused features
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
 
+    // get DPI scale
     HWND hWnd = window.getSystemHandle();
     auto dpi = winapi::GetWindowDPI(hWnd);
     auto scaleFactor = static_cast<float>(dpi) / 96.f;
-    io.FontGlobalScale = scaleFactor;
-
     auto scaledWidth = (windowWidth * scaleFactor);
     auto scaledHeight = (windowHeight * scaleFactor);
     window.setSize(sf::Vector2u(scaledWidth, scaledHeight));
     io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
 
-    // TODO: add missing windows size and controls positions on non-default DPI
-
-    ui::LoadFonts(hInstance);
     ui::ApplyImGuiStyleDark();
+    ui::UpdateUIScaling(scaleFactor);
+    ui::LoadFonts(hInstance);    
     
     // Set window icon
     if (auto hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)))

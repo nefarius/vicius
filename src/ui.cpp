@@ -177,3 +177,28 @@ void ui::IndeterminateProgressBar(const ImVec2& size_arg)
     bb.Expand(ImVec2(-style.FrameBorderSize, -style.FrameBorderSize));
     RenderRectFilledRangeH(window->DrawList, bb, GetColorU32(ImGuiCol_PlotHistogram), t0, t1, style.FrameRounding);
 }
+
+void ui::UpdateUIScaling(float scale)
+{
+    ImGuiIO& io = ImGui::GetIO();
+    io.FontGlobalScale = scale;
+
+    // Setup Dear ImGui style
+    ImGuiStyle& style = ImGui::GetStyle();
+    const ImGuiStyle styleOld = style; // Backup colors
+    style = ImGuiStyle(); // IMPORTANT: ScaleAllSizes will change the original size, so we should reset all style config
+    style.WindowBorderSize = 1.0f;
+    style.ChildBorderSize = 1.0f;
+    style.PopupBorderSize = 1.0f;
+    style.FrameBorderSize = 1.0f;
+    style.TabBorderSize = 1.0f;
+    style.WindowRounding = 0.0f;
+    style.ChildRounding = 0.0f;
+    style.PopupRounding = 0.0f;
+    style.FrameRounding = 0.0f;
+    style.ScrollbarRounding = 0.0f;
+    style.GrabRounding = 0.0f;
+    style.TabRounding = 0.0f;
+    style.ScaleAllSizes(scale);
+    CopyMemory(style.Colors, styleOld.Colors, sizeof(style.Colors)); // Restore colors
+}
