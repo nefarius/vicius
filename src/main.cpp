@@ -244,11 +244,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     auto dpi = winapi::GetWindowDPI(hWnd);
     auto scaleFactor = static_cast<float>(dpi) / 96.f;
     io.FontGlobalScale = scaleFactor;
-        
-    window.setSize(sf::Vector2u(
-        static_cast<unsigned>(windowWidth * scaleFactor),
-        static_cast<unsigned>(windowHeight * scaleFactor)
-    ));
+
+    auto scaledWidth = (windowWidth * scaleFactor);
+    auto scaledHeight = (windowHeight * scaleFactor);
+    window.setSize(sf::Vector2u(scaledWidth, scaledHeight));
+    io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
 
     // TODO: add missing windows size and controls positions on non-default DPI
 
@@ -327,7 +327,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         // fakes a little window border/margin
         const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x + 5, mainViewport->WorkPos.y + 5));
-        ImGui::SetNextWindowSize(ImVec2(windowWidth - 10, windowHeight - 10));
+        ImGui::SetNextWindowSize(ImVec2(scaledWidth - 10, scaledHeight - 10));
 
         ImGui::Begin("MainWindow", nullptr, flags);
 
