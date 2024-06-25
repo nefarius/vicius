@@ -12,7 +12,7 @@ extern ImFont* G_Font_Default;
 /**
  * \brief https://github.com/ocornut/imgui/issues/707#issuecomment-1372640066
  */
-void ui::ApplyImGuiStyleDark()
+void ui::ApplyImGuiStyleDark(float scale)
 {
 	auto& colors = ImGui::GetStyle().Colors;
 	colors[ImGuiCol_WindowBg] = ImVec4{ 0.1f, 0.1f, 0.13f, 1.0f };
@@ -85,17 +85,23 @@ void ui::ApplyImGuiStyleDark()
 	style.FrameRounding = 3;
 	style.PopupRounding = 4;
 	style.ChildRounding = 4;
+
+    style.ScaleAllSizes(scale);
 }
 
 /**
  * \brief Loads fonts used in UI and Markdown widget from embedded resources.
  */
-void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels)
+void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
 {
 	ImFontConfig font_cfg;
 	font_cfg.FontDataOwnedByAtlas = false;
+    font_cfg.RasterizerDensity = scale;
+    font_cfg.OversampleH = 1;
+    font_cfg.OversampleV = 1;
 
-	const ImGuiIO& io = ImGui::GetIO();
+	ImGuiIO& io = ImGui::GetIO();
+    io.FontGlobalScale = scale;
 	io.Fonts->Clear();
 
 	// Ruda bold
