@@ -242,7 +242,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     HWND hWnd = window.getSystemHandle();
     auto dpi = winapi::GetWindowDPI(hWnd);
-    io.FontGlobalScale = static_cast<float>(dpi) / 96.f;
+    auto scaleFactor = static_cast<float>(dpi) / 96.f;
+    io.FontGlobalScale = scaleFactor;
+        
+    window.setSize(sf::Vector2u(
+        static_cast<unsigned>(windowWidth * scaleFactor),
+        static_cast<unsigned>(windowHeight * scaleFactor)
+    ));
 
     // TODO: add missing windows size and controls positions on non-default DPI
 
