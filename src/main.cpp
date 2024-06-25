@@ -311,7 +311,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             {
                 const auto offset = sf::Mouse::getPosition() - window.getPosition();
                 // fake a titlebar and only drag when cursor is in that area
-                if (grabbedWindow && offset.y < 30)
+                if (grabbedWindow && offset.y < (30 * scaleFactor))
                 {
                     window.setPosition(sf::Mouse::getPosition() + grabbedOffset);
                 }
@@ -362,14 +362,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             {
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H1);
-                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (30 * scaleFactor));
                 ImGui::Text("Updates for %s are available", cfg.GetProductName().c_str());
                 ImGui::PopFont();
 
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H2);
 
-                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (30 * scaleFactor));
                 if (ImGui::Button(ICON_FK_DOWNLOAD " Display update details now"))
                 {
                     currentPage = cfg.HasSingleRelease()
@@ -377,7 +377,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                                       : WizardPage::MultipleVersionsOverview;
                 }
 
-                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (20 * scaleFactor));
                 if (ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow"))
                 {
                     cfg.SetPostponeData();
@@ -387,7 +387,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                 if (cfg.GetHelpUrl().has_value())
                 {
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 20);
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (20 * scaleFactor));
                     if (ImGui::Button(ICON_FK_QUESTION " Open help web page"))
                     {
                         ShellExecuteA(nullptr, "open", cfg.GetHelpUrl().value().c_str(), nullptr, nullptr,
@@ -406,7 +406,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H1);
-                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (30 * scaleFactor));
                 ImGui::Text("Update Summary");
                 ImGui::PopFont();
 
@@ -464,11 +464,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H1);
-                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (30 * scaleFactor));
                 ImGui::Text("Installing Updates");
                 ImGui::PopFont();
 
-                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 30);
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (30 * scaleFactor));
 
                 bool isDownloading = false;
                 bool hasFinished = false;
@@ -515,7 +515,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     ImGui::Text("Downloading (%.2f MB of %.2f MB)",
                                 totalDownloaded / AS_MB, totalToDownload / AS_MB);
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (5 * scaleFactor));
                     ImGui::ProgressBar(
                         (static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
                         ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f)
@@ -545,10 +545,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, HTTP error code: %d", statusCode);
                     }
 
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
                     ImGui::Text("Press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
 
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 15);
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
                     ImGui::Text("Press the 'Cancel' button to abort and close.");
 
                     break;
@@ -574,7 +574,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                             if (isRunning)
                             {
                                 ImGui::Text("Installing...");
-                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
+                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (5 * scaleFactor));
                                 ui::IndeterminateProgressBar(
                                     ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
                             }
@@ -634,12 +634,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                         if (winapi::IsMsiExecErrorCode(lastExitCode))
                         {
-                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 15);
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
                             ImGui::TextWrapped("Setup engine error: %s", winapi::GetLastErrorStdStr(lastExitCode).c_str());
                         }
                         else
                         {
-                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 15);
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
                             ImGui::Text("Setup exit code: %lu", lastExitCode);
                         }
                     }
@@ -649,10 +649,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                                     winapi::GetLastErrorStdStr().c_str());
                     }
 
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 35);
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
                     ImGui::Text("Press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
 
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 15);
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
                     ImGui::Text("Press the 'Cancel' button to abort and close.");
 
                     isCancelDisabled = false;
