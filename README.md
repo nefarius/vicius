@@ -248,3 +248,4 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [imgui-sfml / DPI-awareness on Windows](https://github.com/SFML/imgui-sfml/issues/284#issuecomment-2188557821)
 - [Examples: A very simple example of High DPI changing handling for Win32](https://github.com/ocornut/imgui/discussions/3925)
 - [imgui / Blurry fonts in high DPI](https://github.com/ocornut/imgui/issues/1065)
+- [thedmd/imgui/tree/feature/hidpi-support](https://github.com/ocornut/imgui/compare/master...thedmd:imgui:feature/hidpi-support)
