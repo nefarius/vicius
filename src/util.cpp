@@ -676,4 +676,38 @@ namespace winapi
 
         return bRet;
     }
+
+    // stolen from: https://building.enlyze.com/posts/writing-win32-apps-like-its-2020-part-3/
+    using PGetDpiForMonitor = HRESULT(WINAPI*)(HMONITOR hmonitor, int dpiType, UINT* dpiX, UINT* dpiY);
+
+    WORD GetWindowDPI(HWND hWnd)
+    {
+        // Try to get the DPI setting for the monitor where the given window is located.
+        // This API is Windows 8.1+.
+        const HMODULE hShcore = LoadLibraryW(L"shcore");
+        if (hShcore)
+        {
+            const auto pGetDpiForMonitor =
+                reinterpret_cast<PGetDpiForMonitor>(GetProcAddress(hShcore, "GetDpiForMonitor"));
+            if (pGetDpiForMonitor)
+            {
+                const HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY);
+                UINT uiDpiX;
+                UINT uiDpiY;
+                const HRESULT hr = pGetDpiForMonitor(hMonitor, 0, &uiDpiX, &uiDpiY);
+                if (SUCCEEDED(hr))
+                {
+                    return static_cast<WORD>(uiDpiX);
+                }
+            }
+        }
+
+        // We couldn't get the window's DPI above, so get the DPI of the primary monitor
+        // using an API that is available in all Windows versions.
+        const HDC hScreenDC = GetDC(nullptr);
+        const int iDpiX = GetDeviceCaps(hScreenDC, LOGPIXELSX);
+        ReleaseDC(nullptr, hScreenDC);
+
+        return static_cast<WORD>(iDpiX);
+    }
 }

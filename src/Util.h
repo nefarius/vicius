@@ -75,4 +75,11 @@ namespace winapi
      * \return TRUE on success, FALSE otherwise.
      */
     BOOL SafeGetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo);
+
+    /**
+     * \brief Queries for the current monitor DPI value.
+     * \param hWnd Window handle.
+     * \return DPI value.
+     */
+    WORD GetWindowDPI(HWND hWnd);
 }
