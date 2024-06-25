@@ -240,16 +240,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
 
+    HWND hWnd = window.getSystemHandle();
+    auto dpi = winapi::GetWindowDPI(hWnd);
+    io.FontGlobalScale = static_cast<float>(dpi) / 96.f;
+
+    // TODO: add missing windows size and controls positions on non-default DPI
+
     ui::LoadFonts(hInstance);
     ui::ApplyImGuiStyleDark();
-
+    
     // Set window icon
     if (auto hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)))
     {
-        SendMessage(window.getSystemHandle(), WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
+        SendMessage(hWnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
     }
 
-    cfg.SetWindowHandle(window.getSystemHandle());
+    cfg.SetWindowHandle(hWnd);
 
     // TODO: try best compromise to display window when user is busy
     //SendMessage(window.getSystemHandle(), WM_SYSCOMMAND, SC_MINIMIZE, 0);
@@ -266,7 +272,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     sf::Clock deltaClock;
     while (window.isOpen())
     {
-        sf::Event event;
+        sf::Event event{};
         while (window.pollEvent(event))
         {
             ImGui::SFML::ProcessEvent(window, event);
