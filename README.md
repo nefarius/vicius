@@ -241,5 +241,10 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [C++ Library Manager for Windows, Linux, and MacOS](https://github.com/microsoft/vcpkg)
 - [Silently Install EXE and MSI setup applications (Unattended) - How To Guide](https://www.advancedinstaller.com/silent-install-exe-msi-applications.html)
 - [Markdown Guide Basic Syntax](https://markdownguide.offshoot.io/basic-syntax/)
+
+#### DPI-awareness
+
 - [Writing Win32 apps like it's 2020: A DPI-aware resizable wizard](https://building.enlyze.com/posts/writing-win32-apps-like-its-2020-part-3/)
-- [DPI-awareness on Windows](https://github.com/SFML/imgui-sfml/issues/284#issuecomment-2188557821)
+- [imgui-sfml / DPI-awareness on Windows](https://github.com/SFML/imgui-sfml/issues/284#issuecomment-2188557821)
+- [Examples: A very simple example of High DPI changing handling for Win32](https://github.com/ocornut/imgui/discussions/3925)
+- [imgui / Blurry fonts in high DPI](https://github.com/ocornut/imgui/issues/1065)

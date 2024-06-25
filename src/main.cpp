@@ -353,7 +353,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         ImGui::SameLine();
         ImGui::Text("Found Updates for %s", cfg.GetProductName().c_str());
 
-        float navigateButtonOffsetY = 470.0;
+        float navigateButtonOffsetY = mainViewport->WorkSize.y - (42 * scaleFactor);
         float leftBorderIndent = 40.0;
 
         switch (currentPage)
@@ -414,7 +414,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
                 ImGui::BeginChild(
                     "Summary",
-                    ImVec2(ImGui::GetContentRegionAvail().x, 360),
+                    ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - (60 * scaleFactor)),
                     false,
                     windowFlags
                 );
@@ -425,7 +425,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 );
                 ImGui::EndChild();
 
-                ImGui::SetCursorPos(ImVec2(425, navigateButtonOffsetY));
+                ImGui::SetCursorPos(ImVec2(mainViewport->WorkSize.x - (215 * scaleFactor), navigateButtonOffsetY));
                 if (ImGui::Button("Download and install"))
                 {
                     instStep = DownloadAndInstallStep::Begin;
@@ -686,10 +686,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             }
         }
 
-        ImGui::SetCursorPosY(460);
+        ImGui::SetCursorPosY(mainViewport->WorkSize.y - (52 * scaleFactor));
         ImGui::Separator();
 
-        ImGui::SetCursorPos(ImVec2(570, navigateButtonOffsetY));
+        ImGui::SetCursorPos(ImVec2(mainViewport->WorkSize.x - (70 * scaleFactor), navigateButtonOffsetY));
         ImGui::BeginDisabled(isCancelDisabled);
         if (ImGui::Button(currentPage == WizardPage::Finish ? "Finish" : "Cancel"))
         {
