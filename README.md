@@ -133,7 +133,6 @@ Non-exhaustive list of things open or in-progress...
   - [ ] `WizardPage::MultipleVersionsOverview`
 - [ ] Make app icon customizable
 - [ ] Add "Light" theme
-- [ ] Make UI DPI-aware
 - [ ] Support closing and restarting applications before and after the main update
 - [ ] Support running prerequisites installation before main update
 - [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
@@ -147,6 +146,7 @@ Non-exhaustive list of things open or in-progress...
 
 <details><summary>Expand me!</summary>
 
+- [x] Make UI DPI-aware
 - [x] Finalize UI design
   - [x] `WizardPage::Start`
   - [x] `WizardPage::SingleVersionSummary`
