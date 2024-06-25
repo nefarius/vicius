@@ -373,6 +373,7 @@
     <ClInclude Include="NAuthenticode.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="UI.h" />
     <ClInclude Include="UniUtil.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="models\UpdateResponse.hpp" />

@@ -77,3 +77,4 @@
 #include "resource.h"
 #include "CustomizeMe.h"
 #include "Crypto.h"
+#include "UI.h"
