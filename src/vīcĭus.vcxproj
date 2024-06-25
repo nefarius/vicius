@@ -175,7 +175,7 @@
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
     </ResourceCompile>
     <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -199,7 +199,7 @@
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
     </ResourceCompile>
     <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -223,7 +223,7 @@
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
     </ResourceCompile>
     <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -251,7 +251,7 @@
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
     </ResourceCompile>
     <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -279,7 +279,7 @@
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
     </ResourceCompile>
     <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
@@ -307,7 +307,7 @@
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
     </ResourceCompile>
     <Manifest>
-      <EnableDpiAwareness>true</EnableDpiAwareness>
+      <EnableDpiAwareness>PerMonitorHighDPIAware</EnableDpiAwareness>
     </Manifest>
   </ItemDefinitionGroup>
   <ItemGroup>
