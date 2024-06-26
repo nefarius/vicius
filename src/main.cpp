@@ -251,7 +251,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     auto scaleFactor = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
     auto scaledWidth = (windowWidth * scaleFactor);
     auto scaledHeight = (windowHeight * scaleFactor);
-    window.setSize(sf::Vector2u(scaledWidth, scaledHeight));
+    window.setSize(sf::Vector2u(static_cast<uint32_t>(scaledWidth), static_cast<uint32_t>(scaledHeight)));
     io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
     
     ui::LoadFonts(hInstance, 16, scaleFactor);
