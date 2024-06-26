@@ -6,13 +6,6 @@ Nefarius' [nŏvīcĭus](https://latinitium.com/latin-dictionaries/?t=lsn31290) u
 
 ## About
 
-<!--
----
-
-*Very* work in progress, do not use 🔥 Star ⭐ it instead to show interest 🤟
-
----
--->
 vīcĭus is a self-contained C++20 executable acting as a software update agent for Microsoft Windows. It can be deployed alongside your product and will take care of periodically checking for newer versions online and notifying the user of pending updates. Its goal is to require the least amount of configuration to get it up and running while providing enough flexibility to be customized for various environments, if desired. It doesn't require any prerequisites being present on the target system and should be able to run on any recent Windows version.
 
 ## Motivation
@@ -21,27 +14,27 @@ Dealing with software update mechanics has been a steady companion for almost 10
 
 ## Features
 
-- **No backend application server required**  
+- **No backend application server required**
   All you need on the server-side to get going is a web host supporting delivering static JSON files and you're done. [GitHub Pages](https://pages.github.com/) would be a sufficient free hosting solution where you can upload to and deliver the updater configuration from. Take a look at the [example server implementation](examples/server) if you wish to write your own backend service.
-- **Self-contained**  
+- **Self-contained**
   No need to worry if .NET or other runtimes are present on the target machines, everything it needs is delivered in a single Win32 executable.
-- **(Almost) zero configuration**  
+- **(Almost) zero configuration**
   The bare minimum configuration can be provided by simply compiling in the server URL by adjusting the `CustomizeMe.h` header file. This does not mean you need to maintain one build for every product you wanna support; you will get **multi-tenancy out of the box** by simply naming the resulting executable after the following scheme: `manufacturer_product_Updater.exe`, e.g. `nefarius_HidHide_Updater.exe` will build the server path as `https://example.org/api/nefarius/HidHide/updates.json` (or however it is defined in `CustomizeMe.h`) automatically!
   - All alternative, more sophisticated configuration options [are described in the extended documentation](https://docs.nefarius.at/projects/Vicius/Server-Discovery/).
   - If you wish to completely avoid touching the cloned sources [have a look at the optional includes](include/README.md).
-- **Sane defaults**  
+- **Sane defaults**
   We hate wasting time writing configuration files as much as the next person; most configuration options are either optional or have sane default fallback values you can depend on.
-- **Self-updater**  
+- **Self-updater**
   Sometimes just the updater process needs an update (e.g. security patches), not the entire product it is watching over. It can update itself if the server-provided instance version is higher than the locally running one.
-- **Self-healing**  
+- **Self-healing**
   If run in autostart when the user logs on, it can make sure that scheduled tasks and other supportive components are configured and working properly.
-- **Low resource consumption**  
+- **Low resource consumption**
   The updater process is only invoked on demand (at user logon and once per day via Task Scheduler) and doesn't keep running in the background.
-- **Respects your time**  
+- **Respects your time**
   Busy fragging in a game? We won't bother you with any popup windows until you're ready.
-- **Powerful template engine included**  
+- **Powerful template engine included**
   Sometimes finding the local resource of interest to check the product version can be more challenging than just having a static, boring file path. You can use [inja](https://github.com/pantor/inja) templates to build your own path resolving logic, all while never having to leave your JSON strings!
-- **Expressive modern changelog support**  
+- **Expressive modern changelog support**
   Update summaries a.k.a. changelogs don't have to be boring slabs of text; [Markdown](https://www.markdownguide.org/) is fully supported! The included fonts are also capable of rendering [Fork Awesome icons](https://forkaweso.me/Fork-Awesome/) and [**system-provided emojis**](https://learn.microsoft.com/en-us/typography/font-list/segoe-ui-emoji)! 🎉 🥳 🍕
 
 ## Prerequisites
@@ -50,7 +43,7 @@ Dealing with software update mechanics has been a steady companion for almost 10
   - **Note:** currently anything below Windows 10 is untested and low priority
 - An NTFS formatted volume
 - An Internet connection
-- Your software updates packaged in some sort of setup or self-extractor  
+- Your software updates packaged in some sort of setup or self-extractor
   Use something like [WiX](https://wixtoolset.org/), [Inno Setup](https://jrsoftware.org/isinfo.php), [Advanced Installer](https://www.advancedinstaller.com/), [NSIS](https://nsis.sourceforge.io/Download) or similar to package your updates into setups.
 
 ## Documentation
@@ -59,7 +52,7 @@ Head over to the [extended documentation](https://docs.nefarius.at/projects/Vici
 
 ## Downloads
 
-You can get [unsigned build snapshots here](https://buildbot.nefarius.at/builds/vicius/). Consider these Beta-releases.
+You can get [unsigned build snapshots here](https://buildbot.nefarius.at/builds/vicius/latest/bin/). Consider these Beta-releases.
 
 Signed stable releases will be provided [on the repository releases page](../../releases/).
 
@@ -136,7 +129,7 @@ Non-exhaustive list of things open or in-progress...
 - [ ] Support closing and restarting applications before and after the main update
 - [ ] Support running prerequisites installation before main update
 - [ ] Support running the update [as Administrator](https://stackoverflow.com/a/4893508)
-- [ ] Implement machine-wide registration  
+- [ ] Implement machine-wide registration
       Currently only the user executing the updater will run registrations, which is sufficient for most cases
 - [ ] Postpone update dialog popping up if the product is currently in use
 - [ ] Allow using a HTTP proxy address via configuration

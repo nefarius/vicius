@@ -22,6 +22,7 @@
         "vcpkg",
         "VERSIONINFO",
         "vīcĭus",
-        "vpatch"
+        "vpatch",
+        "winget"
     ]
 }
