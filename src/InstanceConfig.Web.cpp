@@ -2,6 +2,7 @@
 #include "Util.h"
 #include "InstanceConfig.hpp"
 #include "MimeTypes.h"
+#include <httplib.h>
 
 
 void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* conn) const
@@ -291,8 +292,9 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         // TODO: add retry logic or similar
 
         spdlog::error("GET request failed with code {}", code);
-        const auto curlCode = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
-        return std::make_tuple(false, std::format("HTTP error {}", curlCode));
+        auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
+        errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
+        return std::make_tuple(false, std::format("HTTP error {}", errorMessage));
     }
 
     try

@@ -213,6 +213,7 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [A Template Engine for Modern C++](https://github.com/pantor/inja)
 - [Simple C++ ini parser](https://github.com/mcmtroffaes/inipp)
 - [MimeTypes](https://github.com/lasselukkari/MimeTypes)
+- [A C++ header-only HTTP/HTTPS server and client library](https://github.com/yhirose/cpp-httplib)
 
 ### Literature & references
 

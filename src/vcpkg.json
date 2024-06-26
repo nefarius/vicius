@@ -23,6 +23,7 @@
     "spdlog",
     "scope-guard",
     "curlpp",
-    "inja"
+    "inja",
+    "cpp-httplib"
   ]
 }
