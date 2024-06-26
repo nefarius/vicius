@@ -4,6 +4,7 @@
 #include "WizardPage.h"
 #include "InstanceConfig.hpp"
 #include "DownloadAndInstall.hpp"
+#include <httplib.h>
 
 
 //
@@ -542,7 +543,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
                     else
                     {
-                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, HTTP error code: %d", statusCode);
+                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, HTTP error: %s", httplib::status_message(statusCode));
                     }
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
