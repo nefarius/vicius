@@ -514,13 +514,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 {
                 case DownloadAndInstallStep::Downloading:
 
-                    ImGui::Text("Downloading (%.2f MB of %.2f MB)",
-                                totalDownloaded / AS_MB, totalToDownload / AS_MB);
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (5 * scaleFactor));
-                    ImGui::ProgressBar(
-                        (static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
-                        ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f)
-                    );
+                    if (totalDownloaded <= 0 || totalToDownload <= 0)
+                    {
+                        ImGui::Text("Starting download...");
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (5 * scaleFactor));
+                        ui::IndeterminateProgressBar(
+                            ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
+                    }
+                    else
+                    {
+                        ImGui::Text("Downloading (%.2f MB of %.2f MB)",
+                                    totalDownloaded / AS_MB, totalToDownload / AS_MB);
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (5 * scaleFactor));
+                        ImGui::ProgressBar(
+                            (static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
+                            ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f)
+                        );
+                    }
 
                     break;
                 case DownloadAndInstallStep::DownloadSucceeded:

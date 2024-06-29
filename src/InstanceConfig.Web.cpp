@@ -162,9 +162,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     auto& release = GetSelectedRelease();
     release.localTempFilePath = tempFile;
 
-    // this is ugly but only one download can run in parallel so we're fine :)
-    static std::ofstream outStream;
-
+    std::ofstream outStream{};
     const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
     outStream.exceptions(exceptionMask);
 
@@ -179,24 +177,11 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         return -1;
     }
 
-    // write to file as we download it
-    auto writeCallback = [](void* data, size_t size, size_t nmemb, void* userdata) -> size_t
-    {
-        UNREFERENCED_PARAMETER(userdata);
-
-        const auto bytes = size * nmemb;
-
-        // TODO: error handling
-        outStream.write(static_cast<char*>(data), bytes);
-
-        return bytes;
-    };
-
-    conn->SetWriteFunction(writeCallback);
-
     spdlog::debug("Starting release download from {}", release.downloadUrl);
 
     auto [code, body, headers] = conn->get(release.downloadUrl);
+
+    outStream.write(body.data(), body.size());
 
     outStream.close();
 
@@ -204,7 +189,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     const auto& cd = headers["Content-Disposition"];
 
     // attempt to get true filename
-    if (!cd.empty())
+    if (code == 200 && !cd.empty())
     {
         std::vector<std::string> arguments;
         char dl = ';';
