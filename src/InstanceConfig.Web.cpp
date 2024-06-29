@@ -168,7 +168,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     try
     {
-        outStream.open(release.localTempFilePath.string(), std::ios::binary);
+        outStream.open(release.localTempFilePath.string(), std::ios::binary | std::ios::trunc);
     }
     catch (std::ios_base::failure& e)
     {
