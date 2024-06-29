@@ -89,6 +89,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     spdlog::debug("Setting User Agent to {}", ua);
     conn->SetUserAgent(ua);
     conn->FollowRedirects(true, 5);
+    conn->SetTimeout(30);
     conn->SetFileProgressCallback(progressFn);
 
     SetCommonHeaders(conn);
@@ -277,6 +278,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     spdlog::debug("Setting User Agent to {}", ua);
     conn->SetUserAgent(ua);
     conn->FollowRedirects(true, 5);
+    conn->SetTimeout(30);
 
     RestClient::HeaderFields headers;
     headers["Accept"] = "application/json";
