@@ -85,9 +85,16 @@ namespace winapi
 
     /**
      * \brief Gets the refresh rate of the monitor the given window is rendered on.
-     * \param hWnd Windows handle.
+     * \param hWnd Window handle.
      * \param defaultRate The fallback rate to use if lookup failed.
      * \return The detected refresh rate.
      */
     DWORD GetMonitorRefreshRate(HWND hWnd, DWORD defaultRate = 60);
+
+    /**
+     * \brief Enabled or disables immerse dark mode on a window.
+     * \param hWnd Window handle.
+     * \param useDarkMode TRUE to set dark mode, FALSE for light/default.
+     */
+    void SetDarkMode(HWND hWnd, BOOL useDarkMode = TRUE);
 }

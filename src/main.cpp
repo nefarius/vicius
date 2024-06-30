@@ -236,9 +236,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // 
 
     constexpr int windowWidth = 640, windowHeight = 512;
-    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetWindowTitle(), sf::Style::None);
+    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetWindowTitle(), sf::Style::Titlebar);
     HWND hWnd = window.getSystemHandle();
-
+    
     window.setFramerateLimit(winapi::GetMonitorRefreshRate(hWnd));
     ImGui::SFML::Init(window, false);
 
@@ -264,6 +264,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         SendMessage(hWnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
     }
 
+    window.setVisible(false);
+    winapi::SetDarkMode(hWnd);
+    window.setVisible(true);    
+
     cfg.SetWindowHandle(hWnd);
 
     // TODO: try best compromise to display window when user is busy
@@ -276,8 +280,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     DWORD status = ERROR_SUCCESS;
     std::once_flag errorUrlTriggered;
 
-    sf::Vector2i grabbedOffset;
-    auto grabbedWindow = false;
     sf::Clock deltaClock;
     while (window.isOpen())
     {
@@ -289,33 +291,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             if (event.type == sf::Event::Closed)
             {
                 window.close();
-            }
-            // Mouse events used to react to dragging
-            else if (event.type == sf::Event::MouseButtonPressed)
-            {
-                if (event.mouseButton.button == sf::Mouse::Left)
-                {
-                    grabbedOffset = window.getPosition() - sf::Mouse::getPosition();
-                    grabbedWindow = true;
-                }
-            }
-            // Mouse events used to react to dragging
-            else if (event.type == sf::Event::MouseButtonReleased)
-            {
-                if (event.mouseButton.button == sf::Mouse::Left)
-                {
-                    grabbedWindow = false;
-                }
-            }
-            // Mouse events used to react to dragging
-            else if (event.type == sf::Event::MouseMoved)
-            {
-                const auto offset = sf::Mouse::getPosition() - window.getPosition();
-                // fake a titlebar and only drag when cursor is in that area
-                if (grabbedWindow && offset.y < (30 * scaleFactor))
-                {
-                    window.setPosition(sf::Mouse::getPosition() + grabbedOffset);
-                }
             }
         }
 
