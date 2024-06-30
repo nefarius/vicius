@@ -84,12 +84,11 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     UNREFERENCED_PARAMETER(releaseIndex);
     const auto conn = new RestClient::Connection("");
 
-    conn->SetTimeout(5);
     const auto ua = std::format("{}/{}", appFilename, appVersion.str());
     spdlog::debug("Setting User Agent to {}", ua);
     conn->SetUserAgent(ua);
-    conn->FollowRedirects(true, 5);
-    conn->SetTimeout(30);
+    conn->FollowRedirects(true, MAX_REDIRECTS);
+    conn->SetTimeout(MAX_TIMEOUT_SECS);
     conn->SetFileProgressCallback(progressFn);
 
     SetCommonHeaders(conn);
@@ -258,12 +257,11 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 {
     const auto conn = new RestClient::Connection("");
 
-    conn->SetTimeout(5);
     const auto ua = std::format("{}/{}", appFilename, appVersion.str());
     spdlog::debug("Setting User Agent to {}", ua);
     conn->SetUserAgent(ua);
-    conn->FollowRedirects(true, 5);
-    conn->SetTimeout(30);
+    conn->FollowRedirects(true, MAX_REDIRECTS);
+    conn->SetTimeout(MAX_TIMEOUT_SECS);
 
     RestClient::HeaderFields headers;
     headers["Accept"] = "application/json";

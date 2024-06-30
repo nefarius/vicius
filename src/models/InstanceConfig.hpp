@@ -70,6 +70,9 @@ namespace models
         std::tuple<bool, DWORD, DWORD> ExecuteSetup();
 
     public:
+        static constexpr int MAX_TIMEOUT_SECS = 30;
+        static constexpr int MAX_REDIRECTS = 5;
+
         std::string serverUrlTemplate;
         std::string filenameRegex;
         Authority authority;
