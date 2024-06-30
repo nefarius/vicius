@@ -742,12 +742,6 @@ namespace winapi
 
     void SetDarkMode(HWND hWnd, BOOL useDarkMode)
     {
-        HRESULT hr = DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
-        if (SUCCEEDED(hr))
-        {
-            // TODO: refreshing doesn't work at all on Windows 10 22H2 for some reason?!
-            SetWindowPos(hWnd, NULL, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED);
-            RedrawWindow(hWnd, NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW);
-        }
+        (void)DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
     }
 }
