@@ -308,6 +308,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             return std::make_tuple(true, "OK");
         }
 
+        // merge values that can be supplied both locally end remotely
         if (remote.shared.has_value())
         {
             const auto& shared = remote.shared.value();
