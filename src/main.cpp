@@ -237,8 +237,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     constexpr int windowWidth = 640, windowHeight = 512;
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetWindowTitle(), sf::Style::None);
+    HWND hWnd = window.getSystemHandle();
 
-    window.setFramerateLimit(60);
+    window.setFramerateLimit(winapi::GetMonitorRefreshRate(hWnd));
     ImGui::SFML::Init(window, false);
 
     // disable unused features
@@ -246,8 +247,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
 
-    // get DPI scale
-    HWND hWnd = window.getSystemHandle();
+    // get DPI scale    
     auto dpi = winapi::GetWindowDPI(hWnd);
     auto scaleFactor = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
     auto scaledWidth = (windowWidth * scaleFactor);

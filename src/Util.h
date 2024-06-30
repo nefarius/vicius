@@ -82,4 +82,12 @@ namespace winapi
      * \return DPI value.
      */
     WORD GetWindowDPI(HWND hWnd);
+
+    /**
+     * \brief Gets the refresh rate of the monitor the given window is rendered on.
+     * \param hWnd Windows handle.
+     * \param defaultRate The fallback rate to use if lookup failed.
+     * \return The detected refresh rate.
+     */
+    DWORD GetMonitorRefreshRate(HWND hWnd, DWORD defaultRate = 60);
 }

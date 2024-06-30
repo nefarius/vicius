@@ -710,4 +710,33 @@ namespace winapi
 
         return static_cast<WORD>(iDpiX);
     }
+
+    DWORD GetMonitorRefreshRate(HWND hWnd, DWORD defaultRate)
+    {
+        const HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+
+        if (!hMonitor)
+        {
+            return defaultRate;
+        }
+
+        MONITORINFOEX monitorInfo;
+        monitorInfo.cbSize = sizeof(MONITORINFOEX);
+
+        if (!GetMonitorInfo(hMonitor, &monitorInfo))
+        {
+            return defaultRate;
+        }
+
+        DEVMODE devMode;
+        ZeroMemory(&devMode, sizeof(devMode));
+        devMode.dmSize = sizeof(devMode);
+
+        if (EnumDisplaySettings(monitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &devMode))
+        {
+            return devMode.dmDisplayFrequency;
+        }
+
+        return defaultRate;
+    }
 }
