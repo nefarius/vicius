@@ -270,6 +270,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     cfg.SetWindowHandle(hWnd);
 
+    // workaround for
+    // - https://github.com/nefarius/vicius/issues/46
+    // - https://github.com/SFML/imgui-sfml/issues/206
+    // - https://github.com/SFML/imgui-sfml/issues/212
+    ImGui::SFML::ProcessEvent(window, sf::Event(sf::Event::LostFocus));
+    ImGui::SFML::ProcessEvent(window, sf::Event(sf::Event::GainedFocus));
+
     // TODO: try best compromise to display window when user is busy
     //SendMessage(window.getSystemHandle(), WM_SYSCOMMAND, SC_MINIMIZE, 0);
 
