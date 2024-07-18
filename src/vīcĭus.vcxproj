@@ -119,22 +119,22 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(UpdaterName)</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\</OutDir>
-    <RunCodeAnalysis Condition="'$(SKIP_CA)'!='true'">true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(UpdaterName)</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\</OutDir>
-    <RunCodeAnalysis Condition="'$(SKIP_CA)'!='true'">true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(UpdaterName)</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\</OutDir>
-    <RunCodeAnalysis Condition="'$(SKIP_CA)'!='true'">true</RunCodeAnalysis>
+    <RunCodeAnalysis Condition="'$(CI)'==''">true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
-    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgEnableManifest Condition="'$(CI)'!='True'">true</VcpkgEnableManifest>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <VcpkgUseStatic>true</VcpkgUseStatic>
