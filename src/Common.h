@@ -22,6 +22,7 @@
 #define NV_CLI_PARAM_ADD_HEADER     "--add-header"
 #define NV_CLI_PARAM_OVERRIDE_OK    "--override-success-code"
 #define NV_CLI_IGNORE_POSTPONE      "--ignore-postpone"
+#define NV_CLI_PURGE_POSTPONE       "--purge-postpone"
 
 //
 // App error exit codes
@@ -37,6 +38,7 @@
 #define NV_E_DOWNLOAD_FAILED        107
 #define NV_E_SETUP_LAUNCH_FAILED    108
 #define NV_E_SETUP_FAILED           109
+#define NV_E_POSTPONE_PURGE_FAILED  110
 
 #define NV_S_INSTALL                200
 #define NV_S_SELF_UPDATER           201
@@ -44,3 +46,4 @@
 #define NV_S_UPDATE_FINISHED        203
 #define NV_S_USER_POSTPONED         204
 #define NV_S_POSTPONE_PERIOD        205
+#define NV_S_POSTPONE_PURGE         206

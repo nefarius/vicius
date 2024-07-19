@@ -328,6 +328,11 @@ namespace models
         void SetPostponeData();
 
         /**
+         * \brief Removes the postpone data from the registry, if any.
+         */
+        bool PurgePostponeData();
+
+        /**
          * \brief Checks whether we're still in the postpone window.
          * \return True if we're still within a 24 hour window, false otherwise.
          */

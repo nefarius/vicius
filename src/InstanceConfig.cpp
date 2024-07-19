@@ -3,6 +3,7 @@
 #include "Util.h"
 #include "InstanceConfig.hpp"
 
+#define NV_POSTPONE_TS_KEY_TEMPLATE "SOFTWARE\\Nefarius Software Solutions e.U.\\{}\\Postpone"
 #define NV_POSTPONE_TS_VALUE_NAME   L"LastTimestamp"
 
 
@@ -678,7 +679,7 @@ void models::InstanceConfig::LaunchEmergencySite() const
 void models::InstanceConfig::SetPostponeData()
 {
     winreg::RegKey key;
-    const auto subKeyTemplate = std::format("SOFTWARE\\Nefarius Software Solutions e.U.\\{}\\Postpone", appFilename);
+    const auto subKeyTemplate = std::format(NV_POSTPONE_TS_KEY_TEMPLATE, appFilename);
     const auto subKey = ConvertAnsiToWide(subKeyTemplate);
 
     if (const winreg::RegResult result = key.TryCreate(
@@ -703,6 +704,27 @@ void models::InstanceConfig::SetPostponeData()
     }
 }
 
+bool models::InstanceConfig::PurgePostponeData()
+{
+    winreg::RegKey key;
+    const auto subKeyTemplate = std::format(NV_POSTPONE_TS_KEY_TEMPLATE, appFilename);
+    const auto subKey = ConvertAnsiToWide(subKeyTemplate);
+
+    if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey, KEY_ALL_ACCESS); !result)
+    {
+        spdlog::error("Failed to open postpone key, error {}", ConvertWideToANSI(result.ErrorMessage()));
+        return false;
+    }
+
+    if (const winreg::RegResult result = key.TryDeleteValue(NV_POSTPONE_TS_VALUE_NAME); !result)
+    {
+        spdlog::error("Failed to delete postpone value, error {}", ConvertWideToANSI(result.ErrorMessage()));
+        return false;
+    }
+
+    return true;
+}
+
 bool models::InstanceConfig::IsInPostponePeriod()
 {
     if (ignorePostponePeriod)
@@ -712,7 +734,7 @@ bool models::InstanceConfig::IsInPostponePeriod()
     }
 
     winreg::RegKey key;
-    const auto subKeyTemplate = std::format("SOFTWARE\\Nefarius Software Solutions e.U.\\{}\\Postpone", appFilename);
+    const auto subKeyTemplate = std::format(NV_POSTPONE_TS_KEY_TEMPLATE, appFilename);
     const auto subKey = ConvertAnsiToWide(subKeyTemplate);
 
     if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey); !result)

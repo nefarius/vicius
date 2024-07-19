@@ -146,6 +146,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         return NV_S_INSTALL;
     }
 
+    // purge postpone data, if any
+    if (cmdl[{NV_CLI_PURGE_POSTPONE}])
+    {
+        return cfg.PurgePostponeData()
+                   ? NV_S_POSTPONE_PURGE
+                   : NV_E_POSTPONE_PURGE_FAILED;
+    }
+
     // contact update server and get latest state and config
     if (const auto ret = cfg.RequestUpdateInfo(); !std::get<0>(ret))
     {
