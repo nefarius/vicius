@@ -1,4 +1,4 @@
-version: 1.1.{build}
+version: 1.2.{build}
 build_cloud: WIN-LKR467JS4GL
 image: Windows
 platform:
@@ -9,7 +9,6 @@ configuration:
 - Release
 environment:
   UpdaterName: contoso_EmergencyUrl_Updater
-  SKIP_CA: true
 test: off
 skip_commits:
   files:
@@ -21,6 +20,8 @@ install:
 - cmd: git submodule -q update --init
 #- cmd: vcpkg integrate install
 #- cmd: vcpkg update
+# manifest mode takes forever to build each commit so use global copy instead
+- cmd: vcpkg install argh:%PLATFORM%-windows-static sfml:%PLATFORM%-windows-static imgui[freetype,wchar32]:%PLATFORM%-windows-static imgui-sfml:%PLATFORM%-windows-static restclient-cpp:%PLATFORM%-windows-static nlohmann-json:%PLATFORM%-windows-static magic-enum:%PLATFORM%-windows-static z4kn4fein-semver:%PLATFORM%-windows-static winreg:%PLATFORM%-windows-static hash-library:%PLATFORM%-windows-static spdlog:%PLATFORM%-windows-static scope-guard:%PLATFORM%-windows-static curlpp:%PLATFORM%-windows-static inja:%PLATFORM%-windows-static cpp-httplib:%PLATFORM%-windows-static
 - ps: Setup-VS2022 $env:PLATFORM
 before_build:
 - cmd: nuget restore vīcĭus.sln
