@@ -61,6 +61,7 @@ namespace models
         std::optional<std::shared_future<std::tuple<bool, DWORD, DWORD>>> setupTask;
         int selectedRelease{0};
         bool isSilent{false};
+        bool ignorePostponePeriod{false};
         NSIGINFO appSigInfo{};
 
         int DownloadRelease(curl_progress_callback progressFn, int releaseIndex);

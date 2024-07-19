@@ -65,6 +65,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     // 
 
     isSilent = cmdl[{NV_CLI_BACKGROUND}] || cmdl[{NV_CLI_SILENT}] || cmdl[{NV_CLI_AUTOSTART}];
+    ignorePostponePeriod = cmdl[{NV_CLI_IGNORE_POSTPONE}];
 
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     // grab our backend URL from string resource
@@ -704,6 +705,12 @@ void models::InstanceConfig::SetPostponeData()
 
 bool models::InstanceConfig::IsInPostponePeriod()
 {
+    if (ignorePostponePeriod)
+    {
+        spdlog::info("User specified to ignore postpone period, skipping check");
+        return false;
+    }
+
     winreg::RegKey key;
     const auto subKeyTemplate = std::format("SOFTWARE\\Nefarius Software Solutions e.U.\\{}\\Postpone", appFilename);
     const auto subKey = ConvertAnsiToWide(subKeyTemplate);
