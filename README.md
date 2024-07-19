@@ -52,7 +52,7 @@ Head over to the [extended documentation](https://docs.nefarius.at/projects/Vici
 
 ## Downloads
 
-You can get [unsigned build snapshots here](https://buildbot.nefarius.at/builds/vicius/latest/bin/). Consider these Beta-releases.
+You can get [unsigned build snapshots here](https://buildbot.nefarius.at/builds/vicius/latest/bin/). Consider these Nightly-releases.
 
 Signed stable releases will be provided [on the repository releases page](../../releases/). Keep in mind though that those releases are built to use my own update infrastructure so in 99% of the cases you probably don't want to use them, at least not without a configuration file!
 
