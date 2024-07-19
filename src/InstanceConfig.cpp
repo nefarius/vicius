@@ -712,11 +712,17 @@ bool models::InstanceConfig::PurgePostponeData()
 
     if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey, KEY_READ); !result)
     {
-        spdlog::error("Failed to open postpone key");
+        spdlog::error("Failed to open postpone key, error {}", ConvertWideToANSI(result.ErrorMessage()));
         return false;
     }
 
-    return key.TryDeleteValue(NV_POSTPONE_TS_VALUE_NAME).IsOk();
+    if (const winreg::RegResult result = key.TryDeleteValue(NV_POSTPONE_TS_VALUE_NAME); !result)
+    {
+        spdlog::error("Failed to delete postpone value, error {}", ConvertWideToANSI(result.ErrorMessage()));
+        return false;
+    }
+
+    return true;
 }
 
 bool models::InstanceConfig::IsInPostponePeriod()
