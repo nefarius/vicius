@@ -2,7 +2,7 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/6n8p9r0koqqt1q6m?svg=true)](https://ci.appveyor.com/project/nefarius/vicius)
 [![Documentation](https://img.shields.io/badge/Documentation-8A2BE2)](https://docs.nefarius.at/projects/Vicius/)
-![GitHub Release](https://img.shields.io/github/v/release/nefarius/vicius)
+[![GitHub Release](https://img.shields.io/github/v/release/nefarius/vicius)](../../releases/)
 [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/)
 [![Mastodon Follow](https://img.shields.io/mastodon/follow/109321120351128938?domain=https%3A%2F%2Ffosstodon.org%2F)](https://fosstodon.org/@Nefarius)
 
