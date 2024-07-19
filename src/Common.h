@@ -21,6 +21,7 @@
 #define NV_CLI_PARAM_CHANNEL        "--channel"
 #define NV_CLI_PARAM_ADD_HEADER     "--add-header"
 #define NV_CLI_PARAM_OVERRIDE_OK    "--override-success-code"
+#define NV_CLI_IGNORE_POSTPONE      "--ignore-postpone"
 
 //
 // App error exit codes
