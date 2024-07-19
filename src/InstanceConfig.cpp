@@ -710,7 +710,7 @@ bool models::InstanceConfig::PurgePostponeData()
     const auto subKeyTemplate = std::format(NV_POSTPONE_TS_KEY_TEMPLATE, appFilename);
     const auto subKey = ConvertAnsiToWide(subKeyTemplate);
 
-    if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey, KEY_READ); !result)
+    if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey, KEY_ALL_ACCESS); !result)
     {
         spdlog::error("Failed to open postpone key, error {}", ConvertWideToANSI(result.ErrorMessage()));
         return false;
