@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Util.h"
 #include "InstanceConfig.hpp"
-#include "MimeTypes.h"
 #include <httplib.h>
 
 
@@ -165,6 +164,11 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
     outStream.exceptions(exceptionMask);
 
+    // ReSharper disable once CppTooWideScopeInitStatement
+    int retryCount = 5;
+
+retry:
+
     try
     {
         outStream.open(release.localTempFilePath.string(), std::ios::binary | std::ios::trunc);
@@ -236,10 +240,20 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             }
         }
     }
-
-    // TODO: error handling, retry?
+    
     if (code != 200)
     {
+        if (retryCount-- > 0)
+        {
+            spdlog::debug("Web request failed, retrying");
+
+            std::mt19937_64 eng{std::random_device{}()};
+            std::uniform_int_distribution<> dist{1000, 5000};
+            std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
+
+            goto retry;
+        }
+
         spdlog::error("GET request failed with code {}", code);
 
         // clean up local file since we re-download it when the user decides to retry
@@ -269,11 +283,25 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     SetCommonHeaders(conn);
 
+    // ReSharper disable once CppTooWideScopeInitStatement
+    int retryCount = 5;
+
+retry:
+
     auto [code, body, _] = conn->get(updateRequestUrl);
 
     if (code != 200)
     {
-        // TODO: add retry logic or similar
+        if (retryCount-- > 0)
+        {
+            spdlog::debug("Web request failed, retrying");
+
+            std::mt19937_64 eng{std::random_device{}()};
+            std::uniform_int_distribution<> dist{1000, 5000};
+            std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
+
+            goto retry;
+        }
 
         spdlog::error("GET request failed with code {}", code);
         auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
