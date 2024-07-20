@@ -495,7 +495,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 if (instStep == DownloadAndInstallStep::Downloading && hasFinished)
                 {
                     spdlog::debug("Download finished with status code {}", statusCode);
-                    instStep = statusCode == 200
+                    instStep = statusCode == httplib::OK_200
                                    ? DownloadAndInstallStep::DownloadSucceeded
                                    : DownloadAndInstallStep::DownloadFailed;
                 }

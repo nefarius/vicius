@@ -192,7 +192,7 @@ retry:
     const auto& cd = headers["Content-Disposition"];
 
     // attempt to get true filename
-    if (code == 200 && !cd.empty())
+    if (code == httplib::OK_200 && !cd.empty())
     {
         std::vector<std::string> arguments;
         char dl = ';';
@@ -241,9 +241,9 @@ retry:
         }
     }
     
-    if (code != 200)
+    if (code != httplib::OK_200)
     {
-        if (--retryCount > 0)
+        if (code != httplib::NotFound_404 && --retryCount > 0)
         {
             spdlog::debug("Web request failed (code {}), retrying {} more time(s)", code, retryCount);
 
@@ -290,9 +290,9 @@ retry:
 
     auto [code, body, _] = conn->get(updateRequestUrl);
 
-    if (code != 200)
+    if (code != httplib::OK_200)
     {
-        if (--retryCount > 0)
+        if (code != httplib::NotFound_404 && --retryCount > 0)
         {
             spdlog::debug("Web request failed (code {}), retrying {} more time(s)", code, retryCount);
 
