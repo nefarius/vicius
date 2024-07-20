@@ -5,6 +5,7 @@
 #include <SFML/OpenGL.hpp>
 #include <restclient-cpp/restclient.h>
 #include <restclient-cpp/connection.h>
+#include <httplib.h>
 
 
 // Fonts shared throughout app
@@ -25,6 +26,7 @@ struct changelog : public imgui_md
     std::map<std::string, std::shared_ptr<sf::Texture>> _images;
     std::string m_img_href;
     std::regex m_regex_link_target;
+    std::map<std::string, std::optional<std::shared_future<std::shared_ptr<sf::Texture>>>> imageDownloadTasks;
 
     explicit changelog(const std::map<std::string, std::shared_ptr<sf::Texture>>& images) : _images(images)
     {
@@ -136,6 +138,23 @@ struct changelog : public imgui_md
         return textureID;
     }
 
+    std::shared_ptr<sf::Texture> DownloadImageTexture(const std::string& url) const
+    {
+        const auto conn = new RestClient::Connection("");
+        conn->FollowRedirects(true, 5);
+        conn->SetTimeout(5);
+
+        const RestClient::Response response = conn->get(url);
+
+        if (response.code != httplib::OK_200)
+            return nullptr;
+
+        auto res = std::make_shared<sf::Texture>();
+        res->loadFromMemory(response.body.data(), response.body.length());
+
+        return res;
+    }
+
     /**
      * \brief Downloads a remote image resource and caches it in memory.
      * \param url The href of the image.
@@ -146,19 +165,48 @@ struct changelog : public imgui_md
         // this gets called on every frame so we only download it once and cache it
         if (!_images.contains(url))
         {
-            const auto conn = new RestClient::Connection("");
-            conn->FollowRedirects(true, 5);
+            // no download task is assigned to the given url, initiate
+            if (!imageDownloadTasks.contains(url) || !imageDownloadTasks[url].has_value())
+            {
+                const std::optional<std::shared_future<std::shared_ptr<sf::Texture>>> downloadTask = std::async(
+                    std::launch::async,
+                    &changelog::DownloadImageTexture,
+                    this,
+                    url
+                );
+                imageDownloadTasks[url] = downloadTask;
+            }
+            // task is running or finished
+            else if (imageDownloadTasks[url].has_value())
+            {
+                const auto task = imageDownloadTasks[url];
+                const std::future_status status = (*task).wait_for(std::chrono::milliseconds(1));
 
-            const RestClient::Response response = conn->get(url);
+                const bool isDownloading = status == std::future_status::timeout;
+                const bool hasFinished = status == std::future_status::ready;
 
-            if (response.code != 200)
-                return nullptr;
+                // no texture to report yet
+                if (isDownloading)
+                    return nullptr;
 
-            auto res = std::make_shared<sf::Texture>();
-            res->loadFromMemory(response.body.data(), response.body.length());
+                // task done (succeeded or failed)
+                if (hasFinished)
+                {
+                    auto res = (*task).get();
 
-            _images.emplace(url, res);
-            return res;
+                    // got our image, cache and return
+                    if (res != nullptr)
+                    {
+                        _images.emplace(url, res);
+                        return res;
+                    }
+
+                    // retry on next frame
+                    imageDownloadTasks[url].reset();
+                }
+            }
+
+            return nullptr;
         }
 
         return _images[url];

@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Util.h"
 #include "InstanceConfig.hpp"
-#include "MimeTypes.h"
 #include <httplib.h>
 
 
@@ -165,6 +164,11 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
     outStream.exceptions(exceptionMask);
 
+    // ReSharper disable once CppTooWideScopeInitStatement
+    int retryCount = 5;
+
+retry:
+
     try
     {
         outStream.open(release.localTempFilePath.string(), std::ios::binary | std::ios::trunc);
@@ -188,7 +192,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     const auto& cd = headers["Content-Disposition"];
 
     // attempt to get true filename
-    if (code == 200 && !cd.empty())
+    if (code == httplib::OK_200 && !cd.empty())
     {
         std::vector<std::string> arguments;
         char dl = ';';
@@ -236,11 +240,23 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             }
         }
     }
-
-    // TODO: error handling, retry?
-    if (code != 200)
+    
+    if (code != httplib::OK_200)
     {
-        spdlog::error("GET request failed with code {}", code);
+        if (code != httplib::NotFound_404 && --retryCount > 0)
+        {
+            spdlog::debug("Web request failed (code {}), retrying {} more time(s)", code, retryCount);
+
+            std::mt19937_64 eng{std::random_device{}()};
+            std::uniform_int_distribution<> dist{1000, 5000};
+            std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
+
+            goto retry;
+        }
+
+        auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
+        errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
+        spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
 
         // clean up local file since we re-download it when the user decides to retry
         if (DeleteFileA(release.localTempFilePath.string().c_str()) == 0)
@@ -269,15 +285,29 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     SetCommonHeaders(conn);
 
+    // ReSharper disable once CppTooWideScopeInitStatement
+    int retryCount = 5;
+
+retry:
+
     auto [code, body, _] = conn->get(updateRequestUrl);
 
-    if (code != 200)
+    if (code != httplib::OK_200)
     {
-        // TODO: add retry logic or similar
+        if (code != httplib::NotFound_404 && --retryCount > 0)
+        {
+            spdlog::debug("Web request failed (code {}), retrying {} more time(s)", code, retryCount);
 
-        spdlog::error("GET request failed with code {}", code);
+            std::mt19937_64 eng{std::random_device{}()};
+            std::uniform_int_distribution<> dist{1000, 5000};
+            std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
+
+            goto retry;
+        }
+                
         auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
         errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
+        spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
         return std::make_tuple(false, std::format("HTTP error {}", errorMessage));
     }
 
