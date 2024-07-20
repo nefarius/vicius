@@ -547,7 +547,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
-                    ImGui::Text("Press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
+                    if (ImGui::Button("Retry now"))
+                    {
+                        instStep = DownloadAndInstallStep::Begin;
+                        currentPage = WizardPage::DownloadAndInstall;
+                    }
+
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
+                    ImGui::Text("You can also press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
                     ImGui::Text("Press the 'Cancel' button to abort and close.");
