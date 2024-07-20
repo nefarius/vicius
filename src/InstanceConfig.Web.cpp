@@ -254,7 +254,9 @@ retry:
             goto retry;
         }
 
-        spdlog::error("GET request failed with code {}", code);
+        auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
+        errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
+        spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
 
         // clean up local file since we re-download it when the user decides to retry
         if (DeleteFileA(release.localTempFilePath.string().c_str()) == 0)
@@ -302,10 +304,10 @@ retry:
 
             goto retry;
         }
-
-        spdlog::error("GET request failed with code {}", code);
+                
         auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
         errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
+        spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
         return std::make_tuple(false, std::format("HTTP error {}", errorMessage));
     }
 
