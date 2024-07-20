@@ -243,9 +243,9 @@ retry:
     
     if (code != 200)
     {
-        if (retryCount-- > 0)
+        if (--retryCount > 0)
         {
-            spdlog::debug("Web request failed, retrying");
+            spdlog::debug("Web request failed (code {}), retrying {} more time(s)", code, retryCount);
 
             std::mt19937_64 eng{std::random_device{}()};
             std::uniform_int_distribution<> dist{1000, 5000};
@@ -292,9 +292,9 @@ retry:
 
     if (code != 200)
     {
-        if (retryCount-- > 0)
+        if (--retryCount > 0)
         {
-            spdlog::debug("Web request failed, retrying");
+            spdlog::debug("Web request failed (code {}), retrying {} more time(s)", code, retryCount);
 
             std::mt19937_64 eng{std::random_device{}()};
             std::uniform_int_distribution<> dist{1000, 5000};
