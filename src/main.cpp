@@ -431,7 +431,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             {
                 isBackDisabled = false;
 
-                // TODO: implement me
+                // TODO: implement me! The idea behind this page is to offer a list of releases for the user to choose from
                 break;
             }
         case WizardPage::DownloadAndInstall:
