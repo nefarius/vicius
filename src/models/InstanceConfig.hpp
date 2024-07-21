@@ -51,6 +51,8 @@ namespace models
         std::string tenantSubPath;
         /** URL of the update request */
         std::string updateRequestUrl;
+        /** Full pathname of the updater parent process file */
+        std::filesystem::path parentAppPath;
 
         /** The local and remote shared configuration */
         MergedConfig merged;

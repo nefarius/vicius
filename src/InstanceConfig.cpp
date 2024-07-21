@@ -112,6 +112,14 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     appPath = util::GetImageBasePathW();
     spdlog::debug("appPath = {}", appPath.string());
 
+    DWORD parentProcessId = winapi::GetParentProcessID(GetCurrentProcessId());
+    spdlog::debug("parentProcessId = {}", parentProcessId);
+
+    if (winapi::GetProcessFullPath(parentProcessId, parentAppPath))
+    {
+        spdlog::debug("parentAppPath = {}", parentAppPath.string());
+    }
+
     appVersion = util::GetVersionFromFile(appPath);
     spdlog::debug("appVersion = {}", appVersion.str());
 

@@ -133,4 +133,13 @@ namespace winapi
      */
     _Must_inspect_result_
     bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::string& path);
+
+    /**
+     * \brief Gets the full main image file path for a given process ID.
+     * \param dwPID The process ID to query.
+     * \param path The string receiving the path.
+     * \return true on success, false otherwise.
+     */
+    _Must_inspect_result_
+    bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::filesystem::path& path);
 }

@@ -817,4 +817,15 @@ namespace winapi
         path = ConvertWideToANSI(tempPath);
         return true;
     }
+
+    _Use_decl_annotations_
+    bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::filesystem::path& path)
+    {
+        std::string tempPath;
+        if (!GetProcessFullPath(dwPID, tempPath))
+            return false;
+
+        path = tempPath;
+        return true;
+    }
 }
