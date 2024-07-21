@@ -247,8 +247,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
         spdlog::info("Regex {} didn't match anything on {}", filenameRegex, appFilename);
     }
 
-    // first try to build "manufacturer/product" and use filename as 
-    // fallback if extraction via regex didn't yield any results
+    // first try to build "manufacturer/product", then "manufacturer/product/channel" and 
+    // then use filename as fallback if extraction via regex didn't yield any results
     tenantSubPath = (!manufacturer.empty() && !product.empty())
                         ? channel.empty()
                               ? std::format("{}/{}", manufacturer, product)
