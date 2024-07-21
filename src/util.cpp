@@ -4,6 +4,7 @@
 #include <wintrust.h>
 #include <Shlobj.h>
 #include <Msi.h>
+#include <tlhelp32.h>
 
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
@@ -743,5 +744,50 @@ namespace winapi
     void SetDarkMode(HWND hWnd, BOOL useDarkMode)
     {
         (void)DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
+    }
+
+    _Use_decl_annotations_
+    DWORD GetParentProcessID(_In_ DWORD dwPID)
+    {
+        PROCESSENTRY32 pe32;
+        DWORD dwParentPID = 0;
+
+        const HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (hSnapshot == INVALID_HANDLE_VALUE)
+        {
+            return 0;
+        }
+
+        pe32.dwSize = sizeof(PROCESSENTRY32);
+        if (Process32First(hSnapshot, &pe32))
+        {
+            do
+            {
+                if (pe32.th32ProcessID == dwPID)
+                {
+                    dwParentPID = pe32.th32ParentProcessID;
+                    break;
+                }
+            }
+            while (Process32Next(hSnapshot, &pe32));
+        }
+
+        CloseHandle(hSnapshot);
+        return dwParentPID;
+    }
+
+    _Use_decl_annotations_
+    BOOL GetProcessFullPath(_In_ DWORD dwPID, _Inout_ LPTSTR lpExeName, _In_ DWORD dwSize)
+    {
+        const HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwPID);
+        if (hProcess == nullptr)
+        {
+            return FALSE;
+        }
+
+        const BOOL bSuccess = QueryFullProcessImageName(hProcess, 0, lpExeName, &dwSize);
+
+        CloseHandle(hProcess);
+        return bSuccess;
     }
 }

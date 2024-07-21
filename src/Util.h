@@ -97,4 +97,22 @@ namespace winapi
      * \param useDarkMode TRUE to set dark mode, FALSE for light/default.
      */
     void SetDarkMode(HWND hWnd, BOOL useDarkMode = TRUE);
+    
+    /**
+     * \brief Queries for the parent PID of a given process.
+     * \param dwPID The PID of the process to query the parent for.
+     * \return The parent process PID.
+     */
+    _Must_inspect_result_
+    DWORD GetParentProcessID(_In_ DWORD dwPID);
+        
+    /**
+     * \brief 
+     * \param dwPID 
+     * \param lpExeName 
+     * \param dwSize 
+     * \return 
+     */
+    _Must_inspect_result_
+    BOOL GetProcessFullPath(_In_ DWORD dwPID, _Inout_ LPTSTR lpExeName, _In_ DWORD dwSize);
 }
