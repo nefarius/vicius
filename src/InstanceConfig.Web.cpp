@@ -361,6 +361,9 @@ retry:
 
             if (shared.downloadLocation.has_value())
                 merged.downloadLocation = shared.downloadLocation.value();
+
+            if (shared.runAsTemporaryCopy.has_value())
+                merged.runAsTemporaryCopy = shared.runAsTemporaryCopy.value();
         }
 
         return std::make_tuple(true, "OK");
