@@ -806,4 +806,15 @@ namespace winapi
 
         return true;
     }
+
+    _Use_decl_annotations_
+    bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::string& path)
+    {
+        std::wstring tempPath;
+        if (!GetProcessFullPath(dwPID, tempPath))
+            return false;
+
+        path = ConvertWideToANSI(tempPath);
+        return true;
+    }
 }
