@@ -185,9 +185,14 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
             // trusted parent, we can continue
             isTemporaryCopy = util::icompare(hashLhs, hashRhs);
+
+            if (!isTemporaryCopy)
+                spdlog::error("Parent SHA256 {} didn't match current SHA256 {}, will not continue with temporary copy",
+                              hashLhs, hashRhs);
         }
         else
         {
+            spdlog::warn("Failed to open process module streams for comparison");
             // prerequisites for running in this mode not met
             isTemporaryCopy = false;
         }
