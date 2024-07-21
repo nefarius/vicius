@@ -55,7 +55,8 @@ namespace winapi
      * \param path The path it will get written to.
      * \return True on success, false otherwise.
      */
-    bool GetUserTemporaryPath(std::string& path);
+    _Must_inspect_result_
+    bool GetUserTemporaryPath(_Inout_ std::string& path);
 
     /**
      * \brief Attempts to retrieve the %ProgramData% directory.

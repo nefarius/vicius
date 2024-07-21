@@ -611,7 +611,8 @@ namespace winapi
         return false;
     }
 
-    bool GetUserTemporaryPath(std::string& path)
+    _Use_decl_annotations_
+    bool GetUserTemporaryPath(_Inout_ std::string& path)
     {
         std::string tempPath(MAX_PATH, '\0');
         // this expands typically to %TEMP% or %LOCALAPPDATA%\Temp
