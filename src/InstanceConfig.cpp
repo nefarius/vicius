@@ -116,6 +116,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     appPath = util::GetImageBasePathW();
     spdlog::debug("appPath = {}", appPath.string());
 
+#pragma region Temporary child process launch verification
+
     DWORD parentProcessId = winapi::GetParentProcessID(GetCurrentProcessId());
     spdlog::debug("parentProcessId = {}", parentProcessId);
 
@@ -194,6 +196,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     }
 
     spdlog::debug("isTemporaryCopy = {}", isTemporaryCopy);
+
+#pragma endregion
 
     appVersion = util::GetVersionFromFile(appPath);
     spdlog::debug("appVersion = {}", appVersion.str());
