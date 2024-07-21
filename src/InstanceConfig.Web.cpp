@@ -147,7 +147,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     std::string tempFile(MAX_PATH, '\0');
 
-    if (GetTempFileNameA(downloadLocation.c_str(), "VICIUS", 0, tempFile.data()) == 0)
+    if (GetTempFileNameA(downloadLocation.c_str(), "VICIUS", 0, tempFile.data()) == FALSE)
     {
         spdlog::error("Failed to get temporary file name, error: {:#x}", GetLastError());
         return -1;
@@ -259,7 +259,7 @@ retry:
         spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
 
         // clean up local file since we re-download it when the user decides to retry
-        if (DeleteFileA(release.localTempFilePath.string().c_str()) == 0)
+        if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
         {
             spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}",
                          release.localTempFilePath.string(), GetLastError(), winapi::GetLastErrorStdStr());

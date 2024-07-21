@@ -615,7 +615,7 @@ namespace winapi
     {
         std::string tempPath(MAX_PATH, '\0');
         // this expands typically to %TEMP% or %LOCALAPPDATA%\Temp
-        if (GetTempPathA(MAX_PATH, tempPath.data()) == 0)
+        if (GetTempPathA(MAX_PATH, tempPath.data()) == FALSE)
         {
             spdlog::error("Failed to get path to temporary directory, error: {0:#x}", GetLastError());
             return false;
