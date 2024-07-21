@@ -47,6 +47,7 @@
 #include <hash-library/sha256.h>
 #include <scope_guard.hpp>
 #include <nlohmann/json.hpp>
+#include <httplib.h>
 
 //
 // Logging

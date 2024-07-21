@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Util.h"
 #include "InstanceConfig.hpp"
-#include <httplib.h>
 
 
 void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* conn) const

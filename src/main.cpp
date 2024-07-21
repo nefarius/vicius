@@ -4,7 +4,6 @@
 #include "WizardPage.h"
 #include "InstanceConfig.hpp"
 #include "DownloadAndInstall.hpp"
-#include <httplib.h>
 
 
 //
