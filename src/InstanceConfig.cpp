@@ -299,6 +299,10 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     }
 #endif
 
+    // avoid accidental fork bomb :P
+    if (this->isTemporaryCopy)
+        this->merged.runAsTemporaryCopy = false;
+
     //
     // File name extraction
     // 
@@ -812,7 +816,7 @@ bool models::InstanceConfig::TryRunTemporaryProcess()
     narrow.erase(narrow.begin());
 
     // slice together new launch arguments
-    std::string cliLine = std::format(
+    const std::string cliLine = std::format(
         "--temporary {}",
         std::accumulate(
             std::next(narrow.begin()),
@@ -823,6 +827,31 @@ bool models::InstanceConfig::TryRunTemporaryProcess()
                 return std::format("{} {}", lhs, rhs);
             }
         ));
+
+    STARTUPINFOA info = {};
+    info.cb = sizeof(STARTUPINFOA);
+    PROCESS_INFORMATION updateProcessInfo = {};
+
+    if (!CreateProcessA(
+        temporaryUpdaterPath.c_str(),
+        const_cast<LPSTR>(cliLine.c_str()),
+        nullptr,
+        nullptr,
+        TRUE,
+        0,
+        nullptr,
+        nullptr,
+        &info,
+        &updateProcessInfo
+    ))
+    {
+        DWORD win32Error = GetLastError();
+
+        spdlog::error("Failed to launch {}, error {:#x}, message {}",
+                      temporaryUpdaterPath, win32Error, winapi::GetLastErrorStdStr());
+
+        return false;
+    }
 
     return true;
 }
