@@ -8,7 +8,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 {
     //
     // Initialize everything in here that depends on CLI arguments, the environment and a potential configuration file
-    // 
+    //
 
     RestClient::init();
 
@@ -16,7 +16,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     //
     // Setup logger
-    // 
+    //
 
 #if !defined(NV_FLAGS_NO_LOGGING)
     const auto logLevel = magic_enum::enum_cast<spdlog::level::level_enum>(cmdl(NV_CLI_PARAM_LOG_LEVEL).str());
@@ -68,28 +68,23 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     //
     // Defaults and embedded stuff
-    // 
+    //
 
-    isSilent = cmdl[{NV_CLI_BACKGROUND}] || cmdl[{NV_CLI_SILENT}] || cmdl[{NV_CLI_AUTOSTART}];
-    ignorePostponePeriod = cmdl[{NV_CLI_IGNORE_POSTPONE}];
+    isSilent = cmdl[ {NV_CLI_BACKGROUND} ] || cmdl[ {NV_CLI_SILENT} ] || cmdl[ {NV_CLI_AUTOSTART} ];
+    ignorePostponePeriod = cmdl[ {NV_CLI_IGNORE_POSTPONE} ];
 
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     // grab our backend URL from string resource
     std::string idsServerUrl(NV_API_URL_MAX_CHARS, '\0');
-    if (LoadStringA(
-        hInstance,
-        IDS_STRING_SERVER_URL,
-        idsServerUrl.data(),
-        NV_API_URL_MAX_CHARS - 1
-    ))
+    if (LoadStringA(hInstance, IDS_STRING_SERVER_URL, idsServerUrl.data(), NV_API_URL_MAX_CHARS - 1))
     {
         serverUrlTemplate = idsServerUrl;
     }
     else
     {
 #endif
-    // fallback to compiled-in value
-    serverUrlTemplate = NV_API_URL_TEMPLATE;
+        // fallback to compiled-in value
+        serverUrlTemplate = NV_API_URL_TEMPLATE;
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     }
 #endif
@@ -124,9 +119,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     //
     // Make sure pur parent is originating form the exact same file to not load configuration from an impostor *sus*
-    // 
-    if (std::filesystem::path parentPath{}; cmdl[{NV_CLI_TEMPORARY}] && winapi::GetProcessFullPath(
-        parentProcessId, parentPath))
+    //
+    if (std::filesystem::path parentPath{}; cmdl[ {NV_CLI_TEMPORARY} ] && winapi::GetProcessFullPath(parentProcessId, parentPath))
     {
         parentAppPath = parentPath;
         spdlog::debug("parentAppPath = {}", parentAppPath.value().string());
@@ -138,7 +132,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
         {
             SHA256 parentSha256Alg, currentSha256Alg;
             // improve hashing speed
-            constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
+            constexpr std::size_t chunkSize = 4 * 1024;  // 4 KB
 
             std::vector<char> parentAppFileBuffer(chunkSize);
             while (!parentAppFileStream.eof())
@@ -152,8 +146,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
                 {
                     if (parentAppFileStream.fail())
                     {
-                        spdlog::error("Failed to read file {} to the end for hashing, aborting",
-                                      parentAppPath.value().string());
+                        spdlog::error("Failed to read file {} to the end for hashing, aborting", parentAppPath.value().string());
                         break;
                     }
                 }
@@ -171,8 +164,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
                 {
                     if (currentAppFileStream.fail())
                     {
-                        spdlog::error("Failed to read file {} to the end for hashing, aborting",
-                                      appPath.string());
+                        spdlog::error("Failed to read file {} to the end for hashing, aborting", appPath.string());
                         break;
                     }
                 }
@@ -188,14 +180,12 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
             if (!this->isTemporaryCopy)
             {
-                spdlog::error("Parent SHA256 {} didn't match current SHA256 {}, will not continue with temporary copy",
-                              hashLhs, hashRhs);
+                spdlog::error("Parent SHA256 {} didn't match current SHA256 {}, will not continue with temporary copy", hashLhs,
+                              hashRhs);
 
-                this->TryDisplayErrorDialog(
-                    "Updater process module hash mismatch",
-                    "The module integrity check has failed, "
-                    "temporary child process will not be spawned for security reasons."
-                );
+                this->TryDisplayErrorDialog("Updater process module hash mismatch",
+                                            "The module integrity check has failed, "
+                                            "temporary child process will not be spawned for security reasons.");
             }
         }
         else
@@ -261,14 +251,13 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     //
     // Merge from config file, if available
-    // 
+    //
 
 #if !defined(NV_FLAGS_NO_CONFIG_FILE)
     const auto configFileName = std::format("{}.json", appFilename);
     // ReSharper disable once CppTooWideScopeInitStatement
-    auto configFile = (!isTemporaryCopy || !parentAppPath.has_value())
-                          ? appPath.parent_path() / configFileName
-                          : parentAppPath.value().parent_path() / configFileName;
+    auto configFile = (!isTemporaryCopy || !parentAppPath.has_value()) ? appPath.parent_path() / configFileName
+                                                                       : parentAppPath.value().parent_path() / configFileName;
 
     if (exists(configFile))
     {
@@ -280,7 +269,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
             //
             // Override defaults, if specified
-            // 
+            //
 
             serverUrlTemplate = data.value("/instance/serverUrlTemplate"_json_pointer, serverUrlTemplate);
             filenameRegex = data.value("/instance/filenameRegex"_json_pointer, filenameRegex);
@@ -295,7 +284,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
             // populate shared config first either from JSON file or with built-in defaults
             if (data.contains("shared"))
             {
-                merged = data["shared"].get<MergedConfig>();
+                merged = data[ "shared" ].get<MergedConfig>();
             }
         }
         catch (...)
@@ -313,12 +302,11 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 #endif
 
     // avoid accidental fork bomb :P
-    if (this->isTemporaryCopy)
-        this->merged.runAsTemporaryCopy = false;
+    if (this->isTemporaryCopy) this->merged.runAsTemporaryCopy = false;
 
     //
     // File name extraction
-    // 
+    //
 
     std::regex productRegex(filenameRegex, std::regex_constants::icase);
     auto matchesBegin = std::sregex_iterator(appFilename.begin(), appFilename.end(), productRegex);
@@ -328,8 +316,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     {
         if (const std::smatch& match = *matchesBegin; match.size() == 3)
         {
-            manufacturer = match[1];
-            product = match[2];
+            manufacturer = match[ 1 ];
+            product = match[ 2 ];
 
             spdlog::info("Extracted manufacturer {} and product {} values", manufacturer, product);
         }
@@ -343,15 +331,13 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
         spdlog::info("Regex {} didn't match anything on {}", filenameRegex, appFilename);
     }
 
-    // first try to build "manufacturer/product", then "manufacturer/product/channel" and 
+    // first try to build "manufacturer/product", then "manufacturer/product/channel" and
     // then use filename as fallback if extraction via regex didn't yield any results
-    tenantSubPath = (!manufacturer.empty() && !product.empty())
-                        ? channel.empty()
-                              ? std::format("{}/{}", manufacturer, product)
-                              : std::format("{}/{}/{}", manufacturer, product, channel)
-                        : channel.empty()
-                        ? appFilename
-                        : std::format("{}/{}", channel, appFilename);
+    tenantSubPath = (!manufacturer.empty() && !product.empty()) ? channel.empty()
+                                                                    ? std::format("{}/{}", manufacturer, product)
+                                                                    : std::format("{}/{}/{}", manufacturer, product, channel)
+                    : channel.empty() ? appFilename
+                                                                : std::format("{}/{}", channel, appFilename);
     spdlog::debug("tenantSubPath = {}", tenantSubPath);
 
     updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
@@ -378,15 +364,11 @@ models::InstanceConfig::~InstanceConfig()
         // delete local setup copy
         if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
         {
-            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}",
-                         release.localTempFilePath.string(), GetLastError(), winapi::GetLastErrorStdStr());
+            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}", release.localTempFilePath.string(),
+                         GetLastError(), winapi::GetLastErrorStdStr());
 
             // try to get rid of it on next reboot
-            MoveFileExA(
-                release.localTempFilePath.string().c_str(),
-                nullptr,
-                MOVEFILE_DELAY_UNTIL_REBOOT
-            );
+            MoveFileExA(release.localTempFilePath.string().c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
         }
     }
 
@@ -406,10 +388,10 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
     switch (merged.detectionMethod)
     {
-    //
-    // Detect product version via registry key and value
-    // 
-    case ProductVersionDetectionMethod::RegistryValue:
+        //
+        // Detect product version via registry key and value
+        //
+        case ProductVersionDetectionMethod::RegistryValue:
         {
             spdlog::debug("Running product detection via registry value");
             const auto& cfg = merged.GetRegistryValueConfig();
@@ -417,17 +399,17 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             switch (cfg.hive)
             {
-            case RegistryHive::HKCU:
-                hive = HKEY_CURRENT_USER;
-                break;
-            case RegistryHive::HKLM:
-                hive = HKEY_LOCAL_MACHINE;
-                break;
-            case RegistryHive::HKCR:
-                hive = HKEY_CLASSES_ROOT;
-                break;
-            case RegistryHive::Invalid:
-                return std::make_tuple(false, "Invalid hive value");
+                case RegistryHive::HKCU:
+                    hive = HKEY_CURRENT_USER;
+                    break;
+                case RegistryHive::HKLM:
+                    hive = HKEY_LOCAL_MACHINE;
+                    break;
+                case RegistryHive::HKCR:
+                    hive = HKEY_CLASSES_ROOT;
+                    break;
+                case RegistryHive::Invalid:
+                    return std::make_tuple(false, "Invalid hive value");
             }
 
             const auto subKey = ConvertAnsiToWide(cfg.key);
@@ -468,17 +450,16 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             }
             catch (const std::exception& e)
             {
-                spdlog::error("Failed to convert value {} into SemVer, error: {}",
-                              ConvertWideToANSI(value), e.what());
+                spdlog::error("Failed to convert value {} into SemVer, error: {}", ConvertWideToANSI(value), e.what());
                 return std::make_tuple(false, std::format("String to SemVer conversion failed: {}", e.what()));
             }
 
             return std::make_tuple(true, "OK");
         }
-    //
-    // Detect product by comparing version resource
-    // 
-    case ProductVersionDetectionMethod::FileVersion:
+        //
+        // Detect product by comparing version resource
+        //
+        case ProductVersionDetectionMethod::FileVersion:
         {
             spdlog::debug("Running product detection via file version");
             const auto& cfg = merged.GetFileVersionConfig();
@@ -500,16 +481,16 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             {
                 switch (cfg.statement)
                 {
-                case VersionResource::FILEVERSION:
-                    isOutdated = release.GetDetectionSemVersion() > winapi::GetWin32ResourceFileVersion(filePath);
-                    break;
-                case VersionResource::PRODUCTVERSION:
-                    isOutdated = release.GetDetectionSemVersion() > winapi::GetWin32ResourceProductVersion(filePath);
-                    break;
-                case VersionResource::Invalid:
-                    spdlog::warn("Unexpected version resource statement");
-                    isOutdated = true;
-                    break;
+                    case VersionResource::FILEVERSION:
+                        isOutdated = release.GetDetectionSemVersion() > winapi::GetWin32ResourceFileVersion(filePath);
+                        break;
+                    case VersionResource::PRODUCTVERSION:
+                        isOutdated = release.GetDetectionSemVersion() > winapi::GetWin32ResourceProductVersion(filePath);
+                        break;
+                    case VersionResource::Invalid:
+                        spdlog::warn("Unexpected version resource statement");
+                        isOutdated = true;
+                        break;
                 }
 
                 spdlog::debug("isOutdated = {}", isOutdated);
@@ -522,10 +503,10 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             return std::make_tuple(true, "OK");
         }
-    //
-    // Detect product by comparing expected file sizes
-    // 
-    case ProductVersionDetectionMethod::FileSize:
+        //
+        // Detect product by comparing expected file sizes
+        //
+        case ProductVersionDetectionMethod::FileSize:
         {
             spdlog::debug("Running product detection via file size");
             const auto& cfg = merged.GetFileSizeConfig();
@@ -559,10 +540,10 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             return std::make_tuple(true, "OK");
         }
-    //
-    // Detect product by hashing a given file checksum
-    // 
-    case ProductVersionDetectionMethod::FileChecksum:
+        //
+        // Detect product by hashing a given file checksum
+        //
+        case ProductVersionDetectionMethod::FileChecksum:
         {
             spdlog::debug("Running product detection via file checksum");
             const auto& cfg = merged.GetFileChecksumConfig();
@@ -589,14 +570,14 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             }
 
             // improve hashing speed
-            constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
+            constexpr std::size_t chunkSize = 4 * 1024;  // 4 KB
 
             // checksum detection data of release
             const auto& hashCfg = release.detectionChecksum.value();
 
             switch (hashCfg.checksumAlg)
             {
-            case ChecksumAlgorithm::MD5:
+                case ChecksumAlgorithm::MD5:
                 {
                     spdlog::debug("Hashing with MD5");
                     MD5 alg;
@@ -624,7 +605,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
                     return std::make_tuple(true, "OK");
                 }
-            case ChecksumAlgorithm::SHA1:
+                case ChecksumAlgorithm::SHA1:
                 {
                     spdlog::debug("Hashing with SHA1");
                     SHA1 alg;
@@ -652,7 +633,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
                     return std::make_tuple(true, "OK");
                 }
-            case ChecksumAlgorithm::SHA256:
+                case ChecksumAlgorithm::SHA256:
                 {
                     spdlog::debug("Hashing with SHA256");
                     SHA256 alg;
@@ -680,19 +661,19 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
                     return std::make_tuple(true, "OK");
                 }
-            case ChecksumAlgorithm::Invalid:
-                spdlog::error("Invalid hashing algorithm specified");
-                return std::make_tuple(false, "Invalid hashing algorithm");
+                case ChecksumAlgorithm::Invalid:
+                    spdlog::error("Invalid hashing algorithm specified");
+                    return std::make_tuple(false, "Invalid hashing algorithm");
             }
 
             file.close();
 
             break;
         }
-    //
-    // Evaluate custom expression
-    // 
-    case ProductVersionDetectionMethod::CustomExpression:
+        //
+        // Evaluate custom expression
+        //
+        case ProductVersionDetectionMethod::CustomExpression:
         {
             spdlog::debug("Running product detection via custom expression");
             const auto& cfg = merged.GetCustomExpressionConfig();
@@ -705,10 +686,10 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             json data;
             // provides local state to parser
-            data["merged"] = merged;
-            data["remote"] = remote;
+            data[ "merged" ] = merged;
+            data[ "remote" ] = remote;
             // provides user-supplied data under fixed variable name
-            data["parameters"] = cfg.data;
+            data[ "parameters" ] = cfg.data;
 
             try
             {
@@ -727,9 +708,9 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                 return std::make_tuple(false, "Parsing custom expression failed");
             }
         }
-    case ProductVersionDetectionMethod::Invalid:
-        spdlog::error("Invalid detection method specified");
-        return std::make_tuple(false, "Invalid detection method");
+        case ProductVersionDetectionMethod::Invalid:
+            spdlog::error("Invalid detection method specified");
+            return std::make_tuple(false, "Invalid detection method");
     }
 
     spdlog::error("No detection method matched");
@@ -750,10 +731,7 @@ std::tuple<bool, std::string> models::InstanceConfig::RegisterAutostart(const st
     std::stringstream ss;
     ss << "\"" << appPath.string() << "\" " << launchArgs;
 
-    if (const auto writeResult = key.TrySetStringValue(
-            ConvertAnsiToWide(appFilename),
-            ConvertAnsiToWide(ss.str()));
-        !writeResult)
+    if (const auto writeResult = key.TrySetStringValue(ConvertAnsiToWide(appFilename), ConvertAnsiToWide(ss.str())); !writeResult)
     {
         spdlog::error("Failed to write autostart value");
         return std::make_tuple(false, "Failed to write registry value");
@@ -784,34 +762,22 @@ std::tuple<bool, std::string> models::InstanceConfig::RemoveAutostart() const
 
 void models::InstanceConfig::LaunchEmergencySite() const
 {
-    if (!this->remote.instance.has_value())
-        return;
+    if (!this->remote.instance.has_value()) return;
 
-    if (!this->remote.instance.value().emergencyUrl.has_value())
-        return;
+    if (!this->remote.instance.value().emergencyUrl.has_value()) return;
 
-    ShellExecuteA(
-        nullptr,
-        "open",
-        this->remote.instance.value().emergencyUrl.value().c_str(),
-        nullptr,
-        nullptr,
-        SW_SHOWNORMAL
-    );
+    ShellExecuteA(nullptr, "open", this->remote.instance.value().emergencyUrl.value().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
 bool models::InstanceConfig::TryRunTemporaryProcess() const
 {
-    if (!this->merged.runAsTemporaryCopy || this->isTemporaryCopy)
-        return false;
+    if (!this->merged.runAsTemporaryCopy || this->isTemporaryCopy) return false;
 
     std::string temporaryUpdaterPath{};
 
-    if (!winapi::GetNewTemporaryFile(temporaryUpdaterPath))
-        return false;
+    if (!winapi::GetNewTemporaryFile(temporaryUpdaterPath)) return false;
 
-    if (CopyFileA(this->appPath.string().c_str(), temporaryUpdaterPath.c_str(), FALSE) == FALSE)
-        return false;
+    if (CopyFileA(this->appPath.string().c_str(), temporaryUpdaterPath.c_str(), FALSE) == FALSE) return false;
 
     // ensure cleanup at least on next reboot
     MoveFileExA(temporaryUpdaterPath.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
@@ -822,47 +788,40 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
     for (int i = 0; i < __argc; i++)
     {
         // Windows gives us wide only, convert each to narrow
-        narrow.push_back(__argv[i]);
+        narrow.push_back(__argv[ i ]);
     }
 
     // throw away process path
     narrow.erase(narrow.begin());
 
     // slice together new launch arguments
-    const std::string cliLine = std::format(
-        "--temporary {}",
-        std::accumulate(
-            std::next(narrow.begin()),
-            narrow.end(),
-            narrow[0],
-            [](const std::string& lhs, const std::string& rhs)
-            {
-                return std::format("{} {}", lhs, rhs);
-            }
-        ));
+    const std::string cliLine =
+      std::format("--temporary {}",
+                  std::accumulate(std::next(narrow.begin()),
+                                  narrow.end(),
+                                  narrow[ 0 ],
+                                  [](const std::string& lhs, const std::string& rhs) { return std::format("{} {}", lhs, rhs); }));
 
     STARTUPINFOA info = {};
     info.cb = sizeof(STARTUPINFOA);
     PROCESS_INFORMATION updateProcessInfo = {};
 
     // re-launch temporary copy with additional "--temporary" flag
-    if (!CreateProcessA(
-        temporaryUpdaterPath.c_str(),
-        const_cast<LPSTR>(cliLine.c_str()),
-        nullptr,
-        nullptr,
-        TRUE,
-        0,
-        nullptr,
-        nullptr,
-        &info,
-        &updateProcessInfo
-    ))
+    if (!CreateProcessA(temporaryUpdaterPath.c_str(),
+                        const_cast<LPSTR>(cliLine.c_str()),
+                        nullptr,
+                        nullptr,
+                        TRUE,
+                        0,
+                        nullptr,
+                        nullptr,
+                        &info,
+                        &updateProcessInfo))
     {
         DWORD win32Error = GetLastError();
 
-        spdlog::error("Failed to launch {}, error {:#x}, message {}",
-                      temporaryUpdaterPath, win32Error, winapi::GetLastErrorStdStr());
+        spdlog::error("Failed to launch {}, error {:#x}, message {}", temporaryUpdaterPath, win32Error,
+                      winapi::GetLastErrorStdStr());
 
         return false;
     }
