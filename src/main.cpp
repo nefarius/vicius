@@ -52,7 +52,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     // actions to perform when install is instructed
 #if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
-    if (cmdl[{NV_CLI_INSTALL}])
+    if (!cmdl[{NV_CLI_TEMPORARY}] && cmdl[{NV_CLI_INSTALL}])
     {
 #endif
         if (!cmdl[{NV_CLI_NO_AUTOSTART}])
@@ -94,12 +94,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         spdlog::info("Installation tasks finished successfully");
 
         int successCode = NV_S_INSTALL;
-        if ((cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode))
-        {
-            return successCode;
-        }
-
-        return NV_S_INSTALL;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+        return successCode;
     }
 #endif
 
@@ -108,7 +104,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma region Autostart tasks
 
     // actions to perform when running in autostart
-    if (cmdl[{NV_CLI_AUTOSTART}])
+    if (!cmdl[{NV_CLI_TEMPORARY}] && cmdl[{NV_CLI_AUTOSTART}])
     {
         if (const auto ret = cfg.CreateScheduledTask(); FAILED(std::get<0>(ret)))
         {
@@ -126,7 +122,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma region Uninstall command
 
     // uninstall tasks
-    if (cmdl[{NV_CLI_UNINSTALL}])
+    if (!cmdl[{NV_CLI_TEMPORARY}] && cmdl[{NV_CLI_UNINSTALL}])
     {
         if (const auto autoRet = cfg.RemoveAutostart(); !std::get<0>(autoRet))
         {
@@ -147,12 +143,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
 
         int successCode = NV_S_INSTALL;
-        if ((cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode))
-        {
-            return successCode;
-        }
-
-        return NV_S_INSTALL;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+        return successCode;
     }
 
 #pragma endregion
@@ -160,8 +152,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // purge postpone data, if any
     if (cmdl[{NV_CLI_PURGE_POSTPONE}])
     {
+        int successCode = NV_S_POSTPONE_PURGE;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+
         return cfg.PurgePostponeData()
-                   ? NV_S_POSTPONE_PURGE
+                   ? successCode
                    : NV_E_POSTPONE_PURGE_FAILED;
     }
 
@@ -182,7 +177,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     }
 
     // check for updater updates - updateception :D
-    if (!cmdl[{NV_CLI_SKIP_SELF_UPDATE}] && cfg.IsNewerUpdaterAvailable())
+    if (!cmdl[{NV_CLI_TEMPORARY}] && (!cmdl[{NV_CLI_SKIP_SELF_UPDATE}] && cfg.IsNewerUpdaterAvailable()))
     {
         spdlog::debug("Newer updater version available, invoking self-update");
 
@@ -197,7 +192,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // restart ourselves from a temporary location, if requested
     if (cfg.TryRunTemporaryProcess())
     {
-        return NV_S_LAUNCHED_TEMPORARY;
+        int successCode = NV_S_LAUNCHED_TEMPORARY;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+        return successCode;
     }
 
     bool isOutdated = false;
@@ -216,14 +213,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     {
         spdlog::info("Installed software is up-to-date");
         cfg.TryDisplayUpToDateDialog();
-        return NV_S_UP_TO_DATE;
+        int successCode = NV_S_UP_TO_DATE;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+        return successCode;
     }
 
     // there's a pending update but user chose to postpone
     if (cfg.IsInPostponePeriod())
     {
         spdlog::info("Postpone period active, exiting");
-        return NV_S_POSTPONE_PERIOD;
+        int successCode = NV_S_POSTPONE_PERIOD;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+        return successCode;
     }
 
     // check if we are currently bothering the user
