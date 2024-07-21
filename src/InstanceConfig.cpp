@@ -9,6 +9,10 @@
 
 models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) : appInstance(hInstance), remote()
 {
+    //
+    // Initialize everything in here that depends on CLI arguments, the environment and a potential configuration file
+    // 
+
     RestClient::init();
 
     //
