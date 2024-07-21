@@ -67,6 +67,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     isSilent = cmdl[{NV_CLI_BACKGROUND}] || cmdl[{NV_CLI_SILENT}] || cmdl[{NV_CLI_AUTOSTART}];
     ignorePostponePeriod = cmdl[{NV_CLI_IGNORE_POSTPONE}];
+    isTemporaryCopy = cmdl[{NV_CLI_TEMPORARY}];
 
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     // grab our backend URL from string resource
