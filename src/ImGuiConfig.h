@@ -7,8 +7,5 @@
 
 namespace ImGui
 {
-    inline auto GetTextureVoidPtr(const ImTextureID& id) -> void*
-    {
-        return id.get();
-    }
+    inline auto GetTextureVoidPtr(const ImTextureID& id) -> void* { return id.get(); }
 }

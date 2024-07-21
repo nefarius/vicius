@@ -1,8 +1,8 @@
 #pragma once
 
-// 
+//
 // WinAPI
-// 
+//
 #define NOMINMAX
 #define WIN32_LEAN_AND_MEAN
 #define _SILENCE_ALL_MS_EXT_DEPRECATION_WARNINGS 1
@@ -16,9 +16,9 @@
 #include <taskschd.h>
 #include <wincrypt.h>
 
-// 
+//
 // ImGui, Fonts
-// 
+//
 #if 0
 #include "ImGuiConfig.h"
 #define IMGUI_USER_CONFIG "ImGuiConfig.h"
@@ -28,16 +28,16 @@
 #include "imgui-SFML.h"
 #include "IconsForkAwesome.h"
 
-// 
+//
 // SFML
-// 
+//
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
 
 //
 // Utility packages
-// 
+//
 #include "argh.h"
 #include <semver/semver.hpp>
 #include <magic_enum.hpp>
@@ -51,14 +51,14 @@
 
 //
 // Logging
-// 
+//
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/msvc_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 
 //
 // STL
-// 
+//
 #include <filesystem>
 #include <fstream>
 #include <tuple>
@@ -71,9 +71,9 @@
 #include <string>
 #include <vector>
 
-// 
+//
 // Custom
-// 
+//
 #include "UniUtil.h"
 #include "resource.h"
 #include "CustomizeMe.h"

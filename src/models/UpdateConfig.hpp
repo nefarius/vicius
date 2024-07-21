@@ -40,7 +40,7 @@ namespace models
             {
                 return semver::version::parse(latestVersion.value());
             }
-            catch (...) // couldn't convert version string
+            catch (...)  // couldn't convert version string
             {
                 return semver::version{0, 0, 0};
             }
@@ -48,12 +48,5 @@ namespace models
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-        UpdateConfig,
-        updatesDisabled,
-        latestVersion,
-        latestUrl,
-        emergencyUrl,
-        exitCode,
-        helpUrl
-    )    
+      UpdateConfig, updatesDisabled, latestVersion, latestUrl, emergencyUrl, exitCode, helpUrl)
 }

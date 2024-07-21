@@ -2,12 +2,12 @@
 
 enum class DownloadAndInstallStep
 {
-	Begin,
-	Downloading,
-	DownloadFailed,
-	DownloadSucceeded,
-	PrepareInstall,
-	InstallRunning,
-	InstallFailed,
-	InstallSucceeded
+    Begin,
+    Downloading,
+    DownloadFailed,
+    DownloadSucceeded,
+    PrepareInstall,
+    InstallRunning,
+    InstallFailed,
+    InstallSucceeded
 };

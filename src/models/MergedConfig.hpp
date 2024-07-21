@@ -29,44 +29,25 @@ namespace models
         /** True to run as temporary copy */
         bool runAsTemporaryCopy{false};
 
-        MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME)
-        {
-        }
+        MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME) { }
 
-        RegistryValueConfig GetRegistryValueConfig() const
-        {
-            return detection.get<RegistryValueConfig>();
-        }
+        RegistryValueConfig GetRegistryValueConfig() const { return detection.get<RegistryValueConfig>(); }
 
-        FileVersionConfig GetFileVersionConfig() const
-        {
-            return detection.get<FileVersionConfig>();
-        }
+        FileVersionConfig GetFileVersionConfig() const { return detection.get<FileVersionConfig>(); }
 
-        FileSizeConfig GetFileSizeConfig() const
-        {
-            return detection.get<FileSizeConfig>();
-        }
+        FileSizeConfig GetFileSizeConfig() const { return detection.get<FileSizeConfig>(); }
 
-        FileChecksumConfig GetFileChecksumConfig() const
-        {
-            return detection.get<FileChecksumConfig>();
-        }
+        FileChecksumConfig GetFileChecksumConfig() const { return detection.get<FileChecksumConfig>(); }
 
-        CustomExpressionConfig GetCustomExpressionConfig() const
-        {
-            return detection.get<CustomExpressionConfig>();
-        }
+        CustomExpressionConfig GetCustomExpressionConfig() const { return detection.get<CustomExpressionConfig>(); }
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-        MergedConfig,
-        windowTitle,
-        productName,
-        detectionMethod,
-        detection,
-        installationErrorUrl,
-        downloadLocation,
-        runAsTemporaryCopy
-    )
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MergedConfig,
+                                                    windowTitle,
+                                                    productName,
+                                                    detectionMethod,
+                                                    detection,
+                                                    installationErrorUrl,
+                                                    downloadLocation,
+                                                    runAsTemporaryCopy)
 }

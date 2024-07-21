@@ -82,20 +82,18 @@ namespace models
         std::optional<semver::version> GetDetectionSemVersion() const;
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-        UpdateRelease,
-        name,
-        version,
-        summary,
-        publishedAt,
-        downloadUrl,
-        downloadSize,
-        launchArguments,
-        exitCode,
-        checksum,
-        disabled,
-        detectionChecksum,
-        detectionSize,
-        detectionVersion
-    )
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateRelease,
+                                                    name,
+                                                    version,
+                                                    summary,
+                                                    publishedAt,
+                                                    downloadUrl,
+                                                    downloadSize,
+                                                    launchArguments,
+                                                    exitCode,
+                                                    checksum,
+                                                    disabled,
+                                                    detectionChecksum,
+                                                    detectionSize,
+                                                    detectionVersion)
 }

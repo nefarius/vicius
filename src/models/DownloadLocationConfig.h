@@ -13,9 +13,5 @@ namespace models
         std::optional<json> data;
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-        DownloadLocationConfig,
-        input,
-        data
-    )
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(DownloadLocationConfig, input, data)
 }

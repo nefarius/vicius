@@ -19,19 +19,16 @@ namespace models
         Invalid = -1
     };
 
-    NLOHMANN_JSON_SERIALIZE_ENUM(ProductVersionDetectionMethod, {
-                                 {ProductVersionDetectionMethod::Invalid, nullptr},
-                                 {ProductVersionDetectionMethod::RegistryValue,
-                                 magic_enum::enum_name(ProductVersionDetectionMethod::RegistryValue)},
-                                 {ProductVersionDetectionMethod::FileVersion,
-                                 magic_enum::enum_name(ProductVersionDetectionMethod::FileVersion)},
-                                 {ProductVersionDetectionMethod::FileSize,
-                                 magic_enum::enum_name(ProductVersionDetectionMethod::FileSize)},
-                                 {ProductVersionDetectionMethod::FileChecksum,
-                                 magic_enum::enum_name(ProductVersionDetectionMethod::FileChecksum)},
-                                 {ProductVersionDetectionMethod::CustomExpression,
-                                 magic_enum::enum_name(ProductVersionDetectionMethod::CustomExpression)},
-                                 })
+    NLOHMANN_JSON_SERIALIZE_ENUM(
+      ProductVersionDetectionMethod,
+      {
+        {ProductVersionDetectionMethod::Invalid, nullptr},
+        {ProductVersionDetectionMethod::RegistryValue, magic_enum::enum_name(ProductVersionDetectionMethod::RegistryValue)},
+        {ProductVersionDetectionMethod::FileVersion, magic_enum::enum_name(ProductVersionDetectionMethod::FileVersion)},
+        {ProductVersionDetectionMethod::FileSize, magic_enum::enum_name(ProductVersionDetectionMethod::FileSize)},
+        {ProductVersionDetectionMethod::FileChecksum, magic_enum::enum_name(ProductVersionDetectionMethod::FileChecksum)},
+        {ProductVersionDetectionMethod::CustomExpression, magic_enum::enum_name(ProductVersionDetectionMethod::CustomExpression)},
+      })
 
     /**
      * \brief Parameters for querying the registry.

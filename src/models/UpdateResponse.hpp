@@ -21,10 +21,5 @@ namespace models
         std::vector<UpdateRelease> releases;
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-        UpdateResponse,
-        instance,
-        shared,
-        releases
-    )
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(UpdateResponse, instance, shared, releases)
 }

@@ -22,12 +22,11 @@ namespace models
         Invalid = -1
     };
 
-    NLOHMANN_JSON_SERIALIZE_ENUM(Authority, {
-                                 {Authority::Invalid, nullptr},
-                                 {Authority::Local,
-                                 magic_enum::enum_name(Authority::Local)},
-                                 {Authority::Remote,
-                                 magic_enum::enum_name(Authority::Remote)},
+    NLOHMANN_JSON_SERIALIZE_ENUM(Authority,
+                                 {
+                                   {Authority::Invalid, nullptr},
+                                   {Authority::Local, magic_enum::enum_name(Authority::Local)},
+                                   {Authority::Remote, magic_enum::enum_name(Authority::Remote)},
                                  })
 
     /**
@@ -93,9 +92,7 @@ namespace models
         std::string channel;
         std::map<std::string, std::string> additionalHeaders;
 
-        InstanceConfig() : authority(Authority::Remote)
-        {
-        }
+        InstanceConfig() : authority(Authority::Remote) { }
 
         InstanceConfig(const InstanceConfig&) = delete;
         InstanceConfig(InstanceConfig&&) = delete;
@@ -106,10 +103,7 @@ namespace models
 
         ~InstanceConfig();
 
-        void SetWindowHandle(_In_ const HWND hWnd)
-        {
-            windowHandle = hWnd;
-        }
+        void SetWindowHandle(_In_ const HWND hWnd) { windowHandle = hWnd; }
 
         std::filesystem::path GetAppPath() const { return appPath; }
         semver::version GetAppVersion() const { return appVersion; }
@@ -132,18 +126,12 @@ namespace models
 
         std::filesystem::path GetLocalReleaseTempFilePath(const int releaseId = 0) const
         {
-            return remote.releases[releaseId].localTempFilePath;
+            return remote.releases[ releaseId ].localTempFilePath;
         }
 
-        UpdateRelease& GetSelectedRelease()
-        {
-            return remote.releases[selectedRelease];
-        }
+        UpdateRelease& GetSelectedRelease() { return remote.releases[ selectedRelease ]; }
 
-        int GetSelectedReleaseId() const
-        {
-            return selectedRelease;
-        }
+        int GetSelectedReleaseId() const { return selectedRelease; }
 
         /**
          * \brief Requests the update configuration from the remote server.
@@ -179,8 +167,7 @@ namespace models
                 return false;
             }
 
-            if (remote.instance.value().latestVersion.has_value() &&
-                remote.instance.value().latestUrl.has_value())
+            if (remote.instance.value().latestVersion.has_value() && remote.instance.value().latestUrl.has_value())
             {
                 const auto latest = remote.instance.value().GetLatestUpdaterSemVersion();
 
@@ -194,21 +181,13 @@ namespace models
          * \brief Checks if we have one single update release.
          * \return True if single update release, false otherwise.
          */
-        _Must_inspect_result_
-        [[nodiscard]] bool HasSingleRelease() const
-        {
-            return remote.releases.size() == 1;
-        }
+        _Must_inspect_result_ [[nodiscard]] bool HasSingleRelease() const { return remote.releases.size() == 1; }
 
         /**
          * \brief Checks if we have multiple update releases.
          * \return True if multiple update releases, false otherwise.
          */
-        _Must_inspect_result_
-        [[nodiscard]] bool HasMultipleReleases() const
-        {
-            return remote.releases.size() > 1;
-        }
+        _Must_inspect_result_ [[nodiscard]] bool HasMultipleReleases() const { return remote.releases.size() > 1; }
 
         /**
          * \brief Starts the update release download.
@@ -224,8 +203,8 @@ namespace models
          * \param statusCode The HTTP status code (set when hasFinished is true).
          * \return True if a download has been invoked, false otherwise.
          */
-        _Must_inspect_result_
-        [[nodiscard]] bool GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, int& statusCode) const;
+        _Must_inspect_result_ [[nodiscard]] bool
+        GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, int& statusCode) const;
 
         /**
          * \brief Reset the download async task state.
@@ -376,21 +355,11 @@ namespace models
 
         void ResetSetupState();
 
-        [[nodiscard]] bool GetSetupStatus(
-            bool& isRunning,
-            bool& hasFinished,
-            bool& hasSucceeded,
-            DWORD& exitCode,
-            DWORD& win32Error
-        ) const;
+        [[nodiscard]] bool
+        GetSetupStatus(bool& isRunning, bool& hasFinished, bool& hasSucceeded, DWORD& exitCode, DWORD& win32Error) const;
 
         bool TryRunTemporaryProcess() const;
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-        InstanceConfig,
-        serverUrlTemplate,
-        filenameRegex,
-        authority
-    )
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InstanceConfig, serverUrlTemplate, filenameRegex, authority)
 }

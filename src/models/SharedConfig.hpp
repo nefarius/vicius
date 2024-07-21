@@ -30,14 +30,12 @@ namespace models
         std::optional<bool> runAsTemporaryCopy;
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-        SharedConfig,
-        windowTitle,
-        productName,
-        detectionMethod,
-        detection,
-        installationErrorUrl,
-        downloadLocation,
-        runAsTemporaryCopy
-    )
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SharedConfig,
+                                                    windowTitle,
+                                                    productName,
+                                                    detectionMethod,
+                                                    detection,
+                                                    installationErrorUrl,
+                                                    downloadLocation,
+                                                    runAsTemporaryCopy)
 }
