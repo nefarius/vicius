@@ -184,24 +184,32 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
             spdlog::debug("Hashes LHS {} vs. RHS {}", hashLhs, hashRhs);
 
             // trusted parent, we can continue
-            isTemporaryCopy = util::icompare(hashLhs, hashRhs);
+            this->isTemporaryCopy = util::icompare(hashLhs, hashRhs);
 
-            if (!isTemporaryCopy)
+            if (!this->isTemporaryCopy)
+            {
                 spdlog::error("Parent SHA256 {} didn't match current SHA256 {}, will not continue with temporary copy",
                               hashLhs, hashRhs);
+
+                this->TryDisplayErrorDialog(
+                    "Updater process module hash mismatch",
+                    "The module integrity check has failed, "
+                    "temporary child process will not be spawned for security reasons."
+                );
+            }
         }
         else
         {
             spdlog::warn("Failed to open process module streams for comparison");
             // prerequisites for running in this mode not met
-            isTemporaryCopy = false;
+            this->isTemporaryCopy = false;
         }
 
         parentAppFileStream.close();
         currentAppFileStream.close();
     }
 
-    spdlog::debug("isTemporaryCopy = {}", isTemporaryCopy);
+    spdlog::debug("isTemporaryCopy = {}", this->isTemporaryCopy);
 
 #pragma endregion
 
