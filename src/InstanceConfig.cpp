@@ -71,7 +71,6 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     isSilent = cmdl[{NV_CLI_BACKGROUND}] || cmdl[{NV_CLI_SILENT}] || cmdl[{NV_CLI_AUTOSTART}];
     ignorePostponePeriod = cmdl[{NV_CLI_IGNORE_POSTPONE}];
-    isTemporaryCopy = cmdl[{NV_CLI_TEMPORARY}];
 
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     // grab our backend URL from string resource
@@ -120,11 +119,77 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     DWORD parentProcessId = winapi::GetParentProcessID(GetCurrentProcessId());
     spdlog::debug("parentProcessId = {}", parentProcessId);
 
-    if (std::filesystem::path parentPath{}; winapi::GetProcessFullPath(parentProcessId, parentPath))
+    //
+    // Make sure pur parent is originating form the exact same file to not load configuration from an impostor *sus*
+    // 
+    if (std::filesystem::path parentPath{}; cmdl[{NV_CLI_TEMPORARY}] && winapi::GetProcessFullPath(
+        parentProcessId, parentPath))
     {
         parentAppPath = parentPath;
         spdlog::debug("parentAppPath = {}", parentAppPath.value().string());
+
+        std::ifstream parentAppFileStream(parentAppPath.value(), std::ios::binary);
+        std::ifstream currentAppFileStream(appPath, std::ios::binary);
+
+        if (parentAppFileStream.is_open() && currentAppFileStream.is_open())
+        {
+            SHA256 parentSha256Alg, currentSha256Alg;
+            // improve hashing speed
+            constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
+
+            std::vector<char> parentAppFileBuffer(chunkSize);
+            while (!parentAppFileStream.eof())
+            {
+                parentAppFileStream.read(parentAppFileBuffer.data(), parentAppFileBuffer.size());
+                std::streamsize bytesRead = parentAppFileStream.gcount();
+
+                parentSha256Alg.add(parentAppFileBuffer.data(), bytesRead);
+
+                if (bytesRead < chunkSize && !parentAppFileStream.eof())
+                {
+                    if (parentAppFileStream.fail())
+                    {
+                        break;
+                    }
+                }
+            }
+
+            std::vector<char> currentAppFileBuffer(chunkSize);
+            while (!currentAppFileStream.eof())
+            {
+                currentAppFileStream.read(currentAppFileBuffer.data(), currentAppFileBuffer.size());
+                std::streamsize bytesRead = currentAppFileStream.gcount();
+
+                currentSha256Alg.add(currentAppFileBuffer.data(), bytesRead);
+
+                if (bytesRead < chunkSize && !currentAppFileStream.eof())
+                {
+                    if (currentAppFileStream.fail())
+                    {
+                        break;
+                    }
+                }
+            }
+
+            const auto hashLhs = parentSha256Alg.getHash();
+            const auto hashRhs = currentSha256Alg.getHash();
+
+            spdlog::debug("Hashes LHS {} vs. RHS {}", hashLhs, hashRhs);
+
+            // trusted parent, we can continue
+            isTemporaryCopy = util::icompare(hashLhs, hashRhs);
+        }
+        else
+        {
+            // prerequisites for running in this mode not met
+            isTemporaryCopy = false;
+        }
+
+        parentAppFileStream.close();
+        currentAppFileStream.close();
     }
+
+    spdlog::debug("isTemporaryCopy = {}", isTemporaryCopy);
 
     appVersion = util::GetVersionFromFile(appPath);
     spdlog::debug("appVersion = {}", appVersion.str());
