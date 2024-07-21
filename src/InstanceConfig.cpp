@@ -832,6 +832,7 @@ bool models::InstanceConfig::TryRunTemporaryProcess()
     info.cb = sizeof(STARTUPINFOA);
     PROCESS_INFORMATION updateProcessInfo = {};
 
+    // re-launch temporary copy with additional "--temporary" flag
     if (!CreateProcessA(
         temporaryUpdaterPath.c_str(),
         const_cast<LPSTR>(cliLine.c_str()),

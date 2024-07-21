@@ -27,7 +27,7 @@ namespace models
         /** The setup download location */
         DownloadLocationConfig downloadLocation;
         /** True to run as temporary copy */
-        bool runAsTemporaryCopy{true /* TODO: for debugging only, remove! */};
+        bool runAsTemporaryCopy{false};
 
         MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME)
         {
