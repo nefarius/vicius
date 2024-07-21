@@ -790,4 +790,20 @@ namespace winapi
         CloseHandle(hProcess);
         return bSuccess;
     }
+
+    _Use_decl_annotations_
+    bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::wstring& path)
+    {
+        std::wstring tempPath(MAX_PATH, '\0');
+
+        if (!GetProcessFullPath(dwPID, tempPath.data(), MAX_PATH))
+        {
+            return false;
+        }
+
+        util::stripNulls(tempPath);
+        path = tempPath;
+
+        return true;
+    }
 }
