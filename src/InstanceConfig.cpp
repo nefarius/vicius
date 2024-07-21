@@ -149,6 +149,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
                 {
                     if (parentAppFileStream.fail())
                     {
+                        spdlog::error("Failed to read file {} to the end for hashing, aborting",
+                            parentAppPath.value().string());
                         break;
                     }
                 }
@@ -166,6 +168,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
                 {
                     if (currentAppFileStream.fail())
                     {
+                        spdlog::error("Failed to read file {} to the end for hashing, aborting",
+                            appPath.string());
                         break;
                     }
                 }
