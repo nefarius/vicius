@@ -391,7 +391,6 @@
     <CopyFileToFolders Include="nefarius_HidHide_Updater.json">
       <FileType>Document</FileType>
     </CopyFileToFolders>
-    <None Include=".clang-format" />
     <None Include="cpp.hint" />
     <None Include="selfupdater\x64\selfupdater.dll" />
     <None Include="vcpkg.json" />
