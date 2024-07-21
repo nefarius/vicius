@@ -23,6 +23,7 @@
 #define NV_CLI_PARAM_OVERRIDE_OK    "--override-success-code"
 #define NV_CLI_IGNORE_POSTPONE      "--ignore-postpone"
 #define NV_CLI_PURGE_POSTPONE       "--purge-postpone"
+#define NV_CLI_TEMPORARY            "--temporary"
 
 //
 // App error exit codes
