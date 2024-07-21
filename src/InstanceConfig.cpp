@@ -120,9 +120,10 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     DWORD parentProcessId = winapi::GetParentProcessID(GetCurrentProcessId());
     spdlog::debug("parentProcessId = {}", parentProcessId);
 
-    if (winapi::GetProcessFullPath(parentProcessId, parentAppPath))
+    if (std::filesystem::path parentPath{}; winapi::GetProcessFullPath(parentProcessId, parentPath))
     {
-        spdlog::debug("parentAppPath = {}", parentAppPath.string());
+        parentAppPath = parentPath;
+        spdlog::debug("parentAppPath = {}", parentAppPath.value().string());
     }
 
     appVersion = util::GetVersionFromFile(appPath);
@@ -178,9 +179,9 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 #if !defined(NV_FLAGS_NO_CONFIG_FILE)
     const auto configFileName = std::format("{}.json", appFilename);
     // ReSharper disable once CppTooWideScopeInitStatement
-    auto configFile = !isTemporaryCopy
+    auto configFile = (!isTemporaryCopy || !parentAppPath.has_value())
                           ? appPath.parent_path() / configFileName
-                          : parentAppPath.parent_path() / configFileName;
+                          : parentAppPath.value().parent_path() / configFileName;
 
     if (exists(configFile))
     {
