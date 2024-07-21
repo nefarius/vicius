@@ -56,7 +56,9 @@ namespace winapi
      * \return True on success, false otherwise.
      */
     _Must_inspect_result_
-    bool GetUserTemporaryPath(_Inout_ std::string& path);
+    bool GetUserTemporaryDirectory(_Inout_ std::string& path);
+
+    bool GetNewTemporaryFile(_Inout_ std::string& path, _In_opt_ const std::string& parent = std::string());
 
     /**
      * \brief Attempts to retrieve the %ProgramData% directory.

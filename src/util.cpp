@@ -612,7 +612,7 @@ namespace winapi
     }
 
     _Use_decl_annotations_
-    bool GetUserTemporaryPath(_Inout_ std::string& path)
+    bool GetUserTemporaryDirectory(_Inout_ std::string& path)
     {
         std::string tempPath(MAX_PATH, '\0');
         // this expands typically to %TEMP% or %LOCALAPPDATA%\Temp
@@ -630,6 +630,29 @@ namespace winapi
         util::stripNulls(tempPath);
         path = tempPath;
 
+        return true;
+    }
+
+    bool GetNewTemporaryFile(_Inout_ std::string& path, _In_opt_ const std::string& parent)
+    {
+        std::string tempDir = parent;
+
+        if (!parent.empty())
+            GetUserTemporaryDirectory(tempDir);
+
+        if (tempDir.empty())
+            return false;
+
+        std::string tempFile(MAX_PATH, '\0');
+
+        if (GetTempFileNameA(tempDir.c_str(), "VICIUS", 0, tempFile.data()) == FALSE)
+        {
+            spdlog::error("Failed to get temporary file name, error: {:#x}", GetLastError());
+            return false;
+        }
+
+        util::stripNulls(tempFile);
+        path = tempFile;
         return true;
     }
 

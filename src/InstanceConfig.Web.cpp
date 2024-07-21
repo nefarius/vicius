@@ -107,12 +107,12 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             spdlog::error("Failed to create download location {}, defaulting to TEMP path",
                           rendered);
 
-            winapi::GetUserTemporaryPath(downloadLocation);
+            winapi::GetUserTemporaryDirectory(downloadLocation);
         }
     }
     else
     {
-        winapi::GetUserTemporaryPath(downloadLocation);
+        winapi::GetUserTemporaryDirectory(downloadLocation);
     }
 
     // if we're still empty, the previous methods all failed
@@ -145,15 +145,13 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         downloadLocation = targetDirectory.string();
     }
 
-    std::string tempFile(MAX_PATH, '\0');
+    std::string tempFile{};
 
-    if (GetTempFileNameA(downloadLocation.c_str(), "VICIUS", 0, tempFile.data()) == FALSE)
+    if (!winapi::GetNewTemporaryFile(tempFile, downloadLocation))
     {
-        spdlog::error("Failed to get temporary file name, error: {:#x}", GetLastError());
+        spdlog::error("Failed to get temporary file name");
         return -1;
     }
-
-    util::stripNulls(tempFile);
 
     spdlog::debug("tempFile = {}", tempFile);
 
