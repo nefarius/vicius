@@ -30,9 +30,8 @@ struct changelog : public imgui_md
     explicit changelog(const std::map<std::string, std::shared_ptr<sf::Texture>>& images) : _images(images)
     {
         m_regex_link_target = std::regex(
-            R"(\)\]\((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))\))",
-            std::regex_constants::icase
-        );
+          R"(\)\]\((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))\))",
+          std::regex_constants::icase);
     }
 
     void SPAN_IMG(const MD_SPAN_IMG_DETAIL* d, bool e) override
@@ -53,7 +52,7 @@ struct changelog : public imgui_md
         {
             if (const std::smatch& match = *matchesBegin; match.size() > 1)
             {
-                real_h_ref.assign(match[1]);
+                real_h_ref.assign(match[ 1 ]);
                 is_link = true;
             }
         }
@@ -97,15 +96,15 @@ struct changelog : public imgui_md
     {
         switch (m_hlevel)
         {
-        case 1:
-            return G_Font_H1;
-        case 2:
-            return G_Font_H2;
-        case 3:
-            return G_Font_H3;
-        default:
-        case 0:
-            return G_Font_Default;
+            case 1:
+                return G_Font_H1;
+            case 2:
+                return G_Font_H2;
+            case 3:
+                return G_Font_H3;
+            default:
+            case 0:
+                return G_Font_Default;
         }
     }
 
@@ -114,16 +113,13 @@ struct changelog : public imgui_md
         if (!m_href.empty())
         {
             // improve hyperlink visibility
-            return ImGui::GetStyle().Colors[ImGuiCol_CheckMark];
+            return ImGui::GetStyle().Colors[ ImGuiCol_CheckMark ];
         }
 
-        return ImGui::GetStyle().Colors[ImGuiCol_Text];
+        return ImGui::GetStyle().Colors[ ImGuiCol_Text ];
     }
 
-    void open_url() const override
-    {
-        ShellExecuteA(nullptr, "open", m_href.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-    }
+    void open_url() const override { ShellExecuteA(nullptr, "open", m_href.c_str(), nullptr, nullptr, SW_SHOWNORMAL); }
 
     /**
      * \brief sf::Texture handle to ImTextureID.
@@ -145,8 +141,7 @@ struct changelog : public imgui_md
 
         const RestClient::Response response = conn->get(url);
 
-        if (response.code != httplib::OK_200)
-            return nullptr;
+        if (response.code != httplib::OK_200) return nullptr;
 
         auto res = std::make_shared<sf::Texture>();
         res->loadFromMemory(response.body.data(), response.body.length());
@@ -165,28 +160,23 @@ struct changelog : public imgui_md
         if (!_images.contains(url))
         {
             // no download task is assigned to the given url, initiate
-            if (!imageDownloadTasks.contains(url) || !imageDownloadTasks[url].has_value())
+            if (!imageDownloadTasks.contains(url) || !imageDownloadTasks[ url ].has_value())
             {
-                const std::optional<std::shared_future<std::shared_ptr<sf::Texture>>> downloadTask = std::async(
-                    std::launch::async,
-                    &changelog::DownloadImageTexture,
-                    this,
-                    url
-                );
-                imageDownloadTasks[url] = downloadTask;
+                const std::optional<std::shared_future<std::shared_ptr<sf::Texture>>> downloadTask =
+                  std::async(std::launch::async, &changelog::DownloadImageTexture, this, url);
+                imageDownloadTasks[ url ] = downloadTask;
             }
             // task is running or finished
-            else if (imageDownloadTasks[url].has_value())
+            else if (imageDownloadTasks[ url ].has_value())
             {
-                const auto task = imageDownloadTasks[url];
+                const auto task = imageDownloadTasks[ url ];
                 const std::future_status status = (*task).wait_for(std::chrono::milliseconds(1));
 
                 const bool isDownloading = status == std::future_status::timeout;
                 const bool hasFinished = status == std::future_status::ready;
 
                 // no texture to report yet
-                if (isDownloading)
-                    return nullptr;
+                if (isDownloading) return nullptr;
 
                 // task done (succeeded or failed)
                 if (hasFinished)
@@ -201,14 +191,14 @@ struct changelog : public imgui_md
                     }
 
                     // retry on next frame
-                    imageDownloadTasks[url].reset();
+                    imageDownloadTasks[ url ].reset();
                 }
             }
 
             return nullptr;
         }
 
-        return _images[url];
+        return _images[ url ];
     }
 
     /**

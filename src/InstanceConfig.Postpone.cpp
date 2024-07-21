@@ -11,14 +11,13 @@ void models::InstanceConfig::SetPostponeData()
     const auto subKeyTemplate = std::format(NV_POSTPONE_TS_KEY_TEMPLATE, appFilename);
     const auto subKey = ConvertAnsiToWide(subKeyTemplate);
 
-    if (const winreg::RegResult result = key.TryCreate(
-            HKEY_CURRENT_USER,
-            subKey,
-            KEY_ALL_ACCESS,
-            REG_OPTION_VOLATILE, // gets discarded on reboot
-            nullptr,
-            nullptr); !result
-    )
+    if (const winreg::RegResult result = key.TryCreate(HKEY_CURRENT_USER,
+                                                       subKey,
+                                                       KEY_ALL_ACCESS,
+                                                       REG_OPTION_VOLATILE,  // gets discarded on reboot
+                                                       nullptr,
+                                                       nullptr);
+        !result)
     {
         spdlog::error("Failed to create {}", ConvertWideToANSI(subKey));
         return;
@@ -86,12 +85,8 @@ bool models::InstanceConfig::IsInPostponePeriod()
     SystemTimeToFileTime(&current, &ftLhs);
     SystemTimeToFileTime(&last, &ftRhs);
 
-    const std::chrono::file_clock::duration dLhs{
-        (static_cast<int64_t>(ftLhs.dwHighDateTime) << 32) | ftLhs.dwLowDateTime
-    };
-    const std::chrono::file_clock::duration dRhs{
-        (static_cast<int64_t>(ftRhs.dwHighDateTime) << 32) | ftRhs.dwLowDateTime
-    };
+    const std::chrono::file_clock::duration dLhs{(static_cast<int64_t>(ftLhs.dwHighDateTime) << 32) | ftLhs.dwLowDateTime};
+    const std::chrono::file_clock::duration dRhs{(static_cast<int64_t>(ftRhs.dwHighDateTime) << 32) | ftRhs.dwLowDateTime};
 
     const auto diffHours = std::chrono::duration_cast<std::chrono::hours>(dLhs - dRhs);
     const auto hours = diffHours.count();

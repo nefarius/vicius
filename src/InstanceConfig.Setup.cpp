@@ -11,27 +11,15 @@ bool models::InstanceConfig::InvokeSetupAsync()
         return false;
     }
 
-    setupTask = std::async(
-        std::launch::async,
-        &InstanceConfig::ExecuteSetup,
-        this
-    );
+    setupTask = std::async(std::launch::async, &InstanceConfig::ExecuteSetup, this);
 
     return true;
 }
 
-void models::InstanceConfig::ResetSetupState()
-{
-    setupTask.reset();
-}
+void models::InstanceConfig::ResetSetupState() { setupTask.reset(); }
 
-bool models::InstanceConfig::GetSetupStatus(
-    bool& isRunning,
-    bool& hasFinished,
-    bool& hasSucceeded,
-    DWORD& exitCode,
-    DWORD& win32Error
-) const
+bool models::InstanceConfig::GetSetupStatus(bool& isRunning, bool& hasFinished, bool& hasSucceeded, DWORD& exitCode,
+                                            DWORD& win32Error) const
 {
     if (!setupTask.has_value())
     {
@@ -76,9 +64,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 
     if (!isExecutable)
     {
-        std::string args = release.launchArguments.has_value()
-                               ? release.launchArguments.value()
-                               : std::string{};
+        std::string args = release.launchArguments.has_value() ? release.launchArguments.value() : std::string{};
 
         SHELLEXECUTEINFOA execInfo = {};
         execInfo.cbSize = sizeof(SHELLEXECUTEINFO);
@@ -95,8 +81,8 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
         {
             win32Error = GetLastError();
 
-            spdlog::error("Failed to launch {}, error {:#x}, message {}",
-                          tempFile.string(), win32Error, winapi::GetLastErrorStdStr());
+            spdlog::error("Failed to launch {}, error {:#x}, message {}", tempFile.string(), win32Error,
+                          winapi::GetLastErrorStdStr());
 
             goto exit;
         }
@@ -121,23 +107,13 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 
         const auto& args = launchArgs.str();
 
-        if (!CreateProcessA(
-            nullptr,
-            const_cast<LPSTR>(args.c_str()),
-            nullptr,
-            nullptr,
-            TRUE,
-            0,
-            nullptr,
-            nullptr,
-            &info,
-            &updateProcessInfo
-        ))
+        if (!CreateProcessA(nullptr, const_cast<LPSTR>(args.c_str()), nullptr, nullptr, TRUE, 0, nullptr, nullptr, &info,
+                            &updateProcessInfo))
         {
             win32Error = GetLastError();
 
-            spdlog::error("Failed to launch {}, error {:#x}, message {}",
-                          tempFile.string(), win32Error, winapi::GetLastErrorStdStr());
+            spdlog::error("Failed to launch {}, error {:#x}, message {}", tempFile.string(), win32Error,
+                          winapi::GetLastErrorStdStr());
 
             goto exit;
         }
@@ -152,10 +128,10 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 
     //
     // Run exit code validation, if configured
-    // 
+    //
     if (this->ExitCodeCheck().has_value())
     {
-        const auto [skipCheck, successCodes] = this->ExitCodeCheck().value();
+        const auto [ skipCheck, successCodes ] = this->ExitCodeCheck().value();
 
         if (skipCheck)
         {
@@ -174,7 +150,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 
     //
     // Fallback if nothing is configured
-    // 
+    //
     if (!success)
     {
         success = exitCode == NV_SUCCESS_EXIT_CODE;

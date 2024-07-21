@@ -18,15 +18,12 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     std::uniform_int_distribution<int> uniH(6, 22);
     std::uniform_int_distribution<int> uniM(1, 59);
     std::stringstream ss;
-    ss << "2023-01-01T"
-        << std::setw(2) << std::setfill('0') << uniH(rng)
-        << ":"
-        << std::setw(2) << std::setfill('0') << uniM(rng)
-        << ":00";
+    ss << "2023-01-01T" << std::setw(2) << std::setfill('0') << uniH(rng) << ":" << std::setw(2) << std::setfill('0') << uniM(rng)
+       << ":00";
     const std::string timeStr = ss.str();
 
     // start boundary - format should be YYYY-MM-DDTHH:MM:SS(+-)(timezone).
-    BSTR bstrStart = SysAllocString(ConvertAnsiToWide(timeStr).c_str()); // TODO: make configurable
+    BSTR bstrStart = SysAllocString(ConvertAnsiToWide(timeStr).c_str());  // TODO: make configurable
     BSTR bstrAuthor = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
 
     std::stringstream argsBuilder;
@@ -37,17 +34,17 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
 
     // clean up all resources when going out of scope
     auto guard = sg::make_scope_guard(
-        [bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart, bstrLaunchArgs]() noexcept
-        {
-            if (bstrTaskName) SysFreeString(bstrTaskName);
-            if (bstrExecutablePath) SysFreeString(bstrExecutablePath);
-            if (bstrId) SysFreeString(bstrId);
-            if (bstrAuthor) SysFreeString(bstrAuthor);
-            if (bstrStart) SysFreeString(bstrStart);
-            if (bstrLaunchArgs)SysFreeString(bstrLaunchArgs);
+      [ bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart, bstrLaunchArgs ]() noexcept
+      {
+          if (bstrTaskName) SysFreeString(bstrTaskName);
+          if (bstrExecutablePath) SysFreeString(bstrExecutablePath);
+          if (bstrId) SysFreeString(bstrId);
+          if (bstrAuthor) SysFreeString(bstrAuthor);
+          if (bstrStart) SysFreeString(bstrStart);
+          if (bstrLaunchArgs) SysFreeString(bstrLaunchArgs);
 
-            CoUninitialize();
-        });
+          CoUninitialize();
+      });
 
     HRESULT hr = CoInitialize(nullptr);
     if (FAILED(hr))
@@ -57,13 +54,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
 
     //  Create an instance of the Task Service.
     ITaskService* pService = nullptr;
-    hr = CoCreateInstance(
-        CLSID_TaskScheduler,
-        nullptr,
-        CLSCTX_INPROC_SERVER,
-        IID_ITaskService,
-        (void**)&pService
-    );
+    hr = CoCreateInstance(CLSID_TaskScheduler, nullptr, CLSCTX_INPROC_SERVER, IID_ITaskService, (void**)&pService);
     if (FAILED(hr))
     {
         _com_error err(hr);
@@ -73,8 +64,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     }
 
     //  Connect to the task service.
-    hr = pService->Connect(_variant_t(), _variant_t(),
-                           _variant_t(), _variant_t());
+    hr = pService->Connect(_variant_t(), _variant_t(), _variant_t(), _variant_t());
     if (FAILED(hr))
     {
         pService->Release();
@@ -106,7 +96,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     ITaskDefinition* pTask = nullptr;
     hr = pService->NewTask(0, &pTask);
 
-    pService->Release(); // COM clean up.  Pointer is no longer used.
+    pService->Release();  // COM clean up.  Pointer is no longer used.
 
     if (FAILED(hr))
     {
@@ -134,7 +124,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     }
 
     hr = pRegInfo->put_Author(bstrAuthor);
-    pRegInfo->Release(); // COM clean up.  Pointer is no longer used.
+    pRegInfo->Release();  // COM clean up.  Pointer is no longer used.
 
     if (FAILED(hr))
     {
@@ -333,7 +323,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         return std::make_tuple(hr, "Cannot get principal");
     }
 
-    //  Set up principal information: 
+    //  Set up principal information:
     hr = pPrincipal->put_Id(_bstr_t(L"Author"));
     if (FAILED(hr))
     {
@@ -346,7 +336,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         return std::make_tuple(hr, "Cannot set logon type");
     }
 
-    //  Run the task with the least privileges (LUA) 
+    //  Run the task with the least privileges (LUA)
     hr = pPrincipal->put_RunLevel(TASK_RUNLEVEL_LUA);
     pPrincipal->Release();
     if (FAILED(hr))
@@ -394,16 +384,14 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
 
     //  Register the task in the root folder.
     IRegisteredTask* pRegisteredTask = nullptr;
-    hr = pRootFolder->RegisterTaskDefinition(
-        bstrTaskName,
-        pTask,
-        TASK_CREATE_OR_UPDATE,
-        _variant_t(),
-        _variant_t(),
-        TASK_LOGON_INTERACTIVE_TOKEN,
-        _variant_t(L""),
-        &pRegisteredTask
-    );
+    hr = pRootFolder->RegisterTaskDefinition(bstrTaskName,
+                                             pTask,
+                                             TASK_CREATE_OR_UPDATE,
+                                             _variant_t(),
+                                             _variant_t(),
+                                             TASK_LOGON_INTERACTIVE_TOKEN,
+                                             _variant_t(L""),
+                                             &pRegisteredTask);
 
     if (FAILED(hr))
     {
@@ -429,12 +417,12 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::RemoveScheduledTask() c
     BSTR bstrTaskName = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
 
     auto guard = sg::make_scope_guard(
-        [bstrTaskName]() noexcept
-        {
-            if (bstrTaskName) SysFreeString(bstrTaskName);
+      [ bstrTaskName ]() noexcept
+      {
+          if (bstrTaskName) SysFreeString(bstrTaskName);
 
-            CoUninitialize();
-        });
+          CoUninitialize();
+      });
 
     HRESULT hr = CoInitialize(nullptr);
     if (FAILED(hr))
@@ -444,21 +432,14 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::RemoveScheduledTask() c
 
     //  Create an instance of the Task Service.
     ITaskService* pService = nullptr;
-    hr = CoCreateInstance(
-        CLSID_TaskScheduler,
-        nullptr,
-        CLSCTX_INPROC_SERVER,
-        IID_ITaskService,
-        (void**)&pService
-    );
+    hr = CoCreateInstance(CLSID_TaskScheduler, nullptr, CLSCTX_INPROC_SERVER, IID_ITaskService, (void**)&pService);
     if (FAILED(hr))
     {
         return std::make_tuple(hr, "Failed to create an instance of ITaskService");
     }
 
     //  Connect to the task service.
-    hr = pService->Connect(_variant_t(), _variant_t(),
-                           _variant_t(), _variant_t());
+    hr = pService->Connect(_variant_t(), _variant_t(), _variant_t(), _variant_t());
     if (FAILED(hr))
     {
         pService->Release();

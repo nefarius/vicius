@@ -12,27 +12,29 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
     inja::Environment env;
 
     // provides reading environment variable, example: envar("PROGRAMDATA") -> C:\ProgramData
-    env.add_callback("envar", [](const inja::Arguments& args)
-    {
-        if (args.empty())
-        {
-            return std::string{};
-        }
+    env.add_callback(
+      "envar",
+      [](const inja::Arguments& args)
+      {
+          if (args.empty())
+          {
+              return std::string{};
+          }
 
-        const auto envarName = args.at(0)->get<std::string>();
+          const auto envarName = args.at(0)->get<std::string>();
 
-        std::string envarValue(MAX_PATH, '\0');
+          std::string envarValue(MAX_PATH, '\0');
 
-        if (!GetEnvironmentVariableA(envarName.c_str(), envarValue.data(), static_cast<DWORD>(envarValue.size())))
-        {
-            // return fallback/default value on failure, if provided
-            return args.size() > 1 ? args.at(1)->get<std::string>() : std::string{};
-        }
+          if (!GetEnvironmentVariableA(envarName.c_str(), envarValue.data(), static_cast<DWORD>(envarValue.size())))
+          {
+              // return fallback/default value on failure, if provided
+              return args.size() > 1 ? args.at(1)->get<std::string>() : std::string{};
+          }
 
-        util::stripNulls(envarValue);
+          util::stripNulls(envarValue);
 
-        return envarValue;
-    });
+          return envarValue;
+      });
 
     // reads a registry value, mandatory params:
     // - view
@@ -42,507 +44,515 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
     //
     // optional param:
     // - default/fallback value if not found
-    env.add_callback("regval", [](const inja::Arguments& args)
-    {
-        std::string defaultRet{};
+    env.add_callback("regval",
+                     [](const inja::Arguments& args)
+                     {
+                         std::string defaultRet{};
 
-        if (args.size() < 4)
-        {
-            return defaultRet;
-        }
+                         if (args.size() < 4)
+                         {
+                             return defaultRet;
+                         }
 
-        if (args.size() > 4)
-        {
-            defaultRet = args.at(4)->get<std::string>();
-        }
+                         if (args.size() > 4)
+                         {
+                             defaultRet = args.at(4)->get<std::string>();
+                         }
 
-        const auto viewName = args.at(0)->get<std::string>();
-        const auto view = magic_enum::enum_cast<RegistryView>(viewName);
-        const auto hiveName = args.at(1)->get<std::string>();
-        const auto subKeyValue = args.at(2)->get<std::string>();
-        const auto subKey = ConvertAnsiToWide(subKeyValue);
-        const auto valueNameValue = args.at(3)->get<std::string>();
-        const auto valueName = ConvertAnsiToWide(valueNameValue);
+                         const auto viewName = args.at(0)->get<std::string>();
+                         const auto view = magic_enum::enum_cast<RegistryView>(viewName);
+                         const auto hiveName = args.at(1)->get<std::string>();
+                         const auto subKeyValue = args.at(2)->get<std::string>();
+                         const auto subKey = ConvertAnsiToWide(subKeyValue);
+                         const auto valueNameValue = args.at(3)->get<std::string>();
+                         const auto valueName = ConvertAnsiToWide(valueNameValue);
 
-        HKEY hive = nullptr;
+                         HKEY hive = nullptr;
 
-        const auto regHive = magic_enum::enum_cast<RegistryHive>(hiveName);
+                         const auto regHive = magic_enum::enum_cast<RegistryHive>(hiveName);
 
-        if (!regHive.has_value())
-        {
-            spdlog::error("Unsupported hive provided");
-            return defaultRet;
-        }
+                         if (!regHive.has_value())
+                         {
+                             spdlog::error("Unsupported hive provided");
+                             return defaultRet;
+                         }
 
-        switch (regHive.value())
-        {
-        case RegistryHive::HKCU:
-            hive = HKEY_CURRENT_USER;
-            break;
-        case RegistryHive::HKLM:
-            hive = HKEY_LOCAL_MACHINE;
-            break;
-        case RegistryHive::HKCR:
-            hive = HKEY_CLASSES_ROOT;
-            break;
-        case RegistryHive::Invalid:
-            spdlog::error("Unsupported hive provided");
-            return defaultRet;
-        }
+                         switch (regHive.value())
+                         {
+                             case RegistryHive::HKCU:
+                                 hive = HKEY_CURRENT_USER;
+                                 break;
+                             case RegistryHive::HKLM:
+                                 hive = HKEY_LOCAL_MACHINE;
+                                 break;
+                             case RegistryHive::HKCR:
+                                 hive = HKEY_CLASSES_ROOT;
+                                 break;
+                             case RegistryHive::Invalid:
+                                 spdlog::error("Unsupported hive provided");
+                                 return defaultRet;
+                         }
 
-        winreg::RegKey key;
-        REGSAM flags = KEY_READ;
+                         winreg::RegKey key;
+                         REGSAM flags = KEY_READ;
 
-        if (view.has_value() && view > RegistryView::Default)
-        {
-            flags |= static_cast<REGSAM>(view.value());
-        }
+                         if (view.has_value() && view > RegistryView::Default)
+                         {
+                             flags |= static_cast<REGSAM>(view.value());
+                         }
 
-        if (const winreg::RegResult result = key.TryOpen(hive, subKey, flags); !result)
-        {
-            spdlog::error("Failed to open {}\\{} key", hiveName, subKeyValue);
-            return defaultRet;
-        }
+                         if (const winreg::RegResult result = key.TryOpen(hive, subKey, flags); !result)
+                         {
+                             spdlog::error("Failed to open {}\\{} key", hiveName, subKeyValue);
+                             return defaultRet;
+                         }
 
-        const auto& type = key.TryQueryValueType(valueName);
+                         const auto& type = key.TryQueryValueType(valueName);
 
-        if (!type.IsValid())
-        {
-            spdlog::error("Couldn't get type of vale {}", valueNameValue);
-            return defaultRet;
-        }
+                         if (!type.IsValid())
+                         {
+                             spdlog::error("Couldn't get type of vale {}", valueNameValue);
+                             return defaultRet;
+                         }
 
-        std::stringstream valStream;
+                         std::stringstream valStream;
 
-        switch (type.GetValue())
-        {
-        case REG_BINARY:
-            {
-                const auto ret = key.TryGetBinaryValue(valueName);
+                         switch (type.GetValue())
+                         {
+                             case REG_BINARY:
+                             {
+                                 const auto ret = key.TryGetBinaryValue(valueName);
 
-                if (!ret.IsValid())
-                {
-                    spdlog::error("Failed to access value {}", valueNameValue);
-                    return defaultRet;
-                }
+                                 if (!ret.IsValid())
+                                 {
+                                     spdlog::error("Failed to access value {}", valueNameValue);
+                                     return defaultRet;
+                                 }
 
-                // convert to hex stream string
-                json j = json::array();
-                for (int i = 0; i < ret.GetValue().size(); ++i)
-                {
-                    j.emplace_back(ret.GetValue().data()[i]);
-                }
+                                 // convert to hex stream string
+                                 json j = json::array();
+                                 for (int i = 0; i < ret.GetValue().size(); ++i)
+                                 {
+                                     j.emplace_back(ret.GetValue().data()[ i ]);
+                                 }
 
-                valStream << j;
+                                 valStream << j;
 
-                break;
-            }
-        case REG_DWORD:
-            {
-                const auto ret = key.TryGetDwordValue(valueName);
+                                 break;
+                             }
+                             case REG_DWORD:
+                             {
+                                 const auto ret = key.TryGetDwordValue(valueName);
 
-                if (!ret.IsValid())
-                {
-                    spdlog::error("Failed to access value {}", valueNameValue);
-                    return defaultRet;
-                }
+                                 if (!ret.IsValid())
+                                 {
+                                     spdlog::error("Failed to access value {}", valueNameValue);
+                                     return defaultRet;
+                                 }
 
-                valStream << ret.GetValue();
+                                 valStream << ret.GetValue();
 
-                break;
-            }
-        case REG_EXPAND_SZ:
-            {
-                const auto ret = key.TryGetExpandStringValue(valueName);
+                                 break;
+                             }
+                             case REG_EXPAND_SZ:
+                             {
+                                 const auto ret = key.TryGetExpandStringValue(valueName);
 
-                if (!ret.IsValid())
-                {
-                    spdlog::error("Failed to access value {}", valueNameValue);
-                    return defaultRet;
-                }
+                                 if (!ret.IsValid())
+                                 {
+                                     spdlog::error("Failed to access value {}", valueNameValue);
+                                     return defaultRet;
+                                 }
 
-                std::wstring expandedValue(SHRT_MAX, '\0');
+                                 std::wstring expandedValue(SHRT_MAX, '\0');
 
-                if (ExpandEnvironmentStrings(ret.GetValue().c_str(), expandedValue.data(), SHRT_MAX))
-                {
-                    util::stripNulls(expandedValue);
-                    valStream << ConvertWideToANSI(expandedValue);
-                }
-                else
-                {
-                    spdlog::warn("Failed to expand string {}", ConvertWideToANSI(ret.GetValue()));
-                    valStream << ConvertWideToANSI(ret.GetValue());
-                }
+                                 if (ExpandEnvironmentStrings(ret.GetValue().c_str(), expandedValue.data(), SHRT_MAX))
+                                 {
+                                     util::stripNulls(expandedValue);
+                                     valStream << ConvertWideToANSI(expandedValue);
+                                 }
+                                 else
+                                 {
+                                     spdlog::warn("Failed to expand string {}", ConvertWideToANSI(ret.GetValue()));
+                                     valStream << ConvertWideToANSI(ret.GetValue());
+                                 }
 
-                break;
-            }
-        case REG_MULTI_SZ:
-            {
-                const auto ret = key.TryGetMultiStringValue(valueName);
+                                 break;
+                             }
+                             case REG_MULTI_SZ:
+                             {
+                                 const auto ret = key.TryGetMultiStringValue(valueName);
 
-                if (!ret.IsValid())
-                {
-                    spdlog::error("Failed to access value {}", valueNameValue);
-                    return defaultRet;
-                }
+                                 if (!ret.IsValid())
+                                 {
+                                     spdlog::error("Failed to access value {}", valueNameValue);
+                                     return defaultRet;
+                                 }
 
-                json j = json::array();
-                for (int i = 0; i < ret.GetValue().size(); ++i)
-                {
-                    j.emplace_back(ConvertWideToANSI(ret.GetValue()[i]));
-                }
+                                 json j = json::array();
+                                 for (int i = 0; i < ret.GetValue().size(); ++i)
+                                 {
+                                     j.emplace_back(ConvertWideToANSI(ret.GetValue()[ i ]));
+                                 }
 
-                valStream << j;
+                                 valStream << j;
 
-                break;
-            }
-        case REG_QWORD:
-            {
-                const auto ret = key.TryGetQwordValue(valueName);
+                                 break;
+                             }
+                             case REG_QWORD:
+                             {
+                                 const auto ret = key.TryGetQwordValue(valueName);
 
-                if (!ret.IsValid())
-                {
-                    spdlog::error("Failed to access value {}", valueNameValue);
-                    return defaultRet;
-                }
+                                 if (!ret.IsValid())
+                                 {
+                                     spdlog::error("Failed to access value {}", valueNameValue);
+                                     return defaultRet;
+                                 }
 
-                valStream << ret.GetValue();
+                                 valStream << ret.GetValue();
 
-                break;
-            }
-        case REG_SZ:
-            {
-                const auto ret = key.TryGetStringValue(valueName);
+                                 break;
+                             }
+                             case REG_SZ:
+                             {
+                                 const auto ret = key.TryGetStringValue(valueName);
 
-                if (!ret.IsValid())
-                {
-                    spdlog::error("Failed to access value {}", valueNameValue);
-                    return defaultRet;
-                }
+                                 if (!ret.IsValid())
+                                 {
+                                     spdlog::error("Failed to access value {}", valueNameValue);
+                                     return defaultRet;
+                                 }
 
-                valStream << ConvertWideToANSI(ret.GetValue());
+                                 valStream << ConvertWideToANSI(ret.GetValue());
 
-                break;
-            }
-        default:
-            spdlog::error("Unsupported value type {} detected", type.GetValue());
-            return defaultRet;
-        }
+                                 break;
+                             }
+                             default:
+                                 spdlog::error("Unsupported value type {} detected", type.GetValue());
+                                 return defaultRet;
+                         }
 
-        std::string value = valStream.str();
+                         std::string value = valStream.str();
 
-        spdlog::debug("value = {}", value);
+                         spdlog::debug("value = {}", value);
 
-        return value;
-    });
+                         return value;
+                     });
 
     // reads a key value from a section of an INI file
-    env.add_callback("inival", [](const inja::Arguments& args)
-    {
-        std::string defaultRet{};
+    env.add_callback("inival",
+                     [](const inja::Arguments& args)
+                     {
+                         std::string defaultRet{};
 
-        if (args.size() < 3)
-        {
-            return defaultRet;
-        }
+                         if (args.size() < 3)
+                         {
+                             return defaultRet;
+                         }
 
-        if (args.size() > 3)
-        {
-            defaultRet = args.at(3)->get<std::string>();
-        }
+                         if (args.size() > 3)
+                         {
+                             defaultRet = args.at(3)->get<std::string>();
+                         }
 
-        const auto filePath = args.at(0)->get<std::string>();
-        const auto section = args.at(1)->get<std::string>();
-        const auto keyName = args.at(2)->get<std::string>();
+                         const auto filePath = args.at(0)->get<std::string>();
+                         const auto section = args.at(1)->get<std::string>();
+                         const auto keyName = args.at(2)->get<std::string>();
 
-        try
-        {
-            if (std::filesystem::file_size(filePath) <= 3)
-            {
-                spdlog::warn("File {} is too small for successful parsing", filePath);
-                return defaultRet;
-            }
+                         try
+                         {
+                             if (std::filesystem::file_size(filePath) <= 3)
+                             {
+                                 spdlog::warn("File {} is too small for successful parsing", filePath);
+                                 return defaultRet;
+                             }
 
-            inipp::Ini<char> ini;
-            std::ifstream is(filePath);
+                             inipp::Ini<char> ini;
+                             std::ifstream is(filePath);
 
-            char a, b, c;
-            a = is.get();
-            b = is.get();
-            c = is.get();
-            // checks for UTF-8 BOM presence and skips it (1st found section extraction will fail otherwise)
-            if (a != static_cast<char>(0xEF) || b != static_cast<char>(0xBB) || c != static_cast<char>(0xBF))
-            {
-                is.seekg(0);
-            }
+                             char a, b, c;
+                             a = is.get();
+                             b = is.get();
+                             c = is.get();
+                             // checks for UTF-8 BOM presence and skips it (1st found section extraction will fail otherwise)
+                             if (a != static_cast<char>(0xEF) || b != static_cast<char>(0xBB) || c != static_cast<char>(0xBF))
+                             {
+                                 is.seekg(0);
+                             }
 
-            ini.parse(is);
+                             ini.parse(is);
 
-            std::string value;
-            if (!inipp::get_value(ini.sections[section], keyName, value))
-            {
-                spdlog::warn("Section {} not found", section);
-                return defaultRet;
-            }
+                             std::string value;
+                             if (!inipp::get_value(ini.sections[ section ], keyName, value))
+                             {
+                                 spdlog::warn("Section {} not found", section);
+                                 return defaultRet;
+                             }
 
-            return value;
-        }
-        catch (const std::exception& e)
-        {
-            spdlog::error("Failed to read INI file {}, error {}", filePath, e.what());
-            return defaultRet;
-        }
-    });
+                             return value;
+                         }
+                         catch (const std::exception& e)
+                         {
+                             spdlog::error("Failed to read INI file {}, error {}", filePath, e.what());
+                             return defaultRet;
+                         }
+                     });
 
     // simple logging function for debugging
-    env.add_void_callback("log", 1, [](const inja::Arguments& args)
-    {
-        const auto logMessage = args.at(0)->get<std::string>();
+    env.add_void_callback("log", 1,
+                          [](const inja::Arguments& args)
+                          {
+                              const auto logMessage = args.at(0)->get<std::string>();
 
-        spdlog::debug("inja log message: {}", logMessage);
-    });
+                              spdlog::debug("inja log message: {}", logMessage);
+                          });
 
     // searches for installed products by regular expression
-    env.add_callback("productBy", 2, [](const inja::Arguments& args)
-    {
-        auto targetValue = args.at(0)->get<std::string>();
-        const auto expression = args.at(1)->get<std::string>();
+    env.add_callback(
+      "productBy", 2,
+      [](const inja::Arguments& args)
+      {
+          auto targetValue = args.at(0)->get<std::string>();
+          const auto expression = args.at(1)->get<std::string>();
 
-        json j = json::object();
-        j["count"] = std::to_string(0);
-        json results = json::array();
+          json j = json::object();
+          j[ "count" ] = std::to_string(0);
+          json results = json::array();
 
-        winreg::RegKey key;
-        REGSAM flags = KEY_READ;
+          winreg::RegKey key;
+          REGSAM flags = KEY_READ;
 
-        const auto baseKey = LR"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall)";
+          const auto baseKey = LR"(SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall)";
 
-        if (const winreg::RegResult result = key.TryOpen(HKEY_LOCAL_MACHINE, baseKey, flags); !result)
-        {
-            spdlog::error("Failed to open uninstall key");
-            j["error"] = "Failed to open uninstall key";
-            return j;
-        }
+          if (const winreg::RegResult result = key.TryOpen(HKEY_LOCAL_MACHINE, baseKey, flags); !result)
+          {
+              spdlog::error("Failed to open uninstall key");
+              j[ "error" ] = "Failed to open uninstall key";
+              return j;
+          }
 
-        const auto enumRet = key.TryEnumSubKeys();
+          const auto enumRet = key.TryEnumSubKeys();
 
-        if (!enumRet.IsValid())
-        {
-            spdlog::error("Failed to enumerate sub-keys");
-            j["error"] = "Failed to enumerate sub-keys";
-            return j;
-        }
+          if (!enumRet.IsValid())
+          {
+              spdlog::error("Failed to enumerate sub-keys");
+              j[ "error" ] = "Failed to enumerate sub-keys";
+              return j;
+          }
 
-        // enumerate each sub-key (each represents an installed product)
-        for (const auto& subKeyName : enumRet.GetValue())
-        {
-            // build full new path
-            const auto subKeyPath = std::format(R"({}\{})", ConvertWideToANSI(baseKey), ConvertWideToANSI(subKeyName));
+          // enumerate each sub-key (each represents an installed product)
+          for (const auto& subKeyName : enumRet.GetValue())
+          {
+              // build full new path
+              const auto subKeyPath = std::format(R"({}\{})", ConvertWideToANSI(baseKey), ConvertWideToANSI(subKeyName));
 
-            winreg::RegKey subKey;
-            const winreg::RegResult subResult = subKey.
-                TryOpen(HKEY_LOCAL_MACHINE, ConvertAnsiToWide(subKeyPath), flags);
+              winreg::RegKey subKey;
+              const winreg::RegResult subResult = subKey.TryOpen(HKEY_LOCAL_MACHINE, ConvertAnsiToWide(subKeyPath), flags);
 
-            if (subResult.Failed())
-            {
-                continue;
-            }
+              if (subResult.Failed())
+              {
+                  continue;
+              }
 
-            // attempts to extract the value by name provided by the caller
-            const auto& value = subKey.TryGetStringValue(ConvertAnsiToWide(targetValue));
+              // attempts to extract the value by name provided by the caller
+              const auto& value = subKey.TryGetStringValue(ConvertAnsiToWide(targetValue));
 
-            if (!value.IsValid())
-            {
-                continue;
-            }
+              if (!value.IsValid())
+              {
+                  continue;
+              }
 
-            // regex match to queried value
-            std::string displayName = ConvertWideToANSI(value.GetValue());
-            std::regex productRegex(expression, std::regex_constants::icase);
-            auto matchesBegin = std::sregex_iterator(displayName.begin(), displayName.end(), productRegex);
-            auto matchesEnd = std::sregex_iterator();
+              // regex match to queried value
+              std::string displayName = ConvertWideToANSI(value.GetValue());
+              std::regex productRegex(expression, std::regex_constants::icase);
+              auto matchesBegin = std::sregex_iterator(displayName.begin(), displayName.end(), productRegex);
+              auto matchesEnd = std::sregex_iterator();
 
-            if (matchesBegin == matchesEnd)
-            {
-                continue;
-            }
+              if (matchesBegin == matchesEnd)
+              {
+                  continue;
+              }
 
-            json entry = json::object();
+              json entry = json::object();
 
-            //
-            // Query for well-known properties
-            // 
+              //
+              // Query for well-known properties
+              //
 
-            if (const auto& ret = subKey.TryGetStringValue(L"DisplayName"); ret)
-            {
-                entry["displayName"] = ConvertWideToANSI(ret.GetValue());
-            }
+              if (const auto& ret = subKey.TryGetStringValue(L"DisplayName"); ret)
+              {
+                  entry[ "displayName" ] = ConvertWideToANSI(ret.GetValue());
+              }
 
-            if (const auto& ret = subKey.TryGetStringValue(L"InstallLocation"); ret)
-            {
-                entry["installLocation"] = ConvertWideToANSI(ret.GetValue());
-            }
+              if (const auto& ret = subKey.TryGetStringValue(L"InstallLocation"); ret)
+              {
+                  entry[ "installLocation" ] = ConvertWideToANSI(ret.GetValue());
+              }
 
-            if (const auto& ret = subKey.TryGetStringValue(L"DisplayVersion"); ret)
-            {
-                entry["displayVersion"] = ConvertWideToANSI(ret.GetValue());
-            }
+              if (const auto& ret = subKey.TryGetStringValue(L"DisplayVersion"); ret)
+              {
+                  entry[ "displayVersion" ] = ConvertWideToANSI(ret.GetValue());
+              }
 
-            if (const auto& ret = subKey.TryGetStringValue(L"Publisher"); ret)
-            {
-                entry["publisher"] = ConvertWideToANSI(ret.GetValue());
-            }
+              if (const auto& ret = subKey.TryGetStringValue(L"Publisher"); ret)
+              {
+                  entry[ "publisher" ] = ConvertWideToANSI(ret.GetValue());
+              }
 
-            if (const auto& ret = subKey.TryGetStringValue(L"InstallSource"); ret)
-            {
-                entry["installSource"] = ConvertWideToANSI(ret.GetValue());
-            }
+              if (const auto& ret = subKey.TryGetStringValue(L"InstallSource"); ret)
+              {
+                  entry[ "installSource" ] = ConvertWideToANSI(ret.GetValue());
+              }
 
-            if (const auto& ret = subKey.TryGetStringValue(L"InstallDate"); ret)
-            {
-                entry["installDate"] = ConvertWideToANSI(ret.GetValue());
-            }
+              if (const auto& ret = subKey.TryGetStringValue(L"InstallDate"); ret)
+              {
+                  entry[ "installDate" ] = ConvertWideToANSI(ret.GetValue());
+              }
 
-            if (const auto& ret = subKey.TryGetStringValue(L"UninstallString"); ret)
-            {
-                entry["uninstallString"] = ConvertWideToANSI(ret.GetValue());
-            }
+              if (const auto& ret = subKey.TryGetStringValue(L"UninstallString"); ret)
+              {
+                  entry[ "uninstallString" ] = ConvertWideToANSI(ret.GetValue());
+              }
 
-            if (const auto& ret = subKey.TryGetDwordValue(L"Language"); ret)
-            {
-                entry["language"] = std::to_string(ret.GetValue());
-            }
+              if (const auto& ret = subKey.TryGetDwordValue(L"Language"); ret)
+              {
+                  entry[ "language" ] = std::to_string(ret.GetValue());
+              }
 
-            if (const auto& ret = subKey.TryGetDwordValue(L"MajorVersion"); ret)
-            {
-                entry["majorVersion"] = std::to_string(ret.GetValue());
-            }
+              if (const auto& ret = subKey.TryGetDwordValue(L"MajorVersion"); ret)
+              {
+                  entry[ "majorVersion" ] = std::to_string(ret.GetValue());
+              }
 
-            if (const auto& ret = subKey.TryGetDwordValue(L"MinorVersion"); ret)
-            {
-                entry["minorVersion"] = std::to_string(ret.GetValue());
-            }
+              if (const auto& ret = subKey.TryGetDwordValue(L"MinorVersion"); ret)
+              {
+                  entry[ "minorVersion" ] = std::to_string(ret.GetValue());
+              }
 
-            util::toCamelCase(targetValue);
+              util::toCamelCase(targetValue);
 
-            // avoid duplicates
-            if (!entry.contains(targetValue))
-            {
-                entry[targetValue] = displayName;
-            }
+              // avoid duplicates
+              if (!entry.contains(targetValue))
+              {
+                  entry[ targetValue ] = displayName;
+              }
 
-            results.push_back(entry);
-        }
+              results.push_back(entry);
+          }
 
-        j["count"] = std::to_string(results.size());
-        j["results"] = results;
+          j[ "count" ] = std::to_string(results.size());
+          j[ "results" ] = results;
 
-        std::string value = j.dump(4, ' ', false, json::error_handler_t::replace);
+          std::string value = j.dump(4, ' ', false, json::error_handler_t::replace);
 
-        spdlog::debug("value = {}", value);
+          spdlog::debug("value = {}", value);
 
-        return j;
-    });
+          return j;
+      });
 
     // checks if two semantic version values are equal
-    env.add_callback("versionEq", 2, [](const inja::Arguments& args)
-    {
-        try
-        {
-            auto lhsValue = args.at(0)->get<std::string>();
-            auto rhsValue = args.at(1)->get<std::string>();
-            
-            util::toSemVerCompatible(lhsValue);
-            util::toSemVerCompatible(rhsValue);
+    env.add_callback("versionEq", 2,
+                     [](const inja::Arguments& args)
+                     {
+                         try
+                         {
+                             auto lhsValue = args.at(0)->get<std::string>();
+                             auto rhsValue = args.at(1)->get<std::string>();
 
-            spdlog::debug("lhs = {}", lhsValue);
-            spdlog::debug("rhs = {}", rhsValue);
+                             util::toSemVerCompatible(lhsValue);
+                             util::toSemVerCompatible(rhsValue);
 
-            const semver::version lhs = semver::version::parse(lhsValue);
-            const semver::version rhs = semver::version::parse(rhsValue);
+                             spdlog::debug("lhs = {}", lhsValue);
+                             spdlog::debug("rhs = {}", rhsValue);
 
-            return lhs == rhs;
-        }
-        catch (const std::exception& ex)
-        {
-            spdlog::error("Version conversion failed, error {}", ex.what());
-        }
+                             const semver::version lhs = semver::version::parse(lhsValue);
+                             const semver::version rhs = semver::version::parse(rhsValue);
 
-        return false;
-    });
+                             return lhs == rhs;
+                         }
+                         catch (const std::exception& ex)
+                         {
+                             spdlog::error("Version conversion failed, error {}", ex.what());
+                         }
+
+                         return false;
+                     });
 
     // checks if the first semantic version value is greater than the second
-    env.add_callback("versionGt", 2, [](const inja::Arguments& args)
-    {
-        try
-        {
-            auto lhsValue = args.at(0)->get<std::string>();
-            auto rhsValue = args.at(1)->get<std::string>();
+    env.add_callback("versionGt", 2,
+                     [](const inja::Arguments& args)
+                     {
+                         try
+                         {
+                             auto lhsValue = args.at(0)->get<std::string>();
+                             auto rhsValue = args.at(1)->get<std::string>();
 
-            util::toSemVerCompatible(lhsValue);
-            util::toSemVerCompatible(rhsValue);
+                             util::toSemVerCompatible(lhsValue);
+                             util::toSemVerCompatible(rhsValue);
 
-            spdlog::debug("lhs = {}", lhsValue);
-            spdlog::debug("rhs = {}", rhsValue);
+                             spdlog::debug("lhs = {}", lhsValue);
+                             spdlog::debug("rhs = {}", rhsValue);
 
-            const semver::version lhs = semver::version::parse(lhsValue);
-            const semver::version rhs = semver::version::parse(rhsValue);
+                             const semver::version lhs = semver::version::parse(lhsValue);
+                             const semver::version rhs = semver::version::parse(rhsValue);
 
-            return lhs > rhs;
-        }
-        catch (const std::exception& ex)
-        {
-            spdlog::error("Version conversion failed, error {}", ex.what());
-        }
+                             return lhs > rhs;
+                         }
+                         catch (const std::exception& ex)
+                         {
+                             spdlog::error("Version conversion failed, error {}", ex.what());
+                         }
 
-        return false;
-    });
+                         return false;
+                     });
 
     // checks if the first semantic version value is lower than the second
-    env.add_callback("versionLt", 2, [](const inja::Arguments& args)
-    {
-        try
-        {
-            auto lhsValue = args.at(0)->get<std::string>();
-            auto rhsValue = args.at(1)->get<std::string>();
-            
-            util::toSemVerCompatible(lhsValue);
-            util::toSemVerCompatible(rhsValue);
+    env.add_callback("versionLt", 2,
+                     [](const inja::Arguments& args)
+                     {
+                         try
+                         {
+                             auto lhsValue = args.at(0)->get<std::string>();
+                             auto rhsValue = args.at(1)->get<std::string>();
 
-            spdlog::debug("lhs = {}", lhsValue);
-            spdlog::debug("rhs = {}", rhsValue);
+                             util::toSemVerCompatible(lhsValue);
+                             util::toSemVerCompatible(rhsValue);
 
-            const semver::version lhs = semver::version::parse(lhsValue);
-            const semver::version rhs = semver::version::parse(rhsValue);
+                             spdlog::debug("lhs = {}", lhsValue);
+                             spdlog::debug("rhs = {}", rhsValue);
 
-            return lhs < rhs;
-        }
-        catch (const std::exception& ex)
-        {
-            spdlog::error("Version conversion failed, error {}", ex.what());
-        }
+                             const semver::version lhs = semver::version::parse(lhsValue);
+                             const semver::version rhs = semver::version::parse(rhsValue);
 
-        return false;
-    });
+                             return lhs < rhs;
+                         }
+                         catch (const std::exception& ex)
+                         {
+                             spdlog::error("Version conversion failed, error {}", ex.what());
+                         }
+
+                         return false;
+                     });
 
     // checks if a file exists
-    env.add_callback("exists", 1, [](const inja::Arguments& args)
-    {
-        try
-        {
-            const auto filePathValue = args.at(0)->get<std::string>();
-            spdlog::debug("filePathValue = {}", filePathValue);
-            const std::filesystem::path filePath{filePathValue};
+    env.add_callback("exists", 1,
+                     [](const inja::Arguments& args)
+                     {
+                         try
+                         {
+                             const auto filePathValue = args.at(0)->get<std::string>();
+                             spdlog::debug("filePathValue = {}", filePathValue);
+                             const std::filesystem::path filePath{filePathValue};
 
-            return exists(filePath);
-        }
-        catch (const std::exception& ex)
-        {
-            spdlog::error("File existence check failed, error {}", ex.what());
-        }
+                             return exists(filePath);
+                         }
+                         catch (const std::exception& ex)
+                         {
+                             spdlog::error("File existence check failed, error {}", ex.what());
+                         }
 
-        return false;
-    });
+                         return false;
+                     });
 
     try
     {

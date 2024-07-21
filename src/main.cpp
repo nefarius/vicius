@@ -8,13 +8,13 @@
 
 //
 // Enable visual styles
-// 
-#pragma comment(linker,"\"/manifestdependency:type='win32' \
+//
+#pragma comment(linker, "\"/manifestdependency:type='win32' \
 name='Microsoft.Windows.Common-Controls' version='6.0.0.0' \
 processorArchitecture='*' publicKeyToken='6595b64144ccf1df' language='*'\"")
 
 
-#define AS_MB	(1024 * 1024)
+#define AS_MB (1024 * 1024)
 
 extern ImFont* G_Font_H1;
 extern ImFont* G_Font_H2;
@@ -29,14 +29,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     argh::parser cmdl;
 
-    cmdl.add_params({
-        NV_CLI_PARAM_LOG_LEVEL,
-        NV_CLI_PARAM_LOG_TO_FILE,
-        NV_CLI_PARAM_SERVER_URL,
-        NV_CLI_PARAM_CHANNEL,
-        NV_CLI_PARAM_ADD_HEADER,
-        NV_CLI_PARAM_OVERRIDE_OK
-    });
+    cmdl.add_params({NV_CLI_PARAM_LOG_LEVEL, NV_CLI_PARAM_LOG_TO_FILE, NV_CLI_PARAM_SERVER_URL, NV_CLI_PARAM_CHANNEL,
+                     NV_CLI_PARAM_ADD_HEADER, NV_CLI_PARAM_OVERRIDE_OK});
 
     if (!util::ParseCommandLineArguments(cmdl))
     {
@@ -52,10 +46,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     // actions to perform when install is instructed
 #if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
-    if (!cmdl[{NV_CLI_TEMPORARY}] && cmdl[{NV_CLI_INSTALL}])
+    if (!cmdl[ {NV_CLI_TEMPORARY} ] && cmdl[ {NV_CLI_INSTALL} ])
     {
 #endif
-        if (!cmdl[{NV_CLI_NO_AUTOSTART}])
+        if (!cmdl[ {NV_CLI_NO_AUTOSTART} ])
         {
             if (const auto autoRet = cfg.RegisterAutostart(); !std::get<0>(autoRet))
             {
@@ -67,7 +61,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             }
         }
 
-        if (!cmdl[{NV_CLI_NO_SCHEDULED_TASK}])
+        if (!cmdl[ {NV_CLI_NO_SCHEDULED_TASK} ])
         {
             if (const auto taskRet = cfg.CreateScheduledTask(); FAILED(std::get<0>(taskRet)))
             {
@@ -104,7 +98,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma region Autostart tasks
 
     // actions to perform when running in autostart
-    if (!cmdl[{NV_CLI_TEMPORARY}] && cmdl[{NV_CLI_AUTOSTART}])
+    if (!cmdl[ {NV_CLI_TEMPORARY} ] && cmdl[ {NV_CLI_AUTOSTART} ])
     {
         if (const auto ret = cfg.CreateScheduledTask(); FAILED(std::get<0>(ret)))
         {
@@ -122,7 +116,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma region Uninstall command
 
     // uninstall tasks
-    if (!cmdl[{NV_CLI_TEMPORARY}] && cmdl[{NV_CLI_UNINSTALL}])
+    if (!cmdl[ {NV_CLI_TEMPORARY} ] && cmdl[ {NV_CLI_UNINSTALL} ])
     {
         if (const auto autoRet = cfg.RemoveAutostart(); !std::get<0>(autoRet))
         {
@@ -150,14 +144,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma endregion
 
     // purge postpone data, if any
-    if (cmdl[{NV_CLI_PURGE_POSTPONE}])
+    if (cmdl[ {NV_CLI_PURGE_POSTPONE} ])
     {
         int successCode = NV_S_POSTPONE_PURGE;
         (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
 
-        return cfg.PurgePostponeData()
-                   ? successCode
-                   : NV_E_POSTPONE_PURGE_FAILED;
+        return cfg.PurgePostponeData() ? successCode : NV_E_POSTPONE_PURGE_FAILED;
     }
 
     // contact update server and get latest state and config
@@ -177,7 +169,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     }
 
     // check for updater updates - updateception :D
-    if (!cmdl[{NV_CLI_TEMPORARY}] && (!cmdl[{NV_CLI_SKIP_SELF_UPDATE}] && cfg.IsNewerUpdaterAvailable()))
+    if (!cmdl[ {NV_CLI_TEMPORARY} ] && (!cmdl[ {NV_CLI_SKIP_SELF_UPDATE} ] && cfg.IsNewerUpdaterAvailable()))
     {
         spdlog::debug("Newer updater version available, invoking self-update");
 
@@ -228,7 +220,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     }
 
     // check if we are currently bothering the user
-    if (!cmdl[{NV_CLI_IGNORE_BUSY_STATE}] && cfg.IsSilent())
+    if (!cmdl[ {NV_CLI_IGNORE_BUSY_STATE} ] && cfg.IsSilent())
     {
         // query state for the next 30 minutes before giving up
         int retries = 30;
@@ -259,7 +251,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     //
     // Main GUI creation
-    // 
+    //
 
     constexpr int windowWidth = 640, windowHeight = 512;
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetWindowTitle(), sf::Style::Titlebar);
@@ -273,7 +265,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
 
-    // get DPI scale    
+    // get DPI scale
     auto dpi = winapi::GetWindowDPI(hWnd);
     auto scaleFactor = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
     auto scaledWidth = (windowWidth * scaleFactor);
@@ -331,10 +323,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         ImGui::SFML::Update(window, deltaClock.restart());
 
         ImGuiWindowFlags flags =
-            ImGuiWindowFlags_NoCollapse |
-            ImGuiWindowFlags_NoMove |
-            ImGuiWindowFlags_NoResize |
-            ImGuiWindowFlags_NoTitleBar;
+          ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
 
         // fakes a little window border/margin
         const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
@@ -368,7 +357,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         switch (currentPage)
         {
-        case WizardPage::Start:
+            case WizardPage::Start:
             {
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H1);
@@ -382,9 +371,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (30 * scaleFactor));
                 if (ImGui::Button(ICON_FK_DOWNLOAD " Display update details now"))
                 {
-                    currentPage = cfg.HasSingleRelease()
-                                      ? WizardPage::SingleVersionSummary
-                                      : WizardPage::MultipleVersionsOverview;
+                    currentPage = cfg.HasSingleRelease() ? WizardPage::SingleVersionSummary
+                                                         : WizardPage::MultipleVersionsOverview;
                 }
 
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (20 * scaleFactor));
@@ -400,8 +388,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (20 * scaleFactor));
                     if (ImGui::Button(ICON_FK_QUESTION " Open help web page"))
                     {
-                        ShellExecuteA(nullptr, "open", cfg.GetHelpUrl().value().c_str(), nullptr, nullptr,
-                                      SW_SHOWNORMAL);
+                        ShellExecuteA(nullptr, "open", cfg.GetHelpUrl().value().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
                     }
                 }
 
@@ -410,7 +397,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::Unindent(leftBorderIndent);
                 break;
             }
-        case WizardPage::SingleVersionSummary:
+            case WizardPage::SingleVersionSummary:
             {
                 isBackDisabled = false;
 
@@ -422,17 +409,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                 const auto& release = cfg.GetSelectedRelease();
                 ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
-                ImGui::BeginChild(
-                    "Summary",
-                    ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - (60 * scaleFactor)),
-                    false,
-                    windowFlags
-                );
-                markdown::RenderChangelog(
-                    release.summary.empty()
-                        ? "This release contains no summary."
-                        : release.summary
-                );
+                ImGui::BeginChild("Summary",
+                                  ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - (60 * scaleFactor)),
+                                  false,
+                                  windowFlags);
+                markdown::RenderChangelog(release.summary.empty() ? "This release contains no summary." : release.summary);
                 ImGui::EndChild();
 
                 ImGui::SetCursorPos(ImVec2(mainViewport->WorkSize.x - (215 * scaleFactor), navigateButtonOffsetY));
@@ -446,14 +427,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                 break;
             }
-        case WizardPage::MultipleVersionsOverview:
+            case WizardPage::MultipleVersionsOverview:
             {
                 isBackDisabled = false;
 
                 // TODO: implement me! The idea behind this page is to offer a list of releases for the user to choose from
                 break;
             }
-        case WizardPage::DownloadAndInstall:
+            case WizardPage::DownloadAndInstall:
             {
                 static DWORD lastExitCode = 0;
                 static double totalToDownload = 0;
@@ -493,19 +474,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     // start download
                     cfg.DownloadReleaseAsync(
-                        cfg.GetSelectedReleaseId(),
-                        [](void* pData, double downloadTotal, double downloaded, double uploadTotal,
-                           double uploaded) -> int
-                        {
-                            UNREFERENCED_PARAMETER(pData);
-                            UNREFERENCED_PARAMETER(uploadTotal);
-                            UNREFERENCED_PARAMETER(uploaded);
+                      cfg.GetSelectedReleaseId(),
+                      [](void* pData, double downloadTotal, double downloaded, double uploadTotal, double uploaded) -> int
+                      {
+                          UNREFERENCED_PARAMETER(pData);
+                          UNREFERENCED_PARAMETER(uploadTotal);
+                          UNREFERENCED_PARAMETER(uploaded);
 
-                            totalToDownload = downloadTotal;
-                            totalDownloaded = downloaded;
+                          totalToDownload = downloadTotal;
+                          totalDownloaded = downloaded;
 
-                            return CURLE_OK;
-                        });
+                          return CURLE_OK;
+                      });
 
                     instStep = DownloadAndInstallStep::Downloading;
                 }
@@ -514,73 +494,68 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 if (instStep == DownloadAndInstallStep::Downloading && hasFinished)
                 {
                     spdlog::debug("Download finished with status code {}", statusCode);
-                    instStep = statusCode == httplib::OK_200
-                                   ? DownloadAndInstallStep::DownloadSucceeded
-                                   : DownloadAndInstallStep::DownloadFailed;
+                    instStep = statusCode == httplib::OK_200 ? DownloadAndInstallStep::DownloadSucceeded
+                                                             : DownloadAndInstallStep::DownloadFailed;
                 }
 
                 switch (instStep)
                 {
-                case DownloadAndInstallStep::Downloading:
+                    case DownloadAndInstallStep::Downloading:
 
-                    if (totalDownloaded <= 0 || totalToDownload <= 0)
-                    {
-                        ImGui::Text("Starting download...");
-                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (5 * scaleFactor));
-                        ui::IndeterminateProgressBar(
-                            ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
-                    }
-                    else
-                    {
-                        ImGui::Text("Downloading (%.2f MB of %.2f MB)",
-                                    totalDownloaded / AS_MB, totalToDownload / AS_MB);
-                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (5 * scaleFactor));
-                        ImGui::ProgressBar(
-                            (static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
-                            ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f)
-                        );
-                    }
+                        if (totalDownloaded <= 0 || totalToDownload <= 0)
+                        {
+                            ImGui::Text("Starting download...");
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (5 * scaleFactor));
+                            ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
+                        }
+                        else
+                        {
+                            ImGui::Text("Downloading (%.2f MB of %.2f MB)", totalDownloaded / AS_MB, totalToDownload / AS_MB);
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (5 * scaleFactor));
+                            ImGui::ProgressBar((static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
+                                               ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
+                        }
 
-                    break;
-                case DownloadAndInstallStep::DownloadSucceeded:
+                        break;
+                    case DownloadAndInstallStep::DownloadSucceeded:
 
-                    instStep = DownloadAndInstallStep::PrepareInstall;
+                        instStep = DownloadAndInstallStep::PrepareInstall;
 
-                    spdlog::info("Download finished successfully");
+                        spdlog::info("Download finished successfully");
 
-                    break;
-                case DownloadAndInstallStep::DownloadFailed:
+                        break;
+                    case DownloadAndInstallStep::DownloadFailed:
 
-                    isCancelDisabled = false;
-                    isBackDisabled = false;
-                    status = NV_E_DOWNLOAD_FAILED;
+                        isCancelDisabled = false;
+                        isBackDisabled = false;
+                        status = NV_E_DOWNLOAD_FAILED;
 
-                    if (statusCode < CURL_LAST)
-                    {
-                        const auto curlCode = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(statusCode));
-                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, cURL error: %s", curlCode.data());
-                    }
-                    else
-                    {
-                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, HTTP error: %s",
-                                    httplib::status_message(statusCode));
-                    }
+                        if (statusCode < CURL_LAST)
+                        {
+                            const auto curlCode = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(statusCode));
+                            ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, cURL error: %s", curlCode.data());
+                        }
+                        else
+                        {
+                            ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, HTTP error: %s",
+                                        httplib::status_message(statusCode));
+                        }
 
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
-                    if (ImGui::Button("Retry now"))
-                    {
-                        instStep = DownloadAndInstallStep::Begin;
-                        currentPage = WizardPage::DownloadAndInstall;
-                    }
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
+                        if (ImGui::Button("Retry now"))
+                        {
+                            instStep = DownloadAndInstallStep::Begin;
+                            currentPage = WizardPage::DownloadAndInstall;
+                        }
 
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
-                    ImGui::Text("You can also press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
+                        ImGui::Text("You can also press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
 
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
-                    ImGui::Text("Press the 'Cancel' button to abort and close.");
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
+                        ImGui::Text("Press the 'Cancel' button to abort and close.");
 
-                    break;
-                case DownloadAndInstallStep::PrepareInstall:
+                        break;
+                    case DownloadAndInstallStep::PrepareInstall:
                     {
                         cfg.InvokeSetupAsync();
 
@@ -589,7 +564,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                         break;
                     }
-                case DownloadAndInstallStep::InstallRunning:
+                    case DownloadAndInstallStep::InstallRunning:
                     {
                         bool isRunning = false;
                         bool hasSetupFinished = false;
@@ -603,27 +578,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                             {
                                 ImGui::Text("Installing...");
                                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (5 * scaleFactor));
-                                ui::IndeterminateProgressBar(
-                                    ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
+                                ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
                             }
                             else if (hasSetupFinished)
                             {
-                                spdlog::info("Setup finished; succeeded: {}, exitCode: {}, win32Error: {}",
-                                             hasSucceeded, exitCode, win32Error);
+                                spdlog::info("Setup finished; succeeded: {}, exitCode: {}, win32Error: {}", hasSucceeded,
+                                             exitCode, win32Error);
 
                                 if (win32Error == ERROR_SUCCESS && winapi::IsMsiExecErrorCode(exitCode))
                                 {
-                                    spdlog::error("msiexec failed with {} ({})",
-                                                  winapi::GetLastErrorStdStr(exitCode), exitCode);
+                                    spdlog::error("msiexec failed with {} ({})", winapi::GetLastErrorStdStr(exitCode), exitCode);
 
                                     lastExitCode = exitCode;
                                 }
 
                                 SetLastError(win32Error);
 
-                                instStep = hasSucceeded
-                                               ? DownloadAndInstallStep::InstallSucceeded
-                                               : DownloadAndInstallStep::InstallFailed;
+                                instStep = hasSucceeded ? DownloadAndInstallStep::InstallSucceeded
+                                                        : DownloadAndInstallStep::InstallFailed;
                             }
                         }
                         else
@@ -633,53 +605,46 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
 
                     break;
-                case DownloadAndInstallStep::InstallFailed:
+                    case DownloadAndInstallStep::InstallFailed:
 
-                    std::call_once(errorUrlTriggered, [&cfg]()
-                    {
-                        if (!cfg.GetInstallErrorUrl().has_value())
+                        std::call_once(
+                          errorUrlTriggered,
+                          [ &cfg ]()
+                          {
+                              if (!cfg.GetInstallErrorUrl().has_value())
+                              {
+                                  return;
+                              }
+
+                              ShellExecuteA(
+                                nullptr, "open", cfg.GetInstallErrorUrl().value().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                          });
+
+                        if (GetLastError() == ERROR_SUCCESS)
                         {
-                            return;
-                        }
+                            ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE
+                                        " Error! Installation failed with an unexpected exit code (%lu).",
+                                        lastExitCode);
 
-                        ShellExecuteA(
-                            nullptr,
-                            "open",
-                            cfg.GetInstallErrorUrl().value().c_str(),
-                            nullptr,
-                            nullptr,
-                            SW_SHOWNORMAL
-                        );
-                    });
-
-                    if (GetLastError() == ERROR_SUCCESS)
-                    {
-                        ImGui::Text(
-                            ICON_FK_EXCLAMATION_TRIANGLE
-                            " Error! Installation failed with an unexpected exit code (%lu).",
-                            lastExitCode
-                        );
-
-                        if (winapi::IsMsiExecErrorCode(lastExitCode))
-                        {
-                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
-                            ImGui::TextWrapped("Setup engine error: %s",
-                                               winapi::GetLastErrorStdStr(lastExitCode).c_str());
+                            if (winapi::IsMsiExecErrorCode(lastExitCode))
+                            {
+                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
+                                ImGui::TextWrapped("Setup engine error: %s", winapi::GetLastErrorStdStr(lastExitCode).c_str());
+                            }
+                            else
+                            {
+                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
+                                ImGui::Text("Setup exit code: %lu", lastExitCode);
+                            }
                         }
                         else
                         {
-                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
-                            ImGui::Text("Setup exit code: %lu", lastExitCode);
+                            ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed, error %s.",
+                                        winapi::GetLastErrorStdStr().c_str());
                         }
-                    }
-                    else
-                    {
-                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed, error %s.",
-                                    winapi::GetLastErrorStdStr().c_str());
-                    }
 
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
-                    /* TODO: currently bugged, fix later!
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
+                        /* TODO: currently bugged, fix later!
                     if (ImGui::Button("Retry now"))
                     {
                         instStep = DownloadAndInstallStep::PrepareInstall;
@@ -687,35 +652,35 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
                     */
-                    ImGui::Text("You can also press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
+                        ImGui::Text("You can also press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
 
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
-                    ImGui::Text("Press the 'Cancel' button to abort and close.");
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
+                        ImGui::Text("Press the 'Cancel' button to abort and close.");
 
-                    isCancelDisabled = false;
-                    isBackDisabled = false;
-                    status = NV_E_SETUP_FAILED;
+                        isCancelDisabled = false;
+                        isBackDisabled = false;
+                        status = NV_E_SETUP_FAILED;
 
-                // TODO: handle error
+                        // TODO: handle error
 
-                    break;
-                case DownloadAndInstallStep::InstallSucceeded:
+                        break;
+                    case DownloadAndInstallStep::InstallSucceeded:
 
-                    //ImGui::Text("Done!");
+                        //ImGui::Text("Done!");
 
-                    // TODO: implement me, right now it simply exits
+                        // TODO: implement me, right now it simply exits
 
-                    status = NV_S_UPDATE_FINISHED;
-                    ++currentPage;
+                        status = NV_S_UPDATE_FINISHED;
+                        ++currentPage;
 
-                    break;
+                        break;
                 }
 
                 ImGui::Unindent(leftBorderIndent);
 
                 break;
             }
-        case WizardPage::Finish:
+            case WizardPage::Finish:
             {
                 window.close();
 

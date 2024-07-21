@@ -6,9 +6,9 @@
 void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* conn) const
 {
     //
-    // If a backend server is used, it can alter the response based on 
+    // If a backend server is used, it can alter the response based on
     // these header values, classic web servers will just ignore them
-    // 
+    //
 
 #if !defined(NV_FLAGS_NO_VENDOR_HEADERS)
     conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Manufacturer", manufacturer);
@@ -18,25 +18,24 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
     {
         conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Channel", channel);
     }
-    
+
     //
     // Report updater process architecture
-    // 
+    //
 
-    conn->AppendHeader(
-        "X-" NV_HTTP_HEADERS_NAME "-Process-Architecture",
+    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Process-Architecture",
 #if defined(_M_AMD64)
-                "x64"
+                       "x64"
 #elif defined(_M_ARM64)
-        "arm64"
+                       "arm64"
 #else
-        "x86"
+                       "x86"
 #endif
     );
 
     //
     // Report OS/CPU architecture
-    // 
+    //
 
     SYSTEM_INFO si = {};
 
@@ -46,18 +45,18 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
 
         switch (si.wProcessorArchitecture)
         {
-        case PROCESSOR_ARCHITECTURE_AMD64:
-            arch = "x64";
-            break;
-        case PROCESSOR_ARCHITECTURE_ARM64:
-            arch = "arm64";
-            break;
-        case PROCESSOR_ARCHITECTURE_INTEL:
-            arch = "x86";
-            break;
-        default:
-            arch = "<unknown>";
-            break;
+            case PROCESSOR_ARCHITECTURE_AMD64:
+                arch = "x64";
+                break;
+            case PROCESSOR_ARCHITECTURE_ARM64:
+                arch = "arm64";
+                break;
+            case PROCESSOR_ARCHITECTURE_INTEL:
+                arch = "x86";
+                break;
+            default:
+                arch = "<unknown>";
+                break;
         }
 
         conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture", arch);
@@ -65,7 +64,7 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
 
     //
     // Custom headers passed via CLI
-    // 
+    //
 
     for (const auto& kvp : additionalHeaders)
     {
@@ -103,8 +102,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         }
         else
         {
-            spdlog::error("Failed to create download location {}, defaulting to TEMP path",
-                          rendered);
+            spdlog::error("Failed to create download location {}, defaulting to TEMP path", rendered);
 
             winapi::GetUserTemporaryDirectory(downloadLocation);
         }
@@ -127,17 +125,14 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         }
 
         // build new absolute path, e.g. "C:\ProgramData\nefarius\HidHide\downloads" or "C:\ProgramData\Updater\downloads"
-        const std::filesystem::path subDir =
-            manufacturer.empty()
-                ? appFilename
-                : std::filesystem::path(manufacturer) / product;
+        const std::filesystem::path subDir = manufacturer.empty() ? appFilename : std::filesystem::path(manufacturer) / product;
         const std::filesystem::path targetDirectory = std::filesystem::path(programDataDir) / subDir / "downloads";
 
         // ensure this location can be created
         if (!winapi::DirectoryCreate(targetDirectory.string()))
         {
-            spdlog::error("Failed to create fallback download location {}, error: {:#x}",
-                          targetDirectory.string(), GetLastError());
+            spdlog::error("Failed to create fallback download location {}, error: {:#x}", targetDirectory.string(),
+                          GetLastError());
             return -1;
         }
 
@@ -172,21 +167,20 @@ retry:
     }
     catch (std::ios_base::failure& e)
     {
-        spdlog::error("Failed to open file {}, error {}",
-                      release.localTempFilePath.string(), e.what());
+        spdlog::error("Failed to open file {}, error {}", release.localTempFilePath.string(), e.what());
         return -1;
     }
 
     spdlog::debug("Starting release download from {}", release.downloadUrl);
 
-    auto [code, body, headers] = conn->get(release.downloadUrl);
+    auto [ code, body, headers ] = conn->get(release.downloadUrl);
 
     outStream.write(body.data(), body.size());
 
     outStream.close();
 
     // try to grab original filename
-    const auto& cd = headers["Content-Disposition"];
+    const auto& cd = headers[ "Content-Disposition" ];
 
     // attempt to get true filename
     if (code == httplib::OK_200 && !cd.empty())
@@ -204,7 +198,7 @@ retry:
 
         if (arguments.size() >= 2)
         {
-            const auto& filename = arguments[1];
+            const auto& filename = arguments[ 1 ];
 
             std::regex productRegex("filename=(.*)", std::regex_constants::icase);
             auto matchesBegin = std::sregex_iterator(filename.begin(), filename.end(), productRegex);
@@ -213,7 +207,7 @@ retry:
             if (matchesBegin != matchesEnd)
             {
                 const std::smatch& match = *matchesBegin;
-                std::filesystem::path attachmentName(match[1].str());
+                std::filesystem::path attachmentName(match[ 1 ].str());
 
                 std::filesystem::path newLocation = release.localTempFilePath;
                 //newLocation.replace_extension(attachmentName.extension());
@@ -227,8 +221,8 @@ retry:
                 // otherwise it will fail to launch itself elevated with a "ShellExecuteEx failed" error.
                 if (!MoveFileA(release.localTempFilePath.string().c_str(), newLocation.string().c_str()))
                 {
-                    spdlog::error("Failed to rename {} to {}, error: {:#x}",
-                                  release.localTempFilePath.string(), newLocation.string(), GetLastError());
+                    spdlog::error("Failed to rename {} to {}, error: {:#x}", release.localTempFilePath.string(),
+                                  newLocation.string(), GetLastError());
                 }
                 else
                 {
@@ -237,7 +231,7 @@ retry:
             }
         }
     }
-    
+
     if (code != httplib::OK_200)
     {
         if (code != httplib::NotFound_404 && --retryCount > 0)
@@ -258,8 +252,8 @@ retry:
         // clean up local file since we re-download it when the user decides to retry
         if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
         {
-            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}",
-                         release.localTempFilePath.string(), GetLastError(), winapi::GetLastErrorStdStr());
+            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}", release.localTempFilePath.string(),
+                         GetLastError(), winapi::GetLastErrorStdStr());
         }
     }
 
@@ -277,7 +271,7 @@ retry:
     conn->SetTimeout(MAX_TIMEOUT_SECS);
 
     RestClient::HeaderFields headers;
-    headers["Accept"] = "application/json";
+    headers[ "Accept" ] = "application/json";
     conn->SetHeaders(headers);
 
     SetCommonHeaders(conn);
@@ -287,7 +281,7 @@ retry:
 
 retry:
 
-    auto [code, body, _] = conn->get(updateRequestUrl);
+    auto [ code, body, _ ] = conn->get(updateRequestUrl);
 
     if (code != httplib::OK_200)
     {
@@ -301,7 +295,7 @@ retry:
 
             goto retry;
         }
-                
+
         auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
         errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
         spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
@@ -314,18 +308,11 @@ retry:
         remote = reply.get<UpdateResponse>();
 
         // remove releases marked as disabled
-        std::erase_if(
-            remote.releases,
-            [](const UpdateRelease& x)
-            {
-                return x.disabled;
-            });
+        std::erase_if(remote.releases, [](const UpdateRelease& x) { return x.disabled; });
 
         // top release is always latest by version, even if the response wasn't the right order
         std::ranges::sort(remote.releases, [](const UpdateRelease& lhs, const UpdateRelease& rhs)
-        {
-            return lhs.GetSemVersion() > rhs.GetSemVersion();
-        });
+                          { return lhs.GetSemVersion() > rhs.GetSemVersion(); });
 
         // bail out now if we are not supposed to obey the server settings
         if (authority == Authority::Local || !reply.contains("shared"))
@@ -341,26 +328,19 @@ retry:
             const auto& shared = remote.shared.value();
             spdlog::info("Processing remote shared configuration parameters");
 
-            if (shared.windowTitle.has_value())
-                merged.windowTitle = shared.windowTitle.value();
+            if (shared.windowTitle.has_value()) merged.windowTitle = shared.windowTitle.value();
 
-            if (shared.productName.has_value())
-                merged.productName = shared.productName.value();
+            if (shared.productName.has_value()) merged.productName = shared.productName.value();
 
-            if (shared.detectionMethod.has_value())
-                merged.detectionMethod = shared.detectionMethod.value();
+            if (shared.detectionMethod.has_value()) merged.detectionMethod = shared.detectionMethod.value();
 
-            if (shared.detection.has_value())
-                merged.detection = shared.detection.value();
+            if (shared.detection.has_value()) merged.detection = shared.detection.value();
 
-            if (shared.installationErrorUrl.has_value())
-                merged.installationErrorUrl = shared.installationErrorUrl.value();
+            if (shared.installationErrorUrl.has_value()) merged.installationErrorUrl = shared.installationErrorUrl.value();
 
-            if (shared.downloadLocation.has_value())
-                merged.downloadLocation = shared.downloadLocation.value();
+            if (shared.downloadLocation.has_value()) merged.downloadLocation = shared.downloadLocation.value();
 
-            if (shared.runAsTemporaryCopy.has_value())
-                merged.runAsTemporaryCopy = shared.runAsTemporaryCopy.value();
+            if (shared.runAsTemporaryCopy.has_value()) merged.runAsTemporaryCopy = shared.runAsTemporaryCopy.value();
         }
 
         return std::make_tuple(true, "OK");

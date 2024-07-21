@@ -14,13 +14,9 @@ namespace util
 {
     std::filesystem::path GetImageBasePathW()
     {
-        wchar_t myPath[MAX_PATH + 1] = {0};
+        wchar_t myPath[ MAX_PATH + 1 ] = {0};
 
-        GetModuleFileNameW(
-            reinterpret_cast<HINSTANCE>(&__ImageBase),
-            myPath,
-            MAX_PATH + 1
-        );
+        GetModuleFileNameW(reinterpret_cast<HINSTANCE>(&__ImageBase), myPath, MAX_PATH + 1);
 
         return std::wstring(myPath);
     }
@@ -35,7 +31,7 @@ namespace util
 
         if (verSize != NULL)
         {
-            const auto verData = new char[verSize];
+            const auto verData = new char[ verSize ];
 
             if (GetFileVersionInfoA(filePath.string().c_str(), verHandle, verSize, verData))
             {
@@ -46,10 +42,9 @@ namespace util
                         const auto* verInfo = (VS_FIXEDFILEINFO*)lpBuffer;
                         if (verInfo->dwSignature == 0xfeef04bd)
                         {
-                            versionString
-                                << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionMS)) << "."
-                                << static_cast<ULONG>(LOWORD(verInfo->dwProductVersionMS)) << "."
-                                << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionLS));
+                            versionString << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionMS)) << "."
+                                          << static_cast<ULONG>(LOWORD(verInfo->dwProductVersionMS)) << "."
+                                          << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionLS));
                         }
                     }
                 }
@@ -78,7 +73,7 @@ namespace util
         for (int i = 0; i < nArgs; i++)
         {
             // Windows gives us wide only, convert each to narrow
-            narrow.push_back(ConvertWideToANSI(std::wstring(szArglist[i])));
+            narrow.push_back(ConvertWideToANSI(std::wstring(szArglist[ i ])));
         }
 
         argv.resize(nArgs);
@@ -95,8 +90,7 @@ namespace util
     std::string trim(const std::string& str, const std::string& whitespace)
     {
         const auto strBegin = str.find_first_not_of(whitespace);
-        if (strBegin == std::string::npos)
-            return ""; // no content
+        if (strBegin == std::string::npos) return "";  // no content
 
         const auto strEnd = str.find_last_not_of(whitespace);
         const auto strRange = strEnd - strBegin + 1;
@@ -104,17 +98,13 @@ namespace util
         return str.substr(strBegin, strRange);
     }
 
-    bool icompare_pred(unsigned char a, unsigned char b)
-    {
-        return std::tolower(a) == std::tolower(b);
-    }
+    bool icompare_pred(unsigned char a, unsigned char b) { return std::tolower(a) == std::tolower(b); }
 
     bool icompare(const std::string& a, const std::string& b)
     {
         if (a.length() == b.length())
         {
-            return std::equal(b.begin(), b.end(),
-                              a.begin(), icompare_pred);
+            return std::equal(b.begin(), b.end(), a.begin(), icompare_pred);
         }
         return false;
     }
@@ -141,11 +131,9 @@ namespace util
     void toCamelCase(std::string& s)
     {
         char previous = ' ';
-        auto f = [&](char current)
+        auto f = [ & ](char current)
         {
-            const char result = (std::isblank(previous) && std::isupper(current))
-                                    ? std::tolower(current)
-                                    : current;
+            const char result = (std::isblank(previous) && std::isupper(current)) ? std::tolower(current) : current;
             previous = current;
             return result;
         };
@@ -157,23 +145,13 @@ namespace util
         // for 4 digit version we gonna cheat and convert it to a valid semantic version
         if (std::ranges::count_if(s, [](char c) { return c == '.'; }) > 2)
         {
-            s = std::regex_replace(
-                s,
-                std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"),
-                "$1.$2.$3-rc.$4"
-            );
+            s = std::regex_replace(s, std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"), "$1.$2.$3-rc.$4");
         }
     }
 
-    void stripNulls(std::string& s)
-    {
-        s.erase(std::ranges::find(s, '\0'), s.end());
-    }
+    void stripNulls(std::string& s) { s.erase(std::ranges::find(s, '\0'), s.end()); }
 
-    void stripNulls(std::wstring& s)
-    {
-        s.erase(std::ranges::find(s, L'\0'), s.end());
-    }
+    void stripNulls(std::wstring& s) { s.erase(std::ranges::find(s, L'\0'), s.end()); }
 }
 
 namespace winapi
@@ -188,7 +166,7 @@ namespace winapi
 
         if (verSize != NULL)
         {
-            const auto verData = new char[verSize];
+            const auto verData = new char[ verSize ];
 
             if (GetFileVersionInfoA(filePath.string().c_str(), verHandle, verSize, verData))
             {
@@ -199,11 +177,10 @@ namespace winapi
                         const auto* verInfo = (VS_FIXEDFILEINFO*)lpBuffer;
                         if (verInfo->dwSignature == 0xfeef04bd)
                         {
-                            versionString
-                                << static_cast<ULONG>(HIWORD(verInfo->dwFileVersionMS)) << "."
-                                << static_cast<ULONG>(LOWORD(verInfo->dwFileVersionMS)) << "."
-                                << static_cast<ULONG>(HIWORD(verInfo->dwFileVersionLS)) << "."
-                                << static_cast<ULONG>(LOWORD(verInfo->dwFileVersionLS));
+                            versionString << static_cast<ULONG>(HIWORD(verInfo->dwFileVersionMS)) << "."
+                                          << static_cast<ULONG>(LOWORD(verInfo->dwFileVersionMS)) << "."
+                                          << static_cast<ULONG>(HIWORD(verInfo->dwFileVersionLS)) << "."
+                                          << static_cast<ULONG>(LOWORD(verInfo->dwFileVersionLS));
                         }
                     }
                 }
@@ -224,7 +201,7 @@ namespace winapi
 
         if (verSize != NULL)
         {
-            const auto verData = new char[verSize];
+            const auto verData = new char[ verSize ];
 
             if (GetFileVersionInfoA(filePath.string().c_str(), verHandle, verSize, verData))
             {
@@ -235,11 +212,10 @@ namespace winapi
                         const auto* verInfo = (VS_FIXEDFILEINFO*)lpBuffer;
                         if (verInfo->dwSignature == 0xfeef04bd)
                         {
-                            versionString
-                                << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionMS)) << "."
-                                << static_cast<ULONG>(LOWORD(verInfo->dwProductVersionMS)) << "."
-                                << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionLS)) << "."
-                                << static_cast<ULONG>(LOWORD(verInfo->dwProductVersionLS));
+                            versionString << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionMS)) << "."
+                                          << static_cast<ULONG>(LOWORD(verInfo->dwProductVersionMS)) << "."
+                                          << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionLS)) << "."
+                                          << static_cast<ULONG>(LOWORD(verInfo->dwProductVersionLS));
                         }
                     }
                 }
@@ -257,19 +233,14 @@ namespace winapi
 
         // Allocate and initialize a SID of the administrators group.
         SID_IDENTIFIER_AUTHORITY NtAuthority = SECURITY_NT_AUTHORITY;
-        if (!AllocateAndInitializeSid(
-            &NtAuthority,
-            2,
-            SECURITY_BUILTIN_DOMAIN_RID,
-            DOMAIN_ALIAS_RID_ADMINS,
-            0, 0, 0, 0, 0, 0,
-            &pAdministratorsGroup))
+        if (!AllocateAndInitializeSid(&NtAuthority, 2, SECURITY_BUILTIN_DOMAIN_RID, DOMAIN_ALIAS_RID_ADMINS, 0, 0, 0, 0, 0, 0,
+                                      &pAdministratorsGroup))
         {
             dwError = GetLastError();
             goto Cleanup;
         }
 
-        // Determine whether the SID of administrators group is enabled in 
+        // Determine whether the SID of administrators group is enabled in
         // the primary access token of the process.
         if (!CheckTokenMembership(nullptr, pAdministratorsGroup, IsAdmin))
         {
@@ -293,15 +264,9 @@ namespace winapi
         if (error)
         {
             LPVOID lpMsgBuf;
-            DWORD bufLen = FormatMessageA(
-                FORMAT_MESSAGE_ALLOCATE_BUFFER |
-                FORMAT_MESSAGE_FROM_SYSTEM |
-                FORMAT_MESSAGE_IGNORE_INSERTS,
-                nullptr,
-                error,
-                MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                (LPSTR)&lpMsgBuf,
-                0, nullptr);
+            DWORD bufLen =
+              FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, nullptr,
+                             error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&lpMsgBuf, 0, nullptr);
             if (bufLen)
             {
                 auto lpMsgStr = static_cast<LPCSTR>(lpMsgBuf);
@@ -318,67 +283,64 @@ namespace winapi
     bool IsMsiExecErrorCode(DWORD errorCode)
     {
         // https://learn.microsoft.com/en-us/windows/win32/msi/error-codes
-        std::vector<DWORD> codes
-        {
-            ERROR_INVALID_DATA,
-            ERROR_INVALID_PARAMETER,
-            ERROR_CALL_NOT_IMPLEMENTED,
-            ERROR_APPHELP_BLOCK,
-            ERROR_INSTALL_SERVICE_FAILURE,
-            ERROR_INSTALL_USEREXIT,
-            ERROR_INSTALL_FAILURE,
-            ERROR_INSTALL_SUSPEND,
-            ERROR_UNKNOWN_PRODUCT,
-            ERROR_UNKNOWN_FEATURE,
-            ERROR_UNKNOWN_COMPONENT,
-            ERROR_UNKNOWN_PROPERTY,
-            ERROR_INVALID_HANDLE_STATE,
-            ERROR_BAD_CONFIGURATION,
-            ERROR_INDEX_ABSENT,
-            ERROR_INSTALL_SOURCE_ABSENT,
-            ERROR_INSTALL_PACKAGE_VERSION,
-            ERROR_PRODUCT_UNINSTALLED,
-            ERROR_BAD_QUERY_SYNTAX,
-            ERROR_INVALID_FIELD,
-            ERROR_INSTALL_ALREADY_RUNNING,
-            ERROR_INSTALL_PACKAGE_OPEN_FAILED,
-            ERROR_INSTALL_PACKAGE_INVALID,
-            ERROR_INSTALL_UI_FAILURE,
-            ERROR_INSTALL_LOG_FAILURE,
-            ERROR_INSTALL_LANGUAGE_UNSUPPORTED,
-            ERROR_INSTALL_TRANSFORM_FAILURE,
-            ERROR_INSTALL_PACKAGE_REJECTED,
-            ERROR_FUNCTION_NOT_CALLED,
-            ERROR_FUNCTION_FAILED,
-            ERROR_INVALID_TABLE,
-            ERROR_DATATYPE_MISMATCH,
-            ERROR_UNSUPPORTED_TYPE,
-            ERROR_CREATE_FAILED,
-            ERROR_INSTALL_TEMP_UNWRITABLE,
-            ERROR_INSTALL_PLATFORM_UNSUPPORTED,
-            ERROR_INSTALL_NOTUSED,
-            ERROR_PATCH_PACKAGE_OPEN_FAILED,
-            ERROR_PATCH_PACKAGE_INVALID,
-            ERROR_PATCH_PACKAGE_UNSUPPORTED,
-            ERROR_PRODUCT_VERSION,
-            ERROR_INVALID_COMMAND_LINE,
-            ERROR_INSTALL_REMOTE_DISALLOWED,
-            ERROR_SUCCESS_REBOOT_INITIATED,
-            ERROR_PATCH_TARGET_NOT_FOUND,
-            ERROR_PATCH_PACKAGE_REJECTED,
-            ERROR_INSTALL_TRANSFORM_REJECTED,
-            ERROR_INSTALL_REMOTE_PROHIBITED,
-            ERROR_PATCH_REMOVAL_UNSUPPORTED,
-            ERROR_UNKNOWN_PATCH,
-            ERROR_PATCH_NO_SEQUENCE,
-            ERROR_PATCH_REMOVAL_DISALLOWED,
-            ERROR_INVALID_PATCH_XML,
-            ERROR_PATCH_MANAGED_ADVERTISED_PRODUCT,
-            ERROR_INSTALL_SERVICE_SAFEBOOT,
-            ERROR_ROLLBACK_DISABLED,
-            ERROR_INSTALL_REJECTED,
-            ERROR_SUCCESS_REBOOT_REQUIRED
-        };
+        std::vector<DWORD> codes{ERROR_INVALID_DATA,
+                                 ERROR_INVALID_PARAMETER,
+                                 ERROR_CALL_NOT_IMPLEMENTED,
+                                 ERROR_APPHELP_BLOCK,
+                                 ERROR_INSTALL_SERVICE_FAILURE,
+                                 ERROR_INSTALL_USEREXIT,
+                                 ERROR_INSTALL_FAILURE,
+                                 ERROR_INSTALL_SUSPEND,
+                                 ERROR_UNKNOWN_PRODUCT,
+                                 ERROR_UNKNOWN_FEATURE,
+                                 ERROR_UNKNOWN_COMPONENT,
+                                 ERROR_UNKNOWN_PROPERTY,
+                                 ERROR_INVALID_HANDLE_STATE,
+                                 ERROR_BAD_CONFIGURATION,
+                                 ERROR_INDEX_ABSENT,
+                                 ERROR_INSTALL_SOURCE_ABSENT,
+                                 ERROR_INSTALL_PACKAGE_VERSION,
+                                 ERROR_PRODUCT_UNINSTALLED,
+                                 ERROR_BAD_QUERY_SYNTAX,
+                                 ERROR_INVALID_FIELD,
+                                 ERROR_INSTALL_ALREADY_RUNNING,
+                                 ERROR_INSTALL_PACKAGE_OPEN_FAILED,
+                                 ERROR_INSTALL_PACKAGE_INVALID,
+                                 ERROR_INSTALL_UI_FAILURE,
+                                 ERROR_INSTALL_LOG_FAILURE,
+                                 ERROR_INSTALL_LANGUAGE_UNSUPPORTED,
+                                 ERROR_INSTALL_TRANSFORM_FAILURE,
+                                 ERROR_INSTALL_PACKAGE_REJECTED,
+                                 ERROR_FUNCTION_NOT_CALLED,
+                                 ERROR_FUNCTION_FAILED,
+                                 ERROR_INVALID_TABLE,
+                                 ERROR_DATATYPE_MISMATCH,
+                                 ERROR_UNSUPPORTED_TYPE,
+                                 ERROR_CREATE_FAILED,
+                                 ERROR_INSTALL_TEMP_UNWRITABLE,
+                                 ERROR_INSTALL_PLATFORM_UNSUPPORTED,
+                                 ERROR_INSTALL_NOTUSED,
+                                 ERROR_PATCH_PACKAGE_OPEN_FAILED,
+                                 ERROR_PATCH_PACKAGE_INVALID,
+                                 ERROR_PATCH_PACKAGE_UNSUPPORTED,
+                                 ERROR_PRODUCT_VERSION,
+                                 ERROR_INVALID_COMMAND_LINE,
+                                 ERROR_INSTALL_REMOTE_DISALLOWED,
+                                 ERROR_SUCCESS_REBOOT_INITIATED,
+                                 ERROR_PATCH_TARGET_NOT_FOUND,
+                                 ERROR_PATCH_PACKAGE_REJECTED,
+                                 ERROR_INSTALL_TRANSFORM_REJECTED,
+                                 ERROR_INSTALL_REMOTE_PROHIBITED,
+                                 ERROR_PATCH_REMOVAL_UNSUPPORTED,
+                                 ERROR_UNKNOWN_PATCH,
+                                 ERROR_PATCH_NO_SEQUENCE,
+                                 ERROR_PATCH_REMOVAL_DISALLOWED,
+                                 ERROR_INVALID_PATCH_XML,
+                                 ERROR_PATCH_MANAGED_ADVERTISED_PRODUCT,
+                                 ERROR_INSTALL_SERVICE_SAFEBOOT,
+                                 ERROR_ROLLBACK_DISABLED,
+                                 ERROR_INSTALL_REJECTED,
+                                 ERROR_SUCCESS_REBOOT_REQUIRED};
 
         return std::ranges::find(codes, errorCode) != codes.end();
     }
@@ -450,25 +412,22 @@ namespace winapi
         // Not used.
         WinTrustData.pwszURLReference = nullptr;
 
-        // This is not applicable if there is no UI because it changes 
-        // the UI to accommodate running applications instead of 
+        // This is not applicable if there is no UI because it changes
+        // the UI to accommodate running applications instead of
         // installing applications.
         WinTrustData.dwUIContext = 0;
 
         // Set pFile.
         WinTrustData.pFile = &FileData;
 
-        // WinVerifyTrust verifies signatures as specified by the GUID 
+        // WinVerifyTrust verifies signatures as specified by the GUID
         // and Wintrust_Data.
-        lStatus = WinVerifyTrust(
-            nullptr,
-            &WVTPolicyGUID,
-            &WinTrustData);
+        lStatus = WinVerifyTrust(nullptr, &WVTPolicyGUID, &WinTrustData);
 
         switch (lStatus)
         {
-        case ERROR_SUCCESS:
-            /*
+            case ERROR_SUCCESS:
+                /*
             Signed file:
                 - Hash that represents the subject is trusted.
 
@@ -481,79 +440,73 @@ namespace winapi
                     "Yes" when asked to install and run the signed 
                     subject.
             */
-            wprintf_s(L"The file \"%s\" is signed and the signature "
-                      L"was verified.\n",
-                      pwszSourceFile);
-            break;
-
-        case TRUST_E_NOSIGNATURE:
-            // The file was not signed or had a signature 
-            // that was not valid.
-
-            // Get the reason for no signature.
-            dwLastError = GetLastError();
-            if (TRUST_E_NOSIGNATURE == dwLastError ||
-                TRUST_E_SUBJECT_FORM_UNKNOWN == dwLastError ||
-                TRUST_E_PROVIDER_UNKNOWN == dwLastError)
-            {
-                // The file was not signed.
-                wprintf_s(L"The file \"%s\" is not signed.\n",
+                wprintf_s(L"The file \"%s\" is signed and the signature "
+                          L"was verified.\n",
                           pwszSourceFile);
-            }
-            else
-            {
-                // The signature was not valid or there was an error 
-                // opening the file.
-                wprintf_s(L"An unknown error occurred trying to "
-                          L"verify the signature of the \"%s\" file.\n",
-                          pwszSourceFile);
-            }
+                break;
 
-            break;
+            case TRUST_E_NOSIGNATURE:
+                // The file was not signed or had a signature
+                // that was not valid.
 
-        case TRUST_E_EXPLICIT_DISTRUST:
-            // The hash that represents the subject or the publisher 
-            // is not allowed by the admin or user.
-            wprintf_s(L"The signature is present, but specifically "
-                L"disallowed.\n");
-            break;
+                // Get the reason for no signature.
+                dwLastError = GetLastError();
+                if (TRUST_E_NOSIGNATURE == dwLastError || TRUST_E_SUBJECT_FORM_UNKNOWN == dwLastError ||
+                    TRUST_E_PROVIDER_UNKNOWN == dwLastError)
+                {
+                    // The file was not signed.
+                    wprintf_s(L"The file \"%s\" is not signed.\n", pwszSourceFile);
+                }
+                else
+                {
+                    // The signature was not valid or there was an error
+                    // opening the file.
+                    wprintf_s(L"An unknown error occurred trying to "
+                              L"verify the signature of the \"%s\" file.\n",
+                              pwszSourceFile);
+                }
 
-        case TRUST_E_SUBJECT_NOT_TRUSTED:
-            // The user clicked "No" when asked to install and run.
-            wprintf_s(L"The signature is present, but not "
-                L"trusted.\n");
-            break;
+                break;
 
-        case CRYPT_E_SECURITY_SETTINGS:
-            /*
+            case TRUST_E_EXPLICIT_DISTRUST:
+                // The hash that represents the subject or the publisher
+                // is not allowed by the admin or user.
+                wprintf_s(L"The signature is present, but specifically "
+                          L"disallowed.\n");
+                break;
+
+            case TRUST_E_SUBJECT_NOT_TRUSTED:
+                // The user clicked "No" when asked to install and run.
+                wprintf_s(L"The signature is present, but not "
+                          L"trusted.\n");
+                break;
+
+            case CRYPT_E_SECURITY_SETTINGS:
+                /*
             The hash that represents the subject or the publisher 
             was not explicitly trusted by the admin and the 
             admin policy has disabled user trust. No signature, 
             publisher or time stamp errors.
             */
-            wprintf_s(L"CRYPT_E_SECURITY_SETTINGS - The hash "
-                L"representing the subject or the publisher wasn't "
-                L"explicitly trusted by the admin and admin policy "
-                L"has disabled user trust. No signature, publisher "
-                L"or timestamp errors.\n");
-            break;
+                wprintf_s(L"CRYPT_E_SECURITY_SETTINGS - The hash "
+                          L"representing the subject or the publisher wasn't "
+                          L"explicitly trusted by the admin and admin policy "
+                          L"has disabled user trust. No signature, publisher "
+                          L"or timestamp errors.\n");
+                break;
 
-        default:
-            // The UI was disabled in dwUIChoice or the admin policy 
-            // has disabled user trust. lStatus contains the 
-            // publisher or time stamp chain error.
-            wprintf_s(L"Error is: 0x%x.\n",
-                      lStatus);
-            break;
+            default:
+                // The UI was disabled in dwUIChoice or the admin policy
+                // has disabled user trust. lStatus contains the
+                // publisher or time stamp chain error.
+                wprintf_s(L"Error is: 0x%x.\n", lStatus);
+                break;
         }
 
         // Any hWVTStateData must be released by a call with close.
         WinTrustData.dwStateAction = WTD_STATEACTION_CLOSE;
 
-        lStatus = WinVerifyTrust(
-            nullptr,
-            &WVTPolicyGUID,
-            &WinTrustData);
+        lStatus = WinVerifyTrust(nullptr, &WVTPolicyGUID, &WinTrustData);
 
         return true;
     }
@@ -561,13 +514,11 @@ namespace winapi
     bool DirectoryExists(const std::string& dirName)
     {
         const DWORD ftyp = GetFileAttributesA(dirName.c_str());
-        if (ftyp == INVALID_FILE_ATTRIBUTES)
-            return false; //something is wrong with your path!
+        if (ftyp == INVALID_FILE_ATTRIBUTES) return false;  //something is wrong with your path!
 
-        if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
-            return true; // this is a directory!
+        if (ftyp & FILE_ATTRIBUTE_DIRECTORY) return true;  // this is a directory!
 
-        return false; // this is not a directory!
+        return false;  // this is not a directory!
     }
 
     bool DirectoryCreate(const std::string& dirName)
@@ -586,34 +537,32 @@ namespace winapi
 
         switch (ret)
         {
-        case ERROR_BAD_PATHNAME:
-            spdlog::error("The pszPath parameter was set to a relative path.");
-            break;
-        case ERROR_FILENAME_EXCED_RANGE:
-            spdlog::error("The path pointed to by pszPath is too long.");
-            break;
-        case ERROR_PATH_NOT_FOUND:
-            spdlog::error(
-                "The system cannot find the path pointed to by pszPath. The path may contain an invalid entry.");
-            break;
-        case ERROR_FILE_EXISTS:
-            spdlog::error("The directory exists.");
-            break;
-        case ERROR_ALREADY_EXISTS:
-            spdlog::error("The directory exists.");
-            break;
-        case ERROR_CANCELLED:
-            spdlog::error("The user canceled the operation.");
-            break;
-        default:
-            return false;
+            case ERROR_BAD_PATHNAME:
+                spdlog::error("The pszPath parameter was set to a relative path.");
+                break;
+            case ERROR_FILENAME_EXCED_RANGE:
+                spdlog::error("The path pointed to by pszPath is too long.");
+                break;
+            case ERROR_PATH_NOT_FOUND:
+                spdlog::error("The system cannot find the path pointed to by pszPath. The path may contain an invalid entry.");
+                break;
+            case ERROR_FILE_EXISTS:
+                spdlog::error("The directory exists.");
+                break;
+            case ERROR_ALREADY_EXISTS:
+                spdlog::error("The directory exists.");
+                break;
+            case ERROR_CANCELLED:
+                spdlog::error("The user canceled the operation.");
+                break;
+            default:
+                return false;
         }
 
         return false;
     }
 
-    _Use_decl_annotations_
-    bool GetUserTemporaryDirectory(_Inout_ std::string& path)
+    _Use_decl_annotations_ bool GetUserTemporaryDirectory(_Inout_ std::string& path)
     {
         std::string tempPath(MAX_PATH, '\0');
         // this expands typically to %TEMP% or %LOCALAPPDATA%\Temp
@@ -638,11 +587,9 @@ namespace winapi
     {
         std::string tempDir = parent;
 
-        if (parent.empty())
-            GetUserTemporaryDirectory(tempDir);
+        if (parent.empty()) GetUserTemporaryDirectory(tempDir);
 
-        if (tempDir.empty())
-            return false;
+        if (tempDir.empty()) return false;
 
         std::string tempFile(MAX_PATH, '\0');
 
@@ -685,11 +632,8 @@ namespace winapi
                 break;
             }
 
-            using GetNativeSystemInfoProc = void(WINAPI *)(LPSYSTEM_INFO lpSystemInfo);
-            auto pFun = (GetNativeSystemInfoProc)GetProcAddress(
-                GetModuleHandle(TEXT("kernel32")),
-                "GetNativeSystemInfo"
-            );
+            using GetNativeSystemInfoProc = void(WINAPI*)(LPSYSTEM_INFO lpSystemInfo);
+            auto pFun = (GetNativeSystemInfoProc)GetProcAddress(GetModuleHandle(TEXT("kernel32")), "GetNativeSystemInfo");
 
             if (NULL != pFun)
             {
@@ -701,8 +645,7 @@ namespace winapi
             }
 
             bRet = TRUE;
-        }
-        while (FALSE);
+        } while (FALSE);
 
         return bRet;
     }
@@ -717,8 +660,7 @@ namespace winapi
         const HMODULE hShcore = LoadLibraryW(L"shcore");
         if (hShcore)
         {
-            const auto pGetDpiForMonitor =
-                reinterpret_cast<PGetDpiForMonitor>(GetProcAddress(hShcore, "GetDpiForMonitor"));
+            const auto pGetDpiForMonitor = reinterpret_cast<PGetDpiForMonitor>(GetProcAddress(hShcore, "GetDpiForMonitor"));
             if (pGetDpiForMonitor)
             {
                 const HMONITOR hMonitor = MonitorFromWindow(hWnd, MONITOR_DEFAULTTOPRIMARY);
@@ -775,8 +717,7 @@ namespace winapi
         (void)DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
     }
 
-    _Use_decl_annotations_
-    DWORD GetParentProcessID(_In_ DWORD dwPID)
+    _Use_decl_annotations_ DWORD GetParentProcessID(_In_ DWORD dwPID)
     {
         PROCESSENTRY32 pe32;
         DWORD dwParentPID = 0;
@@ -797,16 +738,14 @@ namespace winapi
                     dwParentPID = pe32.th32ParentProcessID;
                     break;
                 }
-            }
-            while (Process32Next(hSnapshot, &pe32));
+            } while (Process32Next(hSnapshot, &pe32));
         }
 
         CloseHandle(hSnapshot);
         return dwParentPID;
     }
 
-    _Use_decl_annotations_
-    BOOL GetProcessFullPath(_In_ DWORD dwPID, _Inout_ LPTSTR lpExeName, _In_ DWORD dwSize)
+    _Use_decl_annotations_ BOOL GetProcessFullPath(_In_ DWORD dwPID, _Inout_ LPTSTR lpExeName, _In_ DWORD dwSize)
     {
         const HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwPID);
         if (hProcess == nullptr)
@@ -820,8 +759,7 @@ namespace winapi
         return bSuccess;
     }
 
-    _Use_decl_annotations_
-    bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::wstring& path)
+    _Use_decl_annotations_ bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::wstring& path)
     {
         std::wstring tempPath(MAX_PATH, '\0');
 
@@ -836,23 +774,19 @@ namespace winapi
         return true;
     }
 
-    _Use_decl_annotations_
-    bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::string& path)
+    _Use_decl_annotations_ bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::string& path)
     {
         std::wstring tempPath;
-        if (!GetProcessFullPath(dwPID, tempPath))
-            return false;
+        if (!GetProcessFullPath(dwPID, tempPath)) return false;
 
         path = ConvertWideToANSI(tempPath);
         return true;
     }
 
-    _Use_decl_annotations_
-    bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::filesystem::path& path)
+    _Use_decl_annotations_ bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::filesystem::path& path)
     {
         std::string tempPath;
-        if (!GetProcessFullPath(dwPID, tempPath))
-            return false;
+        if (!GetProcessFullPath(dwPID, tempPath)) return false;
 
         path = tempPath;
         return true;
