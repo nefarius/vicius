@@ -194,6 +194,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         spdlog::error("Failed to invoke self-update");
     }
 
+    // restart ourselves from a temporary location, if requested
+    if (cfg.TryRunTemporaryProcess())
+    {
+        return NV_S_LAUNCHED_TEMPORARY;
+    }
+
     bool isOutdated = false;
     // run local product detection
     if (const auto ret = cfg.IsInstalledVersionOutdated(isOutdated); !std::get<0>(ret))

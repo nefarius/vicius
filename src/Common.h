@@ -51,3 +51,4 @@
 #define NV_S_USER_POSTPONED         204
 #define NV_S_POSTPONE_PERIOD        205
 #define NV_S_POSTPONE_PURGE         206
+#define NV_S_LAUNCHED_TEMPORARY     207

@@ -315,6 +315,7 @@
     <ClCompile Include="imgui_md.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="InstanceConfig.Postpone.cpp" />
     <ClCompile Include="InstanceConfig.Setup.cpp" />
     <ClCompile Include="InstanceConfig.Template.cpp" />
     <ClCompile Include="md4c.c">

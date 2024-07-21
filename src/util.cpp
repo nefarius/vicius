@@ -74,6 +74,7 @@ namespace util
         std::vector<const char*> argv;
         std::vector<std::string> narrow;
 
+        narrow.reserve(nArgs);
         for (int i = 0; i < nArgs; i++)
         {
             // Windows gives us wide only, convert each to narrow

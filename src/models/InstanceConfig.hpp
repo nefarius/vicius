@@ -382,7 +382,9 @@ namespace models
             bool& hasSucceeded,
             DWORD& exitCode,
             DWORD& win32Error
-        ) const;        
+        ) const;
+
+        bool TryRunTemporaryProcess();
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
