@@ -789,7 +789,7 @@ void models::InstanceConfig::LaunchEmergencySite() const
 
 bool models::InstanceConfig::TryRunTemporaryProcess() const
 {
-    if (!this->merged.runAsTemporaryCopy)
+    if (!this->merged.runAsTemporaryCopy || this->isTemporaryCopy)
         return false;
 
     std::string temporaryUpdaterPath{};
