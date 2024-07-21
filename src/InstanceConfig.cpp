@@ -787,7 +787,7 @@ void models::InstanceConfig::LaunchEmergencySite() const
     );
 }
 
-bool models::InstanceConfig::TryRunTemporaryProcess()
+bool models::InstanceConfig::TryRunTemporaryProcess() const
 {
     if (!this->merged.runAsTemporaryCopy)
         return false;
