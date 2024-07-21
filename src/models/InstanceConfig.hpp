@@ -80,6 +80,19 @@ namespace models
         std::string channel;
         std::map<std::string, std::string> additionalHeaders;
 
+        InstanceConfig() : authority(Authority::Remote)
+        {
+        }
+
+        InstanceConfig(const InstanceConfig&) = delete;
+        InstanceConfig(InstanceConfig&&) = delete;
+        InstanceConfig& operator=(const InstanceConfig&) = delete;
+        InstanceConfig& operator=(InstanceConfig&&) = delete;
+
+        InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl);
+
+        ~InstanceConfig();
+
         void SetWindowHandle(_In_ const HWND hWnd)
         {
             windowHandle = hWnd;
@@ -356,20 +369,7 @@ namespace models
             bool& hasSucceeded,
             DWORD& exitCode,
             DWORD& win32Error
-        ) const;
-
-        InstanceConfig() : authority(Authority::Remote)
-        {
-        }
-
-        InstanceConfig(const InstanceConfig&) = delete;
-        InstanceConfig(InstanceConfig&&) = delete;
-        InstanceConfig& operator=(const InstanceConfig&) = delete;
-        InstanceConfig& operator=(InstanceConfig&&) = delete;
-
-        InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl);
-
-        ~InstanceConfig();
+        ) const;        
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
