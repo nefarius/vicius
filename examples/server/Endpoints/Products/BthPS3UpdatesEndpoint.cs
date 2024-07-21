@@ -25,7 +25,7 @@ internal class BthPS3UpdatesEndpointRequest
 }
 
 /// <summary>
-///     Crafts update configuration for <a href="https://github.com/nefarius/BthPS3">BthPS3</a>. 
+///     Crafts update configuration for <a href="https://github.com/nefarius/BthPS3">BthPS3</a>.
 /// </summary>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiService)
@@ -76,7 +76,8 @@ internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiSe
                         Hive = RegistryHive.HKLM,
                         Key = @"SOFTWARE\Nefarius Software Solutions e.U.\BthPS3 Bluetooth Drivers",
                         Value = "Version"
-                    }
+                    },
+                RunAsTemporaryCopy = true
             },
             Releases =
             {
