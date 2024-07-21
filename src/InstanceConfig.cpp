@@ -3,13 +3,16 @@
 #include "Util.h"
 #include "InstanceConfig.hpp"
 
-#define NV_POSTPONE_TS_KEY_TEMPLATE "SOFTWARE\\Nefarius Software Solutions e.U.\\{}\\Postpone"
-#define NV_POSTPONE_TS_VALUE_NAME   L"LastTimestamp"
 
-
-models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) : appInstance(hInstance), remote()
+models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) : appInstance(hInstance)
 {
+    //
+    // Initialize everything in here that depends on CLI arguments, the environment and a potential configuration file
+    // 
+
     RestClient::init();
+
+#pragma region Logging
 
     //
     // Setup logger
@@ -58,6 +61,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     set_default_logger(logger);
 #endif
+
+#pragma endregion
 
     spdlog::debug("Initializing updater instance (PID: {})", GetCurrentProcessId());
 
@@ -112,6 +117,102 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     appPath = util::GetImageBasePathW();
     spdlog::debug("appPath = {}", appPath.string());
 
+#pragma region Temporary child process launch verification
+
+    DWORD parentProcessId = winapi::GetParentProcessID(GetCurrentProcessId());
+    spdlog::debug("parentProcessId = {}", parentProcessId);
+
+    //
+    // Make sure pur parent is originating form the exact same file to not load configuration from an impostor *sus*
+    // 
+    if (std::filesystem::path parentPath{}; cmdl[{NV_CLI_TEMPORARY}] && winapi::GetProcessFullPath(
+        parentProcessId, parentPath))
+    {
+        parentAppPath = parentPath;
+        spdlog::debug("parentAppPath = {}", parentAppPath.value().string());
+
+        std::ifstream parentAppFileStream(parentAppPath.value(), std::ios::binary);
+        std::ifstream currentAppFileStream(appPath, std::ios::binary);
+
+        if (parentAppFileStream.is_open() && currentAppFileStream.is_open())
+        {
+            SHA256 parentSha256Alg, currentSha256Alg;
+            // improve hashing speed
+            constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
+
+            std::vector<char> parentAppFileBuffer(chunkSize);
+            while (!parentAppFileStream.eof())
+            {
+                parentAppFileStream.read(parentAppFileBuffer.data(), parentAppFileBuffer.size());
+                std::streamsize bytesRead = parentAppFileStream.gcount();
+
+                parentSha256Alg.add(parentAppFileBuffer.data(), bytesRead);
+
+                if (bytesRead < chunkSize && !parentAppFileStream.eof())
+                {
+                    if (parentAppFileStream.fail())
+                    {
+                        spdlog::error("Failed to read file {} to the end for hashing, aborting",
+                                      parentAppPath.value().string());
+                        break;
+                    }
+                }
+            }
+
+            std::vector<char> currentAppFileBuffer(chunkSize);
+            while (!currentAppFileStream.eof())
+            {
+                currentAppFileStream.read(currentAppFileBuffer.data(), currentAppFileBuffer.size());
+                std::streamsize bytesRead = currentAppFileStream.gcount();
+
+                currentSha256Alg.add(currentAppFileBuffer.data(), bytesRead);
+
+                if (bytesRead < chunkSize && !currentAppFileStream.eof())
+                {
+                    if (currentAppFileStream.fail())
+                    {
+                        spdlog::error("Failed to read file {} to the end for hashing, aborting",
+                                      appPath.string());
+                        break;
+                    }
+                }
+            }
+
+            const auto hashLhs = parentSha256Alg.getHash();
+            const auto hashRhs = currentSha256Alg.getHash();
+
+            spdlog::debug("Hashes LHS {} vs. RHS {}", hashLhs, hashRhs);
+
+            // trusted parent, we can continue
+            this->isTemporaryCopy = util::icompare(hashLhs, hashRhs);
+
+            if (!this->isTemporaryCopy)
+            {
+                spdlog::error("Parent SHA256 {} didn't match current SHA256 {}, will not continue with temporary copy",
+                              hashLhs, hashRhs);
+
+                this->TryDisplayErrorDialog(
+                    "Updater process module hash mismatch",
+                    "The module integrity check has failed, "
+                    "temporary child process will not be spawned for security reasons."
+                );
+            }
+        }
+        else
+        {
+            spdlog::warn("Failed to open process module streams for comparison");
+            // prerequisites for running in this mode not met
+            this->isTemporaryCopy = false;
+        }
+
+        parentAppFileStream.close();
+        currentAppFileStream.close();
+    }
+
+    spdlog::debug("isTemporaryCopy = {}", this->isTemporaryCopy);
+
+#pragma endregion
+
     appVersion = util::GetVersionFromFile(appPath);
     spdlog::debug("appVersion = {}", appVersion.str());
 
@@ -163,7 +264,13 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     // 
 
 #if !defined(NV_FLAGS_NO_CONFIG_FILE)
-    if (auto configFile = appPath.parent_path() / std::format("{}.json", appFilename); exists(configFile))
+    const auto configFileName = std::format("{}.json", appFilename);
+    // ReSharper disable once CppTooWideScopeInitStatement
+    auto configFile = (!isTemporaryCopy || !parentAppPath.has_value())
+                          ? appPath.parent_path() / configFileName
+                          : parentAppPath.value().parent_path() / configFileName;
+
+    if (exists(configFile))
     {
         std::ifstream configFileStream(configFile);
 
@@ -205,6 +312,10 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     }
 #endif
 
+    // avoid accidental fork bomb :P
+    if (this->isTemporaryCopy)
+        this->merged.runAsTemporaryCopy = false;
+
     //
     // File name extraction
     // 
@@ -232,8 +343,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
         spdlog::info("Regex {} didn't match anything on {}", filenameRegex, appFilename);
     }
 
-    // first try to build "manufacturer/product" and use filename as 
-    // fallback if extraction via regex didn't yield any results
+    // first try to build "manufacturer/product", then "manufacturer/product/channel" and 
+    // then use filename as fallback if extraction via regex didn't yield any results
     tenantSubPath = (!manufacturer.empty() && !product.empty())
                         ? channel.empty()
                               ? std::format("{}/{}", manufacturer, product)
@@ -265,10 +376,17 @@ models::InstanceConfig::~InstanceConfig()
         }
 
         // delete local setup copy
-        if (DeleteFileA(release.localTempFilePath.string().c_str()) == 0)
+        if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
         {
             spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}",
                          release.localTempFilePath.string(), GetLastError(), winapi::GetLastErrorStdStr());
+
+            // try to get rid of it on next reboot
+            MoveFileExA(
+                release.localTempFilePath.string().c_str(),
+                nullptr,
+                MOVEFILE_DELAY_UNTIL_REBOOT
+            );
         }
     }
 
@@ -666,106 +784,88 @@ std::tuple<bool, std::string> models::InstanceConfig::RemoveAutostart() const
 
 void models::InstanceConfig::LaunchEmergencySite() const
 {
+    if (!this->remote.instance.has_value())
+        return;
+
+    if (!this->remote.instance.value().emergencyUrl.has_value())
+        return;
+
     ShellExecuteA(
         nullptr,
         "open",
-        remote.instance.value().emergencyUrl.value().c_str(),
+        this->remote.instance.value().emergencyUrl.value().c_str(),
         nullptr,
         nullptr,
         SW_SHOWNORMAL
     );
 }
 
-void models::InstanceConfig::SetPostponeData()
+bool models::InstanceConfig::TryRunTemporaryProcess() const
 {
-    winreg::RegKey key;
-    const auto subKeyTemplate = std::format(NV_POSTPONE_TS_KEY_TEMPLATE, appFilename);
-    const auto subKey = ConvertAnsiToWide(subKeyTemplate);
-
-    if (const winreg::RegResult result = key.TryCreate(
-            HKEY_CURRENT_USER,
-            subKey,
-            KEY_ALL_ACCESS,
-            REG_OPTION_VOLATILE, // gets discarded on reboot
-            nullptr,
-            nullptr); !result
-    )
-    {
-        spdlog::error("Failed to create {}", ConvertWideToANSI(subKey));
-        return;
-    }
-
-    SYSTEMTIME time = {};
-    GetSystemTime(&time);
-
-    if (const auto result = key.TrySetBinaryValue(NV_POSTPONE_TS_VALUE_NAME, &time, sizeof(SYSTEMTIME)); !result)
-    {
-        spdlog::error("Failed to set timestamp value");
-    }
-}
-
-bool models::InstanceConfig::PurgePostponeData()
-{
-    winreg::RegKey key;
-    const auto subKeyTemplate = std::format(NV_POSTPONE_TS_KEY_TEMPLATE, appFilename);
-    const auto subKey = ConvertAnsiToWide(subKeyTemplate);
-
-    if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey, KEY_ALL_ACCESS); !result)
-    {
-        spdlog::error("Failed to open postpone key, error {}", ConvertWideToANSI(result.ErrorMessage()));
+    if (!this->merged.runAsTemporaryCopy || this->isTemporaryCopy)
         return false;
+
+    std::string temporaryUpdaterPath{};
+
+    if (!winapi::GetNewTemporaryFile(temporaryUpdaterPath))
+        return false;
+
+    if (CopyFileA(this->appPath.string().c_str(), temporaryUpdaterPath.c_str(), FALSE) == FALSE)
+        return false;
+
+    // ensure cleanup at least on next reboot
+    MoveFileExA(temporaryUpdaterPath.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
+
+    std::vector<std::string> narrow;
+
+    narrow.reserve(__argc);
+    for (int i = 0; i < __argc; i++)
+    {
+        // Windows gives us wide only, convert each to narrow
+        narrow.push_back(__argv[i]);
     }
 
-    if (const winreg::RegResult result = key.TryDeleteValue(NV_POSTPONE_TS_VALUE_NAME); !result)
+    // throw away process path
+    narrow.erase(narrow.begin());
+
+    // slice together new launch arguments
+    const std::string cliLine = std::format(
+        "--temporary {}",
+        std::accumulate(
+            std::next(narrow.begin()),
+            narrow.end(),
+            narrow[0],
+            [](const std::string& lhs, const std::string& rhs)
+            {
+                return std::format("{} {}", lhs, rhs);
+            }
+        ));
+
+    STARTUPINFOA info = {};
+    info.cb = sizeof(STARTUPINFOA);
+    PROCESS_INFORMATION updateProcessInfo = {};
+
+    // re-launch temporary copy with additional "--temporary" flag
+    if (!CreateProcessA(
+        temporaryUpdaterPath.c_str(),
+        const_cast<LPSTR>(cliLine.c_str()),
+        nullptr,
+        nullptr,
+        TRUE,
+        0,
+        nullptr,
+        nullptr,
+        &info,
+        &updateProcessInfo
+    ))
     {
-        spdlog::error("Failed to delete postpone value, error {}", ConvertWideToANSI(result.ErrorMessage()));
+        DWORD win32Error = GetLastError();
+
+        spdlog::error("Failed to launch {}, error {:#x}, message {}",
+                      temporaryUpdaterPath, win32Error, winapi::GetLastErrorStdStr());
+
         return false;
     }
 
     return true;
-}
-
-bool models::InstanceConfig::IsInPostponePeriod()
-{
-    if (ignorePostponePeriod)
-    {
-        spdlog::info("User specified to ignore postpone period, skipping check");
-        return false;
-    }
-
-    winreg::RegKey key;
-    const auto subKeyTemplate = std::format(NV_POSTPONE_TS_KEY_TEMPLATE, appFilename);
-    const auto subKey = ConvertAnsiToWide(subKeyTemplate);
-
-    if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey); !result)
-    {
-        return false;
-    }
-
-    const auto ret = key.TryGetBinaryValue(NV_POSTPONE_TS_VALUE_NAME);
-
-    if (!ret.IsValid())
-    {
-        return false;
-    }
-
-    SYSTEMTIME current = {}, last = {};
-    GetSystemTime(&current);
-    memcpy_s(&last, sizeof(SYSTEMTIME), ret.GetValue().data(), sizeof(SYSTEMTIME));
-
-    FILETIME ftLhs = {}, ftRhs = {};
-    SystemTimeToFileTime(&current, &ftLhs);
-    SystemTimeToFileTime(&last, &ftRhs);
-
-    const std::chrono::file_clock::duration dLhs{
-        (static_cast<int64_t>(ftLhs.dwHighDateTime) << 32) | ftLhs.dwLowDateTime
-    };
-    const std::chrono::file_clock::duration dRhs{
-        (static_cast<int64_t>(ftRhs.dwHighDateTime) << 32) | ftRhs.dwLowDateTime
-    };
-
-    const auto diffHours = std::chrono::duration_cast<std::chrono::hours>(dLhs - dRhs);
-    const auto hours = diffHours.count();
-
-    return hours < 24;
 }

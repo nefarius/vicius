@@ -161,7 +161,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 
             spdlog::debug("exitCode = {}", exitCode);
 
-            if (exitCode == 0 || exitCode == 201 /* NV_S_SELF_UPDATER */)
+            if (exitCode == ERROR_SUCCESS || exitCode == 201 /* NV_S_SELF_UPDATER */)
             {
                 spdlog::debug("Process exited with code {}", exitCode);
                 CloseHandle(hProcess);
@@ -193,7 +193,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 
         spdlog::info("Downloading {} finished", url);
 
-        if (DeleteFileA(tempFile.c_str()) == 0)
+        if (DeleteFileA(tempFile.c_str()) == FALSE)
         {
             spdlog::warn("Failed to delete file {}, scheduling removal on reboot", tempFile);
 
@@ -273,7 +273,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
     CopyFileA(tempFile.c_str(), original.string().c_str(), FALSE);
     SetFileAttributesA(original.string().c_str(), FILE_ATTRIBUTE_NORMAL);
     // attempt to delete temporary copy
-    if (DeleteFileA(tempFile.c_str()) == 0)
+    if (DeleteFileA(tempFile.c_str()) == FALSE)
     {
         // if it still fails, schedule nuking the old file at next reboot
         MoveFileExA(

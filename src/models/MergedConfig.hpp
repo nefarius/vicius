@@ -26,6 +26,8 @@ namespace models
         std::string installationErrorUrl;
         /** The setup download location */
         DownloadLocationConfig downloadLocation;
+        /** True to run as temporary copy */
+        bool runAsTemporaryCopy{false};
 
         MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME)
         {
@@ -64,6 +66,7 @@ namespace models
         detectionMethod,
         detection,
         installationErrorUrl,
-        downloadLocation
+        downloadLocation,
+        runAsTemporaryCopy
     )
 }

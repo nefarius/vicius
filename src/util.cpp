@@ -4,6 +4,7 @@
 #include <wintrust.h>
 #include <Shlobj.h>
 #include <Msi.h>
+#include <tlhelp32.h>
 
 
 EXTERN_C IMAGE_DOS_HEADER __ImageBase;
@@ -73,6 +74,7 @@ namespace util
         std::vector<const char*> argv;
         std::vector<std::string> narrow;
 
+        narrow.reserve(nArgs);
         for (int i = 0; i < nArgs; i++)
         {
             // Windows gives us wide only, convert each to narrow
@@ -610,20 +612,48 @@ namespace winapi
         return false;
     }
 
-    bool GetUserTemporaryPath(std::string& path)
+    _Use_decl_annotations_
+    bool GetUserTemporaryDirectory(_Inout_ std::string& path)
     {
         std::string tempPath(MAX_PATH, '\0');
         // this expands typically to %TEMP% or %LOCALAPPDATA%\Temp
-        if (GetTempPathA(MAX_PATH, tempPath.data()) == 0)
+        if (GetTempPathA(MAX_PATH, tempPath.data()) == FALSE)
         {
-            spdlog::error("Failed to get path to temporary directory, error: {0:#x}", GetLastError());
-            return false;
+            // fallback that is also set in 99% of the cases
+            if (GetEnvironmentVariableA("TEMP", tempPath.data(), MAX_PATH) == FALSE)
+            {
+                spdlog::error("Failed to get path to temporary directory, error: {0:#x}", GetLastError());
+                return false;
+            }
         }
 
         spdlog::debug("tempPath = {}", tempPath);
         util::stripNulls(tempPath);
         path = tempPath;
 
+        return true;
+    }
+
+    bool GetNewTemporaryFile(_Inout_ std::string& path, _In_opt_ const std::string& parent)
+    {
+        std::string tempDir = parent;
+
+        if (parent.empty())
+            GetUserTemporaryDirectory(tempDir);
+
+        if (tempDir.empty())
+            return false;
+
+        std::string tempFile(MAX_PATH, '\0');
+
+        if (GetTempFileNameA(tempDir.c_str(), "VICIUS", 0, tempFile.data()) == FALSE)
+        {
+            spdlog::error("Failed to get temporary file name, error: {:#x}", GetLastError());
+            return false;
+        }
+
+        util::stripNulls(tempFile);
+        path = tempFile;
         return true;
     }
 
@@ -743,5 +773,88 @@ namespace winapi
     void SetDarkMode(HWND hWnd, BOOL useDarkMode)
     {
         (void)DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
+    }
+
+    _Use_decl_annotations_
+    DWORD GetParentProcessID(_In_ DWORD dwPID)
+    {
+        PROCESSENTRY32 pe32;
+        DWORD dwParentPID = 0;
+
+        const HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+        if (hSnapshot == INVALID_HANDLE_VALUE)
+        {
+            return 0;
+        }
+
+        pe32.dwSize = sizeof(PROCESSENTRY32);
+        if (Process32First(hSnapshot, &pe32))
+        {
+            do
+            {
+                if (pe32.th32ProcessID == dwPID)
+                {
+                    dwParentPID = pe32.th32ParentProcessID;
+                    break;
+                }
+            }
+            while (Process32Next(hSnapshot, &pe32));
+        }
+
+        CloseHandle(hSnapshot);
+        return dwParentPID;
+    }
+
+    _Use_decl_annotations_
+    BOOL GetProcessFullPath(_In_ DWORD dwPID, _Inout_ LPTSTR lpExeName, _In_ DWORD dwSize)
+    {
+        const HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, dwPID);
+        if (hProcess == nullptr)
+        {
+            return FALSE;
+        }
+
+        const BOOL bSuccess = QueryFullProcessImageName(hProcess, 0, lpExeName, &dwSize);
+
+        CloseHandle(hProcess);
+        return bSuccess;
+    }
+
+    _Use_decl_annotations_
+    bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::wstring& path)
+    {
+        std::wstring tempPath(MAX_PATH, '\0');
+
+        if (!GetProcessFullPath(dwPID, tempPath.data(), MAX_PATH))
+        {
+            return false;
+        }
+
+        util::stripNulls(tempPath);
+        path = tempPath;
+
+        return true;
+    }
+
+    _Use_decl_annotations_
+    bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::string& path)
+    {
+        std::wstring tempPath;
+        if (!GetProcessFullPath(dwPID, tempPath))
+            return false;
+
+        path = ConvertWideToANSI(tempPath);
+        return true;
+    }
+
+    _Use_decl_annotations_
+    bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::filesystem::path& path)
+    {
+        std::string tempPath;
+        if (!GetProcessFullPath(dwPID, tempPath))
+            return false;
+
+        path = tempPath;
+        return true;
     }
 }

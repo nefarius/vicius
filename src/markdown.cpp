@@ -5,7 +5,6 @@
 #include <SFML/OpenGL.hpp>
 #include <restclient-cpp/restclient.h>
 #include <restclient-cpp/connection.h>
-#include <httplib.h>
 
 
 // Fonts shared throughout app

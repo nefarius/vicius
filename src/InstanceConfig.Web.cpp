@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Util.h"
 #include "InstanceConfig.hpp"
-#include <httplib.h>
 
 
 void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* conn) const
@@ -107,12 +106,12 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             spdlog::error("Failed to create download location {}, defaulting to TEMP path",
                           rendered);
 
-            winapi::GetUserTemporaryPath(downloadLocation);
+            winapi::GetUserTemporaryDirectory(downloadLocation);
         }
     }
     else
     {
-        winapi::GetUserTemporaryPath(downloadLocation);
+        winapi::GetUserTemporaryDirectory(downloadLocation);
     }
 
     // if we're still empty, the previous methods all failed
@@ -145,15 +144,13 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         downloadLocation = targetDirectory.string();
     }
 
-    std::string tempFile(MAX_PATH, '\0');
+    std::string tempFile{};
 
-    if (GetTempFileNameA(downloadLocation.c_str(), "VICIUS", 0, tempFile.data()) == 0)
+    if (!winapi::GetNewTemporaryFile(tempFile, downloadLocation))
     {
-        spdlog::error("Failed to get temporary file name, error: {:#x}", GetLastError());
+        spdlog::error("Failed to get temporary file name");
         return -1;
     }
-
-    util::stripNulls(tempFile);
 
     spdlog::debug("tempFile = {}", tempFile);
 
@@ -259,7 +256,7 @@ retry:
         spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
 
         // clean up local file since we re-download it when the user decides to retry
-        if (DeleteFileA(release.localTempFilePath.string().c_str()) == 0)
+        if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
         {
             spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}",
                          release.localTempFilePath.string(), GetLastError(), winapi::GetLastErrorStdStr());
@@ -361,6 +358,9 @@ retry:
 
             if (shared.downloadLocation.has_value())
                 merged.downloadLocation = shared.downloadLocation.value();
+
+            if (shared.runAsTemporaryCopy.has_value())
+                merged.runAsTemporaryCopy = shared.runAsTemporaryCopy.value();
         }
 
         return std::make_tuple(true, "OK");

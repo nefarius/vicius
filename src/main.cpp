@@ -4,7 +4,6 @@
 #include "WizardPage.h"
 #include "InstanceConfig.hpp"
 #include "DownloadAndInstall.hpp"
-#include <httplib.h>
 
 
 //
@@ -49,9 +48,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // updater configuration, defaults and app state
     models::InstanceConfig cfg(hInstance, cmdl);
 
+#pragma region Install command
+
     // actions to perform when install is instructed
 #if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
-    if (cmdl[{NV_CLI_INSTALL}])
+    if (!cmdl[{NV_CLI_TEMPORARY}] && cmdl[{NV_CLI_INSTALL}])
     {
 #endif
         if (!cmdl[{NV_CLI_NO_AUTOSTART}])
@@ -93,17 +94,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         spdlog::info("Installation tasks finished successfully");
 
         int successCode = NV_S_INSTALL;
-        if ((cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode))
-        {
-            return successCode;
-        }
-
-        return NV_S_INSTALL;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+        return successCode;
     }
 #endif
 
+#pragma endregion
+
+#pragma region Autostart tasks
+
     // actions to perform when running in autostart
-    if (cmdl[{NV_CLI_AUTOSTART}])
+    if (!cmdl[{NV_CLI_TEMPORARY}] && cmdl[{NV_CLI_AUTOSTART}])
     {
         if (const auto ret = cfg.CreateScheduledTask(); FAILED(std::get<0>(ret)))
         {
@@ -116,8 +117,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
     }
 
+#pragma endregion
+
+#pragma region Uninstall command
+
     // uninstall tasks
-    if (cmdl[{NV_CLI_UNINSTALL}])
+    if (!cmdl[{NV_CLI_TEMPORARY}] && cmdl[{NV_CLI_UNINSTALL}])
     {
         if (const auto autoRet = cfg.RemoveAutostart(); !std::get<0>(autoRet))
         {
@@ -138,19 +143,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
 
         int successCode = NV_S_INSTALL;
-        if ((cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode))
-        {
-            return successCode;
-        }
-
-        return NV_S_INSTALL;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+        return successCode;
     }
+
+#pragma endregion
 
     // purge postpone data, if any
     if (cmdl[{NV_CLI_PURGE_POSTPONE}])
     {
+        int successCode = NV_S_POSTPONE_PURGE;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+
         return cfg.PurgePostponeData()
-                   ? NV_S_POSTPONE_PURGE
+                   ? successCode
                    : NV_E_POSTPONE_PURGE_FAILED;
     }
 
@@ -171,7 +177,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     }
 
     // check for updater updates - updateception :D
-    if (!cmdl[{NV_CLI_SKIP_SELF_UPDATE}] && cfg.IsNewerUpdaterAvailable())
+    if (!cmdl[{NV_CLI_TEMPORARY}] && (!cmdl[{NV_CLI_SKIP_SELF_UPDATE}] && cfg.IsNewerUpdaterAvailable()))
     {
         spdlog::debug("Newer updater version available, invoking self-update");
 
@@ -181,6 +187,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
 
         spdlog::error("Failed to invoke self-update");
+    }
+
+    // restart ourselves from a temporary location, if requested
+    if (cfg.TryRunTemporaryProcess())
+    {
+        int successCode = NV_S_LAUNCHED_TEMPORARY;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+        return successCode;
     }
 
     bool isOutdated = false;
@@ -199,14 +213,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     {
         spdlog::info("Installed software is up-to-date");
         cfg.TryDisplayUpToDateDialog();
-        return NV_S_UP_TO_DATE;
+        int successCode = NV_S_UP_TO_DATE;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+        return successCode;
     }
 
     // there's a pending update but user chose to postpone
     if (cfg.IsInPostponePeriod())
     {
         spdlog::info("Postpone period active, exiting");
-        return NV_S_POSTPONE_PERIOD;
+        int successCode = NV_S_POSTPONE_PERIOD;
+        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
+        return successCode;
     }
 
     // check if we are currently bothering the user
@@ -246,7 +264,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     constexpr int windowWidth = 640, windowHeight = 512;
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetWindowTitle(), sf::Style::Titlebar);
     HWND hWnd = window.getSystemHandle();
-    
+
     window.setFramerateLimit(winapi::GetMonitorRefreshRate(hWnd));
     ImGui::SFML::Init(window, false);
 
@@ -262,10 +280,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     auto scaledHeight = (windowHeight * scaleFactor);
     window.setSize(sf::Vector2u(static_cast<uint32_t>(scaledWidth), static_cast<uint32_t>(scaledHeight)));
     io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
-    
+
     ui::LoadFonts(hInstance, 16, scaleFactor);
     ui::ApplyImGuiStyleDark(scaleFactor);
-    
+
     // Set window icon
     if (auto hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)))
     {
@@ -274,7 +292,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     window.setVisible(false);
     winapi::SetDarkMode(hWnd);
-    window.setVisible(true);    
+    window.setVisible(true);
 
     cfg.SetWindowHandle(hWnd);
 
@@ -544,7 +562,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
                     else
                     {
-                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, HTTP error: %s", httplib::status_message(statusCode));
+                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, HTTP error: %s",
+                                    httplib::status_message(statusCode));
                     }
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
@@ -644,7 +663,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         if (winapi::IsMsiExecErrorCode(lastExitCode))
                         {
                             ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
-                            ImGui::TextWrapped("Setup engine error: %s", winapi::GetLastErrorStdStr(lastExitCode).c_str());
+                            ImGui::TextWrapped("Setup engine error: %s",
+                                               winapi::GetLastErrorStdStr(lastExitCode).c_str());
                         }
                         else
                         {
@@ -659,12 +679,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
+                    /* TODO: currently bugged, fix later!
                     if (ImGui::Button("Retry now"))
                     {
                         instStep = DownloadAndInstallStep::PrepareInstall;
                     }
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
+                    */
                     ImGui::Text("You can also press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));

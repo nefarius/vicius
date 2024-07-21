@@ -35,7 +35,9 @@ namespace models
      */
     class InstanceConfig
     {
+        /** The application instance handle */
         HINSTANCE appInstance{};
+        /** Handle of the main SFML window */
         HWND windowHandle{};
         /** Full pathname of the updater process file */
         std::filesystem::path appPath;
@@ -51,17 +53,28 @@ namespace models
         std::string tenantSubPath;
         /** URL of the update request */
         std::string updateRequestUrl;
+        /** Full pathname of the updater parent process file, if any */
+        std::optional<std::filesystem::path> parentAppPath;
 
         /** The local and remote shared configuration */
         MergedConfig merged;
         /** The remote API response */
         UpdateResponse remote;
 
+        /** The download task */
         std::optional<std::shared_future<int>> downloadTask;
+        /** The setup task */
         std::optional<std::shared_future<std::tuple<bool, DWORD, DWORD>>> setupTask;
+        /** The selected release numeric ID */
         int selectedRelease{0};
+        /** True if we run in any of the silent scenarios, false if not */
         bool isSilent{false};
+        /** True if user chose to ignore postpone period */
         bool ignorePostponePeriod{false};
+        /** True if this process is a temporary copy, false if not */
+        bool isTemporaryCopy{false};
+
+        // TODO: implement me!
         NSIGINFO appSigInfo{};
 
         int DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
@@ -79,6 +92,19 @@ namespace models
         Authority authority;
         std::string channel;
         std::map<std::string, std::string> additionalHeaders;
+
+        InstanceConfig() : authority(Authority::Remote)
+        {
+        }
+
+        InstanceConfig(const InstanceConfig&) = delete;
+        InstanceConfig(InstanceConfig&&) = delete;
+        InstanceConfig& operator=(const InstanceConfig&) = delete;
+        InstanceConfig& operator=(InstanceConfig&&) = delete;
+
+        InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl);
+
+        ~InstanceConfig();
 
         void SetWindowHandle(_In_ const HWND hWnd)
         {
@@ -358,18 +384,7 @@ namespace models
             DWORD& win32Error
         ) const;
 
-        InstanceConfig() : authority(Authority::Remote)
-        {
-        }
-
-        InstanceConfig(const InstanceConfig&) = delete;
-        InstanceConfig(InstanceConfig&&) = delete;
-        InstanceConfig& operator=(const InstanceConfig&) = delete;
-        InstanceConfig& operator=(InstanceConfig&&) = delete;
-
-        InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl);
-
-        ~InstanceConfig();
+        bool TryRunTemporaryProcess() const;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(

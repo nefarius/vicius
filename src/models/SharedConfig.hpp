@@ -26,6 +26,8 @@ namespace models
         std::optional<std::string> installationErrorUrl;
         /** The setup download location */
         std::optional<DownloadLocationConfig> downloadLocation;
+        /** True to run as temporary copy */
+        std::optional<bool> runAsTemporaryCopy;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
@@ -35,6 +37,7 @@ namespace models
         detectionMethod,
         detection,
         installationErrorUrl,
-        downloadLocation
+        downloadLocation,
+        runAsTemporaryCopy
     )
 }

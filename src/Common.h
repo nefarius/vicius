@@ -7,7 +7,9 @@
 #define NV_ADS_UPDATER_NAME         ":updater.dll"
 #define NV_CLI_INSTALL              "--install"
 #define NV_CLI_UNINSTALL            "--uninstall"
+// internal
 #define NV_CLI_AUTOSTART            "--autostart"
+// internal
 #define NV_CLI_BACKGROUND           "--background"
 #define NV_CLI_PARAM_LOG_LEVEL      "--log-level"
 #define NV_CLI_SKIP_SELF_UPDATE     "--skip-self-update"
@@ -23,6 +25,8 @@
 #define NV_CLI_PARAM_OVERRIDE_OK    "--override-success-code"
 #define NV_CLI_IGNORE_POSTPONE      "--ignore-postpone"
 #define NV_CLI_PURGE_POSTPONE       "--purge-postpone"
+// internal
+#define NV_CLI_TEMPORARY            "--temporary"
 
 //
 // App error exit codes
@@ -47,3 +51,4 @@
 #define NV_S_USER_POSTPONED         204
 #define NV_S_POSTPONE_PERIOD        205
 #define NV_S_POSTPONE_PURGE         206
+#define NV_S_LAUNCHED_TEMPORARY     207
