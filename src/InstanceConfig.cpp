@@ -15,6 +15,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     RestClient::init();
 
+#pragma region Logging
+
     //
     // Setup logger
     // 
@@ -62,6 +64,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
     set_default_logger(logger);
 #endif
+
+#pragma endregion
 
     spdlog::debug("Initializing updater instance (PID: {})", GetCurrentProcessId());
 
