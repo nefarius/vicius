@@ -49,6 +49,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // updater configuration, defaults and app state
     models::InstanceConfig cfg(hInstance, cmdl);
 
+#pragma region Install command
+
     // actions to perform when install is instructed
 #if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
     if (cmdl[{NV_CLI_INSTALL}])
@@ -102,6 +104,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     }
 #endif
 
+#pragma endregion
+
+#pragma region Autostart tasks
+
     // actions to perform when running in autostart
     if (cmdl[{NV_CLI_AUTOSTART}])
     {
@@ -115,6 +121,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             // TODO: anything else we can do in this case?
         }
     }
+
+#pragma endregion
+
+#pragma region Uninstall command
 
     // uninstall tasks
     if (cmdl[{NV_CLI_UNINSTALL}])
@@ -145,6 +155,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         return NV_S_INSTALL;
     }
+
+#pragma endregion
 
     // purge postpone data, if any
     if (cmdl[{NV_CLI_PURGE_POSTPONE}])
@@ -246,7 +258,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     constexpr int windowWidth = 640, windowHeight = 512;
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetWindowTitle(), sf::Style::Titlebar);
     HWND hWnd = window.getSystemHandle();
-    
+
     window.setFramerateLimit(winapi::GetMonitorRefreshRate(hWnd));
     ImGui::SFML::Init(window, false);
 
@@ -262,10 +274,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     auto scaledHeight = (windowHeight * scaleFactor);
     window.setSize(sf::Vector2u(static_cast<uint32_t>(scaledWidth), static_cast<uint32_t>(scaledHeight)));
     io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
-    
+
     ui::LoadFonts(hInstance, 16, scaleFactor);
     ui::ApplyImGuiStyleDark(scaleFactor);
-    
+
     // Set window icon
     if (auto hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)))
     {
@@ -274,7 +286,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     window.setVisible(false);
     winapi::SetDarkMode(hWnd);
-    window.setVisible(true);    
+    window.setVisible(true);
 
     cfg.SetWindowHandle(hWnd);
 
@@ -544,7 +556,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
                     else
                     {
-                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, HTTP error: %s", httplib::status_message(statusCode));
+                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, HTTP error: %s",
+                                    httplib::status_message(statusCode));
                     }
 
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
@@ -644,7 +657,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         if (winapi::IsMsiExecErrorCode(lastExitCode))
                         {
                             ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
-                            ImGui::TextWrapped("Setup engine error: %s", winapi::GetLastErrorStdStr(lastExitCode).c_str());
+                            ImGui::TextWrapped("Setup engine error: %s",
+                                               winapi::GetLastErrorStdStr(lastExitCode).c_str());
                         }
                         else
                         {
