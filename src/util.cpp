@@ -638,7 +638,7 @@ namespace winapi
     {
         std::string tempDir = parent;
 
-        if (!parent.empty())
+        if (parent.empty())
             GetUserTemporaryDirectory(tempDir);
 
         if (tempDir.empty())

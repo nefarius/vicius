@@ -788,7 +788,41 @@ bool models::InstanceConfig::TryRunTemporaryProcess()
     if (!this->merged.runAsTemporaryCopy)
         return false;
 
-    LPCSTR commandLine = GetCommandLineA();
+    std::string temporaryUpdaterPath{};
+
+    if (!winapi::GetNewTemporaryFile(temporaryUpdaterPath))
+        return false;
+
+    if (CopyFileA(this->appPath.string().c_str(), temporaryUpdaterPath.c_str(), FALSE) == FALSE)
+        return false;
+
+    // ensure cleanup at least on next reboot
+    MoveFileExA(temporaryUpdaterPath.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
+
+    std::vector<std::string> narrow;
+
+    narrow.reserve(__argc);
+    for (int i = 0; i < __argc; i++)
+    {
+        // Windows gives us wide only, convert each to narrow
+        narrow.push_back(__argv[i]);
+    }
+
+    // throw away process path
+    narrow.erase(narrow.begin());
+
+    // slice together new launch arguments
+    std::string cliLine = std::format(
+        "--temporary {}",
+        std::accumulate(
+            std::next(narrow.begin()),
+            narrow.end(),
+            narrow[0],
+            [](const std::string& lhs, const std::string& rhs)
+            {
+                return std::format("{} {}", lhs, rhs);
+            }
+        ));
 
     return true;
 }
