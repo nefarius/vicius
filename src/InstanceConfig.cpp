@@ -172,7 +172,13 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     // 
 
 #if !defined(NV_FLAGS_NO_CONFIG_FILE)
-    if (auto configFile = appPath.parent_path() / std::format("{}.json", appFilename); exists(configFile))
+    const auto configFileName = std::format("{}.json", appFilename);
+    // ReSharper disable once CppTooWideScopeInitStatement
+    auto configFile = !isTemporaryCopy
+                          ? appPath.parent_path() / configFileName
+                          : parentAppPath.parent_path() / configFileName;
+
+    if (exists(configFile))
     {
         std::ifstream configFileStream(configFile);
 
