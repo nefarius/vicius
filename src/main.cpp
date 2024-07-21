@@ -282,6 +282,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // - https://github.com/nefarius/vicius/issues/46
     // - https://github.com/SFML/imgui-sfml/issues/206
     // - https://github.com/SFML/imgui-sfml/issues/212
+    SetFocus(hWnd);
     ImGui::SFML::ProcessEvent(window, sf::Event(sf::Event::LostFocus));
     ImGui::SFML::ProcessEvent(window, sf::Event(sf::Event::GainedFocus));
 
