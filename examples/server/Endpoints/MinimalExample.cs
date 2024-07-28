@@ -27,7 +27,7 @@ internal sealed class MinimalExampleEndpoint : EndpointWithoutRequest
                     /*
                      just an example URL; if you patch the updater with a different type of
                      executable, obviously you would brick the remote installation ;)
-                     */ 
+                     */
                     LatestUrl = "https://downloads.nefarius.at/other/nefarius/vpatch/vpatch.exe"
                 },
             Shared = new SharedConfig
@@ -75,7 +75,7 @@ internal sealed class MinimalExampleEndpoint : EndpointWithoutRequest
                         SuccessCodes =
                         {
                             0, // regular success
-                            3010, // success, but reboot required
+                            3010 // success, but reboot required
                             // 1602 // failure (user cancelled) - you normally wouldn't want that as a success code, just an example
                         }
                     }
