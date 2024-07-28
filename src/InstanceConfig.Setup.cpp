@@ -274,6 +274,10 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
                     {
                         continue;
                     }
+                    if (!std::filesystem::canonical(dest).wstring().starts_with(destRoot.wstring()))
+                    {
+                        spdlog::warn("Cowardly refusing to delete files outside of the installation directory");
+                    }
                     std::filesystem::remove_all(destRoot / relative);
                 }
             }
