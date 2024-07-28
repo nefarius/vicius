@@ -308,7 +308,7 @@ retry:
         remote = reply.get<UpdateResponse>();
 
         // remove releases marked as disabled
-        std::erase_if(remote.releases, [](const UpdateRelease& x) { return x.disabled; });
+        std::erase_if(remote.releases, [](const UpdateRelease& x) { return x.disabled.value_or(false); });
 
         // top release is always latest by version, even if the response wasn't the right order
         std::ranges::sort(remote.releases, [](const UpdateRelease& lhs, const UpdateRelease& rhs)
