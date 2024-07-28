@@ -8,6 +8,7 @@ internal sealed class RootEndpoint : EndpointWithoutRequest
     {
         Get("/");
         AllowAnonymous();
+        Description(b => b.ExcludeFromDescription());
     }
 
     public override Task HandleAsync(CancellationToken ct)
