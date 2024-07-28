@@ -24,6 +24,7 @@
     "scope-guard",
     "curlpp",
     "inja",
-    "cpp-httplib"
+    "cpp-httplib",
+    "libzip"
   ]
 }

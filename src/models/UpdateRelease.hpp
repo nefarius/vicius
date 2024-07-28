@@ -34,6 +34,21 @@ namespace models
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ChecksumParameters, checksum, checksumAlg)
 
     /**
+     * \brief How to treat files when installing a .zip file
+     */
+    enum class ZipExtractFileDisposition
+    {
+        CreateIfAbsent,
+        CreateOrReplace,
+        DeleteIfPresent,
+    };
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(ZipExtractFileDisposition,
+                                 {{ZipExtractFileDisposition::CreateIfAbsent, "CreateIfAbsent"},
+                                  {ZipExtractFileDisposition::CreateOrReplace, "CreateOrReplace"},
+                                  {ZipExtractFileDisposition::DeleteIfPresent, "DeleteIfPresent"}});
+
+    /**
      * \brief Represents an update release.
      */
     class UpdateRelease
@@ -65,9 +80,15 @@ namespace models
         std::optional<size_t> detectionSize;
         /** The version to use in product detection */
         std::optional<std::string> detectionVersion;
+        /** How to handle files in a zip update, unless overriden */
+        ZipExtractFileDisposition zipExtractDefaultFileDisposition{ZipExtractFileDisposition::CreateOrReplace};
+        /** Override the behavior for specific files in a zip update */
+        std::unordered_map<std::string, ZipExtractFileDisposition> zipExtractFileDispositionOverrides;
 
         /** Full pathname of the local temporary file */
         std::filesystem::path localTempFilePath{};
+
+
 
         /**
          * \brief Converts the version string to a SemVer type.
@@ -95,5 +116,7 @@ namespace models
                                                     disabled,
                                                     detectionChecksum,
                                                     detectionSize,
-                                                    detectionVersion)
+                                                    detectionVersion,
+                                                    zipExtractDefaultFileDisposition,
+                                                    zipExtractFileDispositionOverrides)
 }
