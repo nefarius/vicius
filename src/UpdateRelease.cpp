@@ -50,4 +50,6 @@ std::optional<semver::version> models::UpdateRelease::GetDetectionSemVersion() c
 
         return std::nullopt;
     }
+
+    return std::nullopt;
 }
