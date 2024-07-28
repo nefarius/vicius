@@ -20,16 +20,6 @@ internal sealed class TempCopyExample : EndpointWithoutRequest
     {
         UpdateResponse response = new()
         {
-            Instance =
-                new UpdateConfig
-                {
-                    LatestVersion = System.Version.Parse("1.0.0"),
-                    /*
-                     just an example URL; if you patch the updater with a different type of
-                     executable, obviously you would brick the remote installation ;)
-                     */
-                    LatestUrl = "https://downloads.nefarius.at/other/nefarius/vpatch/vpatch.exe"
-                },
             Shared = new SharedConfig
             {
                 ProductName = "Temporary Copy Demo",

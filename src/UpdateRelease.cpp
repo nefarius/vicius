@@ -13,10 +13,15 @@ semver::version models::UpdateRelease::GetSemVersion() const
 
         return semver::version::parse(value);
     }
+    catch (const std::exception& e)
+    {
+        spdlog::debug("Error parsing update version `{}`: {}", version, e.what());
+    }
     catch (...)
     {
-        return semver::version{0, 0, 0};
+        spdlog::debug("Unknown exception parsing update version `{}`", version);
     }
+    return semver::version{0, 0, 0};
 }
 
 std::optional<semver::version> models::UpdateRelease::GetDetectionSemVersion() const
@@ -35,8 +40,16 @@ std::optional<semver::version> models::UpdateRelease::GetDetectionSemVersion() c
 
         return semver::version::parse(value);
     }
+    catch (const std::exception& e)
+    {
+        spdlog::debug("Error parsing update version `{}`: {}", version, e.what());
+    }
     catch (...)
     {
+        spdlog::debug("Unknown exception parsing update detection version `{}`", version);
+
         return std::nullopt;
     }
+
+    return std::nullopt;
 }

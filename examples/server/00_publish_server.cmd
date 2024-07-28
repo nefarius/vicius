@@ -11,7 +11,9 @@ where podman > nul 2>&1 && (
 )
 
 %ce% build -t nefarius.azurecr.io/nefarius-vicius-server:latest .
-%ce% push nefarius.azurecr.io/nefarius-vicius-server:latest
+if %ERRORLEVEL% == 0 (
+	%ce% push nefarius.azurecr.io/nefarius-vicius-server:latest
+)
 
 popd
 endlocal

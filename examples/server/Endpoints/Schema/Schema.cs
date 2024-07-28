@@ -9,7 +9,7 @@ using NJsonSchema;
 using NJsonSchema.Generation;
 using NJsonSchema.NewtonsoftJson.Generation;
 
-namespace Nefarius.Vicius.Example.Server.Endpoints;
+namespace Nefarius.Vicius.Example.Server.Endpoints.Schema;
 
 /// <summary>
 ///     Delivers the JSON schema of all types involved in the update response.
