@@ -79,3 +79,4 @@
 #include "CustomizeMe.h"
 #include "Crypto.h"
 #include "UI.h"
+#include "Formatters.h"
