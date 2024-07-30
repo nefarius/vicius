@@ -773,14 +773,17 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
 {
     if (!this->merged.runAsTemporaryCopy || this->isTemporaryCopy) return false;
 
-    std::string temporaryUpdaterPath{};
+    std::string userTempPath{};
 
-    if (!winapi::GetNewTemporaryFile(temporaryUpdaterPath)) return false;
+    if (!winapi::GetUserTemporaryDirectory(userTempPath)) return false;
 
-    if (CopyFileA(this->appPath.string().c_str(), temporaryUpdaterPath.c_str(), FALSE) == FALSE) return false;
+    std::filesystem::path temporaryUpdaterPath = std::filesystem::path(userTempPath) / std::filesystem::path(
+                                                     std::format("{}.exe", this->appFilename));
+
+    if (CopyFileA(this->appPath.string().c_str(), temporaryUpdaterPath.string().c_str(), FALSE) == FALSE) return false;
 
     // ensure cleanup at least on next reboot
-    MoveFileExA(temporaryUpdaterPath.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
+    MoveFileExA(temporaryUpdaterPath.string().c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
 
     std::vector<std::string> narrow;
 
@@ -788,7 +791,7 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
     for (int i = 0; i < __argc; i++)
     {
         // Windows gives us wide only, convert each to narrow
-        narrow.push_back(__argv[ i ]);
+        narrow.push_back(__argv[ i ]);  // NOLINT(modernize-use-emplace)
     }
 
     // throw away process path
@@ -796,18 +799,21 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
 
     // slice together new launch arguments
     const std::string cliLine =
-      std::format("--temporary {}",
-                  std::accumulate(std::next(narrow.begin()),
-                                  narrow.end(),
-                                  narrow[ 0 ],
-                                  [](const std::string& lhs, const std::string& rhs) { return std::format("{} {}", lhs, rhs); }));
+        std::format("--temporary {}",
+                    std::accumulate(std::next(narrow.begin()),
+                                    narrow.end(),
+                                    narrow[ 0 ],
+                                    [](const std::string& lhs, const std::string& rhs)
+                                    {
+                                        return std::format("{} {}", lhs, rhs);
+                                    }));
 
     STARTUPINFOA info = {};
     info.cb = sizeof(STARTUPINFOA);
     PROCESS_INFORMATION updateProcessInfo = {};
 
     // re-launch temporary copy with additional "--temporary" flag
-    if (!CreateProcessA(temporaryUpdaterPath.c_str(),
+    if (!CreateProcessA(temporaryUpdaterPath.string().c_str(),
                         const_cast<LPSTR>(cliLine.c_str()),
                         nullptr,
                         nullptr,
