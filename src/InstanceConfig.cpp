@@ -790,7 +790,6 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
     narrow.reserve(__argc);
     for (int i = 0; i < __argc; i++)
     {
-        // Windows gives us wide only, convert each to narrow
         narrow.push_back(__argv[ i ]);  // NOLINT(modernize-use-emplace)
     }
 
