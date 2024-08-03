@@ -196,10 +196,17 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 
     spdlog::debug("isExecutable = {}, binType = {}", isExecutable, binType);
 
+    //
+    // Payload may be MSI, ZIP etc.
+    // 
     if (!isExecutable)
     {
         int zipErrorCode = 0;
         unique_zip zip(zip_open(ToUTF8(tempFile.wstring()).c_str(), ZIP_RDONLY, &zipErrorCode), &zip_discard);
+
+        //
+        // We got an archive, run extraction
+        // 
         if (zip)
         {
             // Extract the entire zip to a temporary location first, so we don't break the current install if extraction fails
@@ -283,6 +290,9 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
             }
             success = true;
         }
+        //
+        // Most probably an MSI or similar, offload execution to the default shell launch action
+        // 
         else
         {
             std::string args = release.launchArguments.has_value() ? release.launchArguments.value() : std::string{};
@@ -313,6 +323,9 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
             CloseHandle(execInfo.hProcess);
         }
     }
+    //
+    // Executables can directly be spawned via CreateProcess
+    // 
     else
     {
         STARTUPINFOA info = {};
@@ -351,9 +364,9 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
     //
     // Run exit code validation, if configured
     //
-    if (this->ExitCodeCheck().has_value())
+    if (const auto exitCodeCheck = this->ExitCodeCheck(); exitCodeCheck.has_value())
     {
-        const auto [ skipCheck, successCodes ] = this->ExitCodeCheck().value();
+        const auto [ skipCheck, successCodes ] = exitCodeCheck.value();
 
         if (skipCheck)
         {
