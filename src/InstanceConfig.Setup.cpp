@@ -265,7 +265,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
                     std::filesystem::last_write_time(dest, std::filesystem::last_write_time(source));
                 }
                 // Walk 2/2: deletions
-                for (const auto& [ relative, disposition ] : release.zipExtractFileDispositionOverrides)
+                for (const auto& [ relative, disposition ] : dispositionOverrides)
                 {
                     if (disposition != Disposition::DeleteIfPresent)
                     {
