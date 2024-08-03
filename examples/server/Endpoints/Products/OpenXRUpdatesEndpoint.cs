@@ -19,6 +19,9 @@ internal sealed partial class OpenXRUpdatesEndpoint(
     GitHubApiService githubApiService,
     ILogger<OpenXRUpdatesEndpoint> logger) : EndpointWithoutRequest
 {
+    /// <summary>
+    ///     Strips leading characters and zeroes from tag name to conform to SemVer conversion.
+    /// </summary>
     [GeneratedRegex(@"^v|(?<=\D)0+(?=\d)")]
     private static partial Regex TagStripRegex();
 

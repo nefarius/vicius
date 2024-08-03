@@ -38,6 +38,10 @@ internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiSe
         Options(x => x.WithTags("Production"));
     }
 
+    /// <summary>
+    ///     Strips HTML-style comment blocks from Markdown body. This was used in the past to carry metadata for the Advanced
+    ///     Installer Updater proxy.
+    /// </summary>
     [GeneratedRegex(@"<!--[\s\S\n]*?-->")]
     private partial Regex CommentRegex();
 
