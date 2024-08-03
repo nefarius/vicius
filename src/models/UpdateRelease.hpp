@@ -84,9 +84,9 @@ namespace models
         /** The version to use in product detection */
         std::optional<std::string> detectionVersion;
         /** How to handle files in a zip update, unless overriden */
-        ZipExtractFileDisposition zipExtractDefaultFileDisposition{ZipExtractFileDisposition::CreateOrReplace};
+        std::optional<ZipExtractFileDisposition> zipExtractDefaultFileDisposition;
         /** Override the behavior for specific files in a zip update */
-        std::unordered_map<std::string, ZipExtractFileDisposition> zipExtractFileDispositionOverrides;
+        std::optional<std::unordered_map<std::string, ZipExtractFileDisposition>> zipExtractFileDispositionOverrides;
 
         /** Full pathname of the local temporary file */
         std::filesystem::path localTempFilePath{};

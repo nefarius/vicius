@@ -217,6 +217,11 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
                 const auto sourceRoot = std::filesystem::canonical(*extractedPath);
                 const auto destRoot = std::filesystem::canonical(this->GetAppPath().parent_path());
 
+                const auto defaultDisposition =
+                    release.zipExtractDefaultFileDisposition.value_or(ZipExtractFileDisposition::CreateOrReplace);
+                const auto dispositionOverrides = release.zipExtractFileDispositionOverrides.value_or(
+                    std::unordered_map<std::string, ZipExtractFileDisposition>{});
+
                 // Walk 1/2: create or update only, no deletions
                 for (const auto& it : std::filesystem::recursive_directory_iterator(sourceRoot))
                 {
@@ -225,9 +230,9 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
                     const auto dest = destRoot / relative;
 
                     const auto relativeUTF8 = ToUTF8(relative.wstring());
-                    const auto disposition = release.zipExtractFileDispositionOverrides.contains(relativeUTF8)
-                                                 ? release.zipExtractFileDispositionOverrides.at(relativeUTF8)
-                                                 : release.zipExtractDefaultFileDisposition;
+                    const auto disposition = dispositionOverrides.contains(relativeUTF8)
+                                                 ? dispositionOverrides.at(relativeUTF8)
+                                                 : defaultDisposition;
 
                     if (it.is_directory())
                     {
