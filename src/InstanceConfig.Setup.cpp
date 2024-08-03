@@ -23,7 +23,7 @@ namespace
         // - vicius currently targets Windows 7+, and ICU is only included with some versions of Windows 10
         // - adding it to vcpkg pulls in a *huge* amount of the msys ecosystem as dependencies
         const auto utf8ByteCount =
-          WideCharToMultiByte(CP_UTF8, 0, view.data(), static_cast<int>(view.size()), nullptr, 0, nullptr, nullptr);
+            WideCharToMultiByte(CP_UTF8, 0, view.data(), static_cast<int>(view.size()), nullptr, 0, nullptr, nullptr);
         if (!utf8ByteCount)
         {
             return {};
@@ -143,7 +143,7 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
 
                 std::ofstream f(outPath, std::ios::binary);
 
-                constexpr std::size_t chunkSize = 4 * 1024;  // 4KB
+                constexpr std::size_t chunkSize = 4 * 1024; // 4KB
                 char buffer[ chunkSize ];
 
                 decltype(stat.size) bytesRead = 0;
@@ -221,15 +221,16 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
                 };
 
                 // Walk 1/2: create or update only, no deletions
-                for (const auto& it : std::filesystem::recursive_directory_iterator(sourceRoot)) {
+                for (const auto& it : std::filesystem::recursive_directory_iterator(sourceRoot))
+                {
                     const auto relative = std::filesystem::relative(it.path(), sourceRoot);
                     const auto source = sourceRoot / relative;
                     const auto dest = destRoot / relative;
 
                     const auto relativeUTF8 = ToUTF8(relative.wstring());
                     const auto disposition = release.zipExtractFileDispositionOverrides.contains(relativeUTF8)
-                                               ? release.zipExtractFileDispositionOverrides.at(relativeUTF8)
-                                               : release.zipExtractDefaultFileDisposition;
+                                                 ? release.zipExtractFileDispositionOverrides.at(relativeUTF8)
+                                                 : release.zipExtractDefaultFileDisposition;
 
                     if (it.is_directory())
                     {
@@ -260,7 +261,6 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
                             break;
                     }
                     std::filesystem::last_write_time(dest, std::filesystem::last_write_time(source));
-
                 }
                 // Walk 2/2: deletions
                 for (const auto& [ relative, disposition ] : release.zipExtractFileDispositionOverrides)
