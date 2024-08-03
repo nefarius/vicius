@@ -8,6 +8,9 @@
 
 using json = nlohmann::json;
 
+struct zip;
+typedef struct zip zip_t;
+
 namespace models
 {
     /**
@@ -195,6 +198,15 @@ namespace models
          * \param progressFn The download progress callback.
          */
         bool DownloadReleaseAsync(int releaseIndex, curl_progress_callback progressFn);
+
+
+        /**
+        * \brief Extract the zip file containing updated executables.
+        *
+        * \param zip the zip file; the caller retains ownership.
+        * \return Path of folder containing extracted zip file contents on success, empty otherwise.
+        */
+        std::optional<std::filesystem::path> ExtractReleaseZip(zip_t* zip);
 
         /**
          * \brief Checks the current download status.
