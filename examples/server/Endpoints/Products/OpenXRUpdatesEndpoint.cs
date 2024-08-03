@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
 using FastEndpoints;
 
@@ -13,7 +14,10 @@ namespace Nefarius.Vicius.Example.Server.Endpoints.Products;
 ///     Crafts update configuration for
 ///     <a href="https://github.com/fredemmott/OpenXR-API-Layers-GUI">OpenXR API Layers GUI</a>.
 /// </summary>
-internal sealed partial class OpenXRUpdatesEndpoint(GitHubApiService githubApiService) : EndpointWithoutRequest
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+internal sealed partial class OpenXRUpdatesEndpoint(
+    GitHubApiService githubApiService,
+    ILogger<OpenXRUpdatesEndpoint> logger) : EndpointWithoutRequest
 {
     [GeneratedRegex(@"^v|(?<=\D)0+(?=\d)")]
     private static partial Regex TagStripRegex();
@@ -50,10 +54,18 @@ internal sealed partial class OpenXRUpdatesEndpoint(GitHubApiService githubApiSe
 
                     if (asset is null)
                     {
+                        logger.LogWarning("Release {Release} has no assets, skipping", release);
                         return null;
                     }
 
-                    Version version = System.Version.Parse(TagStripRegex().Replace(release.TagName, string.Empty));
+                    string strippedTag = TagStripRegex().Replace(release.TagName, string.Empty);
+
+                    if (!System.Version.TryParse(strippedTag, out Version? version))
+                    {
+                        logger.LogWarning("Failed to parse version from tag {Tag} for release {Release}, skipping",
+                            release.TagName, release);
+                        return null;
+                    }
 
                     return new UpdateRelease
                     {
