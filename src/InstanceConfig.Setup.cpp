@@ -86,7 +86,7 @@ bool models::InstanceConfig::GetSetupStatus(bool& isRunning, bool& hasFinished, 
     return true;
 }
 
-std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(zip_t* zip)
+std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(zip_t* zip) const
 {
     const auto zipPath = this->GetLocalReleaseTempFilePath();
     std::filesystem::path extractedPath = zipPath;
@@ -337,7 +337,15 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 
         const auto& args = launchArgs.str();
 
-        if (!CreateProcessA(nullptr, const_cast<LPSTR>(args.c_str()), nullptr, nullptr, TRUE, 0, nullptr, nullptr, &info,
+        if (!CreateProcessA(nullptr,
+                            const_cast<LPSTR>(args.c_str()),
+                            nullptr,
+                            nullptr,
+                            TRUE,
+                            0,
+                            nullptr,
+                            nullptr,
+                            &info,
                             &updateProcessInfo))
         {
             win32Error = GetLastError();

@@ -206,7 +206,7 @@ namespace models
         * \param zip the zip file; the caller retains ownership.
         * \return Path of folder containing extracted zip file contents on success, empty otherwise.
         */
-        std::optional<std::filesystem::path> ExtractReleaseZip(zip_t* zip);
+        std::optional<std::filesystem::path> ExtractReleaseZip(zip_t* zip) const;
 
         /**
          * \brief Checks the current download status.
