@@ -179,7 +179,7 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
 
 /**
  * \brief Spawns the setup of the update release and waits for it to finish.
- * \return The Win32 error code.
+ * \return Tuple of success boolean, process exit code and Win32 error code.
  */
 std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 {
