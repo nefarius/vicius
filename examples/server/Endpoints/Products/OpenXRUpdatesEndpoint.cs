@@ -73,7 +73,9 @@ internal sealed partial class OpenXRUpdatesEndpoint(
                         Version = version,
                         Summary = release.Body,
                         PublishedAt = release.CreatedAt,
-                        DownloadUrl = asset.BrowserDownloadUrl
+                        DownloadUrl = asset.BrowserDownloadUrl,
+                        // NOTE: this is the default value on the client, it's set here for demonstration purposes
+                        ZipExtractDefaultFileDisposition = ZipExtractFileDisposition.CreateOrReplace
                     };
                 })
                 .Where(y => y != null)
