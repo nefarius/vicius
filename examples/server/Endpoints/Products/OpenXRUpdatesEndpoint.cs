@@ -27,6 +27,7 @@ internal sealed partial class OpenXRUpdatesEndpoint(
         Get("api/fredemmott/OpenXR-API-Layers-GUI/updates.json");
         AllowAnonymous();
         Options(x => x.WithTags("Production"));
+        Description(x => x.Produces(200, contentType:"application/json"));
     }
 
     public override async Task HandleAsync(CancellationToken ct)

@@ -19,6 +19,7 @@ internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiS
         Get("api/nefarius/HidHide/updates.json");
         AllowAnonymous();
         Options(x => x.WithTags("Production"));
+        Description(x => x.Produces(200, contentType:"application/json"));
     }
 
     [GeneratedRegex(@"<!--[\s\S\n]*?-->")]
