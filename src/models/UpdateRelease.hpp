@@ -44,9 +44,12 @@ namespace models
     };
 
     NLOHMANN_JSON_SERIALIZE_ENUM(ZipExtractFileDisposition,
-                                 {{ZipExtractFileDisposition::CreateIfAbsent, "CreateIfAbsent"},
-                                  {ZipExtractFileDisposition::CreateOrReplace, "CreateOrReplace"},
-                                  {ZipExtractFileDisposition::DeleteIfPresent, "DeleteIfPresent"}});
+                                 {{ZipExtractFileDisposition::CreateIfAbsent,
+                                 magic_enum::enum_name(ZipExtractFileDisposition::CreateIfAbsent)},
+                                 {ZipExtractFileDisposition::CreateOrReplace,
+                                 magic_enum::enum_name(ZipExtractFileDisposition::CreateOrReplace)},
+                                 {ZipExtractFileDisposition::DeleteIfPresent,
+                                 magic_enum::enum_name(ZipExtractFileDisposition::DeleteIfPresent)}});
 
     /**
      * \brief Represents an update release.
@@ -87,7 +90,6 @@ namespace models
 
         /** Full pathname of the local temporary file */
         std::filesystem::path localTempFilePath{};
-
 
 
         /**
