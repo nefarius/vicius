@@ -36,7 +36,6 @@ internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiSe
         Get("api/nefarius/BthPS3/updates.json");
         AllowAnonymous();
         Options(x => x.WithTags("Production"));
-        Description(x => x.Produces(200, contentType:"application/json"));
     }
 
     [GeneratedRegex(@"<!--[\s\S\n]*?-->")]
