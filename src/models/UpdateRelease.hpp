@@ -43,12 +43,12 @@ namespace models
         DeleteIfPresent,
     };
 
-    using enum ZipExtractFileDisposition;
+    using zefd = ZipExtractFileDisposition;
 
     NLOHMANN_JSON_SERIALIZE_ENUM(ZipExtractFileDisposition, {
-                                 {CreateIfAbsent, magic_enum::enum_name(CreateIfAbsent)},
-                                 {CreateOrReplace, magic_enum::enum_name(CreateOrReplace)},
-                                 {DeleteIfPresent, magic_enum::enum_name(DeleteIfPresent)}
+                                 {zefd::CreateIfAbsent, magic_enum::enum_name(zefd::CreateIfAbsent)},
+                                 {zefd::CreateOrReplace, magic_enum::enum_name(zefd::CreateOrReplace)},
+                                 {zefd::DeleteIfPresent, magic_enum::enum_name(zefd::DeleteIfPresent)}
                                  })
 
     /**

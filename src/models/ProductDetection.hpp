@@ -19,16 +19,16 @@ namespace models
         Invalid = -1
     };
 
-    NLOHMANN_JSON_SERIALIZE_ENUM(
-      ProductVersionDetectionMethod,
-      {
-        {ProductVersionDetectionMethod::Invalid, nullptr},
-        {ProductVersionDetectionMethod::RegistryValue, magic_enum::enum_name(ProductVersionDetectionMethod::RegistryValue)},
-        {ProductVersionDetectionMethod::FileVersion, magic_enum::enum_name(ProductVersionDetectionMethod::FileVersion)},
-        {ProductVersionDetectionMethod::FileSize, magic_enum::enum_name(ProductVersionDetectionMethod::FileSize)},
-        {ProductVersionDetectionMethod::FileChecksum, magic_enum::enum_name(ProductVersionDetectionMethod::FileChecksum)},
-        {ProductVersionDetectionMethod::CustomExpression, magic_enum::enum_name(ProductVersionDetectionMethod::CustomExpression)},
-      })
+    using pvdm = ProductVersionDetectionMethod;
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(ProductVersionDetectionMethod, {
+                                 {pvdm::Invalid, nullptr},
+                                 {pvdm::RegistryValue, magic_enum::enum_name(pvdm::RegistryValue)},
+                                 {pvdm::FileVersion, magic_enum::enum_name(pvdm::FileVersion)},
+                                 {pvdm::FileSize, magic_enum::enum_name(pvdm::FileSize)},
+                                 {pvdm::FileChecksum, magic_enum::enum_name(pvdm::FileChecksum)},
+                                 {pvdm::CustomExpression, magic_enum::enum_name(pvdm::CustomExpression)},
+                                 })
 
     /**
      * \brief Parameters for querying the registry.

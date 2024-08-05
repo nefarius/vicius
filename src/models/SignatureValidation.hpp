@@ -14,12 +14,12 @@ namespace models
         Invalid = -1
     };
 
-    NLOHMANN_JSON_SERIALIZE_ENUM(SignatureComparisonPolicy,
-                                 {
-                                   {SignatureComparisonPolicy::Invalid, nullptr},
-                                   {SignatureComparisonPolicy::Relaxed,
-                                    magic_enum::enum_name(SignatureComparisonPolicy::Relaxed)},
-                                   {SignatureComparisonPolicy::Strict, magic_enum::enum_name(SignatureComparisonPolicy::Strict)},
+    using scp = SignatureComparisonPolicy;
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(SignatureComparisonPolicy, {
+                                 {scp::Invalid, nullptr},
+                                 {scp::Relaxed, magic_enum::enum_name(scp::Relaxed)},
+                                 {scp::Strict, magic_enum::enum_name(scp::Strict)},
                                  })
 
     /**
@@ -32,13 +32,12 @@ namespace models
         Invalid = -1
     };
 
-    NLOHMANN_JSON_SERIALIZE_ENUM(SignatureVerificationStrategy,
-                                 {
-                                   {SignatureVerificationStrategy::Invalid, nullptr},
-                                   {SignatureVerificationStrategy::FromUpdaterBinary,
-                                    magic_enum::enum_name(SignatureVerificationStrategy::FromUpdaterBinary)},
-                                   {SignatureVerificationStrategy::FromConfiguration,
-                                    magic_enum::enum_name(SignatureVerificationStrategy::FromConfiguration)},
+    using svs = SignatureVerificationStrategy;
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(SignatureVerificationStrategy, {
+                                 {svs::Invalid, nullptr},
+                                 {svs::FromUpdaterBinary, magic_enum::enum_name(svs::FromUpdaterBinary)},
+                                 {svs::FromConfiguration, magic_enum::enum_name(svs::FromConfiguration)},
                                  })
 
     /**
