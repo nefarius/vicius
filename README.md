@@ -48,7 +48,7 @@ Dealing with software update mechanics has been a steady companion for almost 10
 - An NTFS formatted volume
 - An Internet connection
 - Your software updates need to be packaged in one of the following ways:
-  - Some sort of setup engine like [WiX](https://wixtoolset.org/), [Inno Setup](https://jrsoftware.org/isinfo.php), [Advanced Installer](https://www.advancedinstaller.com/), [NSIS](https://nsis.sourceforge.io/Download) or similar
+  - Some sort of setup engine like [WiX](https://wixtoolset.org/)/[WixSharp](https://github.com/oleg-shilo/wixsharp), [Inno Setup](https://jrsoftware.org/isinfo.php), [Advanced Installer](https://www.advancedinstaller.com/), [NSIS](https://nsis.sourceforge.io/Download) or similar
   - A self-extracting archive ([7zip SFX](https://documentation.help/7-Zip/sfx.htm), [WinRAR SFX](https://documentation.help/WinRAR/HELPArcSFX.htm) and alike)
   - A ZIP archive containing portable software
 
