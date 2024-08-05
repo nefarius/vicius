@@ -49,7 +49,7 @@ namespace models
                                  {CreateIfAbsent, magic_enum::enum_name(CreateIfAbsent)},
                                  {CreateOrReplace, magic_enum::enum_name(CreateOrReplace)},
                                  {DeleteIfPresent, magic_enum::enum_name(DeleteIfPresent)}
-                                 });
+                                 })
 
     /**
      * \brief Represents an update release.

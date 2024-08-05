@@ -15,12 +15,13 @@ namespace models
         Invalid = -1
     };
 
-    NLOHMANN_JSON_SERIALIZE_ENUM(ChecksumAlgorithm,
-                                 {
-                                   {ChecksumAlgorithm::Invalid, nullptr},
-                                   {ChecksumAlgorithm::MD5, magic_enum::enum_name(ChecksumAlgorithm::MD5)},
-                                   {ChecksumAlgorithm::SHA1, magic_enum::enum_name(ChecksumAlgorithm::SHA1)},
-                                   {ChecksumAlgorithm::SHA256, magic_enum::enum_name(ChecksumAlgorithm::SHA256)},
+    using ca = ChecksumAlgorithm;
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(ChecksumAlgorithm, {
+                                 {ca::Invalid, nullptr},
+                                 {ca::MD5, magic_enum::enum_name(ca::MD5)},
+                                 {ca::SHA1, magic_enum::enum_name(ca::SHA1)},
+                                 {ca::SHA256, magic_enum::enum_name(ca::SHA256)},
                                  })
 
     /**
@@ -34,12 +35,14 @@ namespace models
         Invalid = -1
     };
 
+    using rh = RegistryHive;
+
     NLOHMANN_JSON_SERIALIZE_ENUM(RegistryHive, {
-                                                 {RegistryHive::Invalid, nullptr},
-                                                 {RegistryHive::HKCU, magic_enum::enum_name(RegistryHive::HKCU)},
-                                                 {RegistryHive::HKLM, magic_enum::enum_name(RegistryHive::HKLM)},
-                                                 {RegistryHive::HKCR, magic_enum::enum_name(RegistryHive::HKCR)},
-                                               })
+                                 {rh::Invalid, nullptr},
+                                 {rh::HKCU, magic_enum::enum_name(rh::HKCU)},
+                                 {rh::HKLM, magic_enum::enum_name(rh::HKLM)},
+                                 {rh::HKCR, magic_enum::enum_name(rh::HKCR)},
+                                 })
 
     /**
      * \brief https://learn.microsoft.com/en-us/windows/win32/winprog64/accessing-an-alternate-registry-view
@@ -52,12 +55,14 @@ namespace models
         Invalid = -1
     };
 
+    using rv = RegistryView;
+
     NLOHMANN_JSON_SERIALIZE_ENUM(RegistryView, {
-                                                 {RegistryView::Invalid, nullptr},
-                                                 {RegistryView::Default, magic_enum::enum_name(RegistryView::Default)},
-                                                 {RegistryView::WOW64_64KEY, magic_enum::enum_name(RegistryView::WOW64_64KEY)},
-                                                 {RegistryView::WOW64_32KEY, magic_enum::enum_name(RegistryView::WOW64_32KEY)},
-                                               })
+                                 {rv::Invalid, nullptr},
+                                 {rv::Default, magic_enum::enum_name(rv::Default)},
+                                 {rv::WOW64_64KEY, magic_enum::enum_name(rv::WOW64_64KEY)},
+                                 {rv::WOW64_32KEY, magic_enum::enum_name(rv::WOW64_32KEY)},
+                                 })
 
     /**
      * \brief VERSIONINFO resource fixed-info.
@@ -69,10 +74,11 @@ namespace models
         Invalid = -1
     };
 
-    NLOHMANN_JSON_SERIALIZE_ENUM(VersionResource,
-                                 {
-                                   {VersionResource::Invalid, nullptr},
-                                   {VersionResource::FILEVERSION, magic_enum::enum_name(VersionResource::FILEVERSION)},
-                                   {VersionResource::PRODUCTVERSION, magic_enum::enum_name(VersionResource::PRODUCTVERSION)},
+    using vr = VersionResource;
+
+    NLOHMANN_JSON_SERIALIZE_ENUM(VersionResource, {
+                                 {vr::Invalid, nullptr},
+                                 {vr::FILEVERSION, magic_enum::enum_name(vr::FILEVERSION)},
+                                 {vr::PRODUCTVERSION, magic_enum::enum_name(vr::PRODUCTVERSION)},
                                  })
 }
