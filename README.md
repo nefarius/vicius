@@ -18,27 +18,27 @@ Dealing with software update mechanics has been a steady companion for almost 10
 
 ## Features
 
-- **No backend application server required**  
+- **No backend application server required**<br/>
   All you need on the server-side to get going is a web host supporting delivering static JSON files and you're done. [GitHub Pages](https://pages.github.com/) would be a sufficient free hosting solution where you can upload to and deliver the updater configuration from. Take a look at the [example server implementation](examples/server) if you wish to write your own backend service.
-- **Self-contained**  
+- **Self-contained**<br/>
   No need to worry if .NET or other runtimes are present on the target machines, everything it needs is delivered in a single Win32 executable.
-- **(Almost) zero configuration**  
+- **(Almost) zero configuration**<br/>
   The bare minimum configuration can be provided by simply compiling in the server URL by adjusting the `CustomizeMe.h` header file. This does not mean you need to maintain one build for every product you wanna support; you will get **multi-tenancy out of the box** by simply naming the resulting executable after the following scheme: `manufacturer_product_Updater.exe`, e.g. `nefarius_HidHide_Updater.exe` will build the server path as `https://example.org/api/nefarius/HidHide/updates.json` (or however it is defined in `CustomizeMe.h`) automatically!
   - All alternative, more sophisticated configuration options [are described in the extended documentation](https://docs.nefarius.at/projects/Vicius/Server-Discovery/).
   - If you wish to completely avoid touching the cloned sources [have a look at the optional includes](include/README.md).
-- **Sane defaults**  
+- **Sane defaults**<br/>
   We hate wasting time writing configuration files as much as the next person; most configuration options are either optional or have sane default fallback values you can depend on.
-- **Self-updater**  
+- **Self-updater**<br/>
   Sometimes just the updater process needs an update (e.g. security patches), not the entire product it is watching over. It can update itself if the server-provided instance version is higher than the locally running one.
-- **Self-healing**  
+- **Self-healing**<br/>
   If run in autostart when the user logs on, it can make sure that scheduled tasks and other supportive components are configured and working properly.
-- **Low resource consumption**  
+- **Low resource consumption**<br/>
   The updater process is only invoked on demand (at user logon and once per day via Task Scheduler) and doesn't keep running in the background.
-- **Respects your time**  
+- **Respects your time**<br/>
   Busy fragging in a game? We won't bother you with any popup windows until you're ready.
-- **Powerful template engine included**  
+- **Powerful template engine included**<br/>
   Sometimes finding the local resource of interest to check the product version can be more challenging than just having a static, boring file path. You can use [inja](https://github.com/pantor/inja) templates to build your own path resolving logic, all while never having to leave your JSON strings!
-- **Expressive modern changelog support**  
+- **Expressive modern changelog support**<br/>
   Update summaries a.k.a. changelogs don't have to be boring slabs of text; [Markdown](https://www.markdownguide.org/) is fully supported! The included fonts are also capable of rendering [Fork Awesome icons](https://forkaweso.me/Fork-Awesome/) and [**system-provided emojis**](https://learn.microsoft.com/en-us/typography/font-list/segoe-ui-emoji)! 🎉 🥳 🍕
 
 ## Prerequisites
