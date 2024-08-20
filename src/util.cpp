@@ -139,72 +139,26 @@ namespace winapi
 {
     semver::version GetWin32ResourceFileVersion(const std::filesystem::path& filePath)
     {
-        DWORD verHandle = 0;
-        UINT size = 0;
-        LPBYTE lpBuffer = nullptr;
-        const DWORD verSize = GetFileVersionInfoSizeA(filePath.string().c_str(), &verHandle);
-        std::stringstream versionString;
+        const auto versionResult = nefarius::winapi::fs::GetFileVersionFromFile(filePath.string());
 
-        if (verSize != NULL)
+        if (!versionResult)
         {
-            const auto verData = new char[ verSize ];
-
-            if (GetFileVersionInfoA(filePath.string().c_str(), verHandle, verSize, verData))
-            {
-                if (VerQueryValueA(verData, "\\", (VOID FAR * FAR*)&lpBuffer, &size))
-                {
-                    if (size)
-                    {
-                        const auto* verInfo = (VS_FIXEDFILEINFO*)lpBuffer;
-                        if (verInfo->dwSignature == 0xfeef04bd)
-                        {
-                            versionString << static_cast<ULONG>(HIWORD(verInfo->dwFileVersionMS)) << "."
-                                          << static_cast<ULONG>(LOWORD(verInfo->dwFileVersionMS)) << "."
-                                          << static_cast<ULONG>(HIWORD(verInfo->dwFileVersionLS)) << "."
-                                          << static_cast<ULONG>(LOWORD(verInfo->dwFileVersionLS));
-                        }
-                    }
-                }
-            }
-            delete[] verData;
+            return semver::version{0, 0, 1};
         }
 
-        return semver::version::parse(versionString.str());
+        return semver::version::parse(to_string(versionResult.value()));
     }
 
     semver::version GetWin32ResourceProductVersion(const std::filesystem::path& filePath)
     {
-        DWORD verHandle = 0;
-        UINT size = 0;
-        LPBYTE lpBuffer = nullptr;
-        const DWORD verSize = GetFileVersionInfoSizeA(filePath.string().c_str(), &verHandle);
-        std::stringstream versionString;
+        const auto versionResult = nefarius::winapi::fs::GetProductVersionFromFile(filePath.string());
 
-        if (verSize != NULL)
+        if (!versionResult)
         {
-            const auto verData = new char[ verSize ];
-
-            if (GetFileVersionInfoA(filePath.string().c_str(), verHandle, verSize, verData))
-            {
-                if (VerQueryValueA(verData, "\\", (VOID FAR * FAR*)&lpBuffer, &size))
-                {
-                    if (size)
-                    {
-                        const auto* verInfo = (VS_FIXEDFILEINFO*)lpBuffer;
-                        if (verInfo->dwSignature == 0xfeef04bd)
-                        {
-                            versionString << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionMS)) << "."
-                                          << static_cast<ULONG>(LOWORD(verInfo->dwProductVersionMS)) << "."
-                                          << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionLS)) << "."
-                                          << static_cast<ULONG>(LOWORD(verInfo->dwProductVersionLS));
-                        }
-                    }
-                }
-            }
-            delete[] verData;
+            return semver::version{0, 0, 1};
         }
 
-        return semver::version::parse(versionString.str());
+        return semver::version::parse(to_string(versionResult.value()));
     }
 
     std::string GetLastErrorStdStr(DWORD errorCode)
@@ -226,7 +180,8 @@ namespace winapi
                 return result;
             }
         }
-        return std::string("OK");
+
+        return {"OK"};
     }
 
     bool IsMsiExecErrorCode(DWORD errorCode)
