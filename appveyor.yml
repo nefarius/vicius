@@ -23,7 +23,9 @@ install:
 # workaround for "CMake Error: Not a file: C:\tools\vcpkg\buildtrees\0.vcpkg_dep_info.cmake"
 - ps: Start-Sleep -Seconds (Get-Random -Minimum 1 -Maximum 6)
 # manifest mode takes forever to build each commit so use global copy instead
-- cmd: vcpkg install argh:%PLATFORM%-windows-static sfml:%PLATFORM%-windows-static imgui[freetype,wchar32]:%PLATFORM%-windows-static imgui-sfml:%PLATFORM%-windows-static restclient-cpp:%PLATFORM%-windows-static nlohmann-json:%PLATFORM%-windows-static magic-enum:%PLATFORM%-windows-static z4kn4fein-semver:%PLATFORM%-windows-static winreg:%PLATFORM%-windows-static hash-library:%PLATFORM%-windows-static spdlog:%PLATFORM%-windows-static scope-guard:%PLATFORM%-windows-static curlpp:%PLATFORM%-windows-static inja:%PLATFORM%-windows-static cpp-httplib:%PLATFORM%-windows-static libzip:%PLATFORM%-windows-static
+#- cmd: vcpkg install argh:%PLATFORM%-windows-static sfml:%PLATFORM%-windows-static imgui[freetype,wchar32]:%PLATFORM%-windows-static imgui-sfml:%PLATFORM%-windows-static restclient-cpp:%PLATFORM%-windows-static nlohmann-json:%PLATFORM%-windows-static magic-enum:%PLATFORM%-windows-static z4kn4fein-semver:%PLATFORM%-windows-static winreg:%PLATFORM%-windows-static hash-library:%PLATFORM%-windows-static spdlog:%PLATFORM%-windows-static scope-guard:%PLATFORM%-windows-static curlpp:%PLATFORM%-windows-static inja:%PLATFORM%-windows-static cpp-httplib:%PLATFORM%-windows-static libzip:%PLATFORM%-windows-static
+# this junction points to a RAM disk on the CI server significantly speeding up building dependencies
+- cmd: mklink /J "%APPVEYOR_BUILD_FOLDER%\src\vcpkg_installed" "C:\tools\build-cache\vicius\src\vcpkg_installed\%PLATFORM%"
 - ps: Setup-VS2022 $env:PLATFORM
 before_build:
 - cmd: nuget restore vīcĭus.sln
