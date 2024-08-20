@@ -70,6 +70,14 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <expected>
+#include <variant>
+#include <format>
+
+//
+// neflib
+// 
+#include <nefarius/neflib/MiscWinApi.hpp>
 
 //
 // Custom

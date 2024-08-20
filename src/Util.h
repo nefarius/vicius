@@ -19,7 +19,6 @@ namespace winapi
 {
     semver::version GetWin32ResourceFileVersion(const std::filesystem::path& filePath);
     semver::version GetWin32ResourceProductVersion(const std::filesystem::path& filePath);
-    DWORD IsAppRunningAsAdminMode(PBOOL IsAdmin);
     std::string GetLastErrorStdStr(DWORD errorCode = 0);
 
     /**
