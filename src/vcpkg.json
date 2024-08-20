@@ -25,6 +25,7 @@
     "curlpp",
     "inja",
     "cpp-httplib",
-    "libzip"
+    "libzip",
+    "neflib"
   ]
 }
