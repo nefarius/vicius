@@ -460,57 +460,6 @@ namespace winapi
         return true;
     }
 
-    bool DirectoryExists(const std::string& dirName)
-    {
-        const DWORD ftyp = GetFileAttributesA(dirName.c_str());
-        if (ftyp == INVALID_FILE_ATTRIBUTES) return false;  //something is wrong with your path!
-
-        if (ftyp & FILE_ATTRIBUTE_DIRECTORY) return true;  // this is a directory!
-
-        return false;  // this is not a directory!
-    }
-
-    bool DirectoryCreate(const std::string& dirName)
-    {
-        if (DirectoryExists(dirName))
-        {
-            return ERROR_SUCCESS;
-        }
-
-        const DWORD ret = SHCreateDirectoryExA(nullptr, dirName.c_str(), nullptr);
-
-        if (ret == ERROR_SUCCESS)
-        {
-            return true;
-        }
-
-        switch (ret)
-        {
-            case ERROR_BAD_PATHNAME:
-                spdlog::error("The pszPath parameter was set to a relative path.");
-                break;
-            case ERROR_FILENAME_EXCED_RANGE:
-                spdlog::error("The path pointed to by pszPath is too long.");
-                break;
-            case ERROR_PATH_NOT_FOUND:
-                spdlog::error("The system cannot find the path pointed to by pszPath. The path may contain an invalid entry.");
-                break;
-            case ERROR_FILE_EXISTS:
-                spdlog::error("The directory exists.");
-                break;
-            case ERROR_ALREADY_EXISTS:
-                spdlog::error("The directory exists.");
-                break;
-            case ERROR_CANCELLED:
-                spdlog::error("The user canceled the operation.");
-                break;
-            default:
-                return false;
-        }
-
-        return false;
-    }
-
     _Use_decl_annotations_ bool GetUserTemporaryDirectory(_Inout_ std::string& path)
     {
         std::string tempPath(MAX_PATH, '\0');

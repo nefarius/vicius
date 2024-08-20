@@ -37,31 +37,28 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
     // Report OS/CPU architecture
     //
 
-    SYSTEM_INFO si = {};
+    const SYSTEM_INFO si = nefarius::winapi::SafeGetNativeSystemInfo();
 
-    if (winapi::SafeGetNativeSystemInfo(&si))
+    std::string arch;
+
+    switch (si.wProcessorArchitecture)
     {
-        std::string arch;
-
-        switch (si.wProcessorArchitecture)
-        {
-            case PROCESSOR_ARCHITECTURE_AMD64:
-                arch = "x64";
-                break;
-            case PROCESSOR_ARCHITECTURE_ARM64:
-                arch = "arm64";
-                break;
-            case PROCESSOR_ARCHITECTURE_INTEL:
-                arch = "x86";
-                break;
-            default:
-                arch = "<unknown>";
-                break;
-        }
-
-        conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture", arch);
+        case PROCESSOR_ARCHITECTURE_AMD64:
+            arch = "x64";
+            break;
+        case PROCESSOR_ARCHITECTURE_ARM64:
+            arch = "arm64";
+            break;
+        case PROCESSOR_ARCHITECTURE_INTEL:
+            arch = "x86";
+            break;
+        default:
+            arch = "<unknown>";
+            break;
     }
 
+    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture", arch);
+    
     //
     // Custom headers passed via CLI
     //
@@ -96,7 +93,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     {
         const auto& rendered = RenderInjaTemplate(merged.downloadLocation.input, merged.downloadLocation.data);
 
-        if (winapi::DirectoryCreate(rendered))
+        if (nefarius::winapi::fs::DirectoryCreate(rendered))
         {
             downloadLocation = rendered;
         }
@@ -129,7 +126,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         const std::filesystem::path targetDirectory = std::filesystem::path(programDataDir) / subDir / "downloads";
 
         // ensure this location can be created
-        if (!winapi::DirectoryCreate(targetDirectory.string()))
+        if (!nefarius::winapi::fs::DirectoryCreate(targetDirectory.string()))
         {
             spdlog::error("Failed to create fallback download location {}, error: {:#x}", targetDirectory.string(),
                           GetLastError());

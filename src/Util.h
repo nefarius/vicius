@@ -36,20 +36,6 @@ namespace winapi
     BOOL VerifyEmbeddedSignature(LPCWSTR pwszSourceFile);
 
     /**
-     * \brief Checks whether a given directory exists.
-     * \param dirName The path to check.
-     * \return True if it exists, false otherwise.
-     */
-    bool DirectoryExists(const std::string& dirName);
-
-    /**
-     * \brief Checks if the given directory exists and creates it otherwise. Nested paths are supported.
-     * \param dirName The path.
-     * \return True if directory exists or was successfully created, false otherwise.
-     */
-    bool DirectoryCreate(const std::string& dirName);
-
-    /**
      * \brief Attempts to retrieve the current users' temporary directory.
      * \param path The path it will get written to.
      * \return True on success, false otherwise.
