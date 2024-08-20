@@ -519,35 +519,6 @@ namespace winapi
         return true;
     }
 
-    BOOL SafeGetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo)
-    {
-        BOOL bRet = FALSE;
-
-        do
-        {
-            if (lpSystemInfo == NULL)
-            {
-                break;
-            }
-
-            using GetNativeSystemInfoProc = void(WINAPI*)(LPSYSTEM_INFO lpSystemInfo);
-            auto pFun = (GetNativeSystemInfoProc)GetProcAddress(GetModuleHandle(TEXT("kernel32")), "GetNativeSystemInfo");
-
-            if (NULL != pFun)
-            {
-                pFun(lpSystemInfo);
-            }
-            else
-            {
-                GetSystemInfo(lpSystemInfo);
-            }
-
-            bRet = TRUE;
-        } while (FALSE);
-
-        return bRet;
-    }
-
     // stolen from: https://building.enlyze.com/posts/writing-win32-apps-like-its-2020-part-3/
     using PGetDpiForMonitor = HRESULT(WINAPI*)(HMONITOR hmonitor, int dpiType, UINT* dpiX, UINT* dpiY);
 

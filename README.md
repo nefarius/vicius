@@ -221,6 +221,7 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [MimeTypes](https://github.com/lasselukkari/MimeTypes)
 - [A C++ header-only HTTP/HTTPS server and client library](https://github.com/yhirose/cpp-httplib)
 - [A C library for reading, creating, and modifying zip archives](https://github.com/nih-at/libzip)
+- [My opinionated collection of C++ utilities](https://github.com/nefarius/neflib)
 
 ### Literature & references
 
