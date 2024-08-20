@@ -72,44 +72,4 @@ namespace winapi
      * \param useDarkMode TRUE to set dark mode, FALSE for light/default.
      */
     void SetDarkMode(HWND hWnd, BOOL useDarkMode = TRUE);
-
-    /**
-     * \brief Queries for the parent PID of a given process.
-     * \param dwPID The PID of the process to query the parent for.
-     * \return The parent process PID.
-     */
-    _Must_inspect_result_ DWORD GetParentProcessID(_In_ DWORD dwPID);
-
-    /**
-     * \brief Gets the full main image file path for a given process ID.
-     * \param dwPID The process ID to query.
-     * \param lpExeName Buffer receiving the target name.
-     * \param dwSize Buffer size.
-     * \return true on success, false otherwise.
-     */
-    _Must_inspect_result_ BOOL GetProcessFullPath(_In_ DWORD dwPID, _Inout_ LPTSTR lpExeName, _In_ DWORD dwSize);
-
-    /**
-     * \brief Gets the full main image file path for a given process ID.
-     * \param dwPID The process ID to query.
-     * \param path The string receiving the path.
-     * \return true on success, false otherwise.
-     */
-    _Must_inspect_result_ bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::wstring& path);
-
-    /**
-     * \brief Gets the full main image file path for a given process ID.
-     * \param dwPID The process ID to query.
-     * \param path The string receiving the path.
-     * \return true on success, false otherwise.
-     */
-    _Must_inspect_result_ bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::string& path);
-
-    /**
-     * \brief Gets the full main image file path for a given process ID.
-     * \param dwPID The process ID to query.
-     * \param path The string receiving the path.
-     * \return true on success, false otherwise.
-     */
-    _Must_inspect_result_ bool GetProcessFullPath(_In_ DWORD dwPID, _Inout_ std::filesystem::path& path);
 }
