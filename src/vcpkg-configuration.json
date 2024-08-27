@@ -8,7 +8,8 @@
     }
   ],
   "default-registry": {
-    "kind": "builtin",
-    "baseline": "2024.07.12"
+    "kind": "git",
+    "repository": "https://github.com/microsoft/vcpkg",
+    "baseline": "1de2026f28ead93ff1773e6e680387643e914ea1"
   }
 }
