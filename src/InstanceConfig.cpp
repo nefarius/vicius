@@ -126,10 +126,12 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
               "Pseudo-handle (e.g. from GetCurrentProcess()) passed to {}; use DuplicateHandle() with bInheritHandle set",
               NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE);
         }
-        else if (!GetCurrentProcessId())
+        else if (!GetProcessId(appHandle))
         {
             spdlog::error("Value passed to {} was not a valid HANDLE; use DuplicateHandle() with bInheritHandle set. If you "
-                          "passed a PID, use OpenProcess()");
+                          "passed a PID, use OpenProcess(). Error: {:#010x}",
+                          NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE,
+                          static_cast<uint32_t>(GetLastError()));
         }
         else
         {
