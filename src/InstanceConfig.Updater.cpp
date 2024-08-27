@@ -76,9 +76,16 @@ bool models::InstanceConfig::RunSelfUpdater() const
 
         std::stringstream argsStream;
         // build CLI args
-        argsStream << "rundll32 \"" << ads << "\",PerformUpdate" << " --silent" << " --log-level "
-                   << magic_enum::enum_name(spdlog::get_level()) << " --pid " << GetCurrentProcessId() << " --path \""
-                   << appPath.string() << "\"" << " --url \"" << remote.instance.value().latestUrl.value() << "\"";
+        argsStream << "rundll32 \"" << ads << "\",PerformUpdate"
+                   << " --silent"
+                   << " --log-level " << magic_enum::enum_name(spdlog::get_level()) << " --pid " << GetCurrentProcessId()
+                   << " --path \"" << appPath.string() << "\""
+                   << " --url \"" << remote.instance.value().latestUrl.value() << "\"";
+        if (terminateProcessBeforeUpdate.has_value())
+        {
+            argsStream << NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE << " "
+                       << reinterpret_cast<const uintptr_t>(terminateProcessBeforeUpdate.value());
+        }
         const auto args = argsStream.str();
         spdlog::debug("args = {}", args);
 
@@ -111,9 +118,16 @@ bool models::InstanceConfig::RunSelfUpdater() const
 
         std::stringstream argsStream;
         // build CLI args
-        argsStream << "\"" << ads << "\",PerformUpdate" << " --silent" << " --log-level "
-                   << magic_enum::enum_name(spdlog::get_level()) << " --pid " << GetCurrentProcessId() << " --path \""
-                   << appPath.string() << "\"" << " --url \"" << remote.instance.value().latestUrl.value() << "\"";
+        argsStream << "\"" << ads << "\",PerformUpdate"
+                   << " --silent"
+                   << " --log-level " << magic_enum::enum_name(spdlog::get_level()) << " --pid " << GetCurrentProcessId()
+                   << " --path \"" << appPath.string() << "\""
+                   << " --url \"" << remote.instance.value().latestUrl.value() << "\"";
+        if (terminateProcessBeforeUpdate.has_value())
+        {
+            argsStream << NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE << " "
+                       << reinterpret_cast<const uintptr_t>(terminateProcessBeforeUpdate.value());
+        }
         const auto args = argsStream.str();
         spdlog::debug("args = {}", args);
 

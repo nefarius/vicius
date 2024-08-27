@@ -4,8 +4,7 @@
 #include "InstanceConfig.hpp"
 
 
-models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl)
-    : appInstance(hInstance)
+models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) : appInstance(hInstance)
 {
     //
     // Initialize everything in here that depends on CLI arguments, the environment and a potential configuration file
@@ -84,8 +83,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl)
     else
     {
 #endif
-    // fallback to compiled-in value
-    serverUrlTemplate = NV_API_URL_TEMPLATE;
+        // fallback to compiled-in value
+        serverUrlTemplate = NV_API_URL_TEMPLATE;
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     }
 #endif
@@ -113,6 +112,32 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl)
     appPath = util::GetImageBasePathW();
     spdlog::debug("appPath = {}", appPath.string());
 
+    if (cmdl({NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE}))
+    {
+        HANDLE appHandle{};
+        cmdl(NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE) >> appHandle;
+        if (!appHandle)
+        {
+            spdlog::error("No handle or 0 passed to {}", NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE);
+        }
+        else if (appHandle == GetCurrentProcess())
+        {
+            spdlog::error(
+              "Pseudo-handle (e.g. from GetCurrentProcess()) passed to {}; use DuplicateHandle() with bInheritHandle set",
+              NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE);
+        }
+        else if (!GetCurrentProcessId())
+        {
+            spdlog::error("Value passed to {} was not a valid HANDLE; use DuplicateHandle() with bInheritHandle set. If you "
+                          "passed a PID, use OpenProcess()");
+        }
+        else
+        {
+            this->terminateProcessBeforeUpdate = appHandle;
+            spdlog::debug("Will terminate process with PID {} if there is an update", GetProcessId(appHandle));
+        }
+    }
+
 #pragma region Temporary child process launch verification
 
     const auto parentProcessId = nefarius::winapi::GetParentProcessID(GetCurrentProcessId());
@@ -135,7 +160,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl)
         {
             SHA256 parentSha256Alg, currentSha256Alg;
             // improve hashing speed
-            constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
+            constexpr std::size_t chunkSize = 4 * 1024;  // 4 KB
 
             std::vector<char> parentAppFileBuffer(chunkSize);
             while (!parentAppFileStream.eof())
@@ -259,9 +284,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl)
 #if !defined(NV_FLAGS_NO_CONFIG_FILE)
     const auto configFileName = std::format("{}.json", appFilename);
     // ReSharper disable once CppTooWideScopeInitStatement
-    auto configFile = (!isTemporaryCopy || !parentAppPath.has_value())
-                          ? appPath.parent_path() / configFileName
-                          : parentAppPath.value().parent_path() / configFileName;
+    auto configFile = (!isTemporaryCopy || !parentAppPath.has_value()) ? appPath.parent_path() / configFileName
+                                                                       : parentAppPath.value().parent_path() / configFileName;
 
     if (exists(configFile))
     {
@@ -337,13 +361,11 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl)
 
     // first try to build "manufacturer/product", then "manufacturer/product/channel" and
     // then use filename as fallback if extraction via regex didn't yield any results
-    tenantSubPath = (!manufacturer.empty() && !product.empty())
-                        ? channel.empty()
-                              ? std::format("{}/{}", manufacturer, product)
-                              : std::format("{}/{}/{}", manufacturer, product, channel)
-                        : channel.empty()
-                        ? appFilename
-                        : std::format("{}/{}", channel, appFilename);
+    tenantSubPath = (!manufacturer.empty() && !product.empty()) ? channel.empty()
+                                                                    ? std::format("{}/{}", manufacturer, product)
+                                                                    : std::format("{}/{}/{}", manufacturer, product, channel)
+                    : channel.empty() ? appFilename
+                                                                : std::format("{}/{}", channel, appFilename);
     spdlog::debug("tenantSubPath = {}", tenantSubPath);
 
     updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
@@ -576,7 +598,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             }
 
             // improve hashing speed
-            constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
+            constexpr std::size_t chunkSize = 4 * 1024;  // 4 KB
 
             // checksum detection data of release
             const auto& hashCfg = release.detectionChecksum.value();
@@ -783,8 +805,8 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
 
     if (!winapi::GetUserTemporaryDirectory(userTempPath)) return false;
 
-    std::filesystem::path temporaryUpdaterPath = std::filesystem::path(userTempPath) / std::filesystem::path(
-                                                     std::format("{}.exe", this->appFilename));
+    std::filesystem::path temporaryUpdaterPath =
+      std::filesystem::path(userTempPath) / std::filesystem::path(std::format("{}.exe", this->appFilename));
 
     if (CopyFileA(this->appPath.string().c_str(), temporaryUpdaterPath.string().c_str(), FALSE) == FALSE) return false;
 
@@ -796,7 +818,7 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
     narrow.reserve(__argc);
     for (int i = 0; i < __argc; i++)
     {
-        narrow.push_back(__argv[ i ]); // NOLINT(modernize-use-emplace)
+        narrow.push_back(__argv[ i ]);  // NOLINT(modernize-use-emplace)
     }
 
     // throw away process path
@@ -804,14 +826,11 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
 
     // slice together new launch arguments
     const std::string cliLine =
-        std::format("--temporary {}",
-                    std::accumulate(std::next(narrow.begin()),
-                                    narrow.end(),
-                                    narrow[ 0 ],
-                                    [](const std::string& lhs, const std::string& rhs)
-                                    {
-                                        return std::format("{} {}", lhs, rhs);
-                                    }));
+      std::format("--temporary {}",
+                  std::accumulate(std::next(narrow.begin()),
+                                  narrow.end(),
+                                  narrow[ 0 ],
+                                  [](const std::string& lhs, const std::string& rhs) { return std::format("{} {}", lhs, rhs); }));
 
     STARTUPINFOA info = {};
     info.cb = sizeof(STARTUPINFOA);

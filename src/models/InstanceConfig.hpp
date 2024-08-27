@@ -57,6 +57,8 @@ namespace models
         std::string updateRequestUrl;
         /** Full pathname of the updater parent process file, if any */
         std::optional<std::filesystem::path> parentAppPath;
+        /** Process to terminate before update */
+        std::optional<HANDLE> terminateProcessBeforeUpdate;
 
         /** The local and remote shared configuration */
         MergedConfig merged;

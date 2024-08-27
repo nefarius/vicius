@@ -23,7 +23,7 @@ namespace
         // - vicius currently targets Windows 7+, and ICU is only included with some versions of Windows 10
         // - adding it to vcpkg pulls in a *huge* amount of the msys ecosystem as dependencies
         const auto utf8ByteCount =
-            WideCharToMultiByte(CP_UTF8, 0, view.data(), static_cast<int>(view.size()), nullptr, 0, nullptr, nullptr);
+          WideCharToMultiByte(CP_UTF8, 0, view.data(), static_cast<int>(view.size()), nullptr, 0, nullptr, nullptr);
         if (!utf8ByteCount)
         {
             return {};
@@ -143,7 +143,7 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
 
                 std::ofstream f(outPath, std::ios::binary);
 
-                constexpr std::size_t chunkSize = 4 * 1024; // 4KB
+                constexpr std::size_t chunkSize = 4 * 1024;  // 4KB
                 char buffer[ chunkSize ];
 
                 decltype(stat.size) bytesRead = 0;
@@ -183,6 +183,16 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
  */
 std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 {
+    if (this->terminateProcessBeforeUpdate.has_value())
+    {
+        const auto terminatePID = GetProcessId(this->terminateProcessBeforeUpdate.value());
+        if (!TerminateProcess(this->terminateProcessBeforeUpdate.value(), 0))
+        {
+            return {false, NV_E_TERMINATE_PROCESS_BEFORE_UPDATE_FAILED, GetLastError()};
+        }
+        spdlog::debug("Terminated PID {} due to {}", terminatePID, NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE);
+    }
+
     const auto& release = this->GetSelectedRelease();
     const auto& tempFile = this->GetLocalReleaseTempFilePath();
     std::string openFile = tempFile.string();
@@ -198,7 +208,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 
     //
     // Payload may be MSI, ZIP etc.
-    // 
+    //
     if (!isExecutable)
     {
         int zipErrorCode = 0;
@@ -206,7 +216,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 
         //
         // We got an archive, run extraction
-        // 
+        //
         if (zip)
         {
             // Extract the entire zip to a temporary location first, so we don't break the current install if extraction fails
@@ -218,9 +228,9 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
                 const auto destRoot = std::filesystem::canonical(this->GetAppPath().parent_path());
 
                 const auto defaultDisposition =
-                    release.zipExtractDefaultFileDisposition.value_or(ZipExtractFileDisposition::CreateOrReplace);
+                  release.zipExtractDefaultFileDisposition.value_or(ZipExtractFileDisposition::CreateOrReplace);
                 const auto dispositionOverrides = release.zipExtractFileDispositionOverrides.value_or(
-                    std::unordered_map<std::string, ZipExtractFileDisposition>{});
+                  std::unordered_map<std::string, ZipExtractFileDisposition>{});
 
                 // Walk 1/2: create or update only, no deletions
                 for (const auto& it : std::filesystem::recursive_directory_iterator(sourceRoot))
@@ -230,9 +240,8 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
                     const auto dest = destRoot / relative;
 
                     const auto relativeUTF8 = ToUTF8(relative.wstring());
-                    const auto disposition = dispositionOverrides.contains(relativeUTF8)
-                                                 ? dispositionOverrides.at(relativeUTF8)
-                                                 : defaultDisposition;
+                    const auto disposition = dispositionOverrides.contains(relativeUTF8) ? dispositionOverrides.at(relativeUTF8)
+                                                                                         : defaultDisposition;
 
                     if (it.is_directory())
                     {
@@ -287,7 +296,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
         }
         //
         // Most probably an MSI or similar, offload execution to the default shell launch action
-        // 
+        //
         else
         {
             std::string args = release.launchArguments.has_value() ? release.launchArguments.value() : std::string{};
@@ -320,7 +329,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
     }
     //
     // Executables can directly be spawned via CreateProcess
-    // 
+    //
     else
     {
         STARTUPINFOA info = {};
@@ -337,15 +346,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
 
         const auto& args = launchArgs.str();
 
-        if (!CreateProcessA(nullptr,
-                            const_cast<LPSTR>(args.c_str()),
-                            nullptr,
-                            nullptr,
-                            TRUE,
-                            0,
-                            nullptr,
-                            nullptr,
-                            &info,
+        if (!CreateProcessA(nullptr, const_cast<LPSTR>(args.c_str()), nullptr, nullptr, TRUE, 0, nullptr, nullptr, &info,
                             &updateProcessInfo))
         {
             win32Error = GetLastError();
