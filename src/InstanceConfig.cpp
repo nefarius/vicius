@@ -424,7 +424,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
         case ProductVersionDetectionMethod::RegistryValue:
         {
             spdlog::debug("Running product detection via registry value");
-            const auto& cfg = merged.GetRegistryValueConfig();
+            const auto cfg = merged.GetRegistryValueConfig();
             HKEY hive = nullptr;
 
             switch (cfg.hive)
@@ -459,7 +459,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                 return std::make_tuple(false, "Failed to open registry key for reading");
             }
 
-            const auto& resource = key.TryGetStringValue(valueName);
+            const auto resource = key.TryGetStringValue(valueName);
 
             if (!resource.IsValid())
             {
@@ -492,8 +492,8 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
         case ProductVersionDetectionMethod::FileVersion:
         {
             spdlog::debug("Running product detection via file version");
-            const auto& cfg = merged.GetFileVersionConfig();
-            const auto& filePath = RenderInjaTemplate(cfg.input, cfg.data);
+            const auto cfg = merged.GetFileVersionConfig();
+            const auto filePath = RenderInjaTemplate(cfg.input, cfg.data);
 
             if (!std::filesystem::exists(filePath))
             {
@@ -539,7 +539,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
         case ProductVersionDetectionMethod::FileSize:
         {
             spdlog::debug("Running product detection via file size");
-            const auto& cfg = merged.GetFileSizeConfig();
+            const auto cfg = merged.GetFileSizeConfig();
 
             if (!release.detectionSize.has_value())
             {
@@ -549,7 +549,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
             try
             {
-                const auto& filePath = RenderInjaTemplate(cfg.input, cfg.data);
+                const auto filePath = RenderInjaTemplate(cfg.input, cfg.data);
 
                 if (!std::filesystem::exists(filePath))
                 {
@@ -576,8 +576,8 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
         case ProductVersionDetectionMethod::FileChecksum:
         {
             spdlog::debug("Running product detection via file checksum");
-            const auto& cfg = merged.GetFileChecksumConfig();
-            const auto& filePath = RenderInjaTemplate(cfg.input, cfg.data);
+            const auto cfg = merged.GetFileChecksumConfig();
+            const auto filePath = RenderInjaTemplate(cfg.input, cfg.data);
 
             if (!release.detectionChecksum.has_value())
             {
@@ -706,7 +706,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
         case ProductVersionDetectionMethod::CustomExpression:
         {
             spdlog::debug("Running product detection via custom expression");
-            const auto& cfg = merged.GetCustomExpressionConfig();
+            const auto cfg = merged.GetCustomExpressionConfig();
 
             if (cfg.input.empty())
             {
@@ -724,7 +724,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             try
             {
                 // expected return value of "true" for outdated and "false" for up2date
-                const auto& result = RenderInjaTemplate(cfg.input, data);
+                const auto result = RenderInjaTemplate(cfg.input, data);
 
                 // string to boolean conversion
                 std::istringstream(result) >> std::boolalpha >> isOutdated;
