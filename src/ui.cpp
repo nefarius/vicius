@@ -96,12 +96,10 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
 {
     ImFontConfig font_cfg;
     font_cfg.FontDataOwnedByAtlas = false;
-    font_cfg.RasterizerDensity = scale;
     font_cfg.OversampleH = 1;
     font_cfg.OversampleV = 1;
 
     ImGuiIO& io = ImGui::GetIO();
-    io.FontGlobalScale = scale;
     io.Fonts->Clear();
 
     // Ruda bold
@@ -120,15 +118,15 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     const LPVOID fk_data = LockResource(LoadResource(hInstance, fk_res));
 
     // Base font
-    io.Fonts->AddFontFromMemoryTTF(ruda_regular_data, ruda_regular_size, sizePixels, &font_cfg);
+    io.Fonts->AddFontFromMemoryTTF(ruda_regular_data, ruda_regular_size, scale * sizePixels, &font_cfg);
 
     // Base font + Fork Awesome merged (default font)
     static constexpr ImWchar fk_range[] = {ICON_MIN_FK, ICON_MAX_FK, 0};
     ImFontConfig fk_cfg;
     fk_cfg.FontDataOwnedByAtlas = false;
     fk_cfg.MergeMode = true;  // merge with default font
-    fk_cfg.GlyphMinAdvanceX = sizePixels;
-    io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels, &fk_cfg, fk_range);
+    fk_cfg.GlyphMinAdvanceX = scale * sizePixels;
+    io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, scale * sizePixels, &fk_cfg, fk_range);
 
     // Base font + Fork Awesome + Emojis merged
     static ImWchar emj_range[] = {0x1, 0x1FFFF, 0};
@@ -136,19 +134,19 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     emj_cfg.OversampleH = emj_cfg.OversampleV = 1;
     emj_cfg.MergeMode = true;
     emj_cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", sizePixels, &emj_cfg, emj_range);
+    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", scale * sizePixels, &emj_cfg, emj_range);
 
     // Bold headings H2
-    io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.2f, &font_cfg);
-    G_Font_H2 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.2f, &fk_cfg, fk_range);
+    io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, scale * sizePixels * 1.2f, &font_cfg);
+    G_Font_H2 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, scale * sizePixels * 1.2f, &fk_cfg, fk_range);
 
     // Bold headings H3 (smaller)
-    io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.0f, &font_cfg);
-    G_Font_H3 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.0f, &fk_cfg, fk_range);
+    io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, scale * sizePixels * 1.0f, &font_cfg);
+    G_Font_H3 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, scale * sizePixels * 1.0f, &fk_cfg, fk_range);
 
     // Bold headings H1
-    io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, sizePixels * 1.5f, &font_cfg);
-    G_Font_H1 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, sizePixels * 1.5f, &fk_cfg, fk_range);
+    io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, scale * sizePixels * 1.5f, &font_cfg);
+    G_Font_H1 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, scale * sizePixels * 1.5f, &fk_cfg, fk_range);
 
     ImGui::SFML::UpdateFontTexture();
 }
