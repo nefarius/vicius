@@ -188,6 +188,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
         const auto terminatePID = GetProcessId(this->terminateProcessBeforeUpdate.value());
         if (!TerminateProcess(this->terminateProcessBeforeUpdate.value(), 0))
         {
+            // TODO: better user feedback; task dialog? Or explicit message in main UI page?
             return {false, NV_E_TERMINATE_PROCESS_BEFORE_UPDATE_FAILED, GetLastError()};
         }
         spdlog::debug("Terminated PID {} due to {}", terminatePID, NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE);
