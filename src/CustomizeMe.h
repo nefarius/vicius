@@ -25,6 +25,17 @@
 #endif
 
 //
+// Customize the updater's own version;
+//
+// for example, if you customize the updater, you probably want to be able to version
+// your customizations, independently of the vicius version.
+//
+// In this case, you could create `v1.7.813+myname1` by specifying '+myname1' here.
+//
+#define NV_CUSTOM_VERSION_SUFFIX ""
+
+
+//
 // Regex for file name extraction, assumes "manufacturer_product_Updater" format
 // Matching value does NOT include file extension
 //
