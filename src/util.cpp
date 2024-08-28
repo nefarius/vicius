@@ -132,7 +132,7 @@ namespace util
         // for 4 digit version we gonna cheat and convert it to a valid semantic version
         if (std::ranges::count_if(s, [](char c) { return c == '.'; }) > 2)
         {
-            s = std::regex_replace(s, std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"), "$1.$2.$3-revision.$4");
+            s = std::regex_replace(s, std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"), "$1.$2.$3+$4");
         }
         // Convert traditional non-semver RC/alphas/betas to semver, e.g. `1.0.0-rc1` -> `1.0.0-rc.1`
         s = std::regex_replace(s, std::regex(R"(([a-zA-Z_]+)(\d+))"), "$1.$2");
