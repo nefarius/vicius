@@ -26,6 +26,8 @@
 #define NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE "--terminate-process-before-update"
 #define NV_CLI_IGNORE_POSTPONE                       "--ignore-postpone"
 #define NV_CLI_PURGE_POSTPONE                        "--purge-postpone"
+#define NV_CLI_PARAM_LOCAL_VERSION       "--local-version"
+#define NV_CLI_PARAM_FORCE_LOCAL_VERSION "--force-local-version"
 // internal
 #define NV_CLI_TEMPORARY                             "--temporary"
 
