@@ -30,7 +30,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     argh::parser cmdl;
 
     cmdl.add_params({NV_CLI_PARAM_LOG_LEVEL, NV_CLI_PARAM_LOG_TO_FILE, NV_CLI_PARAM_SERVER_URL, NV_CLI_PARAM_CHANNEL,
-                     NV_CLI_PARAM_ADD_HEADER, NV_CLI_PARAM_OVERRIDE_OK});
+                     NV_CLI_PARAM_ADD_HEADER, NV_CLI_PARAM_OVERRIDE_OK, NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE});
 
     if (!util::ParseCommandLineArguments(cmdl))
     {
@@ -608,18 +608,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     break;
                     case DownloadAndInstallStep::InstallFailed:
 
-                        std::call_once(
-                          errorUrlTriggered,
-                          [ &cfg ]()
-                          {
-                              if (!cfg.GetInstallErrorUrl().has_value())
-                              {
-                                  return;
-                              }
+                        std::call_once(errorUrlTriggered,
+                                       [ &cfg ]()
+                                       {
+                                           if (!cfg.GetInstallErrorUrl().has_value())
+                                           {
+                                               return;
+                                           }
 
-                              ShellExecuteA(
-                                nullptr, "open", cfg.GetInstallErrorUrl().value().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
-                          });
+                                           ShellExecuteA(nullptr, "open", cfg.GetInstallErrorUrl().value().c_str(), nullptr,
+                                                         nullptr, SW_SHOWNORMAL);
+                                       });
 
                         if (GetLastError() == ERROR_SUCCESS)
                         {
