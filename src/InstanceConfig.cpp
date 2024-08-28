@@ -148,7 +148,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     const auto parentPath = nefarius::winapi::GetProcessFullPath<std::string>(parentProcessId.value_or(0));
 
     //
-    // Make sure pur parent is originating form the exact same file to not load configuration from an impostor *sus*
+    // Make sure our parent is originating form the exact same file to not load configuration from an impostor *sus*
     //
     if (cmdl[ {NV_CLI_TEMPORARY} ] && parentPath)
     {
