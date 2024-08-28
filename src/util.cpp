@@ -128,6 +128,8 @@ namespace util
         {
             s = std::regex_replace(s, std::regex(R"((\d*)\.(\d*)\.(\d*)\.(\d*))"), "$1.$2.$3-rc.$4");
         }
+        // Leading zeroes (e.g. in dates like 2024.08.28) aren't valid in semver
+        s = std::regex_replace(s, std::regex(R"(\b0*(\d+))"), "$1");
     }
 
     void stripNulls(std::string& s) { s.erase(std::ranges::find(s, '\0'), s.end()); }
