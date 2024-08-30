@@ -233,7 +233,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 
 #pragma endregion
 
-    appVersion = util::GetVersionFromFile(appPath);
+    appVersion = semver::version::parse(util::GetVersionFromFile(appPath).str() + NV_CUSTOM_VERSION_SUFFIX);
     spdlog::debug("appVersion = {}", appVersion.str());
 
     appFilename = appPath.stem().string();
