@@ -77,6 +77,8 @@ namespace models
         bool ignorePostponePeriod{false};
         /** True if this process is a temporary copy, false if not */
         bool isTemporaryCopy{false};
+        /** True if NV_CLI_PARAM_FORCE_LOCAL_VERSION was specified, false if not */
+        bool forceLocalVersion{false};
 
         // TODO: implement me!
         NSIGINFO appSigInfo{};

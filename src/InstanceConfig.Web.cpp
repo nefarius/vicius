@@ -329,9 +329,13 @@ retry:
 
             if (shared.productName.has_value()) merged.productName = shared.productName.value();
 
-            if (shared.detectionMethod.has_value()) merged.detectionMethod = shared.detectionMethod.value();
+            // special case where we don't want the server to override what the CLI specified
+            if (!this->forceLocalVersion)
+            {
+                if (shared.detectionMethod.has_value()) merged.detectionMethod = shared.detectionMethod.value();
 
-            if (shared.detection.has_value()) merged.detection = shared.detection.value();
+                if (shared.detection.has_value()) merged.detection = shared.detection.value();
+            }
 
             if (shared.installationErrorUrl.has_value()) merged.installationErrorUrl = shared.installationErrorUrl.value();
 
