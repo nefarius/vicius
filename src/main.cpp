@@ -29,8 +29,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     argh::parser cmdl;
 
-    cmdl.add_params({NV_CLI_PARAM_LOG_LEVEL, NV_CLI_PARAM_LOG_TO_FILE, NV_CLI_PARAM_SERVER_URL, NV_CLI_PARAM_CHANNEL,
-                     NV_CLI_PARAM_ADD_HEADER, NV_CLI_PARAM_OVERRIDE_OK, NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE});
+    cmdl.add_params({
+        NV_CLI_PARAM_LOG_LEVEL,
+        NV_CLI_PARAM_LOG_TO_FILE,
+        NV_CLI_PARAM_SERVER_URL,
+        NV_CLI_PARAM_CHANNEL,
+        NV_CLI_PARAM_ADD_HEADER,
+        NV_CLI_PARAM_OVERRIDE_OK,
+        NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE,
+        NV_CLI_PARAM_LOCAL_VERSION,
+        NV_CLI_PARAM_FORCE_LOCAL_VERSION
+    });
 
     if (!util::ParseCommandLineArguments(cmdl))
     {
