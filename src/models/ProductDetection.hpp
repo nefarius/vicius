@@ -29,7 +29,7 @@ namespace models
                                  {pvdm::FileSize, magic_enum::enum_name(pvdm::FileSize)},
                                  {pvdm::FileChecksum, magic_enum::enum_name(pvdm::FileChecksum)},
                                  {pvdm::CustomExpression, magic_enum::enum_name(pvdm::CustomExpression)},
-                                   {pvdm::FixedVersion, magic_enum::enum_name(pvdm::FixedVersion)},
+                                 {pvdm::FixedVersion, magic_enum::enum_name(pvdm::FixedVersion)},
                                  })
 
     /**
