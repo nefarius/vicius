@@ -331,6 +331,21 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     }
 #endif
 
+    this->forceLocalVersion = static_cast<bool>(cmdl({NV_CLI_PARAM_FORCE_LOCAL_VERSION}));
+
+    if (this->forceLocalVersion)
+    {
+        // Takes priority over config file; intended for manual debugging/fixing stuff
+        merged.detectionMethod = ProductVersionDetectionMethod::FixedVersion;
+        merged.detection = FixedVersionConfig{cmdl(NV_CLI_PARAM_FORCE_LOCAL_VERSION).str()};
+    }
+    else if (cmdl({NV_CLI_PARAM_LOCAL_VERSION}) && merged.detectionMethod == ProductVersionDetectionMethod::Invalid)
+    {
+        // Config files take priority; intended for use when launched by an application
+        merged.detectionMethod = ProductVersionDetectionMethod::FixedVersion;
+        merged.detection = FixedVersionConfig{cmdl(NV_CLI_PARAM_LOCAL_VERSION).str()};
+    }
+
     // avoid accidental fork bomb :P
     if (this->isTemporaryCopy) this->merged.runAsTemporaryCopy = false;
 
@@ -418,6 +433,29 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
 
     switch (merged.detectionMethod)
     {
+        //
+        // We have a fixed version, either from command line, or - presumably local - config file.
+        //
+        case ProductVersionDetectionMethod::FixedVersion:
+        {
+            auto asString = merged.GetFixedVersionConfig().version;
+            spdlog::debug("Using fixed product version {}", asString);
+            try
+            {
+                util::toSemVerCompatible(asString);
+                const semver::version localVersion = semver::version::parse(asString);
+
+                isOutdated = release.GetDetectionSemVersion() > localVersion;
+                spdlog::debug("isOutdated = {}", isOutdated);
+                return std::make_tuple(true, "OK");
+            }
+            catch (const std::exception& e)
+            {
+                spdlog::error("Failed to convert value {} into SemVer, error: {}", asString, e.what());
+                return std::make_tuple(false, std::format("String to SemVer conversion failed: {}", e.what()));
+            }
+        }
+
         //
         // Detect product version via registry key and value
         //

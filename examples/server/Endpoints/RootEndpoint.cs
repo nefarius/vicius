@@ -2,7 +2,7 @@
 
 namespace Nefarius.Vicius.Example.Server.Endpoints;
 
-internal sealed class RootEndpoint : EndpointWithoutRequest
+internal sealed class RootEndpoint(IWebHostEnvironment environment) : EndpointWithoutRequest
 {
     public override void Configure()
     {
@@ -13,6 +13,8 @@ internal sealed class RootEndpoint : EndpointWithoutRequest
 
     public override Task HandleAsync(CancellationToken ct)
     {
-        return SendRedirectAsync("https://docs.nefarius.at/projects/Vicius/", allowRemoteRedirects: true);
+        return environment.IsDevelopment()
+            ? SendNotFoundAsync(ct)
+            : SendRedirectAsync("https://docs.nefarius.at/projects/Vicius/", allowRemoteRedirects: true);
     }
 }

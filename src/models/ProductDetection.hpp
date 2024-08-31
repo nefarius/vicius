@@ -16,6 +16,7 @@ namespace models
         FileSize,
         FileChecksum,
         CustomExpression,
+        FixedVersion,
         Invalid = -1
     };
 
@@ -28,6 +29,7 @@ namespace models
                                  {pvdm::FileSize, magic_enum::enum_name(pvdm::FileSize)},
                                  {pvdm::FileChecksum, magic_enum::enum_name(pvdm::FileChecksum)},
                                  {pvdm::CustomExpression, magic_enum::enum_name(pvdm::CustomExpression)},
+                                 {pvdm::FixedVersion, magic_enum::enum_name(pvdm::FixedVersion)},
                                  })
 
     /**
@@ -103,4 +105,16 @@ namespace models
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CustomExpressionConfig, input, data)
+
+    /**
+     * \brief A custom expression to evaluate.
+     */
+    class FixedVersionConfig
+    {
+    public:
+        /** The fixed version string */
+        std::string version;
+    };
+
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FixedVersionConfig, version)
 }

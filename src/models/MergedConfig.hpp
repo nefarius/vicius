@@ -40,6 +40,8 @@ namespace models
         FileChecksumConfig GetFileChecksumConfig() const { return detection.get<FileChecksumConfig>(); }
 
         CustomExpressionConfig GetCustomExpressionConfig() const { return detection.get<CustomExpressionConfig>(); }
+
+        FixedVersionConfig GetFixedVersionConfig() const { return detection.get<FixedVersionConfig>(); }
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MergedConfig,
