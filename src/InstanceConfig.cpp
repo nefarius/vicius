@@ -331,7 +331,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     }
 #endif
 
-    this->forceLocalVersion = cmdl[ {NV_CLI_PARAM_FORCE_LOCAL_VERSION} ];
+    this->forceLocalVersion = static_cast<bool>(cmdl({NV_CLI_PARAM_FORCE_LOCAL_VERSION}));
 
     if (this->forceLocalVersion)
     {
@@ -339,7 +339,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
         merged.detectionMethod = ProductVersionDetectionMethod::FixedVersion;
         merged.detection = FixedVersionConfig{cmdl(NV_CLI_PARAM_FORCE_LOCAL_VERSION).str()};
     }
-    else if (cmdl[ {NV_CLI_PARAM_LOCAL_VERSION} ] && merged.detectionMethod == ProductVersionDetectionMethod::Invalid)
+    else if (cmdl({NV_CLI_PARAM_LOCAL_VERSION}) && merged.detectionMethod == ProductVersionDetectionMethod::Invalid)
     {
         // Config files take priority; intended for use when launched by an application
         merged.detectionMethod = ProductVersionDetectionMethod::FixedVersion;
