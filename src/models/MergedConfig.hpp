@@ -41,7 +41,7 @@ namespace models
 
         CustomExpressionConfig GetCustomExpressionConfig() const { return detection.get<CustomExpressionConfig>(); }
 
-        std::string GetFixedVersion() const { return detection.get<std::string>(); }
+        FixedVersionConfig GetFixedVersionConfig() const { return detection.get<FixedVersionConfig>(); }
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(MergedConfig,

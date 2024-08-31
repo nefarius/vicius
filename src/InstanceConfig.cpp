@@ -438,7 +438,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
         //
         case ProductVersionDetectionMethod::FixedVersion:
         {
-            auto asString = merged.GetFixedVersion();
+            auto asString = merged.GetFixedVersionConfig().version;
             spdlog::debug("Using fixed product version {}", asString);
             try
             {
