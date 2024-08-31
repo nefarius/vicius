@@ -105,4 +105,16 @@ namespace models
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(CustomExpressionConfig, input, data)
+
+    /**
+     * \brief A custom expression to evaluate.
+     */
+    class FixedVersionConfig
+    {
+    public:
+        /** The fixed version string */
+        std::string version;
+    };
+
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(FixedVersionConfig, version)
 }
