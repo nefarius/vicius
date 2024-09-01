@@ -10,6 +10,9 @@ configuration:
 environment:
   UpdaterName: contoso_EmergencyUrl_Updater
 test: off
+branches:
+  only:
+    - master
 skip_commits:
   files:
     - assets/*
