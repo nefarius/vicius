@@ -163,7 +163,7 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
             }
             catch (const std::exception& e)
             {
-                spdlog::error("Failed to open output file `{}` when extracting zip: {}", outPath.string(), e.what());
+                spdlog::error("Failed to open output file `{}` when extracting zip: {}", outPath, e.what());
                 return std::nullopt;
             }
         }
@@ -317,7 +317,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
             {
                 win32Error = GetLastError();
 
-                spdlog::error("Failed to launch {}, error {:#x}, message {}", tempFile.string(), win32Error,
+                spdlog::error("Failed to launch {}, error {:#x}, message {}", tempFile, win32Error,
                               winapi::GetLastErrorStdStr());
 
                 goto exit;
@@ -352,7 +352,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
         {
             win32Error = GetLastError();
 
-            spdlog::error("Failed to launch {}, error {:#x}, message {}", tempFile.string(), win32Error,
+            spdlog::error("Failed to launch {}, error {:#x}, message {}", tempFile, win32Error,
                           winapi::GetLastErrorStdStr());
 
             goto exit;

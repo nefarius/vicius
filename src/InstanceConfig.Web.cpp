@@ -128,7 +128,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         // ensure this location can be created
         if (!nefarius::winapi::fs::DirectoryCreate(targetDirectory.string()))
         {
-            spdlog::error("Failed to create fallback download location {}, error: {:#x}", targetDirectory.string(),
+            spdlog::error("Failed to create fallback download location {}, error: {:#x}", targetDirectory,
                           GetLastError());
             return -1;
         }
@@ -164,7 +164,7 @@ retry:
     }
     catch (std::ios_base::failure& e)
     {
-        spdlog::error("Failed to open file {}, error {}", release.localTempFilePath.string(), e.what());
+        spdlog::error("Failed to open file {}, error {}", release.localTempFilePath, e.what());
         return -1;
     }
 
@@ -210,7 +210,7 @@ retry:
                 //newLocation.replace_extension(attachmentName.extension());
                 newLocation.replace_filename(attachmentName);
 
-                spdlog::debug("Renaming {} to {}", release.localTempFilePath.string(), newLocation.string());
+                spdlog::debug("Renaming {} to {}", release.localTempFilePath, newLocation);
 
                 DeleteFileA(newLocation.string().c_str());
 
@@ -218,8 +218,8 @@ retry:
                 // otherwise it will fail to launch itself elevated with a "ShellExecuteEx failed" error.
                 if (!MoveFileA(release.localTempFilePath.string().c_str(), newLocation.string().c_str()))
                 {
-                    spdlog::error("Failed to rename {} to {}, error: {:#x}", release.localTempFilePath.string(),
-                                  newLocation.string(), GetLastError());
+                    spdlog::error("Failed to rename {} to {}, error: {:#x}", release.localTempFilePath,
+                                  newLocation, GetLastError());
                 }
                 else
                 {
@@ -249,7 +249,7 @@ retry:
         // clean up local file since we re-download it when the user decides to retry
         if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
         {
-            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}", release.localTempFilePath.string(),
+            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}", release.localTempFilePath,
                          GetLastError(), winapi::GetLastErrorStdStr());
         }
     }

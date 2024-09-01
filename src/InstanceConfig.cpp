@@ -110,7 +110,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     spdlog::debug("channel = {}", channel);
 
     appPath = util::GetImageBasePathW();
-    spdlog::debug("appPath = {}", appPath.string());
+    spdlog::debug("appPath = {}", appPath);
 
     if (cmdl({NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE}))
     {
@@ -153,7 +153,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     if (cmdl[ {NV_CLI_TEMPORARY} ] && parentPath)
     {
         parentAppPath = std::get<std::string>(parentPath.value());
-        spdlog::debug("parentAppPath = {}", parentAppPath.value().string());
+        spdlog::debug("parentAppPath = {}", parentAppPath.value());
 
         std::ifstream parentAppFileStream(parentAppPath.value(), std::ios::binary);
         std::ifstream currentAppFileStream(appPath, std::ios::binary);
@@ -176,7 +176,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
                 {
                     if (parentAppFileStream.fail())
                     {
-                        spdlog::error("Failed to read file {} to the end for hashing, aborting", parentAppPath.value().string());
+                        spdlog::error("Failed to read file {} to the end for hashing, aborting", parentAppPath.value());
                         break;
                     }
                 }
@@ -194,7 +194,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
                 {
                     if (currentAppFileStream.fail())
                     {
-                        spdlog::error("Failed to read file {} to the end for hashing, aborting", appPath.string());
+                        spdlog::error("Failed to read file {} to the end for hashing, aborting", appPath);
                         break;
                     }
                 }
@@ -320,14 +320,14 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
         catch (...)
         {
             // invalid config, too bad
-            spdlog::error("Couldn't deserialize contents of {}", configFile.string());
+            spdlog::error("Couldn't deserialize contents of {}", configFile);
         }
 
         configFileStream.close();
     }
     else
     {
-        spdlog::info("No local configuration found at {}", configFile.string());
+        spdlog::info("No local configuration found at {}", configFile);
     }
 #endif
 
@@ -409,7 +409,7 @@ models::InstanceConfig::~InstanceConfig()
         // delete local setup copy
         if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
         {
-            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}", release.localTempFilePath.string(),
+            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}", release.localTempFilePath,
                          GetLastError(), winapi::GetLastErrorStdStr());
 
             // try to get rid of it on next reboot
@@ -890,7 +890,7 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
     {
         DWORD win32Error = GetLastError();
 
-        spdlog::error("Failed to launch {}, error {:#x}, message {}", temporaryUpdaterPath.string(), win32Error,
+        spdlog::error("Failed to launch {}, error {:#x}, message {}", temporaryUpdaterPath, win32Error,
                       winapi::GetLastErrorStdStr());
 
         return false;
