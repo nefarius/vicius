@@ -14,7 +14,6 @@ skip_commits:
   files:
     - assets/*
     - '**/*.md'
-    - '**/*.json'
     - '**/*.png'
 install:
 - cmd: git submodule -q update --init
