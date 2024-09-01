@@ -890,7 +890,7 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
     {
         DWORD win32Error = GetLastError();
 
-        spdlog::error("Failed to launch {}, error {:#x}, message {}", temporaryUpdaterPath, win32Error,
+        spdlog::error("Failed to launch {}, error {:#x}, message {}", temporaryUpdaterPath.string(), win32Error,
                       winapi::GetLastErrorStdStr());
 
         return false;
