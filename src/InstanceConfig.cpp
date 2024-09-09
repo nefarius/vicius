@@ -115,7 +115,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     if (cmdl({NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE}))
     {
         HANDLE appHandle{};
-        cmdl(NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE) >> appHandle;
+        // A HANDLE is a pointer; cast it to a non-pointer type to make the command line parser to treat the input as decimal
+        cmdl(NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE) >> reinterpret_cast<uintptr_t&>(appHandle);
         if (!appHandle)
         {
             spdlog::error("No handle or 0 passed to {}", NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE);
@@ -128,8 +129,9 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
         }
         else if (!GetProcessId(appHandle))
         {
-            spdlog::error("Value passed to {} was not a valid HANDLE; use DuplicateHandle() with bInheritHandle set. If you "
+            spdlog::error("Value {} passed to {} was not a valid HANDLE; use DuplicateHandle() with bInheritHandle set. If you "
                           "passed a PID, use OpenProcess(). Error: {:#010x}",
+                          reinterpret_cast<uintptr_t>(appHandle),
                           NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE,
                           static_cast<uint32_t>(GetLastError()));
         }
