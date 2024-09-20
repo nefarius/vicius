@@ -878,12 +878,16 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
     narrow.erase(narrow.begin());
 
     // slice together new launch arguments
-    const std::string cliLine =
-      std::format("--temporary {}",
-                  std::accumulate(std::next(narrow.begin()),
-                                  narrow.end(),
-                                  narrow[ 0 ],
-                                  [](const std::string& lhs, const std::string& rhs) { return std::format("{} {}", lhs, rhs); }));
+    const std::string cliLine = narrow.empty()
+                                    ? "--temporary {}"
+                                    : std::format("--temporary {}",
+                                                  std::accumulate(std::next(narrow.begin()),
+                                                                  narrow.end(),
+                                                                  narrow[ 0 ],
+                                                                  [](const std::string& lhs, const std::string& rhs)
+                                                                  {
+                                                                      return std::format("{} {}", lhs, rhs);
+                                                                  }));
 
     STARTUPINFOA info = {};
     info.cb = sizeof(STARTUPINFOA);
