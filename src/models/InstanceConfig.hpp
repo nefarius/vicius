@@ -106,7 +106,7 @@ namespace models
         InstanceConfig& operator=(const InstanceConfig&) = delete;
         InstanceConfig& operator=(InstanceConfig&&) = delete;
 
-        InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl);
+        InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, PDWORD abortError);
 
         ~InstanceConfig();
 

@@ -32,9 +32,12 @@
 #define NV_CLI_TEMPORARY                             "--temporary"
 
 //
-// App error exit codes
+// App exit codes
 //
 
+//
+// Error codes
+// 
 #define NV_E_CLI_PARSING                             100
 #define NV_E_AUTOSTART                               101
 #define NV_E_SCHEDULED_TASK                          102
@@ -47,7 +50,11 @@
 #define NV_E_SETUP_FAILED                            109
 #define NV_E_POSTPONE_PURGE_FAILED                   110
 #define NV_E_TERMINATE_PROCESS_BEFORE_UPDATE_FAILED  111
+#define NV_E_INVALID_PARAMETERS                      112
 
+//
+// Success codes
+// 
 #define NV_S_INSTALL                                 200
 #define NV_S_SELF_UPDATER                            201
 #define NV_S_UP_TO_DATE                              202

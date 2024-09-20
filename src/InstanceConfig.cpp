@@ -4,7 +4,7 @@
 #include "InstanceConfig.hpp"
 
 
-models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) : appInstance(hInstance)
+models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, PDWORD abortError) : appInstance(hInstance)
 {
     //
     // Initialize everything in here that depends on CLI arguments, the environment and a potential configuration file
@@ -70,8 +70,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     // Defaults and embedded stuff
     //
 
-    isSilent = cmdl[ {NV_CLI_BACKGROUND} ] || cmdl[ {NV_CLI_SILENT} ] || cmdl[ {NV_CLI_AUTOSTART} ];
-    ignorePostponePeriod = cmdl[ {NV_CLI_IGNORE_POSTPONE} ];
+    this->isSilent = cmdl[ {NV_CLI_BACKGROUND} ] || cmdl[ {NV_CLI_SILENT} ] || cmdl[ {NV_CLI_AUTOSTART} ];
+    this->ignorePostponePeriod = cmdl[ {NV_CLI_IGNORE_POSTPONE} ];
 
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     // grab our backend URL from string resource
@@ -84,7 +84,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     {
 #endif
         // fallback to compiled-in value
-        serverUrlTemplate = NV_API_URL_TEMPLATE;
+        this->serverUrlTemplate = NV_API_URL_TEMPLATE;
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     }
 #endif
@@ -92,11 +92,11 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
 #if !defined(NDEBUG)
     if (cmdl({NV_CLI_PARAM_SERVER_URL}))
     {
-        serverUrlTemplate = cmdl(NV_CLI_PARAM_SERVER_URL).str();
+        this->serverUrlTemplate = cmdl(NV_CLI_PARAM_SERVER_URL).str();
     }
 #endif
 
-    spdlog::debug("serverUrlTemplate = {}", serverUrlTemplate);
+    spdlog::debug("serverUrlTemplate = {}", this->serverUrlTemplate);
 
     // optional update channel
     if (cmdl({NV_CLI_PARAM_CHANNEL}))
@@ -104,12 +104,12 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
         const auto channelArg = cmdl(NV_CLI_PARAM_CHANNEL).str();
         /* strips "..", "/", "\" and " " */
         std::regex pathRegex(R"([\.{2}\/\\ ])");
-        channel = std::regex_replace(channelArg, pathRegex, "");
+        this->channel = std::regex_replace(channelArg, pathRegex, "");
     }
 
     spdlog::debug("channel = {}", channel);
 
-    appPath = util::GetImageBasePathW();
+    this->appPath = util::GetImageBasePathW();
     spdlog::debug("appPath = {}", appPath);
 
     if (cmdl({NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE}))
@@ -154,6 +154,17 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl) 
     //
     if (cmdl[ {NV_CLI_TEMPORARY} ] && parentPath)
     {
+        // those can not be used together
+        if (this->isSilent)
+        {
+            spdlog::error("Temporary and silent switches can not be used together");
+            if (abortError)
+            {
+                *abortError = NV_E_INVALID_PARAMETERS;
+            }
+            return;
+        }
+
         parentAppPath = std::get<std::string>(parentPath.value());
         spdlog::debug("parentAppPath = {}", parentAppPath.value());
 

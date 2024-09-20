@@ -48,8 +48,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         return NV_E_CLI_PARSING;
     }
 
+    DWORD earlyAbortCode = 0;
+
     // updater configuration, defaults and app state
-    models::InstanceConfig cfg(hInstance, cmdl);
+    models::InstanceConfig cfg(hInstance, cmdl, &earlyAbortCode);
+
+    if (earlyAbortCode)
+    {
+        spdlog::critical("Instance initialization failed");
+        cfg.TryDisplayErrorDialog(
+            "Instance initialization failed",
+            std::format("Booting the updater failed with error code {}", earlyAbortCode)
+        );
+        return earlyAbortCode;
+    }
 
 #pragma region Install command
 
