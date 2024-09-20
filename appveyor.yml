@@ -22,6 +22,7 @@ install:
 - cmd: git submodule -q update --init
 #- cmd: vcpkg integrate install
 #- cmd: vcpkg update
+- cmd: dotnet tool install --global Nefarius.Tools.Vpatch
 # workaround for "CMake Error: Not a file: C:\tools\vcpkg\buildtrees\0.vcpkg_dep_info.cmake"
 - ps: Start-Sleep -Seconds (Get-Random -Minimum 1 -Maximum 6)
 # manifest mode takes forever to build each commit so use global copy instead
