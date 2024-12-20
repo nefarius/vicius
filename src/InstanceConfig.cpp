@@ -64,11 +64,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
 
 #pragma endregion
 
-    if ((cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> this->overriddenSuccessCode))
-    {
-        this->overrideSuccessCode = true;
-    }
-
+    this->overrideSuccessCode = static_cast<bool>(cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> this->overriddenSuccessCode);
+    
     spdlog::debug("Initializing updater instance (PID: {})", GetCurrentProcessId());
 
     //
