@@ -87,7 +87,7 @@ namespace models
 
         void SetCommonHeaders(_Inout_ RestClient::Connection* conn) const;
 
-        std::tuple<bool, DWORD, DWORD> ExecuteSetup();
+        std::tuple<bool, DWORD, DWORD> ExecuteSetup(const std::stop_token&);
 
     public:
         static constexpr int MAX_TIMEOUT_SECS = 30;
@@ -367,7 +367,7 @@ namespace models
          */
         std::string RenderInjaTemplate(const std::string& tpl, const json& data) const;
 
-        bool InvokeSetupAsync();
+        bool InvokeSetupAsync(const std::stop_token&);
 
         void ResetSetupState();
 

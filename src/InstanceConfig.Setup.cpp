@@ -44,9 +44,30 @@ namespace
         }
         return utf8;
     }
+
+    enum class WaitResult {
+        Success,
+        Cancelled,
+    };
+
+    [[nodiscard]]
+    WaitResult CancellableWait(HANDLE object, const std::stop_token& stopToken) {
+        HANDLE stopEvent = CreateEventA(NULL, FALSE, FALSE, NULL);
+        std::stop_callback stopCallback(stopToken, std::bind_front(&SetEvent, stopEvent));
+
+        HANDLE events[] = { object, stopEvent };
+        const auto result = WaitForMultipleObjects(std::size(events), events, FALSE, INFINITE);
+        CloseHandle(stopEvent);
+
+        if (result == WAIT_OBJECT_0) {
+            return WaitResult::Success;
+        }
+
+        return WaitResult::Cancelled;
+    }
 }
 
-bool models::InstanceConfig::InvokeSetupAsync()
+bool models::InstanceConfig::InvokeSetupAsync(const std::stop_token& stopToken)
 {
     // fail if already in-progress
     if (setupTask.has_value())
@@ -54,7 +75,8 @@ bool models::InstanceConfig::InvokeSetupAsync()
         return false;
     }
 
-    setupTask = std::async(std::launch::async, &InstanceConfig::ExecuteSetup, this);
+    // Explicitly copy stopToken so that we don't pass a reference into another thread
+    setupTask = std::async(std::launch::async, &InstanceConfig::ExecuteSetup, this, std::stop_token { stopToken });
 
     return true;
 }
@@ -181,7 +203,7 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
  * \brief Spawns the setup of the update release and waits for it to finish.
  * \return Tuple of success boolean, process exit code and Win32 error code.
  */
-std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
+std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::stop_token& stopToken)
 {
     if (this->terminateProcessBeforeUpdate.has_value())
     {
@@ -323,8 +345,12 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
                 goto exit;
             }
 
-            WaitForSingleObject(execInfo.hProcess, INFINITE);
-            GetExitCodeProcess(execInfo.hProcess, &exitCode);
+
+            if (CancellableWait(execInfo.hProcess, stopToken) == WaitResult::Success) {
+                GetExitCodeProcess(execInfo.hProcess, &exitCode);
+            } else {
+                exitCode = NV_S_CLOSED_WHILE_UPDATER_RUNNING;
+            }
             CloseHandle(execInfo.hProcess);
         }
     }
@@ -361,7 +387,11 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup()
         spdlog::debug("Setup process launched successfully");
 
         WaitForSingleObject(updateProcessInfo.hProcess, INFINITE);
-        GetExitCodeProcess(updateProcessInfo.hProcess, &exitCode);
+        if (CancellableWait(updateProcessInfo.hProcess, stopToken) == WaitResult::Success) {
+            GetExitCodeProcess(updateProcessInfo.hProcess, &exitCode);
+        } else {
+            exitCode = NV_S_CLOSED_WHILE_UPDATER_RUNNING;
+        }
         CloseHandle(updateProcessInfo.hProcess);
         CloseHandle(updateProcessInfo.hThread);
     }
