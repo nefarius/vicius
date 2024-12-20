@@ -63,7 +63,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             "Instance initialization failed",
             std::format("Booting the updater failed with error code {}", earlyAbortCode)
         );
-        return earlyAbortCode;
+        return (int)earlyAbortCode;
     }
 
 #pragma region Install command
@@ -111,9 +111,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
         spdlog::info("Installation tasks finished successfully");
 
-        int successCode = NV_S_INSTALL;
-        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
-        return successCode;
+        return cfg.GetSuccessExitCode(NV_S_INSTALL);
     }
 #endif
 
@@ -160,9 +158,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             return NV_E_SCHEDULED_TASK;
         }
 
-        int successCode = NV_S_INSTALL;
-        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
-        return successCode;
+        return cfg.GetSuccessExitCode(NV_S_INSTALL);
     }
 
 #pragma endregion
@@ -170,9 +166,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // purge postpone data, if any
     if (cmdl[ {NV_CLI_PURGE_POSTPONE} ])
     {
-        int successCode = NV_S_POSTPONE_PURGE;
-        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
-
+        int successCode = cfg.GetSuccessExitCode(NV_S_POSTPONE_PURGE);
         return cfg.PurgePostponeData() ? successCode : NV_E_POSTPONE_PURGE_FAILED;
     }
 
@@ -199,7 +193,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         if (cfg.RunSelfUpdater())
         {
-            return NV_S_SELF_UPDATER;
+            return cfg.GetSuccessExitCode(NV_S_SELF_UPDATER);
         }
 
         spdlog::error("Failed to invoke self-update");
@@ -208,9 +202,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // restart ourselves from a temporary location, if requested
     if (cfg.TryRunTemporaryProcess())
     {
-        int successCode = NV_S_LAUNCHED_TEMPORARY;
-        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
-        return successCode;
+        return cfg.GetSuccessExitCode(NV_S_LAUNCHED_TEMPORARY);
     }
 
     bool isOutdated = false;
@@ -229,18 +221,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     {
         spdlog::info("Installed software is up-to-date");
         cfg.TryDisplayUpToDateDialog();
-        int successCode = NV_S_UP_TO_DATE;
-        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
-        return successCode;
+        return cfg.GetSuccessExitCode(NV_S_UP_TO_DATE);
     }
 
     // there's a pending update but user chose to postpone
     if (cfg.IsInPostponePeriod())
     {
         spdlog::info("Postpone period active, exiting");
-        int successCode = NV_S_POSTPONE_PERIOD;
-        (cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> successCode);
-        return successCode;
+        return cfg.GetSuccessExitCode(NV_S_POSTPONE_PERIOD);
     }
 
     // check if we are currently bothering the user
@@ -405,7 +393,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 if (ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow"))
                 {
                     cfg.SetPostponeData();
-                    status = NV_S_USER_POSTPONED;
+                    status = cfg.GetSuccessExitCode(NV_S_USER_POSTPONED);
                     window.close();
                 }
 
@@ -696,7 +684,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                         // TODO: implement me, right now it simply exits
 
-                        status = NV_S_UPDATE_FINISHED;
+                        status = cfg.GetSuccessExitCode(NV_S_UPDATE_FINISHED);
                         ++currentPage;
 
                         break;
