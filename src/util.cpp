@@ -158,7 +158,10 @@ namespace winapi
             return semver::version{0, 0, 1};
         }
 
-        return semver::version::parse(to_string(versionResult.value()));
+        auto str = to_string(versionResult.value());
+        util::toSemVerCompatible(str);
+
+        return semver::version::parse(str);
     }
 
     semver::version GetWin32ResourceProductVersion(const std::filesystem::path& filePath)
@@ -170,7 +173,9 @@ namespace winapi
             return semver::version{0, 0, 1};
         }
 
-        return semver::version::parse(to_string(versionResult.value()));
+        auto str = to_string(versionResult.value());
+        util::toSemVerCompatible(str);
+        return semver::version::parse(str);
     }
 
     std::string GetLastErrorStdStr(DWORD errorCode)
