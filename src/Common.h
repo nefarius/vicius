@@ -63,3 +63,4 @@
 #define NV_S_POSTPONE_PERIOD                         205
 #define NV_S_POSTPONE_PURGE                          206
 #define NV_S_LAUNCHED_TEMPORARY                      207
+#define NV_S_CLOSED_WHILE_UPDATER_RUNNING            208

@@ -329,6 +329,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     bool isCancelDisabled = false;
     DWORD status = ERROR_SUCCESS;
     std::once_flag errorUrlTriggered;
+    std::stop_source stopSource;
 
     sf::Clock deltaClock;
     while (window.isOpen())
@@ -341,6 +342,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             if (event.type == sf::Event::Closed)
             {
                 window.close();
+                stopSource.request_stop();
             }
         }
 
@@ -582,7 +584,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         break;
                     case DownloadAndInstallStep::PrepareInstall:
                     {
-                        cfg.InvokeSetupAsync();
+                        cfg.InvokeSetupAsync(stopSource.get_token());
 
                         spdlog::debug("Setup process launched asynchronously");
                         instStep = DownloadAndInstallStep::InstallRunning;
