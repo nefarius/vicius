@@ -200,10 +200,8 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="vcpkg.json" />
     <None Include="selfupdater\x64\selfupdater.dll" />
     <None Include="cpp.hint" />
-    <None Include="vcpkg-configuration.json" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="fonts\Ruda-Black.ttf">
