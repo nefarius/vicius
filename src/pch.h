@@ -73,6 +73,7 @@
 #include <expected>
 #include <variant>
 #include <format>
+#include <chrono>
 
 //
 // neflib

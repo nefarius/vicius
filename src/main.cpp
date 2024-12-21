@@ -21,6 +21,12 @@ extern ImFont* G_Font_H2;
 extern ImFont* G_Font_H3;
 
 
+namespace
+{
+    std::future<void> SetWindowFocusAsync(const sf::RenderWindow& window);
+}
+
+
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
@@ -62,7 +68,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         cfg.TryDisplayErrorDialog(
             "Instance initialization failed",
             std::format("Booting the updater failed with error code {}", earlyAbortCode)
-        );
+            );
         return (int)earlyAbortCode;
     }
 
@@ -300,17 +306,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     cfg.SetWindowHandle(hWnd);
 
-    // workaround for
-    // - https://github.com/nefarius/vicius/issues/46
-    // - https://github.com/SFML/imgui-sfml/issues/206
-    // - https://github.com/SFML/imgui-sfml/issues/212
-    SetFocus(hWnd);
-    ImGui::SFML::ProcessEvent(window, sf::Event(sf::Event::LostFocus));
-    ImGui::SFML::ProcessEvent(window, sf::Event(sf::Event::GainedFocus));
-
-    // TODO: try best compromise to display window when user is busy
-    //SendMessage(window.getSystemHandle(), WM_SYSCOMMAND, SC_MINIMIZE, 0);
-
     auto currentPage = WizardPage::Start;
     auto instStep = DownloadAndInstallStep::Begin;
     bool isBackDisabled = false;
@@ -318,6 +313,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     DWORD status = ERROR_SUCCESS;
     std::once_flag errorUrlTriggered;
     std::stop_source stopSource;
+
+    //const auto focusFixFuture = SetWindowFocusAsync(window);
 
     sf::Clock deltaClock;
     while (window.isOpen())
@@ -337,7 +334,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         ImGui::SFML::Update(window, deltaClock.restart());
 
         ImGuiWindowFlags flags =
-          ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
+            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
 
         // fakes a little window border/margin
         const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
@@ -385,8 +382,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (30 * scaleFactor));
                 if (ImGui::Button(ICON_FK_DOWNLOAD " Display update details now"))
                 {
-                    currentPage = cfg.HasSingleRelease() ? WizardPage::SingleVersionSummary
-                                                         : WizardPage::MultipleVersionsOverview;
+                    currentPage = cfg.HasSingleRelease()
+                                      ? WizardPage::SingleVersionSummary
+                                      : WizardPage::MultipleVersionsOverview;
                 }
 
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (20 * scaleFactor));
@@ -489,18 +487,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     // start download
                     cfg.DownloadReleaseAsync(
-                      cfg.GetSelectedReleaseId(),
-                      [](void* pData, double downloadTotal, double downloaded, double uploadTotal, double uploaded) -> int
-                      {
-                          UNREFERENCED_PARAMETER(pData);
-                          UNREFERENCED_PARAMETER(uploadTotal);
-                          UNREFERENCED_PARAMETER(uploaded);
+                        cfg.GetSelectedReleaseId(),
+                        [](void* pData, double downloadTotal, double downloaded, double uploadTotal, double uploaded) -> int
+                        {
+                            UNREFERENCED_PARAMETER(pData);
+                            UNREFERENCED_PARAMETER(uploadTotal);
+                            UNREFERENCED_PARAMETER(uploaded);
 
-                          totalToDownload = downloadTotal;
-                          totalDownloaded = downloaded;
+                            totalToDownload = downloadTotal;
+                            totalDownloaded = downloaded;
 
-                          return CURLE_OK;
-                      });
+                            return CURLE_OK;
+                        });
 
                     instStep = DownloadAndInstallStep::Downloading;
                 }
@@ -509,8 +507,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 if (instStep == DownloadAndInstallStep::Downloading && hasFinished)
                 {
                     spdlog::debug("Download finished with status code {}", statusCode);
-                    instStep = statusCode == httplib::OK_200 ? DownloadAndInstallStep::DownloadSucceeded
-                                                             : DownloadAndInstallStep::DownloadFailed;
+                    instStep = statusCode == httplib::OK_200
+                                   ? DownloadAndInstallStep::DownloadSucceeded
+                                   : DownloadAndInstallStep::DownloadFailed;
                 }
 
                 switch (instStep)
@@ -609,8 +608,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                                 SetLastError(win32Error);
 
-                                instStep = hasSucceeded ? DownloadAndInstallStep::InstallSucceeded
-                                                        : DownloadAndInstallStep::InstallFailed;
+                                instStep = hasSucceeded
+                                               ? DownloadAndInstallStep::InstallSucceeded
+                                               : DownloadAndInstallStep::InstallFailed;
                             }
                         }
                         else
@@ -658,14 +658,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         }
 
                         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (35 * scaleFactor));
-                        /* TODO: currently bugged, fix later!
-                    if (ImGui::Button("Retry now"))
-                    {
-                        instStep = DownloadAndInstallStep::PrepareInstall;
-                    }
+                    /* TODO: currently bugged, fix later!
+                if (ImGui::Button("Retry now"))
+                {
+                    instStep = DownloadAndInstallStep::PrepareInstall;
+                }
 
-                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
-                    */
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
+                */
                         ImGui::Text("You can also press the " ICON_FK_ARROW_LEFT " button in the top left to retry.");
 
                         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + (15 * scaleFactor));
@@ -675,7 +675,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         isBackDisabled = false;
                         status = NV_E_SETUP_FAILED;
 
-                        // TODO: handle error
+                    // TODO: handle error
 
                         break;
                     case DownloadAndInstallStep::InstallSucceeded:
@@ -720,7 +720,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         window.display();
     }
 
+    //focusFixFuture.wait();
+
     ImGui::SFML::Shutdown();
 
     return static_cast<int>(status);
+}
+
+namespace
+{
+    std::future<void> SetWindowFocusAsync(const sf::RenderWindow& window)
+    {
+        const DWORD foregroundThreadId = GetWindowThreadProcessId(window.getSystemHandle(), nullptr);
+        const DWORD currentThreadId = GetCurrentThreadId();
+
+        return std::async(std::launch::async, [&window, foregroundThreadId, currentThreadId]
+        {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+
+            if (AttachThreadInput(currentThreadId, foregroundThreadId, TRUE))
+            {
+                // Even harder workaround for
+                // - https://github.com/nefarius/vicius/issues/46
+                // - https://github.com/SFML/imgui-sfml/issues/206
+                // - https://github.com/SFML/imgui-sfml/issues/212
+                SetForegroundWindow(window.getSystemHandle());
+                ImGui::SFML::ProcessEvent(window, sf::Event(sf::Event::LostFocus));
+                ImGui::SFML::ProcessEvent(window, sf::Event(sf::Event::GainedFocus));
+
+                AttachThreadInput(currentThreadId, foregroundThreadId, FALSE);
+            }
+        });
+    }
 }
