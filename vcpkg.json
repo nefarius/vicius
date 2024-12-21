@@ -13,6 +13,7 @@
         "wchar32"
       ]
     },
+    "argh",
     "imgui-sfml",
     "restclient-cpp",
     "nlohmann-json",
