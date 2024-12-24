@@ -15,6 +15,7 @@
 #include <ole2.h>
 #include <taskschd.h>
 #include <wincrypt.h>
+#include <d3d11.h>
 
 //
 // ImGui, Fonts
