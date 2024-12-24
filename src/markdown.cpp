@@ -128,7 +128,7 @@ struct changelog : public imgui_md
      */
     static ImTextureID ConvertGlTextureHandleToImTextureId(GLuint glTextureHandle)
     {
-        ImTextureID textureID = nullptr;
+        ImTextureID textureID = 0;
         std::memcpy(&textureID, &glTextureHandle, sizeof(GLuint));
         return textureID;
     }

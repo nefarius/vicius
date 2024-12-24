@@ -318,6 +318,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Crypto.cpp" />
+    <ClCompile Include="imgui_impl_dx11.cpp" />
+    <ClCompile Include="imgui_impl_win32.cpp" />
     <ClCompile Include="imgui_md.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -365,6 +367,8 @@
     <ClInclude Include="Formatters.h" />
     <ClInclude Include="IconsForkAwesome.h" />
     <ClInclude Include="ImGuiConfig.h" />
+    <ClInclude Include="imgui_impl_dx11.h" />
+    <ClInclude Include="imgui_impl_win32.h" />
     <ClInclude Include="imgui_md.h" />
     <ClInclude Include="inipp.h" />
     <ClInclude Include="md4c.h" />

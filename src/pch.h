@@ -27,6 +27,8 @@
 #include "imgui_freetype.h"
 #include "imgui-SFML.h"
 #include "IconsForkAwesome.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
 
 //
 // SFML
@@ -40,7 +42,7 @@
 //
 #include "argh.h"
 #include <semver/semver.hpp>
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 #include <winreg/WinReg.hpp>
 #include <hash-library/md5.h>
 #include <hash-library/sha1.h>
