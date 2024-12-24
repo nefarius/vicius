@@ -341,6 +341,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         ImGui::SFML::Update(window, deltaClock.restart());
 
+#pragma region Main ImGui content building
+
         ImGuiWindowFlags flags =
             ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
 
@@ -722,6 +724,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         ImGui::EndDisabled();
 
         ImGui::End();
+
+#pragma endregion
 
         window.clear();
         ImGui::SFML::Render(window);
