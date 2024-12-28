@@ -293,15 +293,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
 
+#define SCALED(_val_)   ((_val_) * scaleFactor)
+
     // get DPI scale
     auto dpi = winapi::GetWindowDPI(hWnd);
     auto scaleFactor = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
-    auto scaledWidth = (windowWidth * scaleFactor);
-    auto scaledHeight = (windowHeight * scaleFactor);
+    auto scaledWidth = SCALED(windowWidth);
+    auto scaledHeight = SCALED(windowHeight);
     window.setSize(sf::Vector2u(static_cast<uint32_t>(scaledWidth), static_cast<uint32_t>(scaledHeight)));
     io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
-
-#define SCALED(_val_)   ((_val_) * scaleFactor)
 
     ui::LoadFonts(hInstance, 16, scaleFactor);
     ui::ApplyImGuiStyleDark(scaleFactor);
