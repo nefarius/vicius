@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Common.h"
 #include <imgui_internal.h>
+#include <wincodec.h>
 
 
 extern ImFont* G_Font_H1;
@@ -178,4 +179,69 @@ void ui::IndeterminateProgressBar(const ImVec2& size_arg)
     RenderFrame(bb.Min, bb.Max, GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
     bb.Expand(ImVec2(-style.FrameBorderSize, -style.FrameBorderSize));
     RenderRectFilledRangeH(window->DrawList, bb, GetColorU32(ImGuiCol_PlotHistogram), t0, t1, style.FrameRounding);
+}
+
+void ui::LoadTextureFromMemory(ID3D11Device* device, const uint8_t* imageData, size_t imageSize,
+                               ID3D11ShaderResourceView** srv)
+{
+    // Step 1: Initialize WIC
+    IWICImagingFactory* wicFactory = nullptr;
+    CoInitialize(nullptr);
+    CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wicFactory));
+
+    // Step 2: Decode the image
+    IWICStream* stream = nullptr;
+    wicFactory->CreateStream(&stream);
+    stream->InitializeFromMemory((BYTE*)imageData, static_cast<DWORD>(imageSize));
+
+    IWICBitmapDecoder* decoder = nullptr;
+    wicFactory->CreateDecoderFromStream(stream, nullptr, WICDecodeMetadataCacheOnLoad, &decoder);
+
+    IWICBitmapFrameDecode* frame = nullptr;
+    decoder->GetFrame(0, &frame);
+
+    IWICFormatConverter* converter = nullptr;
+    wicFactory->CreateFormatConverter(&converter);
+    converter->Initialize(frame, GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, nullptr, 0.0, WICBitmapPaletteTypeCustom);
+
+    UINT width, height;
+    frame->GetSize(&width, &height);
+
+    std::vector<uint8_t> pixelData(width * height * 4); // Assuming RGBA format
+    converter->CopyPixels(nullptr, width * 4, static_cast<UINT>(pixelData.size()), pixelData.data());
+
+    // Step 3: Create the Direct3D texture
+    D3D11_TEXTURE2D_DESC textureDesc = {};
+    textureDesc.Width = width;
+    textureDesc.Height = height;
+    textureDesc.MipLevels = 1;
+    textureDesc.ArraySize = 1;
+    textureDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    textureDesc.SampleDesc.Count = 1;
+    textureDesc.Usage = D3D11_USAGE_DEFAULT;
+    textureDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+
+    D3D11_SUBRESOURCE_DATA initData = {};
+    initData.pSysMem = pixelData.data();
+    initData.SysMemPitch = width * 4;
+
+    ID3D11Texture2D* texture = nullptr;
+    device->CreateTexture2D(&textureDesc, &initData, &texture);
+
+    // Step 4: Create the Shader Resource View
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+    srvDesc.Format = textureDesc.Format;
+    srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+    srvDesc.Texture2D.MipLevels = textureDesc.MipLevels;
+
+    device->CreateShaderResourceView(texture, &srvDesc, srv);
+
+    // Clean up
+    texture->Release();
+    converter->Release();
+    frame->Release();
+    decoder->Release();
+    stream->Release();
+    wicFactory->Release();
+    CoUninitialize();
 }
