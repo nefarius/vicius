@@ -192,6 +192,10 @@ Non-exhaustive list of things open or in-progress...
 
 </details>
 
+## Sponsors
+
+[<img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/jetbrains/jetbrains-original.svg" title="JetBrains ReSharper" alt="JetBrains" width="120" height="120"/>](https://www.jetbrains.com/resharper/)
+
 ## Sources & 3rd party credits
 
 This tool benefits from these awesome projects ❤ (appearance in no special order):
