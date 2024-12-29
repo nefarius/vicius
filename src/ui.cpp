@@ -122,15 +122,15 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     io.Fonts->AddFontFromMemoryTTF(ruda_regular_data, ruda_regular_size, scale * sizePixels, &font_cfg);
 
     // Base font + Fork Awesome merged (default font)
-    static constexpr ImWchar fk_range[] = {ICON_MIN_FK, ICON_MAX_FK, 0};
+    static constexpr ImWchar fk_range[ ] = {ICON_MIN_FK, ICON_MAX_FK, 0};
     ImFontConfig fk_cfg;
     fk_cfg.FontDataOwnedByAtlas = false;
-    fk_cfg.MergeMode = true;  // merge with default font
+    fk_cfg.MergeMode = true; // merge with default font
     fk_cfg.GlyphMinAdvanceX = scale * sizePixels;
     io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, scale * sizePixels, &fk_cfg, fk_range);
 
     // Base font + Fork Awesome + Emojis merged
-    static ImWchar emj_range[] = {0x1, 0x1FFFF, 0};
+    static ImWchar emj_range[ ] = {0x1, 0x1FFFF, 0};
     static ImFontConfig emj_cfg;
     emj_cfg.OversampleH = emj_cfg.OversampleV = 1;
     emj_cfg.MergeMode = true;
@@ -181,36 +181,79 @@ void ui::IndeterminateProgressBar(const ImVec2& size_arg)
     RenderRectFilledRangeH(window->DrawList, bb, GetColorU32(ImGuiCol_PlotHistogram), t0, t1, style.FrameRounding);
 }
 
-void ui::LoadTextureFromMemory(ID3D11Device* device, const uint8_t* imageData, size_t imageSize,
-                               ID3D11ShaderResourceView** srv)
+std::expected<void, HRESULT> ui::LoadTextureFromMemory(
+    ID3D11Device* device,
+    const uint8_t* imageData,
+    size_t imageSize,
+    ID3D11ShaderResourceView** srv
+    )
 {
-    // Step 1: Initialize WIC
+    HRESULT hr = S_OK;
     IWICImagingFactory* wicFactory = nullptr;
-    CoInitialize(nullptr);
-    CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wicFactory));
-
-    // Step 2: Decode the image
     IWICStream* stream = nullptr;
-    wicFactory->CreateStream(&stream);
-    stream->InitializeFromMemory((BYTE*)imageData, static_cast<DWORD>(imageSize));
-
     IWICBitmapDecoder* decoder = nullptr;
-    wicFactory->CreateDecoderFromStream(stream, nullptr, WICDecodeMetadataCacheOnLoad, &decoder);
-
     IWICBitmapFrameDecode* frame = nullptr;
-    decoder->GetFrame(0, &frame);
-
     IWICFormatConverter* converter = nullptr;
-    wicFactory->CreateFormatConverter(&converter);
-    converter->Initialize(frame, GUID_WICPixelFormat32bppRGBA, WICBitmapDitherTypeNone, nullptr, 0.0, WICBitmapPaletteTypeCustom);
+    ID3D11Texture2D* texture = nullptr;
+
+    if (FAILED(hr = CoInitialize(nullptr))) return std::unexpected(hr);
+
+    auto guard = sg::make_scope_guard(
+        [texture, converter, frame, decoder, stream, wicFactory ]() noexcept
+        {
+            if (texture) texture->Release();
+            if (converter) converter->Release();
+            if (frame) frame->Release();
+            if (decoder) decoder->Release();
+            if (stream) stream->Release();
+            if (wicFactory) wicFactory->Release();
+            CoUninitialize();
+        });
+
+    if (FAILED(hr = CoCreateInstance(
+        CLSID_WICImagingFactory,
+        nullptr,
+        CLSCTX_INPROC_SERVER,
+        IID_PPV_ARGS(&wicFactory)
+    )))
+        return std::unexpected(hr);
+
+    if (FAILED(hr = wicFactory->CreateStream(&stream))) return std::unexpected(hr);
+    if (FAILED(hr = stream->InitializeFromMemory((BYTE*)imageData, static_cast<DWORD>(imageSize)))) return std::unexpected(hr);
+
+    if (FAILED(hr = wicFactory->CreateDecoderFromStream(
+        stream,
+        nullptr,
+        WICDecodeMetadataCacheOnLoad,
+        &decoder
+    )))
+        return std::unexpected(hr);
+
+    if (FAILED(hr = decoder->GetFrame(0, &frame))) return std::unexpected(hr);
+
+    if (FAILED(hr = wicFactory->CreateFormatConverter(&converter))) return std::unexpected(hr);
+    if (FAILED(hr = converter->Initialize(
+        frame,
+        GUID_WICPixelFormat32bppRGBA,
+        WICBitmapDitherTypeNone,
+        nullptr,
+        0.0,
+        WICBitmapPaletteTypeCustom
+    )))
+        return std::unexpected(hr);
 
     UINT width, height;
-    frame->GetSize(&width, &height);
+    if (FAILED(hr = frame->GetSize(&width, &height))) return std::unexpected(hr);
 
     std::vector<uint8_t> pixelData(width * height * 4); // Assuming RGBA format
-    converter->CopyPixels(nullptr, width * 4, static_cast<UINT>(pixelData.size()), pixelData.data());
+    if (FAILED(hr = converter->CopyPixels(
+        nullptr,
+        width * 4,
+        static_cast<UINT>(pixelData.size()),
+        pixelData.data()
+    )))
+        return std::unexpected(hr);
 
-    // Step 3: Create the Direct3D texture
     D3D11_TEXTURE2D_DESC textureDesc = {};
     textureDesc.Width = width;
     textureDesc.Height = height;
@@ -225,23 +268,19 @@ void ui::LoadTextureFromMemory(ID3D11Device* device, const uint8_t* imageData, s
     initData.pSysMem = pixelData.data();
     initData.SysMemPitch = width * 4;
 
-    ID3D11Texture2D* texture = nullptr;
-    device->CreateTexture2D(&textureDesc, &initData, &texture);
+    if (FAILED(hr = device->CreateTexture2D(
+        &textureDesc,
+        &initData,
+        &texture
+    )))
+        return std::unexpected(hr);
 
-    // Step 4: Create the Shader Resource View
     D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = textureDesc.Format;
     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
     srvDesc.Texture2D.MipLevels = textureDesc.MipLevels;
 
-    device->CreateShaderResourceView(texture, &srvDesc, srv);
+    if (FAILED(hr = device->CreateShaderResourceView(texture, &srvDesc, srv))) return std::unexpected(hr);
 
-    // Clean up
-    texture->Release();
-    converter->Release();
-    frame->Release();
-    decoder->Release();
-    stream->Release();
-    wicFactory->Release();
-    CoUninitialize();
+    return {};
 }
