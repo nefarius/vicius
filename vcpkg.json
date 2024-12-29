@@ -28,6 +28,7 @@
     "inja",
     "cpp-httplib",
     "libzip",
-    "neflib"
+    "neflib",
+    "directxtk"
   ]
 }
