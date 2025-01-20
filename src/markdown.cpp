@@ -128,7 +128,7 @@ struct changelog : public imgui_md
      */
     static ImTextureID ConvertGlTextureHandleToImTextureId(GLuint glTextureHandle)
     {
-        ImTextureID textureID = nullptr;
+        ImTextureID textureID = 0;
         std::memcpy(&textureID, &glTextureHandle, sizeof(GLuint));
         return textureID;
     }
@@ -170,7 +170,7 @@ struct changelog : public imgui_md
             else if (imageDownloadTasks[ url ].has_value())
             {
                 const auto task = imageDownloadTasks[ url ];
-                const std::future_status status = (*task).wait_for(std::chrono::milliseconds(1));
+                const std::future_status status = task->wait_for(std::chrono::milliseconds(1));
 
                 const bool isDownloading = status == std::future_status::timeout;
                 const bool hasFinished = status == std::future_status::ready;
