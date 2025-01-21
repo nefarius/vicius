@@ -802,7 +802,8 @@ std::tuple<bool, std::string> models::InstanceConfig::RegisterAutostart(const st
 
     if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey); !result)
     {
-        spdlog::error("Failed to open {}", ConvertWideToANSI(subKey));
+        spdlog::error("Failed to open {} (code: {}, message: {})",
+            ConvertWideToANSI(subKey), result.Code(), ConvertWideToANSI(result.ErrorMessage()));
         return std::make_tuple(false, "Failed to open registry key");
     }
 
@@ -811,7 +812,8 @@ std::tuple<bool, std::string> models::InstanceConfig::RegisterAutostart(const st
 
     if (const auto writeResult = key.TrySetStringValue(ConvertAnsiToWide(appFilename), ConvertAnsiToWide(ss.str())); !writeResult)
     {
-        spdlog::error("Failed to write autostart value");
+        spdlog::error("Failed to write autostart value (code: {}, message: {})",
+            writeResult.Code(), ConvertWideToANSI(writeResult.ErrorMessage()));
         return std::make_tuple(false, "Failed to write registry value");
     }
 
