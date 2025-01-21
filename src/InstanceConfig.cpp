@@ -811,6 +811,7 @@ std::tuple<bool, std::string> models::InstanceConfig::RegisterAutostart(const st
 
     std::stringstream ss;
     ss << "\"" << appPath.string() << "\" " << launchArgs;
+    spdlog::debug("String value: {}", ss.str());
 
     if (const auto writeResult = key.TrySetStringValue(ConvertAnsiToWide(appFilename), ConvertAnsiToWide(ss.str())); !writeResult)
     {
