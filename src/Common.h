@@ -51,6 +51,7 @@
 #define NV_E_POSTPONE_PURGE_FAILED                   110
 #define NV_E_TERMINATE_PROCESS_BEFORE_UPDATE_FAILED  111
 #define NV_E_INVALID_PARAMETERS                      112
+#define NV_E_INVALID_MODULE_NAME                     113
 
 //
 // Success codes
