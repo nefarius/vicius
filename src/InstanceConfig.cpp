@@ -116,7 +116,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
     // Main module checks
     // 
 
-    std::regex renamingIssuePattern(R"((\.exe){2,}$)", std::regex_constants::icase);
+    const std::regex renamingIssuePattern(R"((\.exe){2,}$)", std::regex_constants::icase);
 
     /*
      * Catches a common issue with renaming the file thanks to Windows
@@ -149,11 +149,13 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
         }
         else if (!GetProcessId(appHandle))
         {
-            spdlog::error("Value {} passed to {} was not a valid HANDLE; use DuplicateHandle() with bInheritHandle set. If you "
-                          "passed a PID, use OpenProcess(). Error: {:#010x}",
-                          reinterpret_cast<uintptr_t>(appHandle),
-                          NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE,
-                          static_cast<uint32_t>(GetLastError()));
+            spdlog::error(
+                "Value {} passed to {} was not a valid HANDLE; use DuplicateHandle() with bInheritHandle set. If you "
+                "passed a PID, use OpenProcess(). Error: {:#010x}",
+                reinterpret_cast<uintptr_t>(appHandle),
+                NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE,
+                static_cast<uint32_t>(GetLastError())
+                );
         }
         else
         {
