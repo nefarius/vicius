@@ -4,7 +4,8 @@
 #include "InstanceConfig.hpp"
 
 
-models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, PDWORD abortError) : appInstance(hInstance)
+models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, PDWORD abortError)
+    : appInstance(hInstance)
 {
     //
     // Initialize everything in here that depends on CLI arguments, the environment and a potential configuration file
@@ -65,7 +66,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
 #pragma endregion
 
     this->overrideSuccessCode = static_cast<bool>(cmdl({NV_CLI_PARAM_OVERRIDE_OK}) >> this->overriddenSuccessCode);
-    
+
     spdlog::debug("Initializing updater instance (PID: {})", GetCurrentProcessId());
 
     //
@@ -85,8 +86,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
     else
     {
 #endif
-        // fallback to compiled-in value
-        this->serverUrlTemplate = NV_API_URL_TEMPLATE;
+    // fallback to compiled-in value
+    this->serverUrlTemplate = NV_API_URL_TEMPLATE;
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
     }
 #endif
@@ -111,6 +112,26 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
     this->appPath = util::GetImageBasePathW();
     spdlog::debug("appPath = {}", appPath);
 
+    //
+    // Main module checks
+    // 
+
+    std::regex renamingIssuePattern(R"((\.exe){2,}$)", std::regex_constants::icase);
+
+    /*
+     * Catches a common issue with renaming the file thanks to Windows
+     * Explorers' idiotic default settings of hiding the file extension
+     **/
+    if (std::regex_match(this->appPath.string(), renamingIssuePattern))
+    {
+        spdlog::error("Mangled module name detected (appPath: {})", this->appPath.string());
+        if (abortError)
+        {
+            *abortError = NV_E_INVALID_MODULE_NAME;
+        }
+        return;
+    }
+
     if (cmdl({NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE}))
     {
         HANDLE appHandle{};
@@ -123,8 +144,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
         else if (appHandle == GetCurrentProcess())
         {
             spdlog::error(
-              "Pseudo-handle (e.g. from GetCurrentProcess()) passed to {}; use DuplicateHandle() with bInheritHandle set",
-              NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE);
+                "Pseudo-handle (e.g. from GetCurrentProcess()) passed to {}; use DuplicateHandle() with bInheritHandle set",
+                NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE);
         }
         else if (!GetProcessId(appHandle))
         {
@@ -174,7 +195,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
         {
             SHA256 parentSha256Alg, currentSha256Alg;
             // improve hashing speed
-            constexpr std::size_t chunkSize = 4 * 1024;  // 4 KB
+            constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
 
             std::vector<char> parentAppFileBuffer(chunkSize);
             while (!parentAppFileStream.eof())
@@ -298,8 +319,9 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
 #if !defined(NV_FLAGS_NO_CONFIG_FILE)
     const auto configFileName = std::format("{}.json", appFilename);
     // ReSharper disable once CppTooWideScopeInitStatement
-    auto configFile = (!isTemporaryCopy || !parentAppPath.has_value()) ? appPath.parent_path() / configFileName
-                                                                       : parentAppPath.value().parent_path() / configFileName;
+    auto configFile = (!isTemporaryCopy || !parentAppPath.has_value())
+                          ? appPath.parent_path() / configFileName
+                          : parentAppPath.value().parent_path() / configFileName;
 
     if (exists(configFile))
     {
@@ -390,11 +412,13 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
 
     // first try to build "manufacturer/product", then "manufacturer/product/channel" and
     // then use filename as fallback if extraction via regex didn't yield any results
-    tenantSubPath = (!manufacturer.empty() && !product.empty()) ? channel.empty()
-                                                                    ? std::format("{}/{}", manufacturer, product)
-                                                                    : std::format("{}/{}/{}", manufacturer, product, channel)
-                    : channel.empty() ? appFilename
-                                                                : std::format("{}/{}", channel, appFilename);
+    tenantSubPath = (!manufacturer.empty() && !product.empty())
+                        ? channel.empty()
+                              ? std::format("{}/{}", manufacturer, product)
+                              : std::format("{}/{}/{}", manufacturer, product, channel)
+                        : channel.empty()
+                        ? appFilename
+                        : std::format("{}/{}", channel, appFilename);
     spdlog::debug("tenantSubPath = {}", tenantSubPath);
 
     updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
@@ -650,7 +674,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             }
 
             // improve hashing speed
-            constexpr std::size_t chunkSize = 4 * 1024;  // 4 KB
+            constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
 
             // checksum detection data of release
             const auto& hashCfg = release.detectionChecksum.value();
@@ -805,7 +829,7 @@ std::tuple<bool, std::string> models::InstanceConfig::RegisterAutostart(const st
     if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey); !result)
     {
         spdlog::error("Failed to open {} (code: {}, message: {})",
-            ConvertWideToANSI(subKey), result.Code(), ConvertWideToANSI(result.ErrorMessage()));
+                      ConvertWideToANSI(subKey), result.Code(), ConvertWideToANSI(result.ErrorMessage()));
         return std::make_tuple(false, "Failed to open registry key");
     }
 
@@ -816,7 +840,7 @@ std::tuple<bool, std::string> models::InstanceConfig::RegisterAutostart(const st
     if (const auto writeResult = key.TrySetStringValue(ConvertAnsiToWide(appFilename), ConvertAnsiToWide(ss.str())); !writeResult)
     {
         spdlog::error("Failed to write autostart value (code: {}, message: {})",
-            writeResult.Code(), ConvertWideToANSI(writeResult.ErrorMessage()));
+                      writeResult.Code(), ConvertWideToANSI(writeResult.ErrorMessage()));
         return std::make_tuple(false, "Failed to write registry value");
     }
 
@@ -861,7 +885,7 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
     if (!winapi::GetUserTemporaryDirectory(userTempPath)) return false;
 
     std::filesystem::path temporaryUpdaterPath =
-      std::filesystem::path(userTempPath) / std::filesystem::path(std::format("{}.exe", this->appFilename));
+        std::filesystem::path(userTempPath) / std::filesystem::path(std::format("{}.exe", this->appFilename));
 
     if (CopyFileA(this->appPath.string().c_str(), temporaryUpdaterPath.string().c_str(), FALSE) == FALSE) return false;
 
@@ -873,7 +897,7 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
     narrow.reserve(__argc);
     for (int i = 0; i < __argc; i++)
     {
-        narrow.push_back(__argv[ i ]);  // NOLINT(modernize-use-emplace)
+        narrow.push_back(__argv[ i ]); // NOLINT(modernize-use-emplace)
     }
 
     // throw away process path

@@ -72,6 +72,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // updater configuration, defaults and app state
     models::InstanceConfig cfg(hInstance, cmdl, &earlyAbortCode);
 
+    if (earlyAbortCode == NV_E_INVALID_MODULE_NAME)
+    {
+        spdlog::critical("Invalid module name detected");
+        cfg.TryDisplayErrorDialog(
+            "Invalid updater file name detected",
+            "The updater file name contains some invalid sequences, "
+            "make sure you have 'Hide extensions for known file types' "
+            "turned OFF in Windows Explorer, fix the file name and try again."
+            );
+        return (int)earlyAbortCode;
+    }
+
     if (earlyAbortCode)
     {
         spdlog::critical("Instance initialization failed");
