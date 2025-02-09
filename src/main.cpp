@@ -307,7 +307,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         0L, 0L,
         hInstance,
         LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)), nullptr, nullptr, nullptr,
-        windowTitle.c_str(),
+        L"NefariusViciusUpdaterClass",
         nullptr
     };
     ::RegisterClassExW(&wc);
