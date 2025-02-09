@@ -148,8 +148,6 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     // Bold headings H1
     io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, scale * sizePixels * 1.5f, &font_cfg);
     G_Font_H1 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, scale * sizePixels * 1.5f, &fk_cfg, fk_range);
-
-    ImGui::SFML::UpdateFontTexture();
 }
 
 /**

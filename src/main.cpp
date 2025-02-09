@@ -294,41 +294,96 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     //
 
     constexpr int windowWidth = 640, windowHeight = 512;
+
+    const auto windowTitle = nefarius::utilities::ConvertToWide(cfg.GetWindowTitle());
+
+    // Create application window
+    ImGui_ImplWin32_EnableDpiAwareness();
+
+    WNDCLASSEXW wc = {
+        sizeof(wc),
+        CS_CLASSDC,
+        WndProc,
+        0L, 0L,
+        GetModuleHandle(nullptr),
+        LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)), nullptr, nullptr, nullptr,
+        windowTitle.c_str(),
+        nullptr
+    };
+    ::RegisterClassExW(&wc);
+    const HWND hwnd = ::CreateWindowW(
+        wc.lpszClassName, windowTitle.c_str(),
+        WS_OVERLAPPEDWINDOW,
+        CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight,
+        nullptr, nullptr, wc.hInstance, nullptr
+        );
+
+    // Initialize Direct3D
+    if (!CreateDeviceD3D(hwnd))
+    {
+        CleanupDeviceD3D();
+        ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
+        return NV_E_CREATE_D3D_DEVICE;
+    }
+
+    cfg.SetWindowHandle(hwnd);
+
+    // Show the window
+    ::ShowWindow(hwnd, SW_SHOWDEFAULT);
+    ::UpdateWindow(hwnd);
+
+    /*
     sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetWindowTitle(), sf::Style::Titlebar);
     HWND hWnd = window.getSystemHandle();
 
     window.setFramerateLimit(winapi::GetMonitorRefreshRate(hWnd));
     ImGui::SFML::Init(window, false);
+    */
+
+    // Setup Dear ImGui context
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
 
     // disable unused features
     ImGuiIO& io = ImGui::GetIO();
     io.IniFilename = nullptr;
     io.LogFilename = nullptr;
 
+    // Setup Platform/Renderer backends
+    ImGui_ImplWin32_Init(hwnd);
+    ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
+
 #define SCALED(_val_)   ((_val_) * scaleFactor)
 
     // get DPI scale
-    auto dpi = winapi::GetWindowDPI(hWnd);
+    auto dpi = winapi::GetWindowDPI(hwnd);
     auto scaleFactor = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
     auto scaledWidth = SCALED(windowWidth);
     auto scaledHeight = SCALED(windowHeight);
-    window.setSize(sf::Vector2u(static_cast<uint32_t>(scaledWidth), static_cast<uint32_t>(scaledHeight)));
+
+    MoveWindow(
+        hwnd,
+        CW_USEDEFAULT, CW_USEDEFAULT,
+        static_cast<int>(scaledWidth),
+        static_cast<int>(scaledHeight),
+        TRUE
+        );
     io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
 
     ui::LoadFonts(hInstance, 16, scaleFactor);
     ui::ApplyImGuiStyleDark(scaleFactor);
 
     // Set window icon
-    if (auto hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)))
+    /*if (auto hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)))
     {
         SendMessage(hWnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
-    }
+    }*/
 
-    window.setVisible(false);
-    winapi::SetDarkMode(hWnd);
-    window.setVisible(true);
+    //window.setVisible(false);
+    winapi::SetDarkMode(hwnd);
+    //window.setVisible(true);
 
-    cfg.SetWindowHandle(hWnd);
+    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     auto currentPage = WizardPage::Start;
     auto instStep = DownloadAndInstallStep::Begin;
@@ -338,22 +393,44 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     std::once_flag errorUrlTriggered;
     std::stop_source stopSource;
 
-    sf::Clock deltaClock;
-    while (window.isOpen())
+    // Main loop
+    bool done = false;
+    while (!done)
     {
-        sf::Event event{};
-        while (window.pollEvent(event))
+        // Poll and handle messages (inputs, window resize, etc.)
+        // See the WndProc() function below for our to dispatch events to the Win32 backend.
+        MSG msg;
+        while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
         {
-            ImGui::SFML::ProcessEvent(window, event);
+            ::TranslateMessage(&msg);
+            ::DispatchMessage(&msg);
+            if (msg.message == WM_QUIT)
+                done = true;
+        }
+        if (done)
+            break;
 
-            if (event.type == sf::Event::Closed)
-            {
-                window.close();
-                stopSource.request_stop();
-            }
+        // Handle window being minimized or screen locked
+        if (g_SwapChainOccluded && g_pSwapChain->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED)
+        {
+            ::Sleep(10);
+            continue;
+        }
+        g_SwapChainOccluded = false;
+
+        // Handle window resize (we don't resize directly in the WM_SIZE handler)
+        if (g_ResizeWidth != 0 && g_ResizeHeight != 0)
+        {
+            CleanupRenderTarget();
+            g_pSwapChain->ResizeBuffers(0, g_ResizeWidth, g_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
+            g_ResizeWidth = g_ResizeHeight = 0;
+            CreateRenderTarget();
         }
 
-        ImGui::SFML::Update(window, deltaClock.restart());
+        // Start the Dear ImGui frame
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
 
 #pragma region Main ImGui content building
 
@@ -416,7 +493,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 {
                     cfg.SetPostponeData();
                     status = cfg.GetSuccessExitCode(NV_S_USER_POSTPONED);
-                    window.close();
+                    PostQuitMessage(status);
                 }
 
                 if (cfg.GetHelpUrl().has_value())
@@ -424,7 +501,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(20));
                     if (ImGui::Button(ICON_FK_QUESTION " Open help web page"))
                     {
-                        ShellExecuteA(nullptr, "open", cfg.GetHelpUrl().value().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                        ShellExecuteA(
+                            nullptr,
+                            "open",
+                            cfg.GetHelpUrl().value().c_str(),
+                            nullptr, nullptr,
+                            SW_SHOWNORMAL
+                        );
                     }
                 }
 
@@ -720,7 +803,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             }
             case WizardPage::Finish:
             {
-                window.close();
+                PostQuitMessage(status);
 
                 break;
             }
@@ -733,7 +816,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         ImGui::BeginDisabled(isCancelDisabled);
         if (ImGui::Button(currentPage == WizardPage::Finish ? "Finish" : "Cancel"))
         {
-            window.close();
+            PostQuitMessage(status);
         }
         ImGui::EndDisabled();
 
@@ -741,12 +824,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 #pragma endregion
 
-        window.clear();
-        ImGui::SFML::Render(window);
-        window.display();
+        // Rendering
+        ImGui::Render();
+        const float clear_color_with_alpha[ 4 ] = {
+            clear_color.x * clear_color.w,
+            clear_color.y * clear_color.w,
+            clear_color.z * clear_color.w,
+            clear_color.w
+        };
+        g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
+        g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+        // Present
+        HRESULT hr = g_pSwapChain->Present(1, 0); // Present with vsync
+        //HRESULT hr = g_pSwapChain->Present(0, 0); // Present without vsync
+        g_SwapChainOccluded = (hr == DXGI_STATUS_OCCLUDED);
     }
 
-    ImGui::SFML::Shutdown();
+    // Cleanup
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
+    CleanupDeviceD3D();
+    ::DestroyWindow(hwnd);
+    ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
 
     return static_cast<int>(status);
 }

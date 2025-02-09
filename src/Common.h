@@ -52,6 +52,7 @@
 #define NV_E_TERMINATE_PROCESS_BEFORE_UPDATE_FAILED  111
 #define NV_E_INVALID_PARAMETERS                      112
 #define NV_E_INVALID_MODULE_NAME                     113
+#define NV_E_CREATE_D3D_DEVICE                       114
 
 //
 // Success codes
