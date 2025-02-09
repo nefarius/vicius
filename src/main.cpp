@@ -259,6 +259,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         return cfg.GetSuccessExitCode(NV_S_POSTPONE_PERIOD);
     }
 
+#pragma region Busy state check
+
     // check if we are currently bothering the user
     if (!cmdl[ {NV_CLI_IGNORE_BUSY_STATE} ] && cfg.IsSilent())
     {
@@ -288,6 +290,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             }
         }
     }
+
+#pragma endregion
 
     //
     // Main GUI creation
