@@ -332,14 +332,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     ::ShowWindow(hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(hwnd);
 
-    /*
-    sf::RenderWindow window(sf::VideoMode(windowWidth, windowHeight), cfg.GetWindowTitle(), sf::Style::Titlebar);
-    HWND hWnd = window.getSystemHandle();
-
-    window.setFramerateLimit(winapi::GetMonitorRefreshRate(hWnd));
-    ImGui::SFML::Init(window, false);
-    */
-
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -361,7 +353,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     auto scaledWidth = SCALED(windowWidth);
     auto scaledHeight = SCALED(windowHeight);
 
-    BOOL moveRet = MoveWindow(
+    ::MoveWindow(
         hwnd,
         CW_USEDEFAULT, CW_USEDEFAULT,
         static_cast<int>(scaledWidth),
@@ -373,15 +365,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     ui::LoadFonts(hInstance, 16, scaleFactor);
     ui::ApplyImGuiStyleDark(scaleFactor);
 
-    // Set window icon
-    /*if (auto hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)))
-    {
-        SendMessage(hWnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(hIcon));
-    }*/
-
-    //window.setVisible(false);
     winapi::SetDarkMode(hwnd);
-    //window.setVisible(true);
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
