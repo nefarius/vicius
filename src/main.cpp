@@ -387,10 +387,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         // Poll and handle messages (inputs, window resize, etc.)
         // See the WndProc() function below for our to dispatch events to the Win32 backend.
         MSG msg;
-        while (::PeekMessage(&msg, nullptr, 0U, 0U, PM_REMOVE))
+        while (::PeekMessageW(&msg, nullptr, 0U, 0U, PM_REMOVE))
         {
             ::TranslateMessage(&msg);
-            ::DispatchMessage(&msg);
+            ::DispatchMessageW(&msg);
             if (msg.message == WM_QUIT)
                 done = true;
         }
@@ -865,7 +865,7 @@ bool CreateDeviceD3D(HWND hWnd)
     UINT createDeviceFlags = 0;
     //createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
     D3D_FEATURE_LEVEL featureLevel;
-    const D3D_FEATURE_LEVEL featureLevelArray[ 2 ] = {
+    constexpr D3D_FEATURE_LEVEL featureLevelArray[ 2 ] = {
         D3D_FEATURE_LEVEL_11_0,
         D3D_FEATURE_LEVEL_10_0,
     };
