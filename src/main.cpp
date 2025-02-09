@@ -305,7 +305,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         CS_CLASSDC,
         WndProc,
         0L, 0L,
-        GetModuleHandle(nullptr),
+        hInstance,
         LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON_MAIN)), nullptr, nullptr, nullptr,
         windowTitle.c_str(),
         nullptr
