@@ -41,7 +41,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(szCmdLine);
-    UNREFERENCED_PARAMETER(iCmdShow);
 
     argh::parser cmdl;
 
@@ -333,7 +332,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     cfg.SetWindowHandle(hwnd);
 
     // Show the window
-    ::ShowWindow(hwnd, SW_SHOWDEFAULT);
+    ::ShowWindow(hwnd, iCmdShow);
     ::UpdateWindow(hwnd);
 
     // Setup Dear ImGui context
