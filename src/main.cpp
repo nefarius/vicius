@@ -361,7 +361,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     auto scaledWidth = SCALED(windowWidth);
     auto scaledHeight = SCALED(windowHeight);
 
-    MoveWindow(
+    BOOL moveRet = MoveWindow(
         hwnd,
         CW_USEDEFAULT, CW_USEDEFAULT,
         static_cast<int>(scaledWidth),
