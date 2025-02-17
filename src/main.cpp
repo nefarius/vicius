@@ -356,12 +356,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     auto scaledWidth = SCALED(windowWidth);
     auto scaledHeight = SCALED(windowHeight);
 
-    ::MoveWindow(
-        hwnd,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        static_cast<int>(scaledWidth),
-        static_cast<int>(scaledHeight),
-        TRUE
+    ::SetWindowPos(
+        hwnd, // Handle to the window
+        HWND_TOP, // Window position (keep it on top of other windows)
+        0, 0, // X and Y positions (set to 0, 0 to keep the current position)
+        static_cast<int>(scaledWidth), // New width
+        static_cast<int>(scaledHeight), // New height
+        SWP_NOZORDER | SWP_NOMOVE // Don't change the z-order or position
         );
     io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
 
@@ -424,10 +425,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         ImGuiWindowFlags flags =
             ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
 
-        // fakes a little window border/margin
         const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x + 5, mainViewport->WorkPos.y + 5));
-        ImGui::SetNextWindowSize(ImVec2(scaledWidth - 10, scaledHeight - 10));
+        ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x, mainViewport->WorkPos.y));
+        ImGui::SetNextWindowSize(ImVec2(scaledWidth, scaledHeight));
 
         ImGui::Begin("MainWindow", nullptr, flags);
 
