@@ -31,13 +31,6 @@
 #include "imgui_impl_dx11.h"
 
 //
-// SFML
-//
-#include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/System/Clock.hpp>
-#include <SFML/Window/Event.hpp>
-
-//
 // Utility packages
 //
 #include "argh.h"

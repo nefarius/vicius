@@ -14,7 +14,6 @@
     },
     "argh",
     "fmt",
-    "imgui-sfml",
     "restclient-cpp",
     "nlohmann-json",
     "magic-enum",
