@@ -383,12 +383,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     ::ShowWindow(hwnd, iCmdShow);
     ::UpdateWindow(hwnd);
 
-    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
-    if (FAILED(hr))
-    {
-        // TODO: ???
-    }
-
     auto& colors = ImGui::GetStyle().Colors;
     ImVec4 clear_color = colors[ ImGuiCol_WindowBg ];
 

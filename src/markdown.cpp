@@ -173,6 +173,8 @@ struct changelog : imgui_md
         winrt::com_ptr<ID3D11Resource> txt;
         winrt::com_ptr<ID3D11ShaderResourceView> srv;
 
+        winrt::init_apartment();
+
         HRESULT hr = CreateWICTextureFromMemory(
             g_pd3dDevice,
             reinterpret_cast<const uint8_t*>(response.body.data()),
@@ -252,6 +254,8 @@ struct changelog : imgui_md
     {
         if (!srv)
             return {0, 0};
+
+        winrt::init_apartment();
 
         winrt::com_ptr<ID3D11Resource> resource;
         srv->GetResource(resource.put());
