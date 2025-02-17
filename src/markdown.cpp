@@ -22,6 +22,9 @@ struct D3DResource
 {
     winrt::com_ptr<ID3D11Resource> resource;
     winrt::com_ptr<ID3D11ShaderResourceView> view;
+
+    unsigned width;
+    unsigned height;
 };
 
 using OptionalD3DResource = std::optional<D3DResource>;
@@ -186,7 +189,7 @@ struct changelog : imgui_md
     /**
      * \brief Downloads a remote image resource and caches it in memory.
      * \param url The href of the image.
-     * \return Smart pointer of SFML texture or null.
+     * \return An OptionalD3DResource.
      */
     OptionalD3DResource GetImageTexture(const std::string& url)
     {
@@ -225,6 +228,11 @@ struct changelog : imgui_md
                     // got our image, cache and return
                     if (res != std::nullopt)
                     {
+                        auto [ width, height ] = GetTextureSize(res.value().view);
+
+                        res.value().width = width;
+                        res.value().height = height;
+
                         _images.emplace(url, res);
                         return res;
                     }
@@ -266,13 +274,12 @@ struct changelog : imgui_md
     bool get_image(image_info& nfo) const override
     {
         if (const OptionalD3DResource texture = const_cast<changelog*>(this)->GetImageTexture(m_img_href);
-            texture != std::nullopt)
+            texture.has_value())
         {
             const ImTextureID textureID = reinterpret_cast<ImTextureID>(texture.value().view.get());
-            auto [ width, height ] = GetTextureSize(texture.value().view);
 
             nfo.texture_id = textureID;
-            nfo.size = {width * 1.0f, height * 1.0f};
+            nfo.size = {texture.value().width * 1.0f, texture.value().height * 1.0f};
             nfo.uv0 = {0, 0};
             nfo.uv1 = {1, 1};
             nfo.col_tint = {1, 1, 1, 1};
