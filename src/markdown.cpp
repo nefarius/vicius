@@ -85,7 +85,14 @@ struct changelog : public imgui_md
 
                     if (ImGui::IsMouseReleased(0))
                     {
-                        ShellExecuteA(nullptr, "open", real_h_ref.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                        ShellExecuteA(
+                            nullptr,
+                            "open",
+                            real_h_ref.c_str(),
+                            nullptr,
+                            nullptr,
+                            SW_SHOWNORMAL
+                        );
                     }
                 }
             }
