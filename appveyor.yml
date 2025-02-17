@@ -21,7 +21,7 @@ skip_commits:
 install:
 - cmd: git submodule -q update --init
 - cmd: ./vcpkg/bootstrap-vcpkg.bat
-- cmd: winget install Microsoft.VisualStudio.Locator --silent --accept-package-agreements --accept-source-agreements
+- cmd: choco install vswhere
 # Source: https://gist.github.com/nefarius/b60a498b0229b5cf0e338b7a39460b80
 - ps: Setup-VS2022 $env:PLATFORM
 before_build:
