@@ -25,7 +25,7 @@ install:
 # Source: https://gist.github.com/nefarius/b60a498b0229b5cf0e338b7a39460b80
 - ps: Setup-VS2022 $env:PLATFORM
 before_build:
-- cmd: nuget restore vīcĭus.sln
+#- cmd: nuget restore vīcĭus.sln
 - cmd: vpatch.exe --stamp-version "%APPVEYOR_BUILD_VERSION%" --target-file ".\src\vīcĭus.rc" --resource.file-version --resource.product-version
 build:
   project: $(APPVEYOR_BUILD_FOLDER)\vīcĭus.sln
