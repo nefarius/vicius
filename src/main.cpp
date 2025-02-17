@@ -528,10 +528,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                 const auto& release = cfg.GetSelectedRelease();
                 ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
-                ImGui::BeginChild("Summary",
-                                  ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - SCALED(60)),
-                                  false,
-                                  windowFlags);
+                ImGui::BeginChild(
+                    "Summary",
+                    ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - SCALED(60)),
+                    false,
+                    windowFlags
+                    );
                 markdown::RenderChangelog(release.summary.empty() ? "This release contains no summary." : release.summary);
                 ImGui::EndChild();
 
