@@ -331,10 +331,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     cfg.SetWindowHandle(hwnd);
 
-    // Show the window
-    ::ShowWindow(hwnd, iCmdShow);
-    ::UpdateWindow(hwnd);
-
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -350,28 +346,45 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 #define SCALED(_val_)   ((_val_) * scaleFactor)
 
+#pragma warning(disable : 4244)
+
     // get DPI scale
     auto dpi = winapi::GetWindowDPI(hwnd);
-    auto scaleFactor = static_cast<float>(dpi) / static_cast<float>(USER_DEFAULT_SCREEN_DPI);
+    float scaleFactor = (float)dpi / (float)USER_DEFAULT_SCREEN_DPI;
     auto scaledWidth = SCALED(windowWidth);
     auto scaledHeight = SCALED(windowHeight);
 
+    // Get the screen width and height
+    int screenWidth = GetSystemMetrics(SM_CXSCREEN);  // Screen width
+    int screenHeight = GetSystemMetrics(SM_CYSCREEN); // Screen height
+
+    // Calculate the window's position to center it
+    int xPos = (screenWidth - scaledWidth) / 2;
+    int yPos = (screenHeight - scaledHeight) / 2;
+
     ::SetWindowPos(
-        hwnd, // Handle to the window
-        HWND_TOP, // Window position (keep it on top of other windows)
-        0, 0, // X and Y positions (set to 0, 0 to keep the current position)
-        static_cast<int>(scaledWidth), // New width
-        static_cast<int>(scaledHeight), // New height
-        SWP_NOZORDER | SWP_NOMOVE // Don't change the z-order or position
+        hwnd,
+        HWND_TOP,
+        xPos, yPos,
+        scaledWidth,
+        scaledHeight,
+        SWP_NOZORDER
         );
     io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
+
+#pragma warning(default : 4244)
 
     ui::LoadFonts(hInstance, 16, scaleFactor);
     ui::ApplyImGuiStyleDark(scaleFactor);
 
     winapi::SetDarkMode(hwnd);
 
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    // Show the window
+    ::ShowWindow(hwnd, iCmdShow);
+    ::UpdateWindow(hwnd);
+
+    auto& colors = ImGui::GetStyle().Colors;
+    ImVec4 clear_color = colors[ ImGuiCol_WindowBg ];
 
     auto currentPage = WizardPage::Start;
     auto instStep = DownloadAndInstallStep::Begin;
@@ -426,7 +439,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
 
         const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x, mainViewport->WorkPos.y));
+        ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x - 1, mainViewport->WorkPos.y - 1));
         ImGui::SetNextWindowSize(ImVec2(scaledWidth, scaledHeight));
 
         ImGui::Begin("MainWindow", nullptr, flags);
