@@ -170,7 +170,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D3D11.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
@@ -195,7 +195,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D3D11.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
@@ -220,7 +220,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D3D11.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
@@ -249,7 +249,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D3D11.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
@@ -278,7 +278,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D3D11.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
@@ -307,7 +307,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>D3D11.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;dxgi.lib;Rpcrt4.lib;Comctl32.lib;taskschd.lib;comsupp.lib;version.lib;crypt32.lib;ws2_32.lib;winmm.lib;dwmapi.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ResourceCompile>
       <AdditionalOptions>/D SELF_UPDATER_PATH="selfupdater\$(PlatformShortName)\selfupdater.dll"</AdditionalOptions>
