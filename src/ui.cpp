@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Common.h"
 #include <imgui_internal.h>
+#include <wincodec.h>
 
 
 extern ImFont* G_Font_H1;
@@ -121,15 +122,15 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     io.Fonts->AddFontFromMemoryTTF(ruda_regular_data, ruda_regular_size, scale * sizePixels, &font_cfg);
 
     // Base font + Fork Awesome merged (default font)
-    static constexpr ImWchar fk_range[] = {ICON_MIN_FK, ICON_MAX_FK, 0};
+    static constexpr ImWchar fk_range[ ] = {ICON_MIN_FK, ICON_MAX_FK, 0};
     ImFontConfig fk_cfg;
     fk_cfg.FontDataOwnedByAtlas = false;
-    fk_cfg.MergeMode = true;  // merge with default font
+    fk_cfg.MergeMode = true; // merge with default font
     fk_cfg.GlyphMinAdvanceX = scale * sizePixels;
     io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, scale * sizePixels, &fk_cfg, fk_range);
 
     // Base font + Fork Awesome + Emojis merged
-    static ImWchar emj_range[] = {0x1, 0x1FFFF, 0};
+    static ImWchar emj_range[ ] = {0x1, 0x1FFFF, 0};
     static ImFontConfig emj_cfg;
     emj_cfg.OversampleH = emj_cfg.OversampleV = 1;
     emj_cfg.MergeMode = true;
@@ -147,8 +148,6 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     // Bold headings H1
     io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, scale * sizePixels * 1.5f, &font_cfg);
     G_Font_H1 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, scale * sizePixels * 1.5f, &fk_cfg, fk_range);
-
-    ImGui::SFML::UpdateFontTexture();
 }
 
 /**

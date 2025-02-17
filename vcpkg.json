@@ -5,7 +5,6 @@
   "license": "BSD-3-Clause",
   "supports": "!(arm | uwp)",
   "dependencies": [
-    "sfml",
     {
       "name": "imgui",
       "features": [
@@ -28,6 +27,7 @@
     "inja",
     "cpp-httplib",
     "libzip",
-    "neflib"
+    "neflib",
+    "directxtk"
   ]
 }

@@ -24,7 +24,7 @@
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>
 
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/msvc_sink.h>

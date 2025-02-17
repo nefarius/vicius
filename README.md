@@ -226,6 +226,7 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [A C++ header-only HTTP/HTTPS server and client library](https://github.com/yhirose/cpp-httplib)
 - [A C library for reading, creating, and modifying zip archives](https://github.com/nih-at/libzip)
 - [My opinionated collection of C++ utilities](https://github.com/nefarius/neflib)
+- [The DirectX Tool Kit (aka DirectXTK)](https://github.com/microsoft/DirectXTK)
 
 ### Literature & references
 
@@ -247,6 +248,7 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [C++ Library Manager for Windows, Linux, and MacOS](https://github.com/microsoft/vcpkg)
 - [Silently Install EXE and MSI setup applications (Unattended) - How To Guide](https://www.advancedinstaller.com/silent-install-exe-msi-applications.html)
 - [Markdown Guide Basic Syntax](https://markdownguide.offshoot.io/basic-syntax/)
+- [WICTextureLoader](https://github.com/microsoft/DirectXTK/wiki/WICTextureLoader)
 
 #### DPI-awareness
 

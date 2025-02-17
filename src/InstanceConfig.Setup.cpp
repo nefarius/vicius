@@ -349,7 +349,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::s
             if (CancellableWait(execInfo.hProcess, stopToken) == WaitResult::Success) {
                 GetExitCodeProcess(execInfo.hProcess, &exitCode);
             } else {
-                exitCode = NV_S_CLOSED_WHILE_UPDATER_RUNNING;
+                exitCode = this->GetSuccessExitCode(NV_S_CLOSED_WHILE_UPDATER_RUNNING);
             }
             CloseHandle(execInfo.hProcess);
         }
@@ -390,7 +390,7 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::s
         if (CancellableWait(updateProcessInfo.hProcess, stopToken) == WaitResult::Success) {
             GetExitCodeProcess(updateProcessInfo.hProcess, &exitCode);
         } else {
-            exitCode = NV_S_CLOSED_WHILE_UPDATER_RUNNING;
+            exitCode = this->GetSuccessExitCode(NV_S_CLOSED_WHILE_UPDATER_RUNNING);
         }
         CloseHandle(updateProcessInfo.hProcess);
         CloseHandle(updateProcessInfo.hThread);
