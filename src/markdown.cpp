@@ -207,7 +207,7 @@ struct changelog : public imgui_md
             // task is running or finished
             else if (imageDownloadTasks[ url ].has_value())
             {
-                const auto task = imageDownloadTasks[ url ];
+                const OptionalSharedFutureD3DResource task = imageDownloadTasks[ url ];
                 const std::future_status status = task->wait_for(std::chrono::milliseconds(1));
 
                 const bool isDownloading = status == std::future_status::timeout;
