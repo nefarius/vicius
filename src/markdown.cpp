@@ -34,7 +34,10 @@ using D3DResourceMap = std::map<std::string, OptionalD3DResource>;
 
 
 // Mapping of image URLs -> DirectX textures
-static D3DResourceMap G_ImageTextures;
+namespace
+{
+    D3DResourceMap G_ImageTextures;
+}
 
 
 /**
