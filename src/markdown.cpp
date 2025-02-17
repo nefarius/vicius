@@ -119,7 +119,17 @@ struct changelog : public imgui_md
         return ImGui::GetStyle().Colors[ ImGuiCol_Text ];
     }
 
-    void open_url() const override { ShellExecuteA(nullptr, "open", m_href.c_str(), nullptr, nullptr, SW_SHOWNORMAL); }
+    void open_url() const override
+    {
+        ShellExecuteA(
+            nullptr,
+            "open",
+            m_href.c_str(),
+            nullptr,
+            nullptr,
+            SW_SHOWNORMAL
+            );
+    }
 
     /**
      * \brief sf::Texture handle to ImTextureID.
