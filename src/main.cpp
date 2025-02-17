@@ -316,7 +316,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     ::RegisterClassExW(&wc);
     const HWND hwnd = ::CreateWindowW(
         wc.lpszClassName, windowTitle.c_str(),
-        WS_OVERLAPPEDWINDOW,
+        WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX,
         CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight,
         nullptr, nullptr, wc.hInstance, nullptr
         );
@@ -530,7 +530,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
                 ImGui::BeginChild(
                     "Summary",
-                    ImVec2(ImGui::GetContentRegionAvail().x, ImGui::GetContentRegionAvail().y - SCALED(60)),
+                    ImVec2(ImGui::GetContentRegionAvail().x - SCALED(20), ImGui::GetContentRegionAvail().y - SCALED(100)),
                     false,
                     windowFlags
                     );
@@ -974,16 +974,18 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_SIZE:
             if (wParam == SIZE_MINIMIZED)
                 return 0;
-            g_ResizeWidth = (UINT)LOWORD(lParam); // Queue resize
-            g_ResizeHeight = (UINT)HIWORD(lParam);
+            g_ResizeWidth = static_cast<UINT>(LOWORD(lParam)); // Queue resize
+            g_ResizeHeight = static_cast<UINT>(HIWORD(lParam));
             return 0;
         case WM_SYSCOMMAND:
             if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
                 return 0;
+            if (wParam == SC_MAXIMIZE) // Disable maximize
+                return 0;
             break;
         case WM_DESTROY:
-            ::PostQuitMessage(0);
+            PostQuitMessage(0);
             return 0;
     }
-    return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+    return DefWindowProcW(hWnd, msg, wParam, lParam);
 }
