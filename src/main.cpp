@@ -21,7 +21,7 @@ extern ImFont* G_Font_H2;
 extern ImFont* G_Font_H3;
 
 // Data
-static ID3D11Device* g_pd3dDevice = nullptr;
+ID3D11Device* g_pd3dDevice = nullptr;
 static ID3D11DeviceContext* g_pd3dDeviceContext = nullptr;
 static IDXGISwapChain* g_pSwapChain = nullptr;
 static bool g_SwapChainOccluded = false;
