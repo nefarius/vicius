@@ -1,10 +1,13 @@
 #include "pch.h"
-#include "Common.h"
 #include "imgui_md.h"
-#include <SFML/Graphics/Texture.hpp>
-#include <SFML/OpenGL.hpp>
+
 #include <restclient-cpp/restclient.h>
 #include <restclient-cpp/connection.h>
+
+#include <directxtk/WICTextureLoader.h>
+#include <winrt/base.h>
+
+using namespace DirectX;
 
 
 // Fonts shared throughout app
@@ -13,25 +16,47 @@ ImFont* G_Font_H2 = nullptr;
 ImFont* G_Font_H3 = nullptr;
 ImFont* G_Font_Default = nullptr;
 
-// Mapping of image URLs -> OpenGL textures
-static std::map<std::string, std::shared_ptr<sf::Texture>> G_ImageTextures;
+extern ID3D11Device* g_pd3dDevice;
+
+struct D3DResource
+{
+    winrt::com_ptr<ID3D11Resource> resource;
+    winrt::com_ptr<ID3D11ShaderResourceView> view;
+
+    unsigned width;
+    unsigned height;
+};
+
+using OptionalD3DResource = std::optional<D3DResource>;
+using SharedFutureD3DResource = std::shared_future<OptionalD3DResource>;
+using OptionalSharedFutureD3DResource = std::optional<SharedFutureD3DResource>;
+using D3DResourceMap = std::map<std::string, OptionalD3DResource>;
+
+
+// Mapping of image URLs -> DirectX textures
+namespace
+{
+    D3DResourceMap G_ImageTextures;
+}
 
 
 /**
  * \brief Markdown parser and render widget.
  */
-struct changelog : public imgui_md
+struct changelog : imgui_md
 {
-    std::map<std::string, std::shared_ptr<sf::Texture>> _images;
+    std::map<std::string, OptionalD3DResource> _images;
     std::string m_img_href;
     std::regex m_regex_link_target;
-    std::map<std::string, std::optional<std::shared_future<std::shared_ptr<sf::Texture>>>> imageDownloadTasks;
+    std::map<std::string /* URL */, OptionalSharedFutureD3DResource /* Texture downloader */> imageDownloadTasks;
 
-    explicit changelog(const std::map<std::string, std::shared_ptr<sf::Texture>>& images) : _images(images)
+    explicit changelog(const D3DResourceMap& images)
+        : _images(images)
     {
         m_regex_link_target = std::regex(
-          R"(\)\]\((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))\))",
-          std::regex_constants::icase);
+            R"(\)\]\((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))\))",
+            std::regex_constants::icase
+            );
     }
 
     void SPAN_IMG(const MD_SPAN_IMG_DETAIL* d, bool e) override
@@ -85,7 +110,14 @@ struct changelog : public imgui_md
 
                     if (ImGui::IsMouseReleased(0))
                     {
-                        ShellExecuteA(nullptr, "open", real_h_ref.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                        ShellExecuteA(
+                            nullptr,
+                            "open",
+                            real_h_ref.c_str(),
+                            nullptr,
+                            nullptr,
+                            SW_SHOWNORMAL
+                            );
                     }
                 }
             }
@@ -119,21 +151,20 @@ struct changelog : public imgui_md
         return ImGui::GetStyle().Colors[ ImGuiCol_Text ];
     }
 
-    void open_url() const override { ShellExecuteA(nullptr, "open", m_href.c_str(), nullptr, nullptr, SW_SHOWNORMAL); }
-
-    /**
-     * \brief sf::Texture handle to ImTextureID.
-     * \param glTextureHandle The SFML Texture object native handle.
-     * \return The ImGui Texture ID.
-     */
-    static ImTextureID ConvertGlTextureHandleToImTextureId(GLuint glTextureHandle)
+    void open_url() const override
     {
-        ImTextureID textureID = nullptr;
-        std::memcpy(&textureID, &glTextureHandle, sizeof(GLuint));
-        return textureID;
+        ShellExecuteA(
+            nullptr,
+            "open",
+            m_href.c_str(),
+            nullptr,
+            nullptr,
+            SW_SHOWNORMAL
+            );
     }
 
-    std::shared_ptr<sf::Texture> DownloadImageTexture(const std::string& url) const
+    // ReSharper disable once CppMemberFunctionMayBeStatic
+    OptionalD3DResource DownloadImageTexture(const std::string& url) const
     {
         const auto conn = new RestClient::Connection("");
         conn->FollowRedirects(true, 5);
@@ -141,20 +172,32 @@ struct changelog : public imgui_md
 
         const RestClient::Response response = conn->get(url);
 
-        if (response.code != httplib::OK_200) return nullptr;
+        if (response.code != httplib::OK_200) return std::nullopt;
 
-        auto res = std::make_shared<sf::Texture>();
-        res->loadFromMemory(response.body.data(), response.body.length());
+        winrt::com_ptr<ID3D11Resource> txt;
+        winrt::com_ptr<ID3D11ShaderResourceView> srv;
 
-        return res;
+        winrt::init_apartment();
+
+        HRESULT hr = CreateWICTextureFromMemory(
+            g_pd3dDevice,
+            reinterpret_cast<const uint8_t*>(response.body.data()),
+            response.body.length(),
+            txt.put(),
+            srv.put()
+            );
+
+        return SUCCEEDED(hr)
+                   ? std::make_optional<D3DResource>({txt, srv})
+                   : std::nullopt;
     }
 
     /**
      * \brief Downloads a remote image resource and caches it in memory.
      * \param url The href of the image.
-     * \return Smart pointer of SFML texture or null.
+     * \return An OptionalD3DResource.
      */
-    std::shared_ptr<sf::Texture> GetImageTexture(const std::string& url)
+    OptionalD3DResource GetImageTexture(const std::string& url)
     {
         // this gets called on every frame so we only download it once and cache it
         if (!_images.contains(url))
@@ -162,30 +205,40 @@ struct changelog : public imgui_md
             // no download task is assigned to the given url, initiate
             if (!imageDownloadTasks.contains(url) || !imageDownloadTasks[ url ].has_value())
             {
-                const std::optional<std::shared_future<std::shared_ptr<sf::Texture>>> downloadTask =
-                  std::async(std::launch::async, &changelog::DownloadImageTexture, this, url);
+                const OptionalSharedFutureD3DResource downloadTask =
+                    std::async(
+                        std::launch::async,
+                        &changelog::DownloadImageTexture,
+                        this,
+                        url
+                        );
                 imageDownloadTasks[ url ] = downloadTask;
             }
             // task is running or finished
             else if (imageDownloadTasks[ url ].has_value())
             {
-                const auto task = imageDownloadTasks[ url ];
-                const std::future_status status = (*task).wait_for(std::chrono::milliseconds(1));
+                const OptionalSharedFutureD3DResource task = imageDownloadTasks[ url ];
+                const std::future_status status = task->wait_for(std::chrono::milliseconds(1));
 
                 const bool isDownloading = status == std::future_status::timeout;
                 const bool hasFinished = status == std::future_status::ready;
 
                 // no texture to report yet
-                if (isDownloading) return nullptr;
+                if (isDownloading) return std::nullopt;
 
                 // task done (succeeded or failed)
                 if (hasFinished)
                 {
-                    auto res = (*task).get();
+                    auto res = task->get();
 
                     // got our image, cache and return
-                    if (res != nullptr)
+                    if (res != std::nullopt)
                     {
+                        auto [ width, height ] = GetTextureSize(res.value().view);
+
+                        res.value().width = width;
+                        res.value().height = height;
+
                         _images.emplace(url, res);
                         return res;
                     }
@@ -195,10 +248,30 @@ struct changelog : public imgui_md
                 }
             }
 
-            return nullptr;
+            return std::nullopt;
         }
 
         return _images[ url ];
+    }
+
+    static std::pair<uint32_t, uint32_t> GetTextureSize(const winrt::com_ptr<ID3D11ShaderResourceView>& srv)
+    {
+        if (!srv)
+            return {0, 0};
+
+        winrt::init_apartment();
+
+        winrt::com_ptr<ID3D11Resource> resource;
+        srv->GetResource(resource.put());
+
+        winrt::com_ptr<ID3D11Texture2D> texture;
+        if (FAILED(resource->QueryInterface(IID_PPV_ARGS(texture.put()))))
+            return {0, 0}; // Not a texture2D
+
+        D3D11_TEXTURE2D_DESC desc;
+        texture->GetDesc(&desc);
+
+        return {desc.Width, desc.Height};
     }
 
     /**
@@ -208,13 +281,13 @@ struct changelog : public imgui_md
      */
     bool get_image(image_info& nfo) const override
     {
-        if (const auto texture = const_cast<changelog*>(this)->GetImageTexture(m_img_href); texture != nullptr)
+        if (const OptionalD3DResource texture = const_cast<changelog*>(this)->GetImageTexture(m_img_href);
+            texture.has_value())
         {
-            const ImTextureID textureID = ConvertGlTextureHandleToImTextureId(texture->getNativeHandle());
-            const auto size = texture->getSize();
+            const ImTextureID textureID = reinterpret_cast<ImTextureID>(texture.value().view.get());
 
             nfo.texture_id = textureID;
-            nfo.size = {size.x * 1.0f, size.y * 1.0f};
+            nfo.size = {texture.value().width * 1.0f, texture.value().height * 1.0f};
             nfo.uv0 = {0, 0};
             nfo.uv1 = {1, 1};
             nfo.col_tint = {1, 1, 1, 1};

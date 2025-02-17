@@ -79,6 +79,10 @@ namespace models
         bool isTemporaryCopy{false};
         /** True if NV_CLI_PARAM_FORCE_LOCAL_VERSION was specified, false if not */
         bool forceLocalVersion{false};
+        /** Whether NV_CLI_PARAM_OVERRIDE_OK was supplied */
+        bool overrideSuccessCode{false};
+        /** The value supplied by NV_CLI_PARAM_OVERRIDE_OK */
+        int overriddenSuccessCode{ERROR_SUCCESS};
 
         // TODO: implement me!
         NSIGINFO appSigInfo{};
@@ -375,6 +379,11 @@ namespace models
         GetSetupStatus(bool& isRunning, bool& hasFinished, bool& hasSucceeded, DWORD& exitCode, DWORD& win32Error) const;
 
         bool TryRunTemporaryProcess() const;
+
+        bool GetSuccessExitCode(int exitCode) const
+        {
+            return this->overrideSuccessCode ? this->overriddenSuccessCode : exitCode;
+        }
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InstanceConfig, serverUrlTemplate, filenameRegex, authority)

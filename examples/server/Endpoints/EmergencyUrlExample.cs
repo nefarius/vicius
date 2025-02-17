@@ -11,7 +11,7 @@ internal sealed class EmergencyUrlExampleEndpoint : EndpointWithoutRequest
 {
     public override void Configure()
     {
-        Get("api/contoso/EmergencyUrl/updates.json");
+        Get("api/contoso/EmergencyUrl/updates.json", "api/example/Demo/updates.json");
         AllowAnonymous();
         Options(x => x.WithTags("Examples"));
     }

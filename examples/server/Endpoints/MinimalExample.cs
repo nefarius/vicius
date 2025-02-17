@@ -55,6 +55,8 @@ internal sealed class MinimalExampleEndpoint : EndpointWithoutRequest
                                 * If we need scroll bars
                                 * Vertically
                                 * [Links are also supported!](https://example.org)
+                                
+                              ![Demo Logo](https://nefarius.at/wp-content/uploads/nefarius-logo-website.png)
                               """,
                     // pulling bigger (~50MB) .NET runtime setup as an example to demo progress bar
                     DownloadUrl =

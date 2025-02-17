@@ -15,6 +15,7 @@
 #include <ole2.h>
 #include <taskschd.h>
 #include <wincrypt.h>
+#include <d3d11.h>
 
 //
 // ImGui, Fonts
@@ -25,22 +26,16 @@
 #endif
 #include "imgui.h"
 #include "imgui_freetype.h"
-#include "imgui-SFML.h"
 #include "IconsForkAwesome.h"
-
-//
-// SFML
-//
-#include <SFML/Graphics/RenderWindow.hpp>
-#include <SFML/System/Clock.hpp>
-#include <SFML/Window/Event.hpp>
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
 
 //
 // Utility packages
 //
 #include "argh.h"
 #include <semver/semver.hpp>
-#include <magic_enum.hpp>
+#include <magic_enum/magic_enum.hpp>
 #include <winreg/WinReg.hpp>
 #include <hash-library/md5.h>
 #include <hash-library/sha1.h>
@@ -73,6 +68,7 @@
 #include <expected>
 #include <variant>
 #include <format>
+#include <chrono>
 
 //
 // neflib
