@@ -52,7 +52,8 @@ struct changelog : imgui_md
     {
         m_regex_link_target = std::regex(
             R"(\)\]\((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))\))",
-            std::regex_constants::icase);
+            std::regex_constants::icase
+            );
     }
 
     void SPAN_IMG(const MD_SPAN_IMG_DETAIL* d, bool e) override
