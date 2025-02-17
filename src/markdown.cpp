@@ -37,18 +37,19 @@ static D3DResourceMap G_ImageTextures;
 /**
  * \brief Markdown parser and render widget.
  */
-struct changelog : public imgui_md
+struct changelog : imgui_md
 {
     std::map<std::string, OptionalD3DResource> _images;
     std::string m_img_href;
     std::regex m_regex_link_target;
     std::map<std::string /* URL */, OptionalSharedFutureD3DResource /* Texture downloader */> imageDownloadTasks;
 
-    explicit changelog(const D3DResourceMap& images) : _images(images)
+    explicit changelog(const D3DResourceMap& images)
+        : _images(images)
     {
         m_regex_link_target = std::regex(
-          R"(\)\]\((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))\))",
-          std::regex_constants::icase);
+            R"(\)\]\((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))\))",
+            std::regex_constants::icase);
     }
 
     void SPAN_IMG(const MD_SPAN_IMG_DETAIL* d, bool e) override
@@ -109,7 +110,7 @@ struct changelog : public imgui_md
                             nullptr,
                             nullptr,
                             SW_SHOWNORMAL
-                        );
+                            );
                     }
                 }
             }
@@ -242,19 +243,19 @@ struct changelog : public imgui_md
     static std::pair<uint32_t, uint32_t> GetTextureSize(const winrt::com_ptr<ID3D11ShaderResourceView>& srv)
     {
         if (!srv)
-            return { 0, 0 };
+            return {0, 0};
 
         winrt::com_ptr<ID3D11Resource> resource;
         srv->GetResource(resource.put());
 
         winrt::com_ptr<ID3D11Texture2D> texture;
         if (FAILED(resource->QueryInterface(IID_PPV_ARGS(texture.put()))))
-            return { 0, 0 }; // Not a texture2D
+            return {0, 0}; // Not a texture2D
 
         D3D11_TEXTURE2D_DESC desc;
         texture->GetDesc(&desc);
 
-        return { desc.Width, desc.Height };
+        return {desc.Width, desc.Height};
     }
 
     /**
@@ -264,10 +265,11 @@ struct changelog : public imgui_md
      */
     bool get_image(image_info& nfo) const override
     {
-        if (const OptionalD3DResource texture = const_cast<changelog*>(this)->GetImageTexture(m_img_href); texture != std::nullopt)
+        if (const OptionalD3DResource texture = const_cast<changelog*>(this)->GetImageTexture(m_img_href);
+            texture != std::nullopt)
         {
-            const ImTextureID textureID = reinterpret_cast<ImTextureID>(texture.value().resource.get());
-            auto [width, height] = GetTextureSize(texture.value().view);
+            const ImTextureID textureID = reinterpret_cast<ImTextureID>(texture.value().view.get());
+            auto [ width, height ] = GetTextureSize(texture.value().view);
 
             nfo.texture_id = textureID;
             nfo.size = {width * 1.0f, height * 1.0f};
