@@ -493,7 +493,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 {
                     cfg.SetPostponeData();
                     status = cfg.GetSuccessExitCode(NV_S_USER_POSTPONED);
-                    PostQuitMessage(status);
+                    PostQuitMessage((int)status);
                 }
 
                 if (cfg.GetHelpUrl().has_value())
