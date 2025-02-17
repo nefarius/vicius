@@ -5,6 +5,7 @@
 #include <SFML/OpenGL.hpp>
 #include <restclient-cpp/restclient.h>
 #include <restclient-cpp/connection.h>
+#include <directxtk/WICTextureLoader.h>
 
 
 // Fonts shared throughout app
