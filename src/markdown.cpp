@@ -23,8 +23,8 @@ struct D3DResource
     winrt::com_ptr<ID3D11Resource> resource;
     winrt::com_ptr<ID3D11ShaderResourceView> view;
 
-    unsigned width;
-    unsigned height;
+    uint32_t width;
+    uint32_t height;
 };
 
 using OptionalD3DResource = std::optional<D3DResource>;
