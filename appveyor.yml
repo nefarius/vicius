@@ -34,8 +34,6 @@ after_build:
 artifacts:
 - path: bin\**\*.exe
   name: Updater
-- path: bin\**\*.pdb
-  name: Symbols
 deploy:
 - provider: Environment
   name: BUILDBOT
