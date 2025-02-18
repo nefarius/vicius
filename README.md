@@ -203,8 +203,6 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 ### Dependencies
 
 - [Dear ImGui](https://github.com/ocornut/imgui)
-- [Simple and Fast Multimedia Library](https://www.sfml-dev.org/)
-- [ImGui-SFML](https://github.com/SFML/imgui-sfml)
 - [Argh! A minimalist argument handler](https://github.com/adishavit/argh)
 - [Markdown renderer for Dear ImGui using MD4C parser](https://github.com/mekhontsev/imgui_md)
 - [IconFontCppHeaders](https://github.com/juliettef/IconFontCppHeaders)
@@ -227,6 +225,10 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [A C library for reading, creating, and modifying zip archives](https://github.com/nih-at/libzip)
 - [My opinionated collection of C++ utilities](https://github.com/nefarius/neflib)
 - [The DirectX Tool Kit (aka DirectXTK)](https://github.com/microsoft/DirectXTK)
+<!--
+- [Simple and Fast Multimedia Library](https://www.sfml-dev.org/)
+- [ImGui-SFML](https://github.com/SFML/imgui-sfml)
+-->
 
 ### Literature & references
 
