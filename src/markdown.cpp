@@ -264,8 +264,8 @@ struct changelog : imgui_md
         winrt::com_ptr<ID3D11Resource> resource;
         srv->GetResource(resource.put());
 
-        winrt::com_ptr<ID3D11Texture2D> texture;
-        if (FAILED(resource->QueryInterface(IID_PPV_ARGS(texture.put()))))
+        const auto texture = resource.try_as<ID3D11Texture2D>();
+        if (!texture)
             return {0, 0}; // Not a texture2D
 
         D3D11_TEXTURE2D_DESC desc;
