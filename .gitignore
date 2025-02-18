@@ -344,3 +344,4 @@ healthchecksdb
 **/imgui.ini
 include/*.h
 /include/**/*.h
+/artifacts
