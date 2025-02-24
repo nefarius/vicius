@@ -78,10 +78,9 @@ internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiSe
                     new RegistryValueConfig
                     {
                         Hive = RegistryHive.HKLM,
-                        Key = @"SOFTWARE\Nefarius Software Solutions e.U.\BthPS3 Bluetooth Drivers",
+                        Key = @"SOFTWARE\Nefarius Software Solutions e.U.\Nefarius BthPS3 Bluetooth Drivers",
                         Value = "Version"
-                    },
-                RunAsTemporaryCopy = true
+                    }
             },
             Releases =
             {
