@@ -229,7 +229,7 @@ struct changelog : imgui_md
                 // task done (succeeded or failed)
                 if (hasFinished)
                 {
-                    std::optional<D3DResource> res = task->get();
+                    OptionalD3DResource res = task->get();
 
                     // got our image, cache and return
                     if (res != std::nullopt)
