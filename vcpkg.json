@@ -8,7 +8,9 @@
     {
       "name": "imgui",
       "features": [
+        "dx11-binding",
         "freetype",
+        "win32-binding",
         "wchar32"
       ]
     },
