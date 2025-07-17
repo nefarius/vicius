@@ -1,10 +1,9 @@
 find_package(fmt CONFIG REQUIRED)
 find_package(unofficial-hash-library CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
-find_package(ImGui-SFML CONFIG REQUIRED)
 find_package(libzip CONFIG REQUIRED)
 find_package(restclient-cpp CONFIG REQUIRED)
-find_package(SFML COMPONENTS system window graphics CONFIG REQUIRED)
+find_package(directxtk CONFIG REQUIRED)
 
 # vcpkg port of neflib does not define a target
 find_library(NEFLIB_PATH NAMES neflib REQUIRED)
@@ -54,16 +53,16 @@ target_link_libraries(
   PRIVATE
   # vcpkg
   imgui::imgui
-  ImGui-SFML::ImGui-SFML
   fmt::fmt
   libzip::zip
   restclient-cpp
-  sfml-system sfml-graphics sfml-window
   unofficial::hash-library
+  Microsoft::DirectXTK
   "${NEFLIB_PATH}"
   # system
   Comctl32
   crypt32
+  D3D11
   dwmapi
   Propsys
   Rpcrt4
