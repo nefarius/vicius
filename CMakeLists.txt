@@ -1,4 +1,9 @@
-cmake_minimum_required(VERSION 3.29)
+cmake_minimum_required(VERSION 3.29...3.31 FATAL_ERROR)
+
+# Suppress incorrect unused variable warning
+if (CMAKE_TOOLCHAIN_FILE)
+  message(STATUS "CMAKE_TOOLCHAIN_FILE: ${CMAKE_TOOLCHAIN_FILE}")
+endif ()
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -11,12 +16,6 @@ add_compile_definitions(
 set(
   CMAKE_MSVC_RUNTIME_LIBRARY
   "MultiThreaded$<$<CONFIG:Debug>:Debug>"
-)
-
-set(
-  CMAKE_TOOLCHAIN_FILE
-  "${CMAKE_CURRENT_SOURCE_DIR}/vcpkg/scripts/buildsystems/vcpkg.cmake"
-  CACHE STRING "Vcpkg toolchain file"
 )
 
 # We need C for md4c
