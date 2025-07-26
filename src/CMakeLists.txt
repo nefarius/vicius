@@ -69,6 +69,7 @@ target_link_libraries(
   Shlwapi
   taskschd
   Version
+  runtimeobject
 )
 
 # We *should* be able to directly add vicius.rc to the executable sources,
