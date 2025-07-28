@@ -38,7 +38,7 @@ internal sealed partial class OpenXRUpdatesEndpoint(
 
         if (releases is null)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -86,6 +86,6 @@ internal sealed partial class OpenXRUpdatesEndpoint(
                 .ToList()
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

@@ -38,6 +38,6 @@ internal sealed class SchemaEndpoint : EndpointWithoutRequest
         JsonSchema? schema = generator.Generate(typeof(UpdateResponse));
         string? schemaData = schema.ToJson();
 
-        await SendStringAsync(schemaData, contentType: "application/json", cancellation: ct);
+        await Send.StringAsync(schemaData, contentType: "application/json", cancellation: ct);
     }
 }

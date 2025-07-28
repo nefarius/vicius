@@ -90,6 +90,6 @@ internal sealed class AdvancedExampleEndpoint : EndpointWithoutRequest
             }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

@@ -35,6 +35,6 @@ internal sealed class CustomExpressionEndpoint : EndpointWithoutRequest
             Releases = { Examples.MinimalDemoRelease }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

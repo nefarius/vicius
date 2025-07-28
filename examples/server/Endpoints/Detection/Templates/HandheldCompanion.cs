@@ -56,6 +56,6 @@ internal sealed class HandheldCompanionEndpoint : EndpointWithoutRequest
             Releases = { Examples.MinimalDemoRelease }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

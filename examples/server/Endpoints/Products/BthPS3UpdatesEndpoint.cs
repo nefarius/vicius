@@ -51,7 +51,7 @@ internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiSe
 
         if (release is null)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -61,7 +61,7 @@ internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiSe
 
         if (asset is null)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -107,6 +107,6 @@ internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiSe
             }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

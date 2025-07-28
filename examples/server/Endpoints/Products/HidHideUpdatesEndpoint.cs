@@ -30,7 +30,7 @@ internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiS
 
         if (release is null)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -38,7 +38,7 @@ internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiS
 
         if (asset is null)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -85,6 +85,6 @@ internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiS
             }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

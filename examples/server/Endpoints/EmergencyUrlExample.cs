@@ -26,6 +26,6 @@ internal sealed class EmergencyUrlExampleEndpoint : EndpointWithoutRequest
             }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

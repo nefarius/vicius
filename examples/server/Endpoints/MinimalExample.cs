@@ -75,6 +75,6 @@ internal sealed class MinimalExampleEndpoint : EndpointWithoutRequest
             }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

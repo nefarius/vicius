@@ -93,6 +93,6 @@ internal sealed class FileSizeEndpoint : EndpointWithoutRequest
             }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

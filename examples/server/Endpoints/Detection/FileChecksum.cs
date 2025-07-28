@@ -97,6 +97,6 @@ internal sealed class FileChecksumEndpoint : EndpointWithoutRequest
             }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

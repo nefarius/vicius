@@ -90,6 +90,6 @@ internal sealed class MultipleReleasesExampleEndpoint : EndpointWithoutRequest
             }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

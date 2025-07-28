@@ -74,6 +74,6 @@ internal sealed class DownloadLocationExampleEndpoint : EndpointWithoutRequest
             }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

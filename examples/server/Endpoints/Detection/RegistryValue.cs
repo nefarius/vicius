@@ -85,6 +85,6 @@ internal sealed class RegistryValueEndpoint : EndpointWithoutRequest
             }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

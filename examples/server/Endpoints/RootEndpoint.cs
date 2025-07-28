@@ -14,7 +14,7 @@ internal sealed class RootEndpoint(IWebHostEnvironment environment) : EndpointWi
     public override Task HandleAsync(CancellationToken ct)
     {
         return environment.IsDevelopment()
-            ? SendNotFoundAsync(ct)
-            : SendRedirectAsync("https://docs.nefarius.at/projects/Vicius/", allowRemoteRedirects: true);
+            ? Send.NotFoundAsync(ct)
+            : Send.RedirectAsync("https://docs.nefarius.at/projects/Vicius/", allowRemoteRedirects: true);
     }
 }

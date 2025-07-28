@@ -53,6 +53,6 @@ internal sealed class TempCopyExample : EndpointWithoutRequest
             }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

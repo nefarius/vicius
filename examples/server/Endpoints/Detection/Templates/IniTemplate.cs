@@ -37,6 +37,6 @@ internal sealed class IniTemplateEndpoint : EndpointWithoutRequest
             Releases = { Examples.MinimalDemoRelease }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

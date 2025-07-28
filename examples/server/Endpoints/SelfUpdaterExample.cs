@@ -32,6 +32,6 @@ internal sealed class SelfUpdaterExampleEndpoint : EndpointWithoutRequest
                 }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }

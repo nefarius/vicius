@@ -36,6 +36,6 @@ internal sealed class ProductByDisplayNameEndpoint : EndpointWithoutRequest
             Releases = { Examples.MinimalDemoRelease }
         };
 
-        await SendOkAsync(response, ct);
+        await Send.OkAsync(response, ct);
     }
 }
