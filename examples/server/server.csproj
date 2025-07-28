@@ -12,18 +12,18 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FastEndpoints" Version="6.2.0" />
-        <PackageReference Include="FastEndpoints.Swagger" Version="6.2.0" />
-        <PackageReference Include="Nefarius.Utilities.AspNetCore" Version="2.8.1"/>
+        <PackageReference Include="FastEndpoints" Version="7.0.1" />
+        <PackageReference Include="FastEndpoints.Swagger" Version="7.0.1" />
+        <PackageReference Include="Nefarius.Utilities.AspNetCore" Version="2.8.1" />
         <PackageReference Include="Nefarius.Vicius.Abstractions" Version="1.4.1" />
         <PackageReference Include="NJsonSchema.CodeGeneration" Version="11.3.2" />
         <PackageReference Include="Octokit" Version="14.0.0" />
     </ItemGroup>
 
     <ItemGroup>
-        <TrimmerRootAssembly Include="System.IO.FileSystem"/>
-        <TrimmerRootAssembly Include="System.Xml.XPath.XDocument"/>
-        <TrimmerRootAssembly Include="System.Xml.Linq"/>
+        <TrimmerRootAssembly Include="System.IO.FileSystem" />
+        <TrimmerRootAssembly Include="System.Xml.XPath.XDocument" />
+        <TrimmerRootAssembly Include="System.Xml.Linq" />
     </ItemGroup>
 
 </Project>
