@@ -9,8 +9,7 @@ I also use this project in production so it can be considered stable.
 Tag it with your own registry, of course 😉
 
 ```PowerShell
-docker build -t nefarius.azurecr.io/nefarius-vicius-server:latest .
-docker push nefarius.azurecr.io/nefarius-vicius-server:latest
+docker build --push -t nefarius.azurecr.io/nefarius-vicius-server:latest .
 ```
 
 ## Sources & 3rd party credits

@@ -7,9 +7,29 @@ namespace Nefarius.Vicius.Example.Server.Services;
 /// <summary>
 ///     Abstracts calls to GitHub REST API and caches them to avoid hitting rate limits.
 /// </summary>
-internal sealed class GitHubApiService(IMemoryCache memoryCache, IHostEnvironment environment)
+internal sealed class GitHubApiService
 {
-    private readonly GitHubClient _gitHubClient = new(new ProductHeaderValue("Nefarius.Vicius.Server"));
+    private readonly IHostEnvironment _environment;
+    private readonly GitHubClient _gitHubClient;
+    private readonly IMemoryCache _memoryCache;
+
+    /// <summary>
+    ///     Abstracts calls to GitHub REST API and caches them to avoid hitting rate limits.
+    /// </summary>
+    public GitHubApiService(IMemoryCache memoryCache, IHostEnvironment environment, IConfiguration configuration)
+    {
+        _memoryCache = memoryCache;
+        _environment = environment;
+
+        _gitHubClient = new GitHubClient(new ProductHeaderValue("Nefarius.Vicius.Server"));
+
+        string? token = configuration.GetSection("GitHub:Token").Get<string>();
+
+        if (!string.IsNullOrEmpty(token))
+        {
+            _gitHubClient.Credentials = new Credentials(token, AuthenticationType.Bearer);
+        }
+    }
 
     /// <summary>
     ///     Gets the latest release of a given GitHub repository.
@@ -21,9 +41,9 @@ internal sealed class GitHubApiService(IMemoryCache memoryCache, IHostEnvironmen
     {
         string key = $"{nameof(GitHubApiService)}-{owner}/{name}";
 
-        if (!environment.IsDevelopment())
+        if (!_environment.IsDevelopment())
         {
-            if (memoryCache.TryGetValue(key, out Release? cached))
+            if (_memoryCache.TryGetValue(key, out Release? cached))
             {
                 return cached;
             }
@@ -31,9 +51,9 @@ internal sealed class GitHubApiService(IMemoryCache memoryCache, IHostEnvironmen
 
         Release? release = await _gitHubClient.Repository.Release.GetLatest(owner, name);
 
-        if (!environment.IsDevelopment())
+        if (!_environment.IsDevelopment())
         {
-            memoryCache.Set(
+            _memoryCache.Set(
                 key,
                 release,
                 new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1) }
@@ -53,9 +73,9 @@ internal sealed class GitHubApiService(IMemoryCache memoryCache, IHostEnvironmen
     {
         string key = $"{nameof(GitHubApiService)}-{owner}/{name}";
 
-        if (!environment.IsDevelopment())
+        if (!_environment.IsDevelopment())
         {
-            if (memoryCache.TryGetValue(key, out IReadOnlyList<Release>? cached))
+            if (_memoryCache.TryGetValue(key, out IReadOnlyList<Release>? cached))
             {
                 return cached;
             }
@@ -63,9 +83,9 @@ internal sealed class GitHubApiService(IMemoryCache memoryCache, IHostEnvironmen
 
         IReadOnlyList<Release>? releases = await _gitHubClient.Repository.Release.GetAll(owner, name);
 
-        if (!environment.IsDevelopment())
+        if (!_environment.IsDevelopment())
         {
-            memoryCache.Set(
+            _memoryCache.Set(
                 key,
                 releases,
                 new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(1) }
