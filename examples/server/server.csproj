@@ -12,8 +12,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="FastEndpoints" Version="7.0.1" />
-        <PackageReference Include="FastEndpoints.Swagger" Version="7.0.1" />
+        <PackageReference Include="FastEndpoints" Version="7.1.0" />
+        <PackageReference Include="FastEndpoints.Swagger" Version="7.1.0" />
         <PackageReference Include="Nefarius.Utilities.AspNetCore" Version="2.8.1"/>
         <PackageReference Include="Nefarius.Vicius.Abstractions" Version="1.4.1" />
         <PackageReference Include="NJsonSchema.CodeGeneration" Version="11.5.1" />
