@@ -103,6 +103,8 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     ImGuiIO& io = ImGui::GetIO();
     io.Fonts->Clear();
 
+    const std::filesystem::path emojiFontFile = R"(C:\Windows\Fonts\seguiemj.ttf)";
+
     // Ruda bold
     const HRSRC ruda_bold_res = FindResource(hInstance, MAKEINTRESOURCE(IDR_FONT_RUDA_BOLD), RT_FONT);
     const int ruda_bold_size = static_cast<int>(SizeofResource(hInstance, ruda_bold_res));
@@ -135,19 +137,46 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     emj_cfg.OversampleH = emj_cfg.OversampleV = 1;
     emj_cfg.MergeMode = true;
     emj_cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
-    io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\seguiemj.ttf", scale * sizePixels, &emj_cfg, emj_range);
+    io.Fonts->AddFontFromFileTTF(emojiFontFile.string().c_str(), scale * sizePixels, &emj_cfg, emj_range);
 
     // Bold headings H2
     io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, scale * sizePixels * 1.2f, &font_cfg);
     G_Font_H2 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, scale * sizePixels * 1.2f, &fk_cfg, fk_range);
+    if (is_regular_file(emojiFontFile))
+    {
+        G_Font_H2 = io.Fonts->AddFontFromFileTTF(
+            emojiFontFile.string().c_str(),
+            scale * sizePixels * 1.2f,
+            &emj_cfg,
+            emj_range
+        );
+    }
 
     // Bold headings H3 (smaller)
     io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, scale * sizePixels * 1.0f, &font_cfg);
     G_Font_H3 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, scale * sizePixels * 1.0f, &fk_cfg, fk_range);
+    if (is_regular_file(emojiFontFile))
+    {
+        G_Font_H3 = io.Fonts->AddFontFromFileTTF(
+            emojiFontFile.string().c_str(),
+            scale * sizePixels * 1.0f,
+            &emj_cfg,
+            emj_range
+        );
+    }
 
     // Bold headings H1
     io.Fonts->AddFontFromMemoryTTF(ruda_bold_data, ruda_bold_size, scale * sizePixels * 1.5f, &font_cfg);
     G_Font_H1 = io.Fonts->AddFontFromMemoryTTF(fk_data, fk_size, scale * sizePixels * 1.5f, &fk_cfg, fk_range);
+    if (is_regular_file(emojiFontFile))
+    {
+        G_Font_H1 = io.Fonts->AddFontFromFileTTF(
+            emojiFontFile.string().c_str(),
+            scale * sizePixels * 1.5f,
+            &emj_cfg,
+            emj_range
+        );
+    }
 }
 
 /**
