@@ -316,7 +316,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     ::RegisterClassExW(&wc);
     const HWND hwnd = ::CreateWindowW(
         wc.lpszClassName, windowTitle.c_str(),
-        WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX,
+        WS_OVERLAPPEDWINDOW & ~WS_MAXIMIZEBOX & ~WS_THICKFRAME,
         CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight,
         nullptr, nullptr, wc.hInstance, nullptr
         );
