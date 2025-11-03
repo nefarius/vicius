@@ -474,7 +474,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H1);
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(30));
+                ImGui::PushTextWrapPos(scaledWidth - (10.0f + leftBorderIndent));
                 ImGui::TextWrapped("Updates for %s are available", cfg.GetProductName().c_str());
+                ImGui::PopTextWrapPos();
                 ImGui::PopFont();
 
                 ImGui::Indent(leftBorderIndent);
