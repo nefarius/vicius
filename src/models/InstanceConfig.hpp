@@ -380,7 +380,7 @@ namespace models
 
         bool TryRunTemporaryProcess() const;
 
-        bool GetSuccessExitCode(int exitCode) const
+        int GetSuccessExitCode(int exitCode) const
         {
             return this->overrideSuccessCode ? this->overriddenSuccessCode : exitCode;
         }
