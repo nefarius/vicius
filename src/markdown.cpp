@@ -15,6 +15,7 @@ ImFont* G_Font_H1 = nullptr;
 ImFont* G_Font_H2 = nullptr;
 ImFont* G_Font_H3 = nullptr;
 ImFont* G_Font_Default = nullptr;
+ImFont* G_Font_Bold = nullptr;
 
 extern ID3D11Device* g_pd3dDevice;
 
@@ -126,6 +127,16 @@ struct changelog : imgui_md
 
     ImFont* get_font() const override
     {
+        if (m_is_table_header)
+        {
+            return G_Font_Bold;
+        }
+
+        if (m_is_strong)
+        {
+            return G_Font_Bold;
+        }
+
         switch (m_hlevel)
         {
             case 1:

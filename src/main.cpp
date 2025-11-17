@@ -530,9 +530,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                 const auto& release = cfg.GetSelectedRelease();
                 ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
+                const float changelogRegionWidth = ImGui::GetContentRegionAvail().x - SCALED(20);
+                // compensate vertical scrollbar space
+                ImGui::SetNextWindowContentSize(ImVec2(changelogRegionWidth - SCALED(15),0.0f));
                 ImGui::BeginChild(
                     "Summary",
-                    ImVec2(ImGui::GetContentRegionAvail().x - SCALED(20), ImGui::GetContentRegionAvail().y - SCALED(100)),
+                    ImVec2(changelogRegionWidth, ImGui::GetContentRegionAvail().y - SCALED(100)),
                     false,
                     windowFlags
                     );
