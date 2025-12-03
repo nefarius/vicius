@@ -302,8 +302,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     const auto windowTitle = nefarius::utilities::ConvertToWide(cfg.GetWindowTitle());
 
-    // Create application window
-    ImGui_ImplWin32_EnableDpiAwareness();
+    //
+    // Create application window and class
+    //    
 
     WNDCLASSEXW wc = {
         sizeof(wc),
@@ -352,7 +353,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     // get DPI scale
     auto dpi = winapi::GetWindowDPI(hwnd);
+    spdlog::debug("winapi::GetWindowDPI(hwnd) = {}", dpi);
     float scaleFactor = (float)dpi / (float)USER_DEFAULT_SCREEN_DPI;
+    spdlog::debug("scaleFactor = {}", scaleFactor);
     auto scaledWidth = SCALED(windowWidth);
     auto scaledHeight = SCALED(windowHeight);
 
@@ -377,6 +380,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma warning(default : 4244)
 
     float dpiScale = (float)GetDpiForWindow(hwnd) / (float)USER_DEFAULT_SCREEN_DPI;
+    spdlog::debug("dpiScale = {}", dpiScale);
     ImGui::GetIO().FontGlobalScale = dpiScale;
 
     ui::LoadFonts(hInstance, 16, scaleFactor);
@@ -986,6 +990,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 return 0;
             g_ResizeWidth = static_cast<UINT>(LOWORD(lParam)); // Queue resize
             g_ResizeHeight = static_cast<UINT>(HIWORD(lParam));
+            ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(g_ResizeWidth), static_cast<float>(g_ResizeHeight));
             return 0;
         case WM_SYSCOMMAND:
             if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
@@ -1006,6 +1011,13 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             // Update ImGui scaling
             float dpiScale = HIWORD(wParam) / (float)USER_DEFAULT_SCREEN_DPI;
             ImGui::GetIO().FontGlobalScale = dpiScale;
+            // TODO: Reload fonts?
+            RECT clientRect;
+            GetClientRect(hWnd, &clientRect);
+            ImGui::GetIO().DisplaySize = ImVec2(
+                static_cast<float>(clientRect.right - clientRect.left),
+                static_cast<float>(clientRect.bottom - clientRect.top)
+            );  
             break;
         }
 
