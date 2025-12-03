@@ -42,6 +42,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(szCmdLine);
 
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
     argh::parser cmdl;
 
     cmdl.add_params({
@@ -96,7 +98,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma region Install command
 
     // actions to perform when install is instructed
-#if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
+#ifndef NV_FLAGS_ALWAYS_RUN_INSTALL
     if (!cmdl[ {NV_CLI_TEMPORARY} ] && cmdl[ {NV_CLI_INSTALL} ])
     {
 #endif
@@ -135,7 +137,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             return NV_E_EXTRACT_SELF_UPDATE;
         }
 
-#if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
+#ifndef NV_FLAGS_ALWAYS_RUN_INSTALL
         spdlog::info("Installation tasks finished successfully");
 
         return cfg.GetSuccessExitCode(NV_S_INSTALL);
@@ -373,6 +375,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
 
 #pragma warning(default : 4244)
+
+    float dpiScale = (float)GetDpiForWindow(hwnd) / (float)USER_DEFAULT_SCREEN_DPI;
+    ImGui::GetIO().FontGlobalScale = dpiScale;
 
     ui::LoadFonts(hInstance, 16, scaleFactor);
     ui::ApplyImGuiStyleDark(scaleFactor);
@@ -991,6 +996,19 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;
+        case WM_DPICHANGED:
+        {
+            auto suggestedRect = reinterpret_cast<RECT*>(lParam);
+            SetWindowPos(hWnd, NULL, suggestedRect->left, suggestedRect->top,
+                         suggestedRect->right - suggestedRect->left,
+                         suggestedRect->bottom - suggestedRect->top,
+                         SWP_NOZORDER | SWP_NOACTIVATE);
+            // Update ImGui scaling
+            float dpiScale = HIWORD(wParam) / (float)USER_DEFAULT_SCREEN_DPI;
+            ImGui::GetIO().FontGlobalScale = dpiScale;
+            break;
+        }
+
     }
     return DefWindowProcW(hWnd, msg, wParam, lParam);
 }
