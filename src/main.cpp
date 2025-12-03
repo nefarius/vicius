@@ -35,6 +35,7 @@ void CleanupDeviceD3D();
 void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+float g_scaleFactor = 1.0;
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
@@ -347,15 +348,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
-#define SCALED(_val_)   ((_val_) * scaleFactor)
+#define SCALED(_val_)   ((_val_) * g_scaleFactor)
 
 #pragma warning(disable : 4244)
 
     // get DPI scale
     auto dpi = winapi::GetWindowDPI(hwnd);
     spdlog::debug("winapi::GetWindowDPI(hwnd) = {}", dpi);
-    float scaleFactor = (float)dpi / (float)USER_DEFAULT_SCREEN_DPI;
-    spdlog::debug("scaleFactor = {}", scaleFactor);
+    g_scaleFactor = (float)dpi / (float)USER_DEFAULT_SCREEN_DPI;
+    spdlog::debug("scaleFactor = {}", g_scaleFactor);
     auto scaledWidth = SCALED(windowWidth);
     auto scaledHeight = SCALED(windowHeight);
 
@@ -383,8 +384,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     spdlog::debug("dpiScale = {}", dpiScale);
     ImGui::GetIO().FontGlobalScale = dpiScale;
 
-    ui::LoadFonts(hInstance, 16, scaleFactor);
-    ui::ApplyImGuiStyleDark(scaleFactor);
+    ui::LoadFonts(hInstance, 16, g_scaleFactor);
+    ui::ApplyImGuiStyleDark(g_scaleFactor);
 
     winapi::SetDarkMode(hwnd);
 
@@ -1010,6 +1011,8 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                          SWP_NOZORDER | SWP_NOACTIVATE);
             // Update ImGui scaling
             float dpiScale = HIWORD(wParam) / (float)USER_DEFAULT_SCREEN_DPI;
+            g_scaleFactor = dpiScale;
+            spdlog::debug("Updated DPi scale factor to {}", g_scaleFactor);
             ImGui::GetIO().FontGlobalScale = dpiScale;
             // TODO: Reload fonts?
             RECT clientRect;
