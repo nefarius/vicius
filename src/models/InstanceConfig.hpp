@@ -94,7 +94,7 @@ namespace models
         std::tuple<bool, DWORD, DWORD> ExecuteSetup(const std::stop_token&);
 
     public:
-        static constexpr int MAX_TIMEOUT_SECS = 300; // 5 minutes
+        static constexpr int MAX_TIMEOUT_SECS = 180; // 3 minutes
         static constexpr int MAX_REDIRECTS = 5;
 
         std::string serverUrlTemplate;
