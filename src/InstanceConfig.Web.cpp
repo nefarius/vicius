@@ -179,6 +179,8 @@ retry:
     // try to grab original filename
     const auto& cd = headers[ "Content-Disposition" ];
 
+    spdlog::debug("Content-Disposition header value: {}", cd);
+
     // attempt to get true filename
     if (code == httplib::OK_200 && !cd.empty())
     {
@@ -265,8 +267,8 @@ retry:
     spdlog::debug("Setting User Agent to {}", ua);
     conn->SetUserAgent(ua);
     conn->FollowRedirects(true, MAX_REDIRECTS);
-    conn->SetTimeout(MAX_TIMEOUT_SECS);
-
+    int currentTimeoutSecs = MAX_TIMEOUT_SECS;
+    
     RestClient::HeaderFields headers;
     headers[ "Accept" ] = "application/json";
     conn->SetHeaders(headers);
@@ -277,6 +279,8 @@ retry:
     int retryCount = 5;
 
 retry:
+
+    conn->SetTimeout(currentTimeoutSecs);
 
     auto [ code, body, _ ] = conn->get(updateRequestUrl);
 
@@ -289,6 +293,13 @@ retry:
             std::mt19937_64 eng{std::random_device{}()};
             std::uniform_int_distribution<> dist{1000, 5000};
             std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
+
+            if (code == CURLE_OPERATION_TIMEDOUT)
+            {
+                long nxt = std::lround(currentTimeoutSecs * 1.5);
+                currentTimeoutSecs = std::min(nxt, 900L);
+                spdlog::info("Request timeout reached, setting new timeout to {} seconds", currentTimeoutSecs);
+            }
 
             goto retry;
         }
