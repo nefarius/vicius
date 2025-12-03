@@ -35,7 +35,11 @@ void CleanupDeviceD3D();
 void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+// DPI resizing
 float g_scaleFactor = 1.0;
+float g_scaledWidth;
+float g_scaledHeight;
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
@@ -357,26 +361,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     spdlog::debug("winapi::GetWindowDPI(hwnd) = {}", dpi);
     g_scaleFactor = (float)dpi / (float)USER_DEFAULT_SCREEN_DPI;
     spdlog::debug("scaleFactor = {}", g_scaleFactor);
-    auto scaledWidth = SCALED(windowWidth);
-    auto scaledHeight = SCALED(windowHeight);
+    g_scaledWidth = SCALED(windowWidth);
+    g_scaledHeight = SCALED(windowHeight);
 
     // Get the screen width and height
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);  // Screen width
     int screenHeight = GetSystemMetrics(SM_CYSCREEN); // Screen height
 
     // Calculate the window's position to center it
-    int xPos = (screenWidth - scaledWidth) / 2;
-    int yPos = (screenHeight - scaledHeight) / 2;
+    int xPos = (screenWidth - g_scaledWidth) / 2;
+    int yPos = (screenHeight - g_scaledHeight) / 2;
 
     ::SetWindowPos(
         hwnd,
         HWND_TOP,
         xPos, yPos,
-        scaledWidth,
-        scaledHeight,
+        g_scaledWidth,
+        g_scaledHeight,
         SWP_NOZORDER
         );
-    io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
+    io.DisplaySize = ImVec2(g_scaledWidth, g_scaledHeight);
 
 #pragma warning(default : 4244)
 
@@ -450,7 +454,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x - 1, mainViewport->WorkPos.y - 1));
-        ImGui::SetNextWindowSize(ImVec2(scaledWidth, scaledHeight));
+        ImGui::SetNextWindowSize(ImVec2(g_scaledWidth, g_scaledHeight));
 
         ImGui::Begin("MainWindow", nullptr, flags);
 
@@ -484,7 +488,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H1);
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(30));
-                ImGui::PushTextWrapPos(scaledWidth - (10.0f + leftBorderIndent));
+                ImGui::PushTextWrapPos(g_scaledWidth - (10.0f + leftBorderIndent));
                 ImGui::TextWrapped("Updates for %s are available", cfg.GetProductName().c_str());
                 ImGui::PopTextWrapPos();
                 ImGui::PopFont();
@@ -1017,10 +1021,9 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             // TODO: Reload fonts?
             RECT clientRect;
             GetClientRect(hWnd, &clientRect);
-            ImGui::GetIO().DisplaySize = ImVec2(
-                static_cast<float>(clientRect.right - clientRect.left),
-                static_cast<float>(clientRect.bottom - clientRect.top)
-            );  
+            g_scaledWidth = static_cast<float>(clientRect.right - clientRect.left);
+            g_scaledHeight = static_cast<float>(clientRect.bottom - clientRect.top);
+            ImGui::GetIO().DisplaySize = ImVec2(g_scaledWidth, g_scaledHeight);
             break;
         }
 
