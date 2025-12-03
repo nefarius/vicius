@@ -179,6 +179,8 @@ retry:
     // try to grab original filename
     const auto& cd = headers[ "Content-Disposition" ];
 
+    spdlog::debug("Content-Disposition header value: {}", cd);
+
     // attempt to get true filename
     if (code == httplib::OK_200 && !cd.empty())
     {
