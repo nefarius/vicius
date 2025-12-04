@@ -36,11 +36,18 @@ void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+// DPI resizing
+float g_scaleFactor = 1.0;
+float g_scaledWidth;
+float g_scaledHeight;
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(szCmdLine);
+
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
     argh::parser cmdl;
 
@@ -96,7 +103,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma region Install command
 
     // actions to perform when install is instructed
-#if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
+#ifndef NV_FLAGS_ALWAYS_RUN_INSTALL
     if (!cmdl[ {NV_CLI_TEMPORARY} ] && cmdl[ {NV_CLI_INSTALL} ])
     {
 #endif
@@ -135,7 +142,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             return NV_E_EXTRACT_SELF_UPDATE;
         }
 
-#if !defined(NV_FLAGS_ALWAYS_RUN_INSTALL)
+#ifndef NV_FLAGS_ALWAYS_RUN_INSTALL
         spdlog::info("Installation tasks finished successfully");
 
         return cfg.GetSuccessExitCode(NV_S_INSTALL);
@@ -300,8 +307,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
     const auto windowTitle = nefarius::utilities::ConvertToWide(cfg.GetWindowTitle());
 
-    // Create application window
-    ImGui_ImplWin32_EnableDpiAwareness();
+    //
+    // Create application window and class
+    //    
 
     WNDCLASSEXW wc = {
         sizeof(wc),
@@ -344,38 +352,44 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
-#define SCALED(_val_)   ((_val_) * scaleFactor)
+#define SCALED(_val_)   ((_val_) * g_scaleFactor)
 
 #pragma warning(disable : 4244)
 
     // get DPI scale
     auto dpi = winapi::GetWindowDPI(hwnd);
-    float scaleFactor = (float)dpi / (float)USER_DEFAULT_SCREEN_DPI;
-    auto scaledWidth = SCALED(windowWidth);
-    auto scaledHeight = SCALED(windowHeight);
+    spdlog::debug("winapi::GetWindowDPI(hwnd) = {}", dpi);
+    g_scaleFactor = (float)dpi / (float)USER_DEFAULT_SCREEN_DPI;
+    spdlog::debug("scaleFactor = {}", g_scaleFactor);
+    g_scaledWidth = SCALED(windowWidth);
+    g_scaledHeight = SCALED(windowHeight);
 
     // Get the screen width and height
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);  // Screen width
     int screenHeight = GetSystemMetrics(SM_CYSCREEN); // Screen height
 
     // Calculate the window's position to center it
-    int xPos = (screenWidth - scaledWidth) / 2;
-    int yPos = (screenHeight - scaledHeight) / 2;
+    int xPos = (screenWidth - g_scaledWidth) / 2;
+    int yPos = (screenHeight - g_scaledHeight) / 2;
 
     ::SetWindowPos(
         hwnd,
         HWND_TOP,
         xPos, yPos,
-        scaledWidth,
-        scaledHeight,
+        g_scaledWidth,
+        g_scaledHeight,
         SWP_NOZORDER
         );
-    io.DisplaySize = ImVec2(scaledWidth, scaledHeight);
+    io.DisplaySize = ImVec2(g_scaledWidth, g_scaledHeight);
 
 #pragma warning(default : 4244)
 
-    ui::LoadFonts(hInstance, 16, scaleFactor);
-    ui::ApplyImGuiStyleDark(scaleFactor);
+    float dpiScale = (float)GetDpiForWindow(hwnd) / (float)USER_DEFAULT_SCREEN_DPI;
+    spdlog::debug("dpiScale = {}", dpiScale);
+    ImGui::GetIO().FontGlobalScale = dpiScale;
+
+    ui::LoadFonts(hInstance, 16, g_scaleFactor);
+    ui::ApplyImGuiStyleDark(g_scaleFactor);
 
     winapi::SetDarkMode(hwnd);
 
@@ -440,7 +454,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x - 1, mainViewport->WorkPos.y - 1));
-        ImGui::SetNextWindowSize(ImVec2(scaledWidth, scaledHeight));
+        ImGui::SetNextWindowSize(ImVec2(g_scaledWidth, g_scaledHeight));
 
         ImGui::Begin("MainWindow", nullptr, flags);
 
@@ -474,7 +488,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H1);
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(30));
-                ImGui::PushTextWrapPos(scaledWidth - (10.0f + leftBorderIndent));
+                ImGui::PushTextWrapPos(g_scaledWidth - (10.0f + leftBorderIndent));
                 ImGui::TextWrapped("Updates for %s are available", cfg.GetProductName().c_str());
                 ImGui::PopTextWrapPos();
                 ImGui::PopFont();
@@ -981,6 +995,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                 return 0;
             g_ResizeWidth = static_cast<UINT>(LOWORD(lParam)); // Queue resize
             g_ResizeHeight = static_cast<UINT>(HIWORD(lParam));
+            ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(g_ResizeWidth), static_cast<float>(g_ResizeHeight));
             return 0;
         case WM_SYSCOMMAND:
             if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
@@ -991,6 +1006,27 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         case WM_DESTROY:
             PostQuitMessage(0);
             return 0;
+        case WM_DPICHANGED:
+        {
+            auto suggestedRect = reinterpret_cast<RECT*>(lParam);
+            SetWindowPos(hWnd, NULL, suggestedRect->left, suggestedRect->top,
+                         suggestedRect->right - suggestedRect->left,
+                         suggestedRect->bottom - suggestedRect->top,
+                         SWP_NOZORDER | SWP_NOACTIVATE);
+            // Update ImGui scaling
+            float dpiScale = HIWORD(wParam) / (float)USER_DEFAULT_SCREEN_DPI;
+            g_scaleFactor = dpiScale;
+            spdlog::debug("Updated DPi scale factor to {}", g_scaleFactor);
+            ImGui::GetIO().FontGlobalScale = dpiScale;
+            // TODO: Reload fonts?
+            RECT clientRect;
+            GetClientRect(hWnd, &clientRect);
+            g_scaledWidth = static_cast<float>(clientRect.right - clientRect.left);
+            g_scaledHeight = static_cast<float>(clientRect.bottom - clientRect.top);
+            ImGui::GetIO().DisplaySize = ImVec2(g_scaledWidth, g_scaledHeight);
+            break;
+        }
+
     }
     return DefWindowProcW(hWnd, msg, wParam, lParam);
 }
