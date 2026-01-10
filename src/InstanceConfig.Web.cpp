@@ -145,7 +145,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
     outStream.exceptions(exceptionMask);
 
-    int retryCount = 5;
+    int retryCount = 10;
     int currentTimeoutSecs = MAX_TIMEOUT_SECS;
     const int maxTimeoutSecs = 3600;
 
