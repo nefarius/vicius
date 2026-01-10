@@ -76,16 +76,8 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
 int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, const int releaseIndex)
 {
     UNREFERENCED_PARAMETER(releaseIndex);
-    const auto conn = new RestClient::Connection("");
-
     const auto ua = std::format("{}/{}", appFilename, appVersion.str());
     spdlog::debug("Setting User Agent to {}", ua);
-    conn->SetUserAgent(ua);
-    conn->FollowRedirects(true, MAX_REDIRECTS);
-    conn->SetTimeout(MAX_TIMEOUT_SECS);
-    conn->SetFileProgressCallback(progressFn);
-
-    SetCommonHeaders(conn);
 
     std::string downloadLocation;
 
@@ -153,14 +145,37 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
     outStream.exceptions(exceptionMask);
 
-    // ReSharper disable once CppTooWideScopeInitStatement
     int retryCount = 5;
+    int currentTimeoutSecs = MAX_TIMEOUT_SECS;
+    const int maxTimeoutSecs = 3600;
 
 retry:
 
+    const auto conn = std::make_unique<RestClient::Connection>("");
+    conn->SetUserAgent(ua);
+    conn->FollowRedirects(true, MAX_REDIRECTS);
+    conn->SetTimeout(currentTimeoutSecs);
+    conn->SetFileProgressCallback(progressFn);
+
+    SetCommonHeaders(conn.get());
+
+    std::error_code fsError;
+    const bool hasExistingFile = std::filesystem::exists(release.localTempFilePath, fsError);
+    const std::uintmax_t existingFileSize = hasExistingFile && !fsError
+                                                ? std::filesystem::file_size(release.localTempFilePath, fsError)
+                                                : 0U;
+    const bool shouldResume = existingFileSize > 0;
+
+    if (shouldResume)
+    {
+        conn->AppendHeader("Range", std::format("bytes={}-", existingFileSize));
+        spdlog::info("Attempting to resume download at byte {}", existingFileSize);
+    }
+
     try
     {
-        outStream.open(release.localTempFilePath.string(), std::ios::binary | std::ios::trunc);
+        const auto openMode = shouldResume ? std::ios::binary | std::ios::app : std::ios::binary | std::ios::trunc;
+        outStream.open(release.localTempFilePath.string(), openMode);
     }
     catch (std::ios_base::failure& e)
     {
@@ -172,7 +187,25 @@ retry:
 
     auto [ code, body, headers ] = conn->get(release.downloadUrl);
 
-    outStream.write(body.data(), body.size());
+    if (shouldResume && code == httplib::OK_200)
+    {
+        spdlog::info("Server ignored range request, restarting download from scratch");
+        outStream.close();
+        try
+        {
+            outStream.open(release.localTempFilePath.string(), std::ios::binary | std::ios::trunc);
+        }
+        catch (std::ios_base::failure& e)
+        {
+            spdlog::error("Failed to reopen file {}, error {}", release.localTempFilePath, e.what());
+            return -1;
+        }
+    }
+
+    if (!body.empty())
+    {
+        outStream.write(body.data(), body.size());
+    }
 
     outStream.close();
 
@@ -231,7 +264,28 @@ retry:
         }
     }
 
-    if (code != httplib::OK_200)
+    const bool isPartialContent = (code == httplib::PartialContent_206);
+    bool isSuccessful = (code == httplib::OK_200);
+
+    if (isPartialContent)
+    {
+        if (release.downloadSize.has_value())
+        {
+            const std::uintmax_t downloadedSize = std::filesystem::file_size(release.localTempFilePath, fsError);
+            isSuccessful = !fsError && downloadedSize >= release.downloadSize.value();
+            if (isSuccessful)
+            {
+                code = httplib::OK_200;
+            }
+        }
+        else
+        {
+            isSuccessful = true;
+            code = httplib::OK_200;
+        }
+    }
+
+    if (!isSuccessful)
     {
         if (code != httplib::NotFound_404 && --retryCount > 0)
         {
@@ -241,6 +295,13 @@ retry:
             std::uniform_int_distribution<> dist{1000, 5000};
             std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
 
+            if (code == CURLE_OPERATION_TIMEDOUT)
+            {
+                const long nextTimeoutSecs = std::lround(currentTimeoutSecs * 2.0);
+                currentTimeoutSecs = static_cast<int>(std::min(nextTimeoutSecs, static_cast<long>(maxTimeoutSecs)));
+                spdlog::info("Request timeout reached, setting new timeout to {} seconds", currentTimeoutSecs);
+            }
+
             goto retry;
         }
 
@@ -248,11 +309,14 @@ retry:
         errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
         spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
 
-        // clean up local file since we re-download it when the user decides to retry
-        if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
+        if (code == httplib::NotFound_404)
         {
-            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}", release.localTempFilePath,
-                         GetLastError(), winapi::GetLastErrorStdStr());
+            // clean up local file since we re-download it when the user decides to retry
+            if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
+            {
+                spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}",
+                             release.localTempFilePath, GetLastError(), winapi::GetLastErrorStdStr());
+            }
         }
     }
 
