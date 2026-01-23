@@ -177,7 +177,7 @@ struct changelog : imgui_md
     // ReSharper disable once CppMemberFunctionMayBeStatic
     OptionalD3DResource DownloadImageTexture(const std::string& url) const
     {
-        const auto conn = new RestClient::Connection("");
+        const auto conn = std::make_unique<RestClient::Connection>("");
         conn->FollowRedirects(true, 5);
         conn->SetTimeout(5);
 

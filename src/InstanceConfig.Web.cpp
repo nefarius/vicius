@@ -6,7 +6,7 @@
 #include <curlpp/Options.hpp>
 
 
-void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* conn) const
+void models::InstanceConfig::SetCommonHeaders(_Inout_ std::unique_ptr<RestClient::Connection>& conn) const
 {
     //
     // If a backend server is used, it can alter the response based on
@@ -66,11 +66,14 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
     // Custom headers passed via CLI
     //
 
-    for (const auto& kvp : additionalHeaders)
+    if (!additionalHeaders.empty())
     {
-        const auto name = std::format("X-" NV_HTTP_HEADERS_NAME "-{}", kvp.first);
-        const auto value = kvp.second;
-        conn->AppendHeader(name, value);
+        for (const auto& [ fst, snd ] : additionalHeaders)
+        {
+            const auto name = std::format("X-" NV_HTTP_HEADERS_NAME "-{}", fst);
+            const auto value = snd;
+            conn->AppendHeader(name, value);
+        }
     }
 
 #endif
@@ -79,6 +82,7 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
 int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, const int releaseIndex)
 {
     UNREFERENCED_PARAMETER(releaseIndex);
+    lastDownloadError.clear();
 
     std::string downloadLocation;
 
@@ -157,6 +161,8 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     int retryCount = MAX_RETRY_COUNT;
     long currentTimeoutSecs = MAX_TIMEOUT_SECS;
     constexpr long kMaxTimeoutSecs = MAX_TIMEOUT_SECS_TOTAL;
+    std::string lastFailureDetails{};
+    std::optional<std::filesystem::path> cachedAttachmentName{};
 
     auto tryGetHeader = [](const auto& headers, const std::string& key) -> std::string
     {
@@ -223,11 +229,6 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     while (true)
     {
         const auto ua = std::format("{}/{}", appFilename, appVersion.str());
-
-        // Some servers/proxies omit Content-Disposition on ranged/resumed requests.
-        // Cache the filename once we learn it so a later successful retry can still rename.
-        static_assert(std::is_same_v<std::filesystem::path::value_type, wchar_t> || std::is_same_v<std::filesystem::path::value_type, char>);
-        std::optional<std::filesystem::path> cachedAttachmentName{};
 
         std::optional<uint64_t> expectedSize{};
         if (release.downloadSize.has_value())
@@ -409,9 +410,12 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         }
         headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture: {}", arch));
 
-        for (const auto& kvp : additionalHeaders)
+        if (!additionalHeaders.empty())
         {
-            headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-{}: {}", kvp.first, kvp.second));
+            for (const auto& [fst, snd] : additionalHeaders)
+            {
+                headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-{}: {}", fst, snd));
+            }
         }
 #endif
 
@@ -491,20 +495,41 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
                 continue;
             }
 
+            std::string msg = e.what();
+            if (headerCollector.lastHttpCode != 0)
+            {
+                msg = std::format("HTTP {}: {}", headerCollector.lastHttpCode, msg);
+            }
+
+            lastFailureDetails = msg;
+
             // Best-effort mapping: detect timeout text to enable backoff.
-            const std::string msg = e.what();
             const bool isTimeout =
                 msg.find("Timeout") != std::string::npos ||
                 msg.find("timeout") != std::string::npos ||
                 msg.find("timed out") != std::string::npos ||
                 msg.find("Timed out") != std::string::npos;
 
-            code = isTimeout ? static_cast<int>(CURLE_OPERATION_TIMEDOUT) : -1;
+            if (isTimeout)
+            {
+                code = static_cast<int>(CURLE_OPERATION_TIMEDOUT);
+            }
+            else if (headerCollector.lastHttpCode >= 400 && headerCollector.lastHttpCode < 600)
+            {
+                // Prefer the HTTP status if we have one, so UI can show status text.
+                code = static_cast<int>(headerCollector.lastHttpCode);
+            }
+            else
+            {
+                // Generic cURL-ish failure so UI doesn't show an empty enum name.
+                code = static_cast<int>(CURLE_RECV_ERROR);
+            }
         }
         catch (const curlpp::LogicError& e)
         {
             spdlog::error("cURLpp logic error: {}", e.what());
-            code = -1;
+            lastFailureDetails = e.what();
+            code = static_cast<int>(CURLE_FAILED_INIT);
         }
 
         try { outStream.close(); } catch (...) { }
@@ -585,6 +610,8 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             {
                 spdlog::warn("Partial Content received but file is incomplete ({} of {}), will retry",
                              finalSize, expectedSize.value_or(0ULL));
+                lastFailureDetails = std::format("HTTP 206 Partial Content but file is incomplete ({} of {})",
+                                                 finalSize, expectedSize.value_or(0ULL));
             }
         }
 
@@ -698,7 +725,8 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
         auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
         errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
-        spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
+        lastDownloadError = !lastFailureDetails.empty() ? lastFailureDetails : std::string(errorMessage);
+        spdlog::error("GET request failed with code {}, message {}", code, lastDownloadError);
 
         // Keep partial file to allow resuming on next user retry (only remove on 404 above)
         return code;
@@ -707,7 +735,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
 [[nodiscard]] std::tuple<bool, std::string> models::InstanceConfig::RequestUpdateInfo()
 {
-    const auto conn = new RestClient::Connection("");
+    auto conn = std::make_unique<RestClient::Connection>("");
 
     const auto ua = std::format("{}/{}", appFilename, appVersion.str());
     spdlog::debug("Setting User Agent to {}", ua);

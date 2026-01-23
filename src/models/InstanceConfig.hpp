@@ -73,6 +73,8 @@ namespace models
         std::optional<std::shared_future<std::tuple<bool, DWORD, DWORD>>> setupTask;
         /** The selected release numeric ID */
         int selectedRelease{0};
+        /** Human-readable download failure reason from last attempt (if any) */
+        std::string lastDownloadError{};
         /** True if we run in any of the silent scenarios, false if not */
         bool isSilent{false};
         /** True if user chose to ignore postpone period */
@@ -91,7 +93,7 @@ namespace models
 
         int DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
 
-        void SetCommonHeaders(_Inout_ RestClient::Connection* conn) const;
+        void SetCommonHeaders(_Inout_ std::unique_ptr<RestClient::Connection>& conn) const;
 
         std::tuple<bool, DWORD, DWORD> ExecuteSetup(const std::stop_token&);
 
@@ -148,6 +150,11 @@ namespace models
         UpdateRelease& GetSelectedRelease() { return remote.releases[ selectedRelease ]; }
 
         int GetSelectedReleaseId() const { return selectedRelease; }
+
+        /**
+         * \brief Returns the most recent download failure reason, if any.
+         */
+        [[nodiscard]] std::string GetLastDownloadError() const { return lastDownloadError; }
 
         /**
          * \brief Requests the update configuration from the remote server.
