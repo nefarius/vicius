@@ -1,6 +1,9 @@
 {
 	"instance": {
 		"serverUrlTemplate": "http://localhost:5200/api/{}/updates.json",
+		"fallbackServerUrlTemplates": [
+			"https://example-mirror.invalid/api/{}/updates.json"
+		],
 		"authority": "Remote"
 	},
 	"shared":{
