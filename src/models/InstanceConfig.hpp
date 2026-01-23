@@ -97,6 +97,8 @@ namespace models
 
     public:
         static constexpr int MAX_TIMEOUT_SECS = 180; // 3 minutes
+        static constexpr int MAX_TIMEOUT_SECS_TOTAL = 3600; // 1 hour
+        static constexpr int MAX_RETRY_COUNT = 10;
         static constexpr int MAX_REDIRECTS = 5;
 
         std::string serverUrlTemplate;

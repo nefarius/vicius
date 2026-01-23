@@ -154,10 +154,9 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
     outStream.exceptions(exceptionMask);
 
-    // ReSharper disable once CppTooWideScopeInitStatement
-    int retryCount = 5;
+    int retryCount = MAX_RETRY_COUNT;
     long currentTimeoutSecs = MAX_TIMEOUT_SECS;
-    constexpr long kMaxTimeoutSecs = 3600; // 1 hour
+    constexpr long kMaxTimeoutSecs = MAX_TIMEOUT_SECS_TOTAL;
 
     auto tryGetHeader = [](const auto& headers, const std::string& key) -> std::string
     {
