@@ -76,16 +76,6 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
 int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, const int releaseIndex)
 {
     UNREFERENCED_PARAMETER(releaseIndex);
-    const auto conn = new RestClient::Connection("");
-
-    const auto ua = std::format("{}/{}", appFilename, appVersion.str());
-    spdlog::debug("Setting User Agent to {}", ua);
-    conn->SetUserAgent(ua);
-    conn->FollowRedirects(true, MAX_REDIRECTS);
-    conn->SetTimeout(MAX_TIMEOUT_SECS);
-    conn->SetFileProgressCallback(progressFn);
-
-    SetCommonHeaders(conn);
 
     std::string downloadLocation;
 
@@ -138,16 +128,24 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     std::string tempFile{};
 
-    if (!winapi::GetNewTemporaryFile(tempFile, downloadLocation))
-    {
-        spdlog::error("Failed to get temporary file name");
-        return -1;
-    }
-
-    spdlog::debug("tempFile = {}", tempFile);
-
     auto& release = GetSelectedRelease();
-    release.localTempFilePath = tempFile;
+
+    // Reuse existing temp file if present (allows resuming across user retries)
+    if (release.localTempFilePath.empty())
+    {
+        if (!winapi::GetNewTemporaryFile(tempFile, downloadLocation))
+        {
+            spdlog::error("Failed to get temporary file name");
+            return -1;
+        }
+
+        spdlog::debug("tempFile = {}", tempFile);
+        release.localTempFilePath = tempFile;
+    }
+    else
+    {
+        spdlog::debug("Using existing temp file {}", release.localTempFilePath);
+    }
 
     std::ofstream outStream{};
     const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
@@ -155,108 +153,306 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     // ReSharper disable once CppTooWideScopeInitStatement
     int retryCount = 5;
+    long currentTimeoutSecs = MAX_TIMEOUT_SECS;
+    constexpr long kMaxTimeoutSecs = 3600; // 1 hour
 
-retry:
-
-    try
+    auto tryGetHeader = [](const auto& headers, const std::string& key) -> std::string
     {
-        outStream.open(release.localTempFilePath.string(), std::ios::binary | std::ios::trunc);
-    }
-    catch (std::ios_base::failure& e)
-    {
-        spdlog::error("Failed to open file {}, error {}", release.localTempFilePath, e.what());
-        return -1;
-    }
-
-    spdlog::debug("Starting release download from {}", release.downloadUrl);
-
-    auto [ code, body, headers ] = conn->get(release.downloadUrl);
-
-    outStream.write(body.data(), body.size());
-
-    outStream.close();
-
-    // try to grab original filename
-    const auto& cd = headers[ "Content-Disposition" ];
-
-    spdlog::debug("Content-Disposition header value: {}", cd);
-
-    // attempt to get true filename
-    if (code == httplib::OK_200 && !cd.empty())
-    {
-        std::vector<std::string> arguments;
-        char dl = ';';
-        size_t start = 0, end = 0;
-
-        // extract tokens
-        while ((start = cd.find_first_not_of(dl, end)) != std::string::npos)
+        if (const auto it = headers.find(key); it != headers.end())
         {
-            end = cd.find(dl, start);
-            arguments.push_back(cd.substr(start, end - start));
+            return it->second;
         }
 
-        if (arguments.size() >= 2)
+        // Some stacks may lowercase header names.
+        std::string lowerKey = key;
+        for (auto& ch : lowerKey)
         {
-            const auto& filename = arguments[ 1 ];
+            ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
+        }
+        if (const auto it2 = headers.find(lowerKey); it2 != headers.end())
+        {
+            return it2->second;
+        }
 
-            std::regex productRegex("filename=(.*)", std::regex_constants::icase);
-            auto matchesBegin = std::sregex_iterator(filename.begin(), filename.end(), productRegex);
-            auto matchesEnd = std::sregex_iterator();
+        return {};
+    };
 
-            if (matchesBegin != matchesEnd)
+    auto tryParseTotalSizeFromContentRange = [](const std::string& contentRange) -> std::optional<uint64_t>
+    {
+        // Format: "bytes <start>-<end>/<total>" (total may be "*")
+        if (contentRange.empty())
+        {
+            return std::nullopt;
+        }
+
+        const auto slash = contentRange.find('/');
+        if (slash == std::string::npos || slash + 1 >= contentRange.size())
+        {
+            return std::nullopt;
+        }
+
+        const std::string totalPart = contentRange.substr(slash + 1);
+        if (totalPart == "*")
+        {
+            return std::nullopt;
+        }
+
+        try
+        {
+            return static_cast<uint64_t>(std::stoull(totalPart));
+        }
+        catch (...)
+        {
+            return std::nullopt;
+        }
+    };
+
+    auto getLocalSize = [&]() -> uint64_t
+    {
+        std::error_code ec;
+        if (!release.localTempFilePath.empty() && std::filesystem::exists(release.localTempFilePath, ec) && !ec)
+        {
+            const auto sz = std::filesystem::file_size(release.localTempFilePath, ec);
+            return ec ? 0ULL : static_cast<uint64_t>(sz);
+        }
+        return 0ULL;
+    };
+
+    while (true)
+    {
+        // Recreate connection for each attempt to avoid stale curl state
+        auto conn = std::make_unique<RestClient::Connection>("");
+
+        const auto ua = std::format("{}/{}", appFilename, appVersion.str());
+        conn->SetUserAgent(ua);
+        conn->FollowRedirects(true, MAX_REDIRECTS);
+        conn->SetTimeout(currentTimeoutSecs);
+        conn->SetFileProgressCallback(progressFn);
+
+        SetCommonHeaders(conn.get());
+
+        std::optional<uint64_t> expectedSize{};
+        if (release.downloadSize.has_value())
+        {
+            expectedSize = static_cast<uint64_t>(release.downloadSize.value());
+        }
+
+        uint64_t localSize = getLocalSize();
+
+        if (expectedSize.has_value() && localSize == expectedSize.value())
+        {
+            spdlog::info("Local file already complete ({} bytes), skipping download", localSize);
+            return httplib::OK_200;
+        }
+
+        // If local size exceeds expected, drop it and start over
+        if (expectedSize.has_value() && localSize > expectedSize.value())
+        {
+            spdlog::warn("Local temp file is larger than expected ({} > {}), truncating and restarting",
+                         localSize, expectedSize.value());
+            localSize = 0;
+        }
+
+        const bool wantsResume = localSize > 0;
+
+        if (wantsResume)
+        {
+            const auto rangeHeader = std::format("bytes={}-", localSize);
+            spdlog::info("Attempting to resume download at offset {} (Range: {})", localSize, rangeHeader);
+            conn->AppendHeader("Range", rangeHeader);
+        }
+
+        const std::ios::openmode openMode =
+            std::ios::binary | (wantsResume ? std::ios::app : std::ios::trunc);
+
+        try
+        {
+            outStream.open(release.localTempFilePath.string(), openMode);
+        }
+        catch (std::ios_base::failure& e)
+        {
+            spdlog::error("Failed to open file {}, error {}", release.localTempFilePath, e.what());
+            return -1;
+        }
+
+        spdlog::debug("Starting release download from {} (timeout {}s)", release.downloadUrl, currentTimeoutSecs);
+
+        auto [ code, body, headers ] = conn->get(release.downloadUrl);
+
+        // Special case: if we attempted a resume but the server ignored the Range header and returned 200,
+        // restart locally by truncating and writing the full body.
+        if (wantsResume && code == httplib::OK_200)
+        {
+            spdlog::warn("Server ignored Range request (returned 200), restarting download from scratch");
+            outStream.close();
+            try
             {
-                const std::smatch& match = *matchesBegin;
-                std::filesystem::path attachmentName(match[ 1 ].str());
+                outStream.open(release.localTempFilePath.string(), std::ios::binary | std::ios::trunc);
+            }
+            catch (std::ios_base::failure& e)
+            {
+                spdlog::error("Failed to reopen file {}, error {}", release.localTempFilePath, e.what());
+                return -1;
+            }
+        }
 
-                std::filesystem::path newLocation = release.localTempFilePath;
-                //newLocation.replace_extension(attachmentName.extension());
-                newLocation.replace_filename(attachmentName);
+        if (!body.empty())
+        {
+            outStream.write(body.data(), body.size());
+        }
+        outStream.close();
 
-                spdlog::debug("Renaming {} to {}", release.localTempFilePath, newLocation);
-
-                DeleteFileA(newLocation.string().c_str());
-
-                // some setups with bootstrappers (like InnoSetup) require the original .exe extension
-                // otherwise it will fail to launch itself elevated with a "ShellExecuteEx failed" error.
-                if (!MoveFileA(release.localTempFilePath.string().c_str(), newLocation.string().c_str()))
+        // Update expected size from headers if not provided by server JSON
+        if (!expectedSize.has_value())
+        {
+            if (const auto cr = tryGetHeader(headers, "Content-Range"); !cr.empty())
+            {
+                expectedSize = tryParseTotalSizeFromContentRange(cr);
+            }
+            else if (code == httplib::OK_200)
+            {
+                const auto cl = tryGetHeader(headers, "Content-Length");
+                if (!cl.empty())
                 {
-                    spdlog::error("Failed to rename {} to {}, error: {:#x}", release.localTempFilePath,
-                                  newLocation, GetLastError());
-                }
-                else
-                {
-                    release.localTempFilePath = newLocation;
+                    try
+                    {
+                        expectedSize = static_cast<uint64_t>(std::stoull(cl));
+                    }
+                    catch (...)
+                    {
+                        // ignore
+                    }
                 }
             }
         }
-    }
 
-    if (code != httplib::OK_200)
-    {
-        if (code != httplib::NotFound_404 && --retryCount > 0)
+        const uint64_t finalSize = getLocalSize();
+
+        // Treat 206 as success only if file size matches expected
+        if (code == httplib::PartialContent_206)
+        {
+            if (expectedSize.has_value() && finalSize == expectedSize.value())
+            {
+                spdlog::info("Resumed download completed successfully ({} bytes)", finalSize);
+                code = httplib::OK_200; // normalize
+            }
+            else
+            {
+                spdlog::warn("Partial Content received but file is incomplete ({} of {}), will retry",
+                             finalSize, expectedSize.value_or(0ULL));
+            }
+        }
+
+        // If we attempted to resume but server says the range is not satisfiable, restart download.
+        if (wantsResume && code == httplib::RangeNotSatisfiable_416)
+        {
+            spdlog::warn("Server responded 416 to Range request, truncating and restarting");
+            try
+            {
+                outStream.open(release.localTempFilePath.string(), std::ios::binary | std::ios::trunc);
+                outStream.close();
+            }
+            catch (std::ios_base::failure& e)
+            {
+                spdlog::error("Failed to truncate file {}, error {}", release.localTempFilePath, e.what());
+                return -1;
+            }
+        }
+
+        // try to grab original filename
+        const auto cd = tryGetHeader(headers, "Content-Disposition");
+
+        spdlog::debug("Content-Disposition header value: {}", cd);
+
+        // attempt to get true filename
+        if (code == httplib::OK_200 && !cd.empty())
+        {
+            std::vector<std::string> arguments;
+            char dl = ';';
+            size_t start = 0, end = 0;
+
+            // extract tokens
+            while ((start = cd.find_first_not_of(dl, end)) != std::string::npos)
+            {
+                end = cd.find(dl, start);
+                arguments.push_back(cd.substr(start, end - start));
+            }
+
+            if (arguments.size() >= 2)
+            {
+                const auto& filename = arguments[ 1 ];
+
+                std::regex productRegex("filename=(.*)", std::regex_constants::icase);
+                auto matchesBegin = std::sregex_iterator(filename.begin(), filename.end(), productRegex);
+                auto matchesEnd = std::sregex_iterator();
+
+                if (matchesBegin != matchesEnd)
+                {
+                    const std::smatch& match = *matchesBegin;
+                    std::filesystem::path attachmentName(match[ 1 ].str());
+
+                    std::filesystem::path newLocation = release.localTempFilePath;
+                    //newLocation.replace_extension(attachmentName.extension());
+                    newLocation.replace_filename(attachmentName);
+
+                    spdlog::debug("Renaming {} to {}", release.localTempFilePath, newLocation);
+
+                    DeleteFileA(newLocation.string().c_str());
+
+                    // some setups with bootstrappers (like InnoSetup) require the original .exe extension
+                    // otherwise it will fail to launch itself elevated with a "ShellExecuteEx failed" error.
+                    if (!MoveFileA(release.localTempFilePath.string().c_str(), newLocation.string().c_str()))
+                    {
+                        spdlog::error("Failed to rename {} to {}, error: {:#x}", release.localTempFilePath,
+                                      newLocation, GetLastError());
+                    }
+                    else
+                    {
+                        release.localTempFilePath = newLocation;
+                    }
+                }
+            }
+        }
+
+        if (code == httplib::OK_200)
+        {
+            return code;
+        }
+
+        if (code == httplib::NotFound_404)
+        {
+            spdlog::error("GET request failed with 404, deleting temporary file {}", release.localTempFilePath);
+            if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
+            {
+                spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}", release.localTempFilePath,
+                             GetLastError(), winapi::GetLastErrorStdStr());
+            }
+            return code;
+        }
+
+        if (--retryCount > 0)
         {
             spdlog::debug("Web request failed (code {}), retrying {} more time(s)", code, retryCount);
+
+            if (code == CURLE_OPERATION_TIMEDOUT)
+            {
+                currentTimeoutSecs = std::min(currentTimeoutSecs * 2, kMaxTimeoutSecs);
+                spdlog::info("Request timeout reached, setting new timeout to {} seconds", currentTimeoutSecs);
+            }
 
             std::mt19937_64 eng{std::random_device{}()};
             std::uniform_int_distribution<> dist{1000, 5000};
             std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
-
-            goto retry;
+            continue;
         }
 
         auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
         errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
         spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
 
-        // clean up local file since we re-download it when the user decides to retry
-        if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
-        {
-            spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}", release.localTempFilePath,
-                         GetLastError(), winapi::GetLastErrorStdStr());
-        }
+        // Keep partial file to allow resuming on next user retry (only remove on 404 above)
+        return code;
     }
-
-    return code;
 }
 
 [[nodiscard]] std::tuple<bool, std::string> models::InstanceConfig::RequestUpdateInfo()
