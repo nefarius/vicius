@@ -26,5 +26,6 @@
         "vīcĭus",
         "vpatch",
         "winget"
-    ]
+    ],
+    "dotnet.defaultSolution": "vīcĭus.sln"
 }

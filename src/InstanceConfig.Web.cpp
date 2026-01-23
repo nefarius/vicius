@@ -31,7 +31,7 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
 #else
                        "x86"
 #endif
-    );
+        );
 
     //
     // Report OS/CPU architecture
@@ -58,7 +58,7 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
     }
 
     conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture", arch);
-    
+
     //
     // Custom headers passed via CLI
     //
@@ -268,103 +268,146 @@ retry:
     conn->SetUserAgent(ua);
     conn->FollowRedirects(true, MAX_REDIRECTS);
     int currentTimeoutSecs = MAX_TIMEOUT_SECS;
-    
+
     RestClient::HeaderFields headers;
     headers[ "Accept" ] = "application/json";
     conn->SetHeaders(headers);
 
     SetCommonHeaders(conn);
 
-    // ReSharper disable once CppTooWideScopeInitStatement
-    int retryCount = 5;
+    std::vector<std::string> candidateUrls;
+    candidateUrls.reserve(1 + fallbackUpdateRequestUrls.size());
+    candidateUrls.push_back(updateRequestUrl);
+    candidateUrls.insert(candidateUrls.end(), fallbackUpdateRequestUrls.begin(), fallbackUpdateRequestUrls.end());
 
-retry:
-
-    conn->SetTimeout(currentTimeoutSecs);
-
-    auto [ code, body, _ ] = conn->get(updateRequestUrl);
-
-    if (code != httplib::OK_200)
+    // Best-effort: try primary URL first, then fallbacks if the primary is not accessible
+    for (size_t i = 0; i < candidateUrls.size(); i++)
     {
-        if (code != httplib::NotFound_404 && --retryCount > 0)
+        const auto& requestUrl = candidateUrls[ i ];
+        spdlog::info("Requesting update info from {} ({}/{})", requestUrl, i + 1, candidateUrls.size());
+
+        // ReSharper disable once CppTooWideScopeInitStatement
+        int retryCount = 5;
+        currentTimeoutSecs = MAX_TIMEOUT_SECS;
+
+        while (true)
         {
-            spdlog::debug("Web request failed (code {}), retrying {} more time(s)", code, retryCount);
+            conn->SetTimeout(currentTimeoutSecs);
 
-            std::mt19937_64 eng{std::random_device{}()};
-            std::uniform_int_distribution<> dist{1000, 5000};
-            std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
+            auto [ code, body, _ ] = conn->get(requestUrl);
 
-            if (code == CURLE_OPERATION_TIMEDOUT)
+            if (code != httplib::OK_200)
             {
-                long nxt = std::lround(currentTimeoutSecs * 1.5);
-                currentTimeoutSecs = std::min(nxt, 900L);
-                spdlog::info("Request timeout reached, setting new timeout to {} seconds", currentTimeoutSecs);
+                if (code != httplib::NotFound_404 && --retryCount > 0)
+                {
+                    spdlog::debug("Web request failed (code {}), retrying {} more time(s)", code, retryCount);
+
+                    std::mt19937_64 eng{std::random_device{}()};
+                    std::uniform_int_distribution<> dist{1000, 5000};
+                    std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
+
+                    if (code == CURLE_OPERATION_TIMEDOUT)
+                    {
+                        long nxt = std::lround(currentTimeoutSecs * 1.5);
+                        currentTimeoutSecs = std::min(nxt, 900L);
+                        spdlog::info("Request timeout reached, setting new timeout to {} seconds", currentTimeoutSecs);
+                    }
+
+                    continue;
+                }
+
+                auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
+                errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
+                spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
+
+                // If the error is a cURL error (not an HTTP status), attempt fallbacks if available
+                if (code > 0 && code < CURL_LAST && (i + 1) < candidateUrls.size())
+                {
+                    spdlog::warn("Primary URL not accessible ({}), attempting fallback", errorMessage);
+                    break; // try next candidate URL
+                }
+
+                return std::make_tuple(false, std::format("HTTP error {}", errorMessage));
             }
 
-            goto retry;
-        }
-
-        auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
-        errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
-        spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
-        return std::make_tuple(false, std::format("HTTP error {}", errorMessage));
-    }
-
-    try
-    {
-        const json reply = json::parse(body);
-        remote = reply.get<UpdateResponse>();
-
-        // remove releases marked as disabled
-        std::erase_if(remote.releases, [](const UpdateRelease& x) { return x.disabled.value_or(false); });
-
-        // top release is always latest by version, even if the response wasn't the right order
-        std::ranges::sort(remote.releases, [](const UpdateRelease& lhs, const UpdateRelease& rhs)
-                          { return lhs.GetSemVersion() > rhs.GetSemVersion(); });
-
-        // bail out now if we are not supposed to obey the server settings
-        if (authority == Authority::Local || !reply.contains("shared"))
-        {
-            spdlog::info("{} authority specified (or empty response), ignoring server parameters",
-                         magic_enum::enum_name(authority));
-            return std::make_tuple(true, "OK");
-        }
-
-        // merge values that can be supplied both locally end remotely
-        if (remote.shared.has_value())
-        {
-            const auto& shared = remote.shared.value();
-            spdlog::info("Processing remote shared configuration parameters");
-
-            if (shared.windowTitle.has_value()) merged.windowTitle = shared.windowTitle.value();
-
-            if (shared.productName.has_value()) merged.productName = shared.productName.value();
-
-            // special case where we don't want the server to override what the CLI specified
-            if (!this->forceLocalVersion)
+            try
             {
-                if (shared.detectionMethod.has_value()) merged.detectionMethod = shared.detectionMethod.value();
+                const json reply = json::parse(body);
+                remote = reply.get<UpdateResponse>();
 
-                if (shared.detection.has_value()) merged.detection = shared.detection.value();
+                // remove releases marked as disabled
+                std::erase_if(remote.releases, [](const UpdateRelease& x) { return x.disabled.value_or(false); });
+
+                // top release is always latest by version, even if the response wasn't the right order
+                std::ranges::sort(remote.releases, [](const UpdateRelease& lhs, const UpdateRelease& rhs)
+                {
+                    return lhs.GetSemVersion() > rhs.GetSemVersion();
+                });
+
+                // bail out now if we are not supposed to obey the server settings
+                if (authority == Authority::Local || !reply.contains("shared"))
+                {
+                    spdlog::info("{} authority specified (or empty response), ignoring server parameters",
+                                 magic_enum::enum_name(authority));
+                    return std::make_tuple(true, "OK");
+                }
+
+                // merge values that can be supplied both locally end remotely
+                if (remote.shared.has_value())
+                {
+                    const auto& shared = remote.shared.value();
+                    spdlog::info("Processing remote shared configuration parameters");
+
+                    if (shared.windowTitle.has_value()) merged.windowTitle = shared.windowTitle.value();
+
+                    if (shared.productName.has_value()) merged.productName = shared.productName.value();
+
+                    // special case where we don't want the server to override what the CLI specified
+                    if (!this->forceLocalVersion)
+                    {
+                        if (shared.detectionMethod.has_value()) merged.detectionMethod = shared.detectionMethod.value();
+
+                        if (shared.detection.has_value()) merged.detection = shared.detection.value();
+                    }
+
+                    if (shared.installationErrorUrl.has_value())
+                        merged.installationErrorUrl = shared.installationErrorUrl.value();
+
+                    if (shared.downloadLocation.has_value()) merged.downloadLocation = shared.downloadLocation.value();
+
+                    if (shared.runAsTemporaryCopy.has_value()) merged.runAsTemporaryCopy = shared.runAsTemporaryCopy.value();
+                }
+
+                return std::make_tuple(true, "OK");
             }
+            catch (const json::exception& e)
+            {
+                spdlog::error("Failed to parse JSON, error {}", e.what());
 
-            if (shared.installationErrorUrl.has_value()) merged.installationErrorUrl = shared.installationErrorUrl.value();
+                // Some censorship setups return HTTP 200 with non-JSON body (block pages).
+                // If configured, try fallbacks before failing hard.
+                if ((i + 1) < candidateUrls.size())
+                {
+                    spdlog::warn("Non-JSON response received, attempting fallback");
+                    break; // try next candidate URL
+                }
 
-            if (shared.downloadLocation.has_value()) merged.downloadLocation = shared.downloadLocation.value();
+                return std::make_tuple(false, std::format("JSON parsing error: {}", e.what()));
+            }
+            catch (const std::exception& e)
+            {
+                spdlog::error("Unexpected error during response parsing, error {}", e.what());
 
-            if (shared.runAsTemporaryCopy.has_value()) merged.runAsTemporaryCopy = shared.runAsTemporaryCopy.value();
+                if ((i + 1) < candidateUrls.size())
+                {
+                    spdlog::warn("Response parsing failed, attempting fallback");
+                    break; // try next candidate URL
+                }
+
+                return std::make_tuple(false, std::format("Unknown error error: {}", e.what()));
+            }
         }
+    }
 
-        return std::make_tuple(true, "OK");
-    }
-    catch (const json::exception& e)
-    {
-        spdlog::error("Failed to parse JSON, error {}", e.what());
-        return std::make_tuple(false, std::format("JSON parsing error: {}", e.what()));
-    }
-    catch (const std::exception& e)
-    {
-        spdlog::error("Unexpected error during response parsing, error {}", e.what());
-        return std::make_tuple(false, std::format("Unknown error error: {}", e.what()));
-    }
+    return std::make_tuple(false, "No update server URL could be reached");
 }

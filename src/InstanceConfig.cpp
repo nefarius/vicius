@@ -100,6 +100,9 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
 #endif
 
     spdlog::debug("serverUrlTemplate = {}", this->serverUrlTemplate);
+    spdlog::debug("fallbackServerUrlTemplates.has_value() = {}", this->fallbackServerUrlTemplates.has_value());
+    spdlog::debug("fallbackServerUrlTemplates.size() = {}",
+                  this->fallbackServerUrlTemplates.has_value() ? this->fallbackServerUrlTemplates.value().size() : 0);
 
     // optional update channel
     if (cmdl({NV_CLI_PARAM_CHANNEL}))
@@ -338,6 +341,10 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
             //
 
             serverUrlTemplate = data.value("/instance/serverUrlTemplate"_json_pointer, serverUrlTemplate);
+            if (data.contains("/instance/fallbackServerUrlTemplates"_json_pointer))
+            {
+                fallbackServerUrlTemplates = data.at("/instance/fallbackServerUrlTemplates"_json_pointer).get<std::vector<std::string>>();
+            }
             filenameRegex = data.value("/instance/filenameRegex"_json_pointer, filenameRegex);
             authority = data.value("/instance/authority"_json_pointer, authority);
 
@@ -425,6 +432,24 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
 
     updateRequestUrl = std::vformat(serverUrlTemplate, std::make_format_args(tenantSubPath));
     spdlog::debug("updateRequestUrl = {}", updateRequestUrl);
+
+    fallbackUpdateRequestUrls.clear();
+    if (fallbackServerUrlTemplates.has_value())
+    {
+        fallbackUpdateRequestUrls.reserve(fallbackServerUrlTemplates.value().size());
+
+        for (const auto& tpl : fallbackServerUrlTemplates.value())
+        {
+            try
+            {
+                fallbackUpdateRequestUrls.push_back(std::vformat(tpl, std::make_format_args(tenantSubPath)));
+            }
+            catch (const std::exception& e)
+            {
+                spdlog::error("Failed to render fallback URL template '{}', error: {}", tpl, e.what());
+            }
+        }
+    }
 }
 
 models::InstanceConfig::~InstanceConfig()

@@ -55,6 +55,8 @@ namespace models
         std::string tenantSubPath;
         /** URL of the update request */
         std::string updateRequestUrl;
+        /** Optional pre-rendered fallback URLs for the update request */
+        std::vector<std::string> fallbackUpdateRequestUrls;
         /** Full pathname of the updater parent process file, if any */
         std::optional<std::filesystem::path> parentAppPath;
         /** Process to terminate before update */
@@ -98,6 +100,7 @@ namespace models
         static constexpr int MAX_REDIRECTS = 5;
 
         std::string serverUrlTemplate;
+        std::optional<std::vector<std::string>> fallbackServerUrlTemplates;
         std::string filenameRegex;
         Authority authority;
         std::string channel;
@@ -386,5 +389,6 @@ namespace models
         }
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InstanceConfig, serverUrlTemplate, filenameRegex, authority)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InstanceConfig, serverUrlTemplate, fallbackServerUrlTemplates, filenameRegex,
+                                                    authority)
 }
