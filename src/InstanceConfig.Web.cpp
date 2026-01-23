@@ -395,6 +395,14 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
                     //newLocation.replace_extension(attachmentName.extension());
                     newLocation.replace_filename(attachmentName);
 
+                    // If the server-supplied filename already matches our current path, don't "rename".
+                    // Otherwise we'd delete the file and then fail to move it (ERROR_FILE_NOT_FOUND).
+                    if (newLocation == release.localTempFilePath)
+                    {
+                        spdlog::debug("Skipping rename; already named {}", newLocation);
+                        continue;
+                    }
+
                     spdlog::debug("Renaming {} to {}", release.localTempFilePath, newLocation);
 
                     DeleteFileA(newLocation.string().c_str());
