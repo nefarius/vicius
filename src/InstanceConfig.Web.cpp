@@ -225,6 +225,11 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     {
         const auto ua = std::format("{}/{}", appFilename, appVersion.str());
 
+        // Some servers/proxies omit Content-Disposition on ranged/resumed requests.
+        // Cache the filename once we learn it so a later successful retry can still rename.
+        static_assert(std::is_same_v<std::filesystem::path::value_type, wchar_t> || std::is_same_v<std::filesystem::path::value_type, char>);
+        std::optional<std::filesystem::path> cachedAttachmentName{};
+
         std::optional<uint64_t> expectedSize{};
         if (release.downloadSize.has_value())
         {
@@ -533,6 +538,42 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
         const uint64_t finalSize = getLocalSize();
 
+        auto tryExtractFilenameFromContentDisposition = [](const std::string& cdHeader) -> std::optional<std::filesystem::path>
+        {
+            if (cdHeader.empty())
+            {
+                return std::nullopt;
+            }
+
+            std::vector<std::string> arguments;
+            char dl = ';';
+            size_t start = 0, end = 0;
+
+            while ((start = cdHeader.find_first_not_of(dl, end)) != std::string::npos)
+            {
+                end = cdHeader.find(dl, start);
+                arguments.push_back(cdHeader.substr(start, end - start));
+            }
+
+            if (arguments.size() < 2)
+            {
+                return std::nullopt;
+            }
+
+            const auto& filename = arguments[ 1 ];
+            std::regex productRegex("filename=(.*)", std::regex_constants::icase);
+            auto matchesBegin = std::sregex_iterator(filename.begin(), filename.end(), productRegex);
+            auto matchesEnd = std::sregex_iterator();
+
+            if (matchesBegin == matchesEnd)
+            {
+                return std::nullopt;
+            }
+
+            const std::smatch& match = *matchesBegin;
+            return std::filesystem::path(match[ 1 ].str());
+        };
+
         // Treat 206 as success only if file size matches expected
         if (code == httplib::PartialContent_206)
         {
@@ -564,50 +605,47 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             }
         }
 
-        // try to grab original filename
+        // try to grab original filename (may be missing on some retries/ranged requests)
         const auto cd = tryGetHeader(headers, "Content-Disposition");
-
-        spdlog::debug("Content-Disposition header value: {}", cd);
-
-        // attempt to get true filename
-        if (code == httplib::OK_200 && !cd.empty())
+        if (!cd.empty())
         {
-            std::vector<std::string> arguments;
-            char dl = ';';
-            size_t start = 0, end = 0;
-
-            // extract tokens
-            while ((start = cd.find_first_not_of(dl, end)) != std::string::npos)
+            spdlog::debug("Content-Disposition header value: {}", cd);
+            if (auto parsed = tryExtractFilenameFromContentDisposition(cd); parsed.has_value())
             {
-                end = cd.find(dl, start);
-                arguments.push_back(cd.substr(start, end - start));
+                cachedAttachmentName = parsed.value();
+            }
+        }
+        else
+        {
+            spdlog::debug("Content-Disposition header value: <empty>");
+        }
+
+        // attempt to get true filename (use cached name if this attempt omitted it)
+        if (code == httplib::OK_200)
+        {
+            std::optional<std::filesystem::path> attachmentName{};
+            if (auto parsed = tryExtractFilenameFromContentDisposition(cd); parsed.has_value())
+            {
+                attachmentName = parsed.value();
+            }
+            else if (cachedAttachmentName.has_value())
+            {
+                attachmentName = cachedAttachmentName.value();
             }
 
-            if (arguments.size() >= 2)
+            if (attachmentName.has_value())
             {
-                const auto& filename = arguments[ 1 ];
+                std::filesystem::path newLocation = release.localTempFilePath;
+                newLocation.replace_filename(attachmentName.value());
 
-                std::regex productRegex("filename=(.*)", std::regex_constants::icase);
-                auto matchesBegin = std::sregex_iterator(filename.begin(), filename.end(), productRegex);
-                auto matchesEnd = std::sregex_iterator();
-
-                if (matchesBegin != matchesEnd)
+                // If the server-supplied filename already matches our current path, don't "rename".
+                // Otherwise we'd delete the file and then fail to move it (ERROR_FILE_NOT_FOUND).
+                if (newLocation == release.localTempFilePath)
                 {
-                    const std::smatch& match = *matchesBegin;
-                    std::filesystem::path attachmentName(match[ 1 ].str());
-
-                    std::filesystem::path newLocation = release.localTempFilePath;
-                    //newLocation.replace_extension(attachmentName.extension());
-                    newLocation.replace_filename(attachmentName);
-
-                    // If the server-supplied filename already matches our current path, don't "rename".
-                    // Otherwise we'd delete the file and then fail to move it (ERROR_FILE_NOT_FOUND).
-                    if (newLocation == release.localTempFilePath)
-                    {
-                        spdlog::debug("Skipping rename; already named {}", newLocation);
-                        continue;
-                    }
-
+                    spdlog::debug("Skipping rename; already named {}", newLocation);
+                }
+                else
+                {
                     spdlog::debug("Renaming {} to {}", release.localTempFilePath, newLocation);
 
                     DeleteFileA(newLocation.string().c_str());
