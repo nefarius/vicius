@@ -40,7 +40,11 @@ void models::InstanceConfig::ResetReleaseDownloadState() { downloadTask.reset();
 
 void models::InstanceConfig::RequestAbortDownload()
 {
-    abortDownloadRequested.store(true, std::memory_order_relaxed);
+    const bool was = abortDownloadRequested.exchange(true, std::memory_order_relaxed);
+    if (!was)
+    {
+        spdlog::info("Download abort requested");
+    }
 }
 
 void models::InstanceConfig::WaitForDownloadToFinish()

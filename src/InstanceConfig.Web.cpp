@@ -231,6 +231,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     {
         if (abortDownloadRequested.load(std::memory_order_relaxed))
         {
+            spdlog::info("Download aborted before starting next attempt");
             lastDownloadError = "Download cancelled.";
             return static_cast<int>(CURLE_ABORTED_BY_CALLBACK);
         }
@@ -488,6 +489,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         {
             if (abortDownloadRequested.load(std::memory_order_relaxed))
             {
+                spdlog::info("Download aborted");
                 lastDownloadError = "Download cancelled.";
                 return static_cast<int>(CURLE_ABORTED_BY_CALLBACK);
             }
