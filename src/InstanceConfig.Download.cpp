@@ -22,14 +22,14 @@ bool models::InstanceConfig::DownloadReleaseAsync(int releaseIndex, curl_progres
         return false;
     }
 
-    const std::future_status status = (*downloadTask).wait_for(std::chrono::milliseconds(1));
+    const std::future_status status = downloadTask->wait_for(std::chrono::milliseconds(1));
 
     isDownloading = status == std::future_status::timeout;
     hasFinished = status == std::future_status::ready;
 
     if (hasFinished)
     {
-        statusCode = (*downloadTask).get();
+        statusCode = downloadTask->get();
     }
 
     return true;
