@@ -10,6 +10,7 @@ bool models::InstanceConfig::DownloadReleaseAsync(int releaseIndex, curl_progres
         return false;
     }
 
+    abortDownloadRequested.store(false, std::memory_order_relaxed);
     downloadTask = std::async(std::launch::async, &InstanceConfig::DownloadRelease, this, progressFn, releaseIndex);
 
     return true;
@@ -36,3 +37,19 @@ bool models::InstanceConfig::DownloadReleaseAsync(int releaseIndex, curl_progres
 }
 
 void models::InstanceConfig::ResetReleaseDownloadState() { downloadTask.reset(); }
+
+void models::InstanceConfig::RequestAbortDownload()
+{
+    abortDownloadRequested.store(true, std::memory_order_relaxed);
+}
+
+void models::InstanceConfig::WaitForDownloadToFinish()
+{
+    if (!downloadTask.has_value())
+    {
+        return;
+    }
+
+    // Wait for completion; DownloadRelease is responsible for observing abortDownloadRequested.
+    downloadTask->wait();
+}

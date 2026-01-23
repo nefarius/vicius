@@ -423,7 +423,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 done = true;
         }
         if (done)
+        {
+            cfg.RequestAbortDownload();
+            cfg.WaitForDownloadToFinish();
             break;
+        }
 
         // Handle window being minimized or screen locked
         if (g_SwapChainOccluded && g_pSwapChain->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED)

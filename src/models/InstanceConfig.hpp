@@ -1,6 +1,7 @@
 #pragma once
 #include <restclient-cpp/connection.h>
 #include <curl/curl.h>
+#include <atomic>
 
 #include "UpdateResponse.hpp"
 #include "MergedConfig.hpp"
@@ -75,6 +76,8 @@ namespace models
         int selectedRelease{0};
         /** Human-readable download failure reason from last attempt (if any) */
         std::string lastDownloadError{};
+        /** True if the current download should abort ASAP */
+        std::atomic_bool abortDownloadRequested{false};
         /** True if we run in any of the silent scenarios, false if not */
         bool isSilent{false};
         /** True if user chose to ignore postpone period */
@@ -242,6 +245,16 @@ namespace models
          * \brief Reset the download async task state.
          */
         void ResetReleaseDownloadState();
+
+        /**
+         * \brief Requests the running download (if any) to abort as soon as possible.
+         */
+        void RequestAbortDownload();
+
+        /**
+         * \brief Waits for the running download (if any) to finish.
+         */
+        void WaitForDownloadToFinish();
 
         /**
          * \brief Checks the version of the installed product against the latest available release.

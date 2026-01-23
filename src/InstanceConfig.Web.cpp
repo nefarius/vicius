@@ -83,6 +83,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 {
     UNREFERENCED_PARAMETER(releaseIndex);
     lastDownloadError.clear();
+    abortDownloadRequested.store(false, std::memory_order_relaxed);
 
     std::string downloadLocation;
 
@@ -228,6 +229,12 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     while (true)
     {
+        if (abortDownloadRequested.load(std::memory_order_relaxed))
+        {
+            lastDownloadError = "Download cancelled.";
+            return static_cast<int>(CURLE_ABORTED_BY_CALLBACK);
+        }
+
         const auto ua = std::format("{}/{}", appFilename, appVersion.str());
 
         std::optional<uint64_t> expectedSize{};
@@ -441,20 +448,23 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         req.setOpt(curlpp::options::WriteFunction(writeCallback));
         req.setOpt(curlpp::options::HeaderFunction(headerCallback));
 
-        // Progress
-        if (progressFn != nullptr)
+        // Progress (always enabled so we can abort on shutdown)
+        auto progressCallback = [this, progressFn](double dltotal, double dlnow, double ultotal, double ulnow) -> int
         {
-            auto progressCallback = [progressFn](double dltotal, double dlnow, double ultotal, double ulnow) -> int
+            if (abortDownloadRequested.load(std::memory_order_relaxed))
+            {
+                return 1; // abort transfer
+            }
+
+            if (progressFn != nullptr)
             {
                 return progressFn(nullptr, dltotal, dlnow, ultotal, ulnow);
-            };
-            req.setOpt(curlpp::options::NoProgress(false));
-            req.setOpt(curlpp::options::ProgressFunction(progressCallback));
-        }
-        else
-        {
-            req.setOpt(curlpp::options::NoProgress(true));
-        }
+            }
+
+            return 0;
+        };
+        req.setOpt(curlpp::options::NoProgress(false));
+        req.setOpt(curlpp::options::ProgressFunction(progressCallback));
 
         // Resume
         if (wantsResume)
@@ -476,6 +486,12 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         }
         catch (const curlpp::RuntimeError& e)
         {
+            if (abortDownloadRequested.load(std::memory_order_relaxed))
+            {
+                lastDownloadError = "Download cancelled.";
+                return static_cast<int>(CURLE_ABORTED_BY_CALLBACK);
+            }
+
             // If we aborted because the server ignored the Range request, restart from scratch.
             if (headerCollector.abortBecauseRangeIgnored)
             {
