@@ -25,6 +25,9 @@
 
 #include "imgui_md.h"
 
+// DPI scale factor is owned by main.cpp (kept as a simple global for this app).
+extern float g_scaleFactor;
+
 imgui_md::imgui_md()
 {
 	m_md.abi_version = 0;
@@ -353,7 +356,7 @@ void imgui_md::SPAN_IMG(const MD_SPAN_IMG_DETAIL* d, bool e)
 		image_info nfo;
 		if (get_image(nfo)) {
 
-			const float scale = ImGui::GetIO().FontGlobalScale;
+			const float scale = g_scaleFactor;
 			nfo.size.x *= scale;
 			nfo.size.y *= scale;
 

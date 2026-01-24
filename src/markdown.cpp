@@ -18,6 +18,8 @@ ImFont* G_Font_Default = nullptr;
 ImFont* G_Font_Bold = nullptr;
 
 extern ID3D11Device* g_pd3dDevice;
+// DPI scale factor is owned by main.cpp
+extern float g_scaleFactor;
 
 struct D3DResource
 {
@@ -88,7 +90,7 @@ struct changelog : imgui_md
             image_info nfo;
             if (get_image(nfo))
             {
-                const float scale = ImGui::GetIO().FontGlobalScale;
+                const float scale = g_scaleFactor;
                 nfo.size.x *= scale;
                 nfo.size.y *= scale;
 

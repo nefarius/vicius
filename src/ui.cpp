@@ -16,7 +16,13 @@ extern ImFont* G_Font_Bold;
  */
 void ui::ApplyImGuiStyleDark(float scale)
 {
-    auto& colors = ImGui::GetStyle().Colors;
+    // Make this function idempotent: it can be called multiple times (e.g. on WM_DPICHANGED)
+    // without accumulating size scaling.
+    ImGuiStyle& style = ImGui::GetStyle();
+    style = ImGuiStyle();
+    ImGui::StyleColorsDark(&style);
+
+    auto& colors = style.Colors;
     colors[ ImGuiCol_WindowBg ] = ImVec4{0.1f, 0.1f, 0.13f, 1.0f};
     colors[ ImGuiCol_MenuBarBg ] = ImVec4{0.16f, 0.16f, 0.21f, 1.0f};
 
@@ -79,7 +85,6 @@ void ui::ApplyImGuiStyleDark(float scale)
     colors[ ImGuiCol_ResizeGripHovered ] = ImVec4{0.74f, 0.58f, 0.98f, 0.29f};
     colors[ ImGuiCol_ResizeGripActive ] = ImVec4{0.84f, 0.58f, 1.0f, 0.29f};
 
-    auto& style = ImGui::GetStyle();
     style.TabRounding = 4;
     style.ScrollbarRounding = 9;
     style.WindowRounding = 7;
@@ -122,7 +127,7 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     const LPVOID fk_data = LockResource(LoadResource(hInstance, fk_res));
 
     // Base font
-    io.Fonts->AddFontFromMemoryTTF(ruda_regular_data, ruda_regular_size, scale * sizePixels, &font_cfg);
+    G_Font_Default = io.Fonts->AddFontFromMemoryTTF(ruda_regular_data, ruda_regular_size, scale * sizePixels, &font_cfg);
 
     // Base font + Fork Awesome merged (default font)
     static constexpr ImWchar fk_range[ ] = {ICON_MIN_FK, ICON_MAX_FK, 0};
@@ -191,6 +196,9 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
             emj_range
         );
     }
+
+    // Ensure a deterministic default font selection.
+    io.FontDefault = G_Font_Default;
 }
 
 /**
