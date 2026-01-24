@@ -459,6 +459,10 @@ models::InstanceConfig::~InstanceConfig()
         NCertFreeSigInfo(&appSigInfo);
     }
 
+    // Ensure no in-flight download uses libcurl while we tear down global state.
+    RequestAbortDownload();
+    WaitForDownloadToFinish();
+
     RestClient::disable();
 
     // clean up release resources

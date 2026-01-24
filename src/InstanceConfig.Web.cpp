@@ -2,8 +2,11 @@
 #include "Util.h"
 #include "InstanceConfig.hpp"
 
+#include <curlpp/Easy.hpp>
+#include <curlpp/Options.hpp>
 
-void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* conn) const
+
+void models::InstanceConfig::SetCommonHeaders(_Inout_ std::unique_ptr<RestClient::Connection>& conn) const
 {
     //
     // If a backend server is used, it can alter the response based on
@@ -63,11 +66,14 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
     // Custom headers passed via CLI
     //
 
-    for (const auto& kvp : additionalHeaders)
+    if (!additionalHeaders.empty())
     {
-        const auto name = std::format("X-" NV_HTTP_HEADERS_NAME "-{}", kvp.first);
-        const auto value = kvp.second;
-        conn->AppendHeader(name, value);
+        for (const auto& [ fst, snd ] : additionalHeaders)
+        {
+            const auto name = std::format("X-" NV_HTTP_HEADERS_NAME "-{}", fst);
+            const auto value = snd;
+            conn->AppendHeader(name, value);
+        }
     }
 
 #endif
@@ -76,6 +82,8 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ RestClient::Connection* co
 int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, const int releaseIndex)
 {
     UNREFERENCED_PARAMETER(releaseIndex);
+    lastDownloadError.clear();
+    abortDownloadRequested.store(false, std::memory_order_relaxed);
 
     std::string downloadLocation;
 
@@ -151,10 +159,11 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
     outStream.exceptions(exceptionMask);
 
-    // ReSharper disable once CppTooWideScopeInitStatement
-    int retryCount = 5;
+    int retryCount = MAX_RETRY_COUNT;
     long currentTimeoutSecs = MAX_TIMEOUT_SECS;
-    constexpr long kMaxTimeoutSecs = 3600; // 1 hour
+    constexpr long kMaxTimeoutSecs = MAX_TIMEOUT_SECS_TOTAL;
+    std::string lastFailureDetails{};
+    std::optional<std::filesystem::path> cachedAttachmentName{};
 
     auto tryGetHeader = [](const auto& headers, const std::string& key) -> std::string
     {
@@ -220,16 +229,14 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
     while (true)
     {
-        // Recreate connection for each attempt to avoid stale curl state
-        auto conn = std::make_unique<RestClient::Connection>("");
+        if (abortDownloadRequested.load(std::memory_order_relaxed))
+        {
+            spdlog::info("Download aborted before starting next attempt");
+            lastDownloadError = "Download cancelled.";
+            return static_cast<int>(CURLE_ABORTED_BY_CALLBACK);
+        }
 
         const auto ua = std::format("{}/{}", appFilename, appVersion.str());
-        conn->SetUserAgent(ua);
-        conn->FollowRedirects(true, MAX_REDIRECTS);
-        conn->SetTimeout(currentTimeoutSecs);
-        conn->SetFileProgressCallback(progressFn);
-
-        SetCommonHeaders(conn.get());
 
         std::optional<uint64_t> expectedSize{};
         if (release.downloadSize.has_value())
@@ -255,13 +262,6 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
         const bool wantsResume = localSize > 0;
 
-        if (wantsResume)
-        {
-            const auto rangeHeader = std::format("bytes={}-", localSize);
-            spdlog::info("Attempting to resume download at offset {} (Range: {})", localSize, rangeHeader);
-            conn->AppendHeader("Range", rangeHeader);
-        }
-
         const std::ios::openmode openMode =
             std::ios::binary | (wantsResume ? std::ios::app : std::ios::trunc);
 
@@ -276,31 +276,283 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         }
 
         spdlog::debug("Starting release download from {} (timeout {}s)", release.downloadUrl, currentTimeoutSecs);
-
-        auto [ code, body, headers ] = conn->get(release.downloadUrl);
-
-        // Special case: if we attempted a resume but the server ignored the Range header and returned 200,
-        // restart locally by truncating and writing the full body.
-        if (wantsResume && code == httplib::OK_200)
+        if (wantsResume)
         {
-            spdlog::warn("Server ignored Range request (returned 200), restarting download from scratch");
-            outStream.close();
+            const auto rangeHeader = std::format("bytes={}-", localSize);
+            spdlog::info("Attempting to resume download at offset {} (Range: {})", localSize, rangeHeader);
+        }
+
+        struct CurlHeaderCollector
+        {
+            std::unordered_map<std::string, std::string> fields{};
+            long lastHttpCode{0};
+            bool abortBecauseRangeIgnored{false};
+        };
+
+        CurlHeaderCollector headerCollector{};
+
+        auto trimInPlace = [](std::string& s)
+        {
+            auto isSpace = [](unsigned char c) { return std::isspace(c) != 0; };
+            while (!s.empty() && isSpace(static_cast<unsigned char>(s.front()))) s.erase(s.begin());
+            while (!s.empty() && isSpace(static_cast<unsigned char>(s.back()))) s.pop_back();
+        };
+
+        // Note: this curlpp version expects std::function callbacks WITHOUT userdata.
+        // We capture required state in lambdas instead.
+        auto headerCallback = [&](char* buffer, size_t size, size_t nitems) -> size_t
+        {
+            const size_t bytes = size * nitems;
+            if (buffer == nullptr || bytes == 0)
+            {
+                return bytes;
+            }
+
+            std::string line(buffer, buffer + bytes);
+
+            // Status line, e.g. "HTTP/1.1 206 Partial Content"
+            if (line.rfind("HTTP/", 0) == 0)
+            {
+                const auto firstSpace = line.find(' ');
+                if (firstSpace != std::string::npos && (firstSpace + 4) <= line.size())
+                {
+                    try
+                    {
+                        headerCollector.lastHttpCode = std::stol(line.substr(firstSpace + 1, 3));
+                    }
+                    catch (...)
+                    {
+                        // ignore
+                    }
+                }
+
+                return bytes;
+            }
+
+            const auto colon = line.find(':');
+            if (colon == std::string::npos)
+            {
+                return bytes;
+            }
+
+            std::string key = line.substr(0, colon);
+            std::string value = line.substr(colon + 1);
+
+            // Trim whitespace and CRLF
+            auto isSpace = [](unsigned char c) { return std::isspace(c) != 0; };
+            while (!key.empty() && isSpace(static_cast<unsigned char>(key.back()))) key.pop_back();
+            while (!value.empty() && (value.back() == '\r' || value.back() == '\n')) value.pop_back();
+            while (!value.empty() && isSpace(static_cast<unsigned char>(value.front()))) value.erase(value.begin());
+            while (!value.empty() && isSpace(static_cast<unsigned char>(value.back()))) value.pop_back();
+
+            if (!key.empty())
+            {
+                headerCollector.fields[ key ] = value;
+            }
+
+            return bytes;
+        };
+
+        auto writeCallback = [&](char* ptr, size_t size, size_t nmemb) -> size_t
+        {
+            const size_t bytes = size * nmemb;
+            if (ptr == nullptr || bytes == 0)
+            {
+                return bytes;
+            }
+
+            // If we attempted to resume but the server ignores Range (responds 200),
+            // abort before writing any body bytes to avoid corrupting the local file.
+            if (wantsResume && headerCollector.lastHttpCode == 200)
+            {
+                headerCollector.abortBecauseRangeIgnored = true;
+                return 0;
+            }
+
             try
             {
-                outStream.open(release.localTempFilePath.string(), std::ios::binary | std::ios::trunc);
+                outStream.write(ptr, static_cast<std::streamsize>(bytes));
+                return bytes;
             }
-            catch (std::ios_base::failure& e)
+            catch (...)
             {
-                spdlog::error("Failed to reopen file {}, error {}", release.localTempFilePath, e.what());
-                return -1;
+                return 0; // abort transfer
             }
+        };
+
+        // Build headers (equivalent to SetCommonHeaders + additionalHeaders)
+        std::list<std::string> headerLines;
+#if !defined(NV_FLAGS_NO_VENDOR_HEADERS)
+        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Manufacturer: {}", manufacturer));
+        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Product: {}", product));
+        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Version: {}", appVersion.str()));
+        if (!channel.empty())
+        {
+            headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Channel: {}", channel));
         }
 
-        if (!body.empty())
+#if defined(_M_AMD64)
+        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Process-Architecture: x64"));
+#elif defined(_M_ARM64)
+        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Process-Architecture: arm64"));
+#else
+        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Process-Architecture: x86"));
+#endif
+
+        const SYSTEM_INFO si = nefarius::winapi::SafeGetNativeSystemInfo();
+        std::string arch;
+        switch (si.wProcessorArchitecture)
         {
-            outStream.write(body.data(), body.size());
+            case PROCESSOR_ARCHITECTURE_AMD64:
+                arch = "x64";
+                break;
+            case PROCESSOR_ARCHITECTURE_ARM64:
+                arch = "arm64";
+                break;
+            case PROCESSOR_ARCHITECTURE_INTEL:
+                arch = "x86";
+                break;
+            default:
+                arch = "<unknown>";
+                break;
         }
-        outStream.close();
+        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture: {}", arch));
+
+        if (!additionalHeaders.empty())
+        {
+            for (const auto& [fst, snd] : additionalHeaders)
+            {
+                headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-{}: {}", fst, snd));
+            }
+        }
+#endif
+
+        // Trim any whitespace; curlpp will turn std::list into a curl_slist internally.
+        for (auto& line : headerLines)
+        {
+            trimInPlace(line);
+        }
+
+        curlpp::Easy req;
+        req.setOpt(curlpp::options::Url(release.downloadUrl));
+        req.setOpt(curlpp::options::UserAgent(ua));
+        req.setOpt(curlpp::options::FollowLocation(true));
+        req.setOpt(curlpp::options::MaxRedirs(MAX_REDIRECTS));
+        req.setOpt(curlpp::options::HttpHeader(headerLines));
+
+        // Prefer "stall" timeouts: don't abort if bytes still trickle in.
+        req.setOpt(curlpp::options::ConnectTimeout(60));
+        req.setOpt(curlpp::options::LowSpeedLimit(1));
+        req.setOpt(curlpp::options::LowSpeedTime(currentTimeoutSecs));
+
+        // Streaming write + header collection
+        req.setOpt(curlpp::options::WriteFunction(writeCallback));
+        req.setOpt(curlpp::options::HeaderFunction(headerCallback));
+
+        // Progress (always enabled so we can abort on shutdown)
+        auto progressCallback = [this, progressFn](double dltotal, double dlnow, double ultotal, double ulnow) -> int
+        {
+            if (abortDownloadRequested.load(std::memory_order_relaxed))
+            {
+                return 1; // abort transfer
+            }
+
+            if (progressFn != nullptr)
+            {
+                return progressFn(nullptr, dltotal, dlnow, ultotal, ulnow);
+            }
+
+            return 0;
+        };
+        req.setOpt(curlpp::options::NoProgress(false));
+        req.setOpt(curlpp::options::ProgressFunction(progressCallback));
+
+        // Resume
+        if (wantsResume)
+        {
+#ifdef CURLOPT_RESUME_FROM_LARGE
+            req.setOpt(curlpp::options::ResumeFromLarge(static_cast<curl_off_t>(localSize)));
+#else
+            req.setOpt(curlpp::options::ResumeFrom(static_cast<long>(localSize)));
+#endif
+        }
+
+        int code = httplib::OK_200;
+        try
+        {
+            req.perform();
+
+            // If we didn't parse an HTTP status line, treat as OK (best-effort).
+            code = headerCollector.lastHttpCode != 0 ? static_cast<int>(headerCollector.lastHttpCode) : httplib::OK_200;
+        }
+        catch (const curlpp::RuntimeError& e)
+        {
+            if (abortDownloadRequested.load(std::memory_order_relaxed))
+            {
+                spdlog::info("Download aborted");
+                lastDownloadError = "Download cancelled.";
+                return static_cast<int>(CURLE_ABORTED_BY_CALLBACK);
+            }
+
+            // If we aborted because the server ignored the Range request, restart from scratch.
+            if (headerCollector.abortBecauseRangeIgnored)
+            {
+                spdlog::warn("Server ignored resume (returned 200), restarting from scratch");
+                try
+                {
+                    outStream.close();
+                    outStream.open(release.localTempFilePath.string(), std::ios::binary | std::ios::trunc);
+                    outStream.close();
+                }
+                catch (...)
+                {
+                    // ignore
+                }
+
+                // Retry without consuming a retry slot.
+                continue;
+            }
+
+            std::string msg = e.what();
+            if (headerCollector.lastHttpCode != 0)
+            {
+                msg = std::format("HTTP {}: {}", headerCollector.lastHttpCode, msg);
+            }
+
+            lastFailureDetails = msg;
+
+            // Best-effort mapping: detect timeout text to enable backoff.
+            const bool isTimeout =
+                msg.find("Timeout") != std::string::npos ||
+                msg.find("timeout") != std::string::npos ||
+                msg.find("timed out") != std::string::npos ||
+                msg.find("Timed out") != std::string::npos;
+
+            if (isTimeout)
+            {
+                code = static_cast<int>(CURLE_OPERATION_TIMEDOUT);
+            }
+            else if (headerCollector.lastHttpCode >= 400 && headerCollector.lastHttpCode < 600)
+            {
+                // Prefer the HTTP status if we have one, so UI can show status text.
+                code = static_cast<int>(headerCollector.lastHttpCode);
+            }
+            else
+            {
+                // Generic cURL-ish failure so UI doesn't show an empty enum name.
+                code = static_cast<int>(CURLE_RECV_ERROR);
+            }
+        }
+        catch (const curlpp::LogicError& e)
+        {
+            spdlog::error("cURLpp logic error: {}", e.what());
+            lastFailureDetails = e.what();
+            code = static_cast<int>(CURLE_FAILED_INIT);
+        }
+
+        try { outStream.close(); } catch (...) { }
+
+        const auto& headers = headerCollector.fields;
 
         // Update expected size from headers if not provided by server JSON
         if (!expectedSize.has_value())
@@ -328,6 +580,42 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
         const uint64_t finalSize = getLocalSize();
 
+        auto tryExtractFilenameFromContentDisposition = [](const std::string& cdHeader) -> std::optional<std::filesystem::path>
+        {
+            if (cdHeader.empty())
+            {
+                return std::nullopt;
+            }
+
+            std::vector<std::string> arguments;
+            char dl = ';';
+            size_t start = 0, end = 0;
+
+            while ((start = cdHeader.find_first_not_of(dl, end)) != std::string::npos)
+            {
+                end = cdHeader.find(dl, start);
+                arguments.push_back(cdHeader.substr(start, end - start));
+            }
+
+            if (arguments.size() < 2)
+            {
+                return std::nullopt;
+            }
+
+            const auto& filename = arguments[ 1 ];
+            std::regex productRegex("filename=(.*)", std::regex_constants::icase);
+            auto matchesBegin = std::sregex_iterator(filename.begin(), filename.end(), productRegex);
+            auto matchesEnd = std::sregex_iterator();
+
+            if (matchesBegin == matchesEnd)
+            {
+                return std::nullopt;
+            }
+
+            const std::smatch& match = *matchesBegin;
+            return std::filesystem::path(match[ 1 ].str());
+        };
+
         // Treat 206 as success only if file size matches expected
         if (code == httplib::PartialContent_206)
         {
@@ -340,6 +628,8 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             {
                 spdlog::warn("Partial Content received but file is incomplete ({} of {}), will retry",
                              finalSize, expectedSize.value_or(0ULL));
+                lastFailureDetails = std::format("HTTP 206 Partial Content but file is incomplete ({} of {})",
+                                                 finalSize, expectedSize.value_or(0ULL));
             }
         }
 
@@ -359,42 +649,47 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             }
         }
 
-        // try to grab original filename
+        // try to grab original filename (may be missing on some retries/ranged requests)
         const auto cd = tryGetHeader(headers, "Content-Disposition");
-
-        spdlog::debug("Content-Disposition header value: {}", cd);
-
-        // attempt to get true filename
-        if (code == httplib::OK_200 && !cd.empty())
+        if (!cd.empty())
         {
-            std::vector<std::string> arguments;
-            char dl = ';';
-            size_t start = 0, end = 0;
-
-            // extract tokens
-            while ((start = cd.find_first_not_of(dl, end)) != std::string::npos)
+            spdlog::debug("Content-Disposition header value: {}", cd);
+            if (auto parsed = tryExtractFilenameFromContentDisposition(cd); parsed.has_value())
             {
-                end = cd.find(dl, start);
-                arguments.push_back(cd.substr(start, end - start));
+                cachedAttachmentName = parsed.value();
+            }
+        }
+        else
+        {
+            spdlog::debug("Content-Disposition header value: <empty>");
+        }
+
+        // attempt to get true filename (use cached name if this attempt omitted it)
+        if (code == httplib::OK_200)
+        {
+            std::optional<std::filesystem::path> attachmentName{};
+            if (auto parsed = tryExtractFilenameFromContentDisposition(cd); parsed.has_value())
+            {
+                attachmentName = parsed.value();
+            }
+            else if (cachedAttachmentName.has_value())
+            {
+                attachmentName = cachedAttachmentName.value();
             }
 
-            if (arguments.size() >= 2)
+            if (attachmentName.has_value())
             {
-                const auto& filename = arguments[ 1 ];
+                std::filesystem::path newLocation = release.localTempFilePath;
+                newLocation.replace_filename(attachmentName.value());
 
-                std::regex productRegex("filename=(.*)", std::regex_constants::icase);
-                auto matchesBegin = std::sregex_iterator(filename.begin(), filename.end(), productRegex);
-                auto matchesEnd = std::sregex_iterator();
-
-                if (matchesBegin != matchesEnd)
+                // If the server-supplied filename already matches our current path, don't "rename".
+                // Otherwise we'd delete the file and then fail to move it (ERROR_FILE_NOT_FOUND).
+                if (newLocation == release.localTempFilePath)
                 {
-                    const std::smatch& match = *matchesBegin;
-                    std::filesystem::path attachmentName(match[ 1 ].str());
-
-                    std::filesystem::path newLocation = release.localTempFilePath;
-                    //newLocation.replace_extension(attachmentName.extension());
-                    newLocation.replace_filename(attachmentName);
-
+                    spdlog::debug("Skipping rename; already named {}", newLocation);
+                }
+                else
+                {
                     spdlog::debug("Renaming {} to {}", release.localTempFilePath, newLocation);
 
                     DeleteFileA(newLocation.string().c_str());
@@ -448,7 +743,8 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
         auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
         errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
-        spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
+        lastDownloadError = !lastFailureDetails.empty() ? lastFailureDetails : std::string(errorMessage);
+        spdlog::error("GET request failed with code {}, message {}", code, lastDownloadError);
 
         // Keep partial file to allow resuming on next user retry (only remove on 404 above)
         return code;
@@ -457,7 +753,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
 
 [[nodiscard]] std::tuple<bool, std::string> models::InstanceConfig::RequestUpdateInfo()
 {
-    const auto conn = new RestClient::Connection("");
+    auto conn = std::make_unique<RestClient::Connection>("");
 
     const auto ua = std::format("{}/{}", appFilename, appVersion.str());
     spdlog::debug("Setting User Agent to {}", ua);

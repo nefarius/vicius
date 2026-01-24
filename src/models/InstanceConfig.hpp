@@ -1,6 +1,7 @@
 #pragma once
 #include <restclient-cpp/connection.h>
 #include <curl/curl.h>
+#include <atomic>
 
 #include "UpdateResponse.hpp"
 #include "MergedConfig.hpp"
@@ -73,6 +74,10 @@ namespace models
         std::optional<std::shared_future<std::tuple<bool, DWORD, DWORD>>> setupTask;
         /** The selected release numeric ID */
         int selectedRelease{0};
+        /** Human-readable download failure reason from last attempt (if any) */
+        std::string lastDownloadError{};
+        /** True if the current download should abort ASAP */
+        std::atomic_bool abortDownloadRequested{false};
         /** True if we run in any of the silent scenarios, false if not */
         bool isSilent{false};
         /** True if user chose to ignore postpone period */
@@ -91,12 +96,14 @@ namespace models
 
         int DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
 
-        void SetCommonHeaders(_Inout_ RestClient::Connection* conn) const;
+        void SetCommonHeaders(_Inout_ std::unique_ptr<RestClient::Connection>& conn) const;
 
         std::tuple<bool, DWORD, DWORD> ExecuteSetup(const std::stop_token&);
 
     public:
         static constexpr int MAX_TIMEOUT_SECS = 180; // 3 minutes
+        static constexpr int MAX_TIMEOUT_SECS_TOTAL = 3600; // 1 hour
+        static constexpr int MAX_RETRY_COUNT = 10;
         static constexpr int MAX_REDIRECTS = 5;
 
         std::string serverUrlTemplate;
@@ -146,6 +153,11 @@ namespace models
         UpdateRelease& GetSelectedRelease() { return remote.releases[ selectedRelease ]; }
 
         int GetSelectedReleaseId() const { return selectedRelease; }
+
+        /**
+         * \brief Returns the most recent download failure reason, if any.
+         */
+        [[nodiscard]] std::string GetLastDownloadError() const { return lastDownloadError; }
 
         /**
          * \brief Requests the update configuration from the remote server.
@@ -233,6 +245,16 @@ namespace models
          * \brief Reset the download async task state.
          */
         void ResetReleaseDownloadState();
+
+        /**
+         * \brief Requests the running download (if any) to abort as soon as possible.
+         */
+        void RequestAbortDownload();
+
+        /**
+         * \brief Waits for the running download (if any) to finish.
+         */
+        void WaitForDownloadToFinish();
 
         /**
          * \brief Checks the version of the installed product against the latest available release.

@@ -423,7 +423,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 done = true;
         }
         if (done)
+        {
+            cfg.RequestAbortDownload();
+            cfg.WaitForDownloadToFinish();
             break;
+        }
 
         // Handle window being minimized or screen locked
         if (g_SwapChainOccluded && g_pSwapChain->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED)
@@ -672,10 +676,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         isBackDisabled = false;
                         status = NV_E_DOWNLOAD_FAILED;
 
-                        if (statusCode < CURL_LAST)
+                        // Render a single coherent message:
+                        // - Prefer the detailed reason from the downloader, if available.
+                        // - Otherwise fall back to cURL/HTTP derived message.
+                        if (const auto details = cfg.GetLastDownloadError(); !details.empty())
+                        {
+                            ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed");
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(10));
+                            ImGui::TextWrapped("%s", details.c_str());
+                        }
+                        else if (statusCode >= 0 && statusCode < CURL_LAST)
                         {
                             const auto curlCode = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(statusCode));
-                            ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, cURL error: %s", curlCode.data());
+                            if (!curlCode.empty())
+                            {
+                                ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, cURL error: %s", curlCode.data());
+                            }
+                            else
+                            {
+                                ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, cURL error: %d", statusCode);
+                            }
                         }
                         else
                         {
