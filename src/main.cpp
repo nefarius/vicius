@@ -40,6 +40,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 float g_scaleFactor = 1.0;
 float g_scaledWidth;
 float g_scaledHeight;
+static HINSTANCE g_hInstance = nullptr;
 
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
@@ -47,6 +48,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(szCmdLine);
 
+    g_hInstance = hInstance;
     SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
 
     argh::parser cmdl;
@@ -357,39 +359,47 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma warning(disable : 4244)
 
     // get DPI scale
-    auto dpi = winapi::GetWindowDPI(hwnd);
-    spdlog::debug("winapi::GetWindowDPI(hwnd) = {}", dpi);
+    const UINT dpi = GetDpiForWindow(hwnd);
+    spdlog::debug("GetDpiForWindow(hwnd) = {}", dpi);
     g_scaleFactor = (float)dpi / (float)USER_DEFAULT_SCREEN_DPI;
     spdlog::debug("scaleFactor = {}", g_scaleFactor);
-    g_scaledWidth = SCALED(windowWidth);
-    g_scaledHeight = SCALED(windowHeight);
+    const int windowWidthPx = (int)SCALED(windowWidth);
+    const int windowHeightPx = (int)SCALED(windowHeight);
 
     // Get the screen width and height
     int screenWidth = GetSystemMetrics(SM_CXSCREEN);  // Screen width
     int screenHeight = GetSystemMetrics(SM_CYSCREEN); // Screen height
 
     // Calculate the window's position to center it
-    int xPos = (screenWidth - g_scaledWidth) / 2;
-    int yPos = (screenHeight - g_scaledHeight) / 2;
+    int xPos = (screenWidth - windowWidthPx) / 2;
+    int yPos = (screenHeight - windowHeightPx) / 2;
 
     ::SetWindowPos(
         hwnd,
         HWND_TOP,
         xPos, yPos,
-        g_scaledWidth,
-        g_scaledHeight,
+        windowWidthPx,
+        windowHeightPx,
         SWP_NOZORDER
         );
+
+    // Use *client* size for ImGui layout (not full window size).
+    RECT clientRect{};
+    GetClientRect(hwnd, &clientRect);
+    g_scaledWidth = static_cast<float>(clientRect.right - clientRect.left);
+    g_scaledHeight = static_cast<float>(clientRect.bottom - clientRect.top);
     io.DisplaySize = ImVec2(g_scaledWidth, g_scaledHeight);
 
 #pragma warning(default : 4244)
 
-    float dpiScale = (float)GetDpiForWindow(hwnd) / (float)USER_DEFAULT_SCREEN_DPI;
-    spdlog::debug("dpiScale = {}", dpiScale);
-    ImGui::GetIO().FontGlobalScale = dpiScale;
+    // Fonts are scaled by rebuilding the atlas (see ui::LoadFonts). Do not also use FontGlobalScale,
+    // otherwise the effective font size becomes scale^2 on high DPI displays.
+    ImGui::GetIO().FontGlobalScale = 1.0f;
 
     ui::LoadFonts(hInstance, 16, g_scaleFactor);
     ui::ApplyImGuiStyleDark(g_scaleFactor);
+    ImGui_ImplDX11_InvalidateDeviceObjects();
+    ImGui_ImplDX11_CreateDeviceObjects();
 
     winapi::SetDarkMode(hwnd);
 
@@ -1016,6 +1026,8 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             g_ResizeWidth = static_cast<UINT>(LOWORD(lParam)); // Queue resize
             g_ResizeHeight = static_cast<UINT>(HIWORD(lParam));
             ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(g_ResizeWidth), static_cast<float>(g_ResizeHeight));
+            g_scaledWidth = static_cast<float>(g_ResizeWidth);
+            g_scaledHeight = static_cast<float>(g_ResizeHeight);
             return 0;
         case WM_SYSCOMMAND:
             if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
@@ -1034,16 +1046,25 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                          suggestedRect->bottom - suggestedRect->top,
                          SWP_NOZORDER | SWP_NOACTIVATE);
             // Update ImGui scaling
-            float dpiScale = HIWORD(wParam) / (float)USER_DEFAULT_SCREEN_DPI;
+            const float dpiScale = HIWORD(wParam) / (float)USER_DEFAULT_SCREEN_DPI;
             g_scaleFactor = dpiScale;
             spdlog::debug("Updated DPi scale factor to {}", g_scaleFactor);
-            ImGui::GetIO().FontGlobalScale = dpiScale;
-            // TODO: Reload fonts?
+            ImGui::GetIO().FontGlobalScale = 1.0f;
+
             RECT clientRect;
             GetClientRect(hWnd, &clientRect);
             g_scaledWidth = static_cast<float>(clientRect.right - clientRect.left);
             g_scaledHeight = static_cast<float>(clientRect.bottom - clientRect.top);
             ImGui::GetIO().DisplaySize = ImVec2(g_scaledWidth, g_scaledHeight);
+
+            // Reload fonts + style for the new DPI, and rebuild the DX11 font texture.
+            if (g_hInstance)
+            {
+                ui::LoadFonts(g_hInstance, 16.0f, g_scaleFactor);
+                ui::ApplyImGuiStyleDark(g_scaleFactor);
+                ImGui_ImplDX11_InvalidateDeviceObjects();
+                ImGui_ImplDX11_CreateDeviceObjects();
+            }
             break;
         }
 
