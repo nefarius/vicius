@@ -142,7 +142,7 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     static ImFontConfig emj_cfg;
     emj_cfg.OversampleH = emj_cfg.OversampleV = 1;
     emj_cfg.MergeMode = true;
-    emj_cfg.RasterizerFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
+    emj_cfg.FontLoaderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
     io.Fonts->AddFontFromFileTTF(emojiFontFile.string().c_str(), scale * sizePixels, &emj_cfg, emj_range);
 
     // Base font bold
