@@ -80,7 +80,7 @@ protected:
 
 	struct image_info
 	{
-		ImTextureID	texture_id;
+		ImTextureRef texture_id;
 		ImVec2	size;
 		ImVec2	uv0;
 		ImVec2	uv1;
