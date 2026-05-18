@@ -142,7 +142,7 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     static ImFontConfig emj_cfg;
     emj_cfg.OversampleH = emj_cfg.OversampleV = 1;
     emj_cfg.MergeMode = true;
-    emj_cfg.FontBuilderFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
+    emj_cfg.RasterizerFlags |= ImGuiFreeTypeBuilderFlags_LoadColor;
     io.Fonts->AddFontFromFileTTF(emojiFontFile.string().c_str(), scale * sizePixels, &emj_cfg, emj_range);
 
     // Base font bold
@@ -227,5 +227,11 @@ void ui::IndeterminateProgressBar(const ImVec2& size_arg)
 
     RenderFrame(bb.Min, bb.Max, GetColorU32(ImGuiCol_FrameBg), true, style.FrameRounding);
     bb.Expand(ImVec2(-style.FrameBorderSize, -style.FrameBorderSize));
-    RenderRectFilledRangeH(window->DrawList, bb, GetColorU32(ImGuiCol_PlotHistogram), t0, t1, style.FrameRounding);
+    {
+        ImVec2 fill_min(ImLerp(bb.Min.x, bb.Max.x, t0), bb.Min.y);
+        ImVec2 fill_max(ImLerp(bb.Min.x, bb.Max.x, t1), bb.Max.y);
+        window->DrawList->PushClipRect(bb.Min, bb.Max, true);
+        window->DrawList->AddRectFilled(fill_min, fill_max, GetColorU32(ImGuiCol_PlotHistogram), style.FrameRounding);
+        window->DrawList->PopClipRect();
+    }
 }
