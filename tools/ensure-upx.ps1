@@ -26,25 +26,48 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 # ---------------------------------------------------------------------------
+# ARM64 short-circuit: UPX does not support ARM64.
+# Exit before attempting any UPX lookup or installation.
+# ---------------------------------------------------------------------------
+if ($Pack -and $Platform -eq 'ARM64') {
+    if (-not $InputFile -or -not $OutputFile) {
+        Write-Error '[ensure-upx] -InputFile and -OutputFile are required when -Pack is specified.'
+        exit 1
+    }
+    Write-Host "[ensure-upx] ARM64 platform: copying $InputFile -> $OutputFile verbatim (UPX does not support ARM64)."
+    Copy-Item -Path $InputFile -Destination $OutputFile -Force
+    exit 0
+}
+
+# ---------------------------------------------------------------------------
 # Helper: try to find upx on PATH and return the full path, or $null.
 # ---------------------------------------------------------------------------
 function Find-Upx {
-    try {
-        $cmd = Get-Command upx -ErrorAction SilentlyContinue
-        if ($cmd) { return $cmd.Source }
-    } catch { }
+    $cmd = Get-Command upx -ErrorAction SilentlyContinue
+    if ($cmd) { return $cmd.Source }
     return $null
 }
 
 # ---------------------------------------------------------------------------
-# Helper: attempt a single install method, return $true on success.
+# Helper: refresh the process PATH from the machine + user environment so
+# a freshly installed binary (winget/choco) becomes visible without starting
+# a new shell.
+# ---------------------------------------------------------------------------
+function Update-ProcessPath {
+    $machinePath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
+    $userPath    = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+    $env:PATH = (@($machinePath, $userPath) | Where-Object { $_ }) -join ';'
+}
+
+# ---------------------------------------------------------------------------
+# Helpers: attempt a single install method, return $true on success.
 # ---------------------------------------------------------------------------
 function Invoke-WingetInstall {
     Write-Host '[ensure-upx] Trying winget...'
     try {
-        $result = winget install -e --id UPX.UPX `
+        winget install -e --id UPX.UPX `
             --accept-source-agreements --accept-package-agreements `
-            --disable-interactivity 2>&1
+            --disable-interactivity 2>&1 | Out-Null
         return ($LASTEXITCODE -eq 0)
     } catch { return $false }
 }
@@ -60,6 +83,7 @@ function Invoke-ChocoInstall {
 # ---------------------------------------------------------------------------
 # Helper: download the latest UPX release zip from GitHub and extract it to
 # a local cache directory. No admin rights required.
+# Verifies SHA256 against the published sidecar before extracting.
 # ---------------------------------------------------------------------------
 function Invoke-GitHubDownload {
     Write-Host '[ensure-upx] Trying GitHub download fallback...'
@@ -74,32 +98,56 @@ function Invoke-GitHubDownload {
     try {
         $apiUrl  = 'https://api.github.com/repos/upx/upx/releases/latest'
         $headers = @{ 'User-Agent' = 'ensure-upx.ps1' }
-        $release = Invoke-RestMethod -Uri $apiUrl -Headers $headers
+        $release = Invoke-RestMethod -Uri $apiUrl -Headers $headers -TimeoutSec 60
 
-        # Pick the win64 asset
-        $asset = $release.assets | Where-Object { $_.name -like '*win64*' } | Select-Object -First 1
+        # Pick the win64 zip asset and its .sha256 sidecar.
+        $asset = $release.assets |
+            Where-Object { $_.name -like '*win64*.zip' } |
+            Select-Object -First 1
         if (-not $asset) {
-            Write-Warning '[ensure-upx] No win64 asset found in latest UPX release.'
+            Write-Warning '[ensure-upx] No win64 zip asset found in latest UPX release.'
             return $null
         }
 
-        $zipPath = Join-Path $env:TEMP "upx_download.zip"
+        $sha256Asset = $release.assets |
+            Where-Object { $_.name -eq "$($asset.name).sha256" } |
+            Select-Object -First 1
+
+        $zipPath = Join-Path $env:TEMP 'upx_download.zip'
         Write-Host "[ensure-upx] Downloading $($asset.browser_download_url) ..."
-        Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath -UseBasicParsing
+        Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $zipPath -UseBasicParsing -TimeoutSec 120
+
+        # Verify SHA256 when a sidecar checksum file is available.
+        if ($sha256Asset) {
+            Write-Host '[ensure-upx] Verifying SHA256 checksum...'
+            $hashContent  = (Invoke-WebRequest -Uri $sha256Asset.browser_download_url `
+                                -UseBasicParsing -TimeoutSec 30).Content.Trim()
+            # Format is either "<hash>  <filename>" or just "<hash>".
+            $expectedHash = ($hashContent -split '\s+')[0].ToUpperInvariant()
+            $actualHash   = (Get-FileHash -Path $zipPath -Algorithm SHA256).Hash.ToUpperInvariant()
+            if ($actualHash -ne $expectedHash) {
+                Remove-Item $zipPath -ErrorAction SilentlyContinue
+                Write-Warning "[ensure-upx] SHA256 mismatch: expected $expectedHash, got $actualHash. Aborting download."
+                return $null
+            }
+            Write-Host "[ensure-upx] SHA256 OK ($actualHash)."
+        } else {
+            Write-Warning '[ensure-upx] No .sha256 sidecar found for this release; skipping integrity check.'
+        }
 
         if (-not (Test-Path $cacheDir)) { New-Item -ItemType Directory -Path $cacheDir | Out-Null }
 
         Expand-Archive -Path $zipPath -DestinationPath $cacheDir -Force
         Remove-Item $zipPath -ErrorAction SilentlyContinue
 
-        # The archive contains a sub-folder; find the actual upx.exe
+        # The archive contains a sub-folder; locate the actual upx.exe.
         $found = Get-ChildItem -Path $cacheDir -Recurse -Filter 'upx.exe' | Select-Object -First 1
         if (-not $found) {
             Write-Warning '[ensure-upx] upx.exe not found after extraction.'
             return $null
         }
 
-        # Move it to the cache root for a stable path
+        # Move to the cache root for a stable path on subsequent calls.
         Move-Item -Path $found.FullName -Destination $upxExe -Force
 
         Write-Host "[ensure-upx] UPX downloaded to $upxExe"
@@ -119,11 +167,13 @@ if (-not $upxPath) {
     Write-Host '[ensure-upx] UPX not found on PATH. Attempting auto-install...'
 
     if (Invoke-WingetInstall) {
+        Update-ProcessPath
         $upxPath = Find-Upx
     }
 
     if (-not $upxPath) {
         if (Invoke-ChocoInstall) {
+            Update-ProcessPath
             $upxPath = Find-Upx
         }
     }
@@ -137,9 +187,11 @@ if (-not $upxPath) {
         exit 1
     }
 
-    # Ensure the resolved directory is on PATH for subsequent calls in this process.
-    $upxDir = Split-Path $upxPath -Parent
-    if ($env:PATH -notlike "*$upxDir*") {
+    # Ensure the resolved directory is on PATH for subsequent calls in this
+    # process (most relevant when using the GitHub cache path).
+    $upxDir       = Split-Path $upxPath -Parent
+    $pathSegments = $env:PATH -split ';'
+    if (-not ($pathSegments | Where-Object { $_ -ieq $upxDir })) {
         $env:PATH = "$upxDir;$env:PATH"
     }
 }
@@ -154,12 +206,6 @@ if (-not $Pack) { exit 0 }
 if (-not $InputFile -or -not $OutputFile) {
     Write-Error '[ensure-upx] -InputFile and -OutputFile are required when -Pack is specified.'
     exit 1
-}
-
-if ($Platform -eq 'ARM64') {
-    Write-Host "[ensure-upx] ARM64 platform: copying $InputFile -> $OutputFile verbatim (UPX does not support ARM64)."
-    Copy-Item -Path $InputFile -Destination $OutputFile -Force
-    exit 0
 }
 
 # Remove the output file first (UPX requires it to not exist).
