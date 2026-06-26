@@ -331,15 +331,14 @@ BOOL ExtractCertificateInfo(PCCERT_CONTEXT pCertContext, crypto::PSIGNATURE_INFO
 
         for(DWORD n = 0; n < dwData; n++)
         {
+            // Remaining buffer: (dwData - n) bytes remain, each formats to 2 chars, plus null terminator.
+            const rsize_t remaining = static_cast<rsize_t>((dwData - n) * 2 + 1);
             lpszPointer += _stprintf_s(
                 lpszPointer,
-                dwData,
+                remaining,
                 _T("%02X"),
                 pCertContext->pCertInfo->SerialNumber.pbData[dwData - (n + 1)]
             );
-
-            //_tprintf(_T("%02x "),
-            //         pCertContext->pCertInfo->SerialNumber.pbData[dwData - (n + 1)]);
         }
 
         // Get Issuer name size.
@@ -514,7 +513,8 @@ namespace crypto
         HCERTSTORE hStore = nullptr;
         HCRYPTMSG hMsg = nullptr;
         PCCERT_CONTEXT pCertContext = nullptr;
-        BOOL fResult = FALSE;
+        BOOL fResult = FALSE;  // per-call status only
+        BOOL fSuccess = FALSE; // overall success: set TRUE only after all required steps complete
         DWORD dwEncoding, dwContentType, dwFormatType;
         PCMSG_SIGNER_INFO pSignerInfo = nullptr;
         PCMSG_SIGNER_INFO pCounterSignerInfo = nullptr;
@@ -632,8 +632,14 @@ namespace crypto
 
             // Print Signer certificate information.
             _tprintf(_T("Signer Certificate:\n\n"));
-            ExtractCertificateInfo(pCertContext, info);
+            fResult = ExtractCertificateInfo(pCertContext, info);
             _tprintf(_T("\n"));
+
+            if (!fResult)
+            {
+                spdlog::error("ExtractCertificateInfo failed");
+                __leave;
+            }
 
             // Get the timestamp certificate signerinfo structure.
             if (GetTimeStampSignerInfo(pSignerInfo, &pCounterSignerInfo))
@@ -678,6 +684,9 @@ namespace crypto
                 }
                 _tprintf(_T("\n"));
             }
+
+            // Reached only when all required steps above completed without __leave.
+            fSuccess = TRUE;
         }
         __finally
         {
@@ -696,7 +705,7 @@ namespace crypto
             if (hMsg != nullptr) CryptMsgClose(hMsg);
         }
 
-        return fResult;
+        return fSuccess;
     }
 
     void FreeSignatureInformation(PSIGNATURE_INFORMATION info)

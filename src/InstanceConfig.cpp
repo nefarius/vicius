@@ -801,8 +801,6 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                     return std::make_tuple(false, "Invalid hashing algorithm");
             }
 
-            file.close();
-
             break;
         }
         //

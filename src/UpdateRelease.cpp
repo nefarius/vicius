@@ -42,14 +42,13 @@ std::optional<semver::version> models::UpdateRelease::GetDetectionSemVersion() c
     }
     catch (const std::exception& e)
     {
-        spdlog::debug("Error parsing update version `{}`: {}", version, e.what());
+        spdlog::debug("Error parsing update detection version `{}`: {}", detectionVersion.value(), e.what());
     }
     catch (...)
     {
-        spdlog::debug("Unknown exception parsing update detection version `{}`", version);
-
-        return std::nullopt;
+        spdlog::debug("Unknown exception parsing update detection version `{}`", detectionVersion.value());
     }
 
-    return std::nullopt;
+    // Fall back to the primary release version, consistent with the no-detectionVersion path.
+    return GetSemVersion();
 }
