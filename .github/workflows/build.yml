@@ -23,6 +23,10 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
 
+# Least-privilege default; the release job overrides contents to write.
+permissions:
+  contents: read
+
 env:
   UPDATER_NAME: example_Demo_Updater
   VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
@@ -40,15 +44,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         # The vcpkg submodule is large (~200 MB); the runner ships its own
         # preinstalled vcpkg, so we skip cloning it.
         with:
           submodules: false
+          persist-credentials: false
 
       # x-gha binary cache requires these two vars to be exported explicitly.
       - name: Export GHA cache variables for vcpkg
-        uses: actions/github-script@v7
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7
         with:
           script: |
             core.exportVariable('ACTIONS_CACHE_URL',      process.env.ACTIONS_CACHE_URL      || '');
@@ -91,7 +96,7 @@ jobs:
       # ── Compile ────────────────────────────────────────────────────────────
 
       - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce  # v2
 
       - name: Build with MSBuild
         shell: pwsh
@@ -120,7 +125,7 @@ jobs:
           }
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: vicius-${{ matrix.platform }}
           path: bin/**/*.exe
@@ -137,12 +142,12 @@ jobs:
 
     steps:
       - name: Download all build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
           path: artifacts
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
         with:
           files: artifacts/**/*.exe
           generate_release_notes: true

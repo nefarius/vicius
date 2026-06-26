@@ -60,7 +60,7 @@ Head over to the [extended documentation](https://docs.nefarius.at/projects/Vici
 
 Build artifacts for every push to `master` are available as [workflow run artifacts](../../actions/workflows/build.yml). Consider these nightly snapshots.
 
-Signed stable releases are published [on the repository releases page](../../releases/). Keep in mind that those releases are built to use my own update infrastructure, so in 99% of the cases you probably don't want to use them, at least not without a configuration file!
+Stable releases are published [on the repository releases page](../../releases/). Keep in mind that those releases are built to use my own update infrastructure, so in 99% of the cases you probably don't want to use them, at least not without a configuration file!
 
 ## Screenshots
 
