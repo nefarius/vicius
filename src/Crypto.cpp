@@ -513,7 +513,8 @@ namespace crypto
         HCERTSTORE hStore = nullptr;
         HCRYPTMSG hMsg = nullptr;
         PCCERT_CONTEXT pCertContext = nullptr;
-        BOOL fResult = FALSE;
+        BOOL fResult = FALSE;  // per-call status only
+        BOOL fSuccess = FALSE; // overall success: set TRUE only after all required steps complete
         DWORD dwEncoding, dwContentType, dwFormatType;
         PCMSG_SIGNER_INFO pSignerInfo = nullptr;
         PCMSG_SIGNER_INFO pCounterSignerInfo = nullptr;
@@ -683,6 +684,9 @@ namespace crypto
                 }
                 _tprintf(_T("\n"));
             }
+
+            // Reached only when all required steps above completed without __leave.
+            fSuccess = TRUE;
         }
         __finally
         {
@@ -701,7 +705,7 @@ namespace crypto
             if (hMsg != nullptr) CryptMsgClose(hMsg);
         }
 
-        return fResult;
+        return fSuccess;
     }
 
     void FreeSignatureInformation(PSIGNATURE_INFORMATION info)

@@ -341,8 +341,10 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::s
                     }
                     std::filesystem::remove_all(destRoot / relative);
                 }
+
+                success = true;
             }
-            success = true;
+            // else: ExtractReleaseZip returned nullopt (Zip-Slip, read error, etc.) — success stays false
         }
         //
         // Most probably an MSI or similar, offload execution to the default shell launch action
