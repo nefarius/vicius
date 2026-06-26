@@ -1,6 +1,6 @@
 # <img src="assets/logo_128x128.png" align="left" />Nefarius™ vīcĭus updater agent
 
-[![Build status](https://ci.appveyor.com/api/projects/status/6n8p9r0koqqt1q6m?svg=true)](https://ci.appveyor.com/project/nefarius/vicius)
+[![Build status](https://github.com/nefarius/vicius/actions/workflows/build.yml/badge.svg)](https://github.com/nefarius/vicius/actions/workflows/build.yml)
 [![Documentation](https://img.shields.io/badge/Documentation-8A2BE2)](https://docs.nefarius.at/projects/Vicius/)
 [![GitHub Release](https://img.shields.io/github/v/release/nefarius/vicius)](../../releases/)
 [![Discord](https://img.shields.io/discord/346756263763378176.svg)](https://discord.nefarius.at/)
@@ -58,9 +58,9 @@ Head over to the [extended documentation](https://docs.nefarius.at/projects/Vici
 
 ## Downloads
 
-You can get [unsigned build snapshots here](https://buildbot.nefarius.at/builds/vicius/latest/bin/). Consider these Nightly-releases.
+Build artifacts for every push to `master` are available as [workflow run artifacts](../../actions/workflows/build.yml). Consider these nightly snapshots.
 
-Signed stable releases will be provided [on the repository releases page](../../releases/). Keep in mind though that those releases are built to use my own update infrastructure so in 99% of the cases you probably don't want to use them, at least not without a configuration file!
+Signed stable releases are published [on the repository releases page](../../releases/). Keep in mind that those releases are built to use my own update infrastructure, so in 99% of the cases you probably don't want to use them, at least not without a configuration file!
 
 ## Screenshots
 
