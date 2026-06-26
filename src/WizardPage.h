@@ -42,8 +42,10 @@ inline WizardPage operator++(WizardPage& c, int)
 inline WizardPage& operator--(WizardPage& c)
 {
     using IntType = std::underlying_type_t<WizardPage>;
-    c = static_cast<WizardPage>(static_cast<IntType>(c) - 1);
-    if (c == WizardPage::Start) c = static_cast<WizardPage>(0);
+    const IntType prev = static_cast<IntType>(c) - 1;
+    c = prev < static_cast<IntType>(WizardPage::Start)
+            ? WizardPage::Start
+            : static_cast<WizardPage>(prev);
     return c;
 }
 

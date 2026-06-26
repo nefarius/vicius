@@ -7,8 +7,28 @@
 std::tuple<bool, std::string> models::InstanceConfig::ExtractSelfUpdater() const
 {
     const HRSRC updater_res = FindResource(appInstance, MAKEINTRESOURCE(IDR_DLL_SELF_UPDATER), RT_RCDATA);
+    if (!updater_res)
+    {
+        return std::make_tuple(false, winapi::GetLastErrorStdStr());
+    }
+
+    const HGLOBAL updater_global = LoadResource(appInstance, updater_res);
+    if (!updater_global)
+    {
+        return std::make_tuple(false, winapi::GetLastErrorStdStr());
+    }
+
     const int updater_size = static_cast<int>(SizeofResource(appInstance, updater_res));
-    const LPVOID updater_data = LockResource(LoadResource(appInstance, updater_res));
+    if (updater_size <= 0)
+    {
+        return std::make_tuple(false, "Self-updater resource is empty");
+    }
+
+    const LPVOID updater_data = LockResource(updater_global);
+    if (!updater_data)
+    {
+        return std::make_tuple(false, "Failed to lock self-updater resource");
+    }
 
     std::stringstream ss;
     ss << appPath.string() << NV_ADS_UPDATER_NAME;

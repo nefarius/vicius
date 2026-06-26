@@ -152,7 +152,18 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
             return std::nullopt;
         }
 
-        const auto outPath = extractedPath / stat.name;
+        const auto outPath = (extractedPath / stat.name).lexically_normal();
+
+        // Zip-Slip guard: reject any entry whose normalised path escapes the extraction root
+        {
+            const auto rel = outPath.lexically_relative(extractedPath.lexically_normal());
+            if (rel.empty() || *rel.begin() == L"..")
+            {
+                spdlog::error("Zip entry '{}' escapes extraction root, skipping", stat.name);
+                return std::nullopt;
+            }
+        }
+
         if (outPath.filename().string().back() == '/')
         {
             std::filesystem::create_directories(outPath);
@@ -266,6 +277,16 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::s
                     const auto disposition = dispositionOverrides.contains(relativeUTF8) ? dispositionOverrides.at(relativeUTF8)
                                                                                          : defaultDisposition;
 
+                    // Containment check: relative path must not escape destRoot
+                    {
+                        const auto relCheck = std::filesystem::relative(dest, destRoot);
+                        if (relCheck.empty() || *relCheck.begin() == "..")
+                        {
+                            spdlog::warn("Skipping entry '{}': resolved path escapes installation directory", relativeUTF8);
+                            continue;
+                        }
+                    }
+
                     if (it.is_directory())
                     {
                         if (!std::filesystem::exists(dest))
@@ -308,9 +329,15 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::s
                     {
                         continue;
                     }
-                    if (!std::filesystem::canonical(dest).wstring().starts_with(destRoot.wstring()))
                     {
-                        spdlog::warn("Cowardly refusing to delete files outside of the installation directory");
+                        std::error_code ec;
+                        const auto canonDest = std::filesystem::canonical(dest, ec);
+                        const auto relCheck = ec ? std::filesystem::path{} : std::filesystem::relative(canonDest, destRoot);
+                        if (ec || relCheck.empty() || *relCheck.begin() == "..")
+                        {
+                            spdlog::warn("Cowardly refusing to delete '{}': path escapes installation directory", relative);
+                            continue;
+                        }
                     }
                     std::filesystem::remove_all(destRoot / relative);
                 }
@@ -386,7 +413,6 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::s
 
         spdlog::debug("Setup process launched successfully");
 
-        WaitForSingleObject(updateProcessInfo.hProcess, INFINITE);
         if (CancellableWait(updateProcessInfo.hProcess, stopToken) == WaitResult::Success) {
             GetExitCodeProcess(updateProcessInfo.hProcess, &exitCode);
         } else {

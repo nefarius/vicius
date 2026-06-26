@@ -331,15 +331,14 @@ BOOL ExtractCertificateInfo(PCCERT_CONTEXT pCertContext, crypto::PSIGNATURE_INFO
 
         for(DWORD n = 0; n < dwData; n++)
         {
+            // Remaining buffer: (dwData - n) bytes remain, each formats to 2 chars, plus null terminator.
+            const rsize_t remaining = static_cast<rsize_t>((dwData - n) * 2 + 1);
             lpszPointer += _stprintf_s(
                 lpszPointer,
-                dwData,
+                remaining,
                 _T("%02X"),
                 pCertContext->pCertInfo->SerialNumber.pbData[dwData - (n + 1)]
             );
-
-            //_tprintf(_T("%02x "),
-            //         pCertContext->pCertInfo->SerialNumber.pbData[dwData - (n + 1)]);
         }
 
         // Get Issuer name size.
@@ -632,8 +631,14 @@ namespace crypto
 
             // Print Signer certificate information.
             _tprintf(_T("Signer Certificate:\n\n"));
-            ExtractCertificateInfo(pCertContext, info);
+            fResult = ExtractCertificateInfo(pCertContext, info);
             _tprintf(_T("\n"));
+
+            if (!fResult)
+            {
+                spdlog::error("ExtractCertificateInfo failed");
+                __leave;
+            }
 
             // Get the timestamp certificate signerinfo structure.
             if (GetTimeStampSignerInfo(pSignerInfo, &pCounterSignerInfo))

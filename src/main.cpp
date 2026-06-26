@@ -592,8 +592,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             case WizardPage::DownloadAndInstall:
             {
                 static DWORD lastExitCode = 0;
-                static double totalToDownload = 0;
-                static double totalDownloaded = 0;
+                static std::atomic<double> totalToDownload = 0;
+                static std::atomic<double> totalDownloaded = 0;
 
                 // use this state to reset everything since the user might retry on error
                 if (instStep == DownloadAndInstallStep::Begin)
@@ -636,8 +636,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                             UNREFERENCED_PARAMETER(uploadTotal);
                             UNREFERENCED_PARAMETER(uploaded);
 
-                            totalToDownload = downloadTotal;
-                            totalDownloaded = downloaded;
+                            totalToDownload.store(downloadTotal, std::memory_order_relaxed);
+                            totalDownloaded.store(downloaded, std::memory_order_relaxed);
 
                             return CURLE_OK;
                         });
@@ -658,18 +658,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 {
                     case DownloadAndInstallStep::Downloading:
 
-                        if (totalDownloaded <= 0 || totalToDownload <= 0)
                         {
-                            ImGui::Text("Starting download...");
-                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(5));
-                            ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
-                        }
-                        else
-                        {
-                            ImGui::Text("Downloading (%.2f MB of %.2f MB)", totalDownloaded / AS_MB, totalToDownload / AS_MB);
-                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(5));
-                            ImGui::ProgressBar((static_cast<float>(totalDownloaded) / static_cast<float>(totalToDownload)) * 1.0f,
-                                               ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
+                            const double dlNow = totalDownloaded.load(std::memory_order_relaxed);
+                            const double dlTotal = totalToDownload.load(std::memory_order_relaxed);
+                            if (dlNow <= 0 || dlTotal <= 0)
+                            {
+                                ImGui::Text("Starting download...");
+                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(5));
+                                ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
+                            }
+                            else
+                            {
+                                ImGui::Text("Downloading (%.2f MB of %.2f MB)", dlNow / AS_MB, dlTotal / AS_MB);
+                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(5));
+                                ImGui::ProgressBar(static_cast<float>(dlNow / dlTotal),
+                                                   ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
+                            }
                         }
 
                         break;
