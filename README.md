@@ -10,7 +10,7 @@ Nefarius' [nŏvīcĭus](https://latinitium.com/latin-dictionaries/?t=lsn31290) u
 
 ## About
 
-vīcĭus is a self-contained C++23 executable acting as a software update agent for Microsoft Windows. It can be deployed alongside your product and will take care of periodically checking for newer versions online and notifying the user of pending updates. Its goal is to require the least amount of configuration to get it up and running while providing enough flexibility to be customized for various environments, if desired. It doesn't require any prerequisites being present on the target system and should be able to run on any recent Windows version.
+vīcĭus is a self-contained C++ executable (built with MSVC's latest language standard) acting as a software update agent for Microsoft Windows. It can be deployed alongside your product and will take care of periodically checking for newer versions online and notifying the user of pending updates. Its goal is to require the least amount of configuration to get it up and running while providing enough flexibility to be customized for various environments, if desired. It doesn't require any prerequisites being present on the target system and should be able to run on any recent Windows version.
 
 ## Motivation
 
@@ -128,6 +128,7 @@ This tool benefits from these awesome projects ❤ (appearance in no special ord
 - [REST client for C++](https://github.com/mrtazz/restclient-cpp)
   - [libcurl](https://curl.se/libcurl/)
 - [cURLpp](https://github.com/jpbarrette/curlpp)
+- [{fmt} formatting library](https://github.com/fmtlib/fmt)
 - [JSON for Modern C++](https://github.com/nlohmann/json)
 - [Magic Enum C++](https://github.com/Neargye/magic_enum)
 - [Semantic Versioning library for modern C++](https://github.com/z4kn4fein/cpp-semver)
