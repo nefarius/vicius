@@ -345,3 +345,4 @@ healthchecksdb
 include/*.h
 /include/**/*.h
 /artifacts
+/tools/.upx
