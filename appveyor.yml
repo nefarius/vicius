@@ -23,6 +23,7 @@ install:
 - cmd: git submodule -q update --init
 - cmd: ./vcpkg/bootstrap-vcpkg.bat
 - cmd: choco install vswhere
+- cmd: choco install upx -y
 # Source: https://gist.github.com/nefarius/b60a498b0229b5cf0e338b7a39460b80
 - ps: Setup-VS2022 $env:PLATFORM
 before_build:
