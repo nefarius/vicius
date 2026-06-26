@@ -1,0 +1,153 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+    # paths-ignore is not evaluated for tag pushes (GitHub behaviour), so tag
+    # releases always build regardless of what files changed.
+    paths-ignore:
+      - 'assets/**'
+      - '**/*.md'
+      - '**/*.png'
+  pull_request:
+    branches: [master]
+    paths-ignore:
+      - 'assets/**'
+      - '**/*.md'
+      - '**/*.png'
+
+# Cancel in-flight runs for the same ref (branch / PR).
+# Tag pushes are never cancelled so a release is never half-published.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') }}
+
+# Least-privilege default; the release job overrides contents to write.
+permissions:
+  contents: read
+
+env:
+  UPDATER_NAME: example_Demo_Updater
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+jobs:
+  # ─── Build ─────────────────────────────────────────────────────────────────
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: windows-2022
+    strategy:
+      matrix:
+        # Solution platform names (x86 maps to Win32 in the .vcxproj)
+        platform: [x86, x64, ARM64]
+      fail-fast: false
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        # The vcpkg submodule is large (~200 MB); the runner ships its own
+        # preinstalled vcpkg, so we skip cloning it.
+        with:
+          submodules: false
+          persist-credentials: false
+
+      # x-gha binary cache requires these two vars to be exported explicitly.
+      - name: Export GHA cache variables for vcpkg
+        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7
+        with:
+          script: |
+            core.exportVariable('ACTIONS_CACHE_URL',      process.env.ACTIONS_CACHE_URL      || '');
+            core.exportVariable('ACTIONS_RUNTIME_TOKEN',  process.env.ACTIONS_RUNTIME_TOKEN  || '');
+
+      # ── Version stamping ───────────────────────────────────────────────────
+
+      - name: Install vpatch
+        shell: pwsh
+        run: |
+          dotnet tool install --global Nefarius.Tools.Vpatch --version 2.7.0
+          # Make the tool available in subsequent steps
+          "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Compute build version
+        id: version
+        shell: pwsh
+        run: |
+          $ref = '${{ github.ref }}'
+          if ($ref -match '^refs/tags/v(.+)$') {
+            # Tag build: derive from vX.Y.Z → X.Y.Z.0
+            $ver = $Matches[1]
+            $parts = $ver.Split('.')
+            if ($parts.Count -eq 3) { $ver = "$ver.0" }
+          } else {
+            # Branch / PR build: mirror the old AppVeyor 1.15.{build} scheme
+            $ver = "1.15.0.${{ github.run_number }}"
+          }
+          "BUILD_VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Stamp version into resource file
+        shell: pwsh
+        run: |
+          vpatch `
+            --stamp-version "$env:BUILD_VERSION" `
+            --target-file ".\src\vīcĭus.rc" `
+            --resource.file-version `
+            --resource.product-version
+
+      # ── Compile ────────────────────────────────────────────────────────────
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce  # v2
+
+      - name: Build with MSBuild
+        shell: pwsh
+        run: |
+          msbuild "vīcĭus.sln" `
+            /m `
+            /p:Configuration=Release `
+            /p:Platform=${{ matrix.platform }} `
+            /p:UpdaterName="$env:UPDATER_NAME" `
+            /p:CI=true
+
+      # ── Post-build ─────────────────────────────────────────────────────────
+
+      - name: Pack with UPX
+        # ARM64 UPX support is experimental; skip it (matches original pipeline)
+        if: matrix.platform != 'ARM64'
+        shell: pwsh
+        run: |
+          choco install upx -y --no-progress
+          # Output lives under bin\<PlatformShortName>\ where Win32→x86, x64→x64
+          $exes = Get-ChildItem -Path "bin" -Filter "*.exe" -Recurse |
+                  Where-Object { $_.Name -notlike '*_packed*' }
+          foreach ($exe in $exes) {
+            $packed = Join-Path $exe.DirectoryName "$($exe.BaseName)_packed.exe"
+            upx -9 -o $packed $exe.FullName
+          }
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: vicius-${{ matrix.platform }}
+          path: bin/**/*.exe
+          if-no-files-found: error
+
+  # ─── Release ───────────────────────────────────────────────────────────────
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
+        with:
+          files: artifacts/**/*.exe
+          generate_release_notes: true
