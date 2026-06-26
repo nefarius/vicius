@@ -49,14 +49,19 @@ function Find-Upx {
 }
 
 # ---------------------------------------------------------------------------
-# Helper: refresh the process PATH from the machine + user environment so
-# a freshly installed binary (winget/choco) becomes visible without starting
-# a new shell.
+# Helper: merge the machine + user registry PATH into the current process PATH
+# so a freshly installed binary (winget/choco) becomes visible without losing
+# any process-only entries injected by MSBuild, vcvars, or the CI agent.
 # ---------------------------------------------------------------------------
 function Update-ProcessPath {
     $machinePath = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
     $userPath    = [System.Environment]::GetEnvironmentVariable('Path', 'User')
-    $env:PATH = (@($machinePath, $userPath) | Where-Object { $_ }) -join ';'
+    $combined    = @($env:PATH, $machinePath, $userPath) -join ';'
+    # Deduplicate while preserving the original order (case-insensitive).
+    $seen = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+    $env:PATH = ($combined -split ';' |
+        Where-Object { $_ -and $seen.Add($_) }) -join ';'
 }
 
 # ---------------------------------------------------------------------------
