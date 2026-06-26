@@ -54,13 +54,6 @@ jobs:
             core.exportVariable('ACTIONS_CACHE_URL',      process.env.ACTIONS_CACHE_URL      || '');
             core.exportVariable('ACTIONS_RUNTIME_TOKEN',  process.env.ACTIONS_RUNTIME_TOKEN  || '');
 
-      # Wire the preinstalled vcpkg into MSBuild (writes the .user.targets
-      # integration file that VcpkgEnableManifest=true picks up).
-      - name: Integrate vcpkg with MSBuild
-        shell: pwsh
-        run: |
-          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" integrate install
-
       # ── Version stamping ───────────────────────────────────────────────────
 
       - name: Install vpatch

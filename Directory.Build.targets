@@ -1,9 +1,14 @@
 <Project>
- <Import Project="$(MSBuildThisFileDirectory)vcpkg\scripts\buildsystems\msbuild\vcpkg.targets" />
- <ItemDefinitionGroup Condition="!Exists('$(MSBuildThisFileDirectory)/vcpkg/vcpkg.exe')">
-   <PreBuildEvent>
-     <Command>$(MSBuildThisFileDirectory)vcpkg\bootstrap-vcpkg.bat</Command>
-     <Message>Bootstrap vcpkg</Message>
-   </PreBuildEvent>
- </ItemDefinitionGroup>
+  <!-- VcpkgRoot is resolved in Directory.Build.props and carries over here. -->
+  <Import Project="$(VcpkgRoot)scripts\buildsystems\msbuild\vcpkg.targets" />
+  <!--
+    Bootstrap the local submodule only when it is checked out but has not yet
+    been compiled (first local build after cloning with submodules).
+  -->
+  <ItemDefinitionGroup Condition="Exists('$(MSBuildThisFileDirectory)vcpkg\') And !Exists('$(MSBuildThisFileDirectory)vcpkg\vcpkg.exe')">
+    <PreBuildEvent>
+      <Command>$(MSBuildThisFileDirectory)vcpkg\bootstrap-vcpkg.bat</Command>
+      <Message>Bootstrap vcpkg</Message>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
 </Project>
