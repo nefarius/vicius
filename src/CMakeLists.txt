@@ -8,6 +8,14 @@ find_package(directxtk CONFIG REQUIRED)
 # vcpkg port of neflib does not define a target
 find_library(NEFLIB_PATH NAMES neflib REQUIRED)
 
+# Optional: manifest Ed25519 signing (only linked when NV_MANIFEST_PUBLIC_KEY is defined)
+find_package(unofficial-sodium CONFIG)
+if(unofficial-sodium_FOUND)
+  message(STATUS "libsodium found - manifest signature verification available")
+else()
+  message(STATUS "libsodium NOT found - manifest signature verification disabled (add libsodium to vcpkg.json to enable)")
+endif()
+
 # Header files don't *need* to be specified, but it helps some IDEs
 add_executable(
   Updater
@@ -16,6 +24,7 @@ add_executable(
   InstanceConfig.Dialogs.cpp
   InstanceConfig.Download.cpp
   InstanceConfig.Postpone.cpp
+  InstanceConfig.Security.cpp
   InstanceConfig.Setup.cpp
   InstanceConfig.TaskScheduler.cpp
   InstanceConfig.Template.cpp
@@ -70,7 +79,13 @@ target_link_libraries(
   taskschd
   Version
   runtimeobject
+  wintrust
 )
+
+# Link libsodium when available (needed for manifest Ed25519 signature verification)
+if(unofficial-sodium_FOUND)
+  target_link_libraries(Updater PRIVATE unofficial-sodium::sodium)
+endif()
 
 # We *should* be able to directly add vicius.rc to the executable sources,
 # and CMake *should* build self-updater first when it sees it's a dependency

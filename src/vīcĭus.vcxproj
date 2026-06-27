@@ -318,6 +318,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Crypto.cpp" />
+    <ClCompile Include="InstanceConfig.Security.cpp" />
     <ClCompile Include="imgui_md.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>

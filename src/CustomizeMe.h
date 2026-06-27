@@ -73,6 +73,22 @@
 
 
 /*
+ * Manifest signing (Ed25519 / minisign-compatible)
+ *
+ * Set NV_MANIFEST_PUBLIC_KEY to your minisign public-key string (the second line of the
+ * .pub file, base64-encoded, starting with "RWSA...") to enable per-manifest signature
+ * verification.  When defined, verification is mandatory; when absent, verification is
+ * skipped (backward-compatible for unsigned deployments).
+ *
+ * Generate a keypair:    minisign -G
+ * Sign your manifest:    minisign -S -s ~/.minisign/minisign.key -m updates.json
+ *   (produces updates.json.minisig alongside updates.json)
+ *
+ * Rotate on cert renewal: sign a new manifest with the SAME Ed25519 key; no redeploy needed.
+ */
+// #define NV_MANIFEST_PUBLIC_KEY  "RWSxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+/*
  * Compiler switches turning optional features on or off
  */
 

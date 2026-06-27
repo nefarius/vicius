@@ -83,6 +83,26 @@ bool models::InstanceConfig::RunSelfUpdater() const
 
     const auto runDll = "rundll32.exe";
 
+    const auto& inst = remote.instance.value();
+    const std::string latestUrl = inst.latestUrl.value();
+
+    // Build optional integrity args to pass to the self-updater DLL.
+    // The self-updater verifies them before swapping the binary into place.
+    std::string checksumArgs;
+    if (inst.latestChecksum.has_value())
+    {
+        const auto& cs = inst.latestChecksum.value();
+        checksumArgs = std::format(" --checksum \"{}\" --checksum-alg \"{}\"",
+                                   cs.checksum,
+                                   magic_enum::enum_name(cs.checksumAlg));
+        spdlog::info("Passing checksum to self-updater: alg={} value={}",
+                     magic_enum::enum_name(cs.checksumAlg), cs.checksum);
+    }
+    else
+    {
+        spdlog::warn("No checksum available for self-updater binary; verification will be Authenticode-only");
+    }
+
     // if we can write to our directory, spawn under current user
     if (HasWritePermissions())
     {
@@ -95,10 +115,13 @@ bool models::InstanceConfig::RunSelfUpdater() const
         si.wShowWindow = SW_HIDE;
 
         std::stringstream argsStream;
-        // build CLI args
-        argsStream << "rundll32 \"" << ads << "\",PerformUpdate" << " --silent" << " --log-level "
-                   << magic_enum::enum_name(spdlog::get_level()) << " --pid " << GetCurrentProcessId() << " --path \""
-                   << appPath.string() << "\"" << " --url \"" << remote.instance.value().latestUrl.value() << "\"";
+        argsStream << "rundll32 \"" << ads << "\",PerformUpdate"
+                   << " --silent"
+                   << " --log-level " << magic_enum::enum_name(spdlog::get_level())
+                   << " --pid " << GetCurrentProcessId()
+                   << " --path \"" << appPath.string() << "\""
+                   << " --url \"" << latestUrl << "\""
+                   << checksumArgs;
         const auto args = argsStream.str();
         spdlog::debug("args = {}", args);
 
@@ -130,10 +153,13 @@ bool models::InstanceConfig::RunSelfUpdater() const
         TryDisplayUACDialog();
 
         std::stringstream argsStream;
-        // build CLI args
-        argsStream << "\"" << ads << "\",PerformUpdate" << " --silent" << " --log-level "
-                   << magic_enum::enum_name(spdlog::get_level()) << " --pid " << GetCurrentProcessId() << " --path \""
-                   << appPath.string() << "\"" << " --url \"" << remote.instance.value().latestUrl.value() << "\"";
+        argsStream << "\"" << ads << "\",PerformUpdate"
+                   << " --silent"
+                   << " --log-level " << magic_enum::enum_name(spdlog::get_level())
+                   << " --pid " << GetCurrentProcessId()
+                   << " --path \"" << appPath.string() << "\""
+                   << " --url \"" << latestUrl << "\""
+                   << checksumArgs;
         const auto args = argsStream.str();
         spdlog::debug("args = {}", args);
 

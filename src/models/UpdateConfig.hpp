@@ -1,5 +1,7 @@
 #pragma once
 
+#include "UpdateRelease.hpp"
+
 namespace models
 {
     class ExitCodeCheck;
@@ -16,6 +18,11 @@ namespace models
         std::optional<std::string> latestVersion;
         /** URL of the latest updater binary */
         std::optional<std::string> latestUrl;
+        /**
+         * \brief Optional checksum of the self-updater binary at latestUrl.
+         * Passed to the self-updater DLL so it can verify the download before swapping.
+         */
+        std::optional<ChecksumParameters> latestChecksum;
         /** Optional URL pointing to an emergency announcement web page */
         std::optional<std::string> emergencyUrl;
         /** The exit code parameters */
@@ -48,5 +55,5 @@ namespace models
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-      UpdateConfig, updatesDisabled, latestVersion, latestUrl, emergencyUrl, exitCode, helpUrl)
+      UpdateConfig, updatesDisabled, latestVersion, latestUrl, latestChecksum, emergencyUrl, exitCode, helpUrl)
 }

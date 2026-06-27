@@ -2,6 +2,7 @@
 #include "Common.h"
 #include "Util.h"
 #include "InstanceConfig.hpp"
+#include "NAuthenticode.h"
 
 
 models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, PDWORD abortError)
@@ -297,25 +298,42 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
         additionalHeaders.insert(std::make_pair(name, value));
     }
 
-    /*
-    if (!NVerifyFileSignature(ConvertAnsiToWide(appPath.string()).c_str(), &appSigInfo))
+    //
+    // Capture the updater's own Authenticode signature (used for FromUpdaterBinary publisher pinning).
+    // We do NOT pass WTD_LIFETIME_SIGNING_FLAG so that time-stamped certs remain valid after expiry.
+    //
+    if (!NVerifyFileSignature(appPath.wstring().c_str(), &appSigInfo))
     {
         switch (appSigInfo.lValidationResult)
         {
-        case TRUST_E_NOSIGNATURE:
-            spdlog::warn("Executable {} has no signature", appPath.string());
-            break;
-        default:
-            spdlog::warn("Grabbing signature information for {} failed unexpectedly", appPath.string());
-            break;
+            case TRUST_E_NOSIGNATURE:
+                spdlog::info("Updater executable {} is not signed (FromUpdaterBinary pinning unavailable)",
+                             appPath.string());
+                break;
+            default:
+                spdlog::warn("Updater executable {} signature validation returned {:#x}",
+                             appPath.string(), static_cast<unsigned long>(appSigInfo.lValidationResult));
+                break;
+        }
+        isUpdaterSigned = false;
+    }
+    else
+    {
+        // Extract extended cert info for subjectName comparison
+        if (crypto::ExtractSignatureInformation(ConvertAnsiToWide(appPath.string()).c_str(), &appCertInfo))
+        {
+            isUpdaterSigned = true;
+            spdlog::info("Updater executable is signed; subject='{}'",
+                         appCertInfo.SubjectName
+                             ? ConvertWideToANSI(std::wstring(appCertInfo.SubjectName))
+                             : "(unknown)");
+        }
+        else
+        {
+            spdlog::warn("Updater is signed but cert info could not be extracted");
+            isUpdaterSigned = false;
         }
     }
-
-    // TODO: implement me!
-
-    crypto::SIGNATURE_INFORMATION sigInf = {};
-    crypto::ExtractSignatureInformation(ConvertAnsiToWide(appPath.string()).c_str(), &sigInf);
-    */
 
     //
     // Merge from config file, if available
@@ -375,6 +393,23 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
 #endif
 
     this->forceLocalVersion = static_cast<bool>(cmdl({NV_CLI_PARAM_FORCE_LOCAL_VERSION}));
+
+    // Strict verification: checksum required, Authenticode required, publisher pin must match
+    this->strictVerification = static_cast<bool>(cmdl[{NV_CLI_STRICT_VERIFICATION}]);
+    if (this->strictVerification)
+    {
+        spdlog::info("Strict verification mode is ACTIVE");
+        // Strict mode implies Required signature verification mode if not already set higher
+        if (merged.signatureVerificationMode == SignatureVerificationMode::WhenPresent ||
+            merged.signatureVerificationMode == SignatureVerificationMode::Disabled)
+        {
+            merged.signatureVerificationMode = SignatureVerificationMode::Required;
+        }
+        if (merged.signaturePolicy == SignatureComparisonPolicy::Relaxed)
+        {
+            merged.signaturePolicy = SignatureComparisonPolicy::Strict;
+        }
+    }
 
     if (this->forceLocalVersion)
     {
@@ -457,6 +492,11 @@ models::InstanceConfig::~InstanceConfig()
     if (appSigInfo.lValidationResult == ERROR_SUCCESS)
     {
         NCertFreeSigInfo(&appSigInfo);
+    }
+
+    if (isUpdaterSigned)
+    {
+        crypto::FreeSignatureInformation(&appCertInfo);
     }
 
     // Ensure no in-flight download uses libcurl while we tear down global state.

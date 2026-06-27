@@ -84,3 +84,10 @@
 #include "Crypto.h"
 #include "UI.h"
 #include "Formatters.h"
+
+//
+// Manifest signing (libsodium, only when a public key is compiled in)
+//
+#if defined(NV_MANIFEST_PUBLIC_KEY)
+#include <sodium.h>
+#endif

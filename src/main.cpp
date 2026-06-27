@@ -679,9 +679,63 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         break;
                     case DownloadAndInstallStep::DownloadSucceeded:
 
-                        instStep = DownloadAndInstallStep::PrepareInstall;
+                        spdlog::info("Download finished successfully, advancing to verification step");
+                        instStep = DownloadAndInstallStep::Verifying;
 
-                        spdlog::info("Download finished successfully");
+                        break;
+
+                    case DownloadAndInstallStep::Verifying:
+                    {
+                        ImGui::Text(ICON_FK_SHIELD " Verifying download integrity...");
+
+                        // Run synchronously (fast: checksum + WinVerifyTrust; no UI blocking concern)
+                        const auto [verOk, verReason] = cfg.VerifyReleaseIntegrity();
+
+                        if (verOk)
+                        {
+                            spdlog::info("Verification passed, advancing to install");
+                            instStep = DownloadAndInstallStep::PrepareInstall;
+                        }
+                        else
+                        {
+                            spdlog::error("Verification failed: {}", verReason);
+                            // Store reason so VerificationFailed can display it
+                            cfg.SetLastDownloadError(verReason);
+                            instStep = DownloadAndInstallStep::VerificationFailed;
+                        }
+
+                        break;
+                    }
+
+                    case DownloadAndInstallStep::VerificationFailed:
+
+                        isCancelDisabled = false;
+                        isBackDisabled = false;
+                        status = NV_E_SIGNATURE_INVALID;
+
+                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Verification failed");
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(10));
+
+                        if (const auto details = cfg.GetLastDownloadError(); !details.empty())
+                        {
+                            ImGui::TextWrapped("%s", details.c_str());
+                        }
+                        else
+                        {
+                            ImGui::TextWrapped("The downloaded file could not be verified. "
+                                               "It may have been tampered with or corrupted.");
+                        }
+
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(35));
+                        if (ImGui::Button("Retry download"))
+                        {
+                            cfg.SetLastDownloadError({});
+                            instStep = DownloadAndInstallStep::Begin;
+                            currentPage = WizardPage::DownloadAndInstall;
+                        }
+
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(15));
+                        ImGui::Text("Press 'Cancel' to abort and close.");
 
                         break;
                     case DownloadAndInstallStep::DownloadFailed:

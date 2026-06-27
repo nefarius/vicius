@@ -2,6 +2,7 @@
 
 #include "ProductDetection.hpp"
 #include "DownloadLocationConfig.h"
+#include "SignatureValidation.hpp"
 
 using json = nlohmann::json;
 
@@ -28,6 +29,14 @@ namespace models
         DownloadLocationConfig downloadLocation;
         /** True to run as temporary copy */
         bool runAsTemporaryCopy{false};
+        /** Authenticode verification mode for downloaded setups */
+        SignatureVerificationMode signatureVerificationMode{SignatureVerificationMode::WhenPresent};
+        /** Authenticode comparison policy (Relaxed = chain only, Strict = must match pin) */
+        SignatureComparisonPolicy signaturePolicy{SignatureComparisonPolicy::Relaxed};
+        /** Authenticode pin strategy (FromUpdaterBinary pins subjectName; FromConfiguration uses explicit config) */
+        SignatureVerificationStrategy signatureStrategy{SignatureVerificationStrategy::FromUpdaterBinary};
+        /** Explicit certificate pin (used with FromConfiguration strategy) */
+        std::optional<SignatureConfig> signatureConfig;
 
         MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME) { }
 
@@ -51,5 +60,9 @@ namespace models
                                                     detection,
                                                     installationErrorUrl,
                                                     downloadLocation,
-                                                    runAsTemporaryCopy)
+                                                    runAsTemporaryCopy,
+                                                    signatureVerificationMode,
+                                                    signaturePolicy,
+                                                    signatureStrategy,
+                                                    signatureConfig)
 }
