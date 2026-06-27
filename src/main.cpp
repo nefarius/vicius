@@ -68,10 +68,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     cmdl.add_params(NV_CLI_PARAM_SERVER_URL);
 #endif
 
-    if (!util::ParseCommandLineArguments(cmdl))
+    if (const auto parseResult = util::ParseCommandLineArguments(cmdl); !parseResult)
     {
         // TODO: better fallback action?
-        spdlog::critical("Failed to parse command line arguments");
+        spdlog::critical("Failed to parse command line arguments: {}", parseResult.error());
         return NV_E_CLI_PARSING;
     }
 
@@ -111,36 +111,34 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #endif
         if (!cmdl[ {NV_CLI_NO_AUTOSTART} ])
         {
-            if (const auto autoRet = cfg.RegisterAutostart(); !std::get<0>(autoRet))
+            if (const auto autoRet = cfg.RegisterAutostart(); !autoRet)
             {
                 // TODO: better fallback action?
 
-                spdlog::critical("Failed to register in autostart");
-                cfg.TryDisplayErrorDialog("Failed to register in autostart", std::get<1>(autoRet));
+                spdlog::critical("Failed to register in autostart: {}", autoRet.error());
+                cfg.TryDisplayErrorDialog("Failed to register in autostart", autoRet.error());
                 return NV_E_AUTOSTART;
             }
         }
 
         if (!cmdl[ {NV_CLI_NO_SCHEDULED_TASK} ])
         {
-            if (const auto taskRet = cfg.CreateScheduledTask(); FAILED(std::get<0>(taskRet)))
+            if (const auto taskRet = cfg.CreateScheduledTask(); !taskRet)
             {
                 // TODO: better fallback action?
 
-                _com_error err(std::get<0>(taskRet));
-                spdlog::critical("Failed to (re-)create Scheduled Task, error: {}, HRESULT: {}", std::get<1>(taskRet),
-                                 ConvertWideToANSI(err.ErrorMessage()));
-                cfg.TryDisplayErrorDialog("Failed to create scheduled task", std::get<1>(taskRet));
+                spdlog::critical("Failed to (re-)create Scheduled Task: {}", taskRet.error());
+                cfg.TryDisplayErrorDialog("Failed to create scheduled task", taskRet.error());
                 return NV_E_SCHEDULED_TASK;
             }
         }
 
-        if (const auto extRet = cfg.ExtractSelfUpdater(); !std::get<0>(extRet))
+        if (const auto extRet = cfg.ExtractSelfUpdater(); !extRet)
         {
             // TODO: better fallback action?
 
-            spdlog::critical("Failed to extract self-updater, error: {}", std::get<1>(extRet));
-            cfg.TryDisplayErrorDialog("Failed to extract self-updater", std::get<1>(extRet));
+            spdlog::critical("Failed to extract self-updater: {}", extRet.error());
+            cfg.TryDisplayErrorDialog("Failed to extract self-updater", extRet.error());
             return NV_E_EXTRACT_SELF_UPDATE;
         }
 
@@ -158,12 +156,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // actions to perform when running in autostart
     if (!cmdl[ {NV_CLI_TEMPORARY} ] && cmdl[ {NV_CLI_AUTOSTART} ])
     {
-        if (const auto ret = cfg.CreateScheduledTask(); FAILED(std::get<0>(ret)))
+        if (const auto ret = cfg.CreateScheduledTask(); !ret)
         {
-            _com_error err(std::get<0>(ret));
-            spdlog::error("Failed to (re-)create Scheduled Task, error: {}, HRESULT: {}", std::get<1>(ret),
-                          ConvertWideToANSI(err.ErrorMessage()));
-            cfg.TryDisplayErrorDialog("Failed to create scheduled task", std::get<1>(ret));
+            spdlog::error("Failed to (re-)create Scheduled Task: {}", ret.error());
+            cfg.TryDisplayErrorDialog("Failed to create scheduled task", ret.error());
 
             // TODO: anything else we can do in this case?
         }
@@ -176,21 +172,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // uninstall tasks
     if (!cmdl[ {NV_CLI_TEMPORARY} ] && cmdl[ {NV_CLI_UNINSTALL} ])
     {
-        if (const auto autoRet = cfg.RemoveAutostart(); !std::get<0>(autoRet))
+        if (const auto autoRet = cfg.RemoveAutostart(); !autoRet)
         {
             // TODO: better fallback action?
 
-            spdlog::critical("Failed to de-register from autostart");
-            cfg.TryDisplayErrorDialog("Failed to de-register from autostart", std::get<1>(autoRet));
+            spdlog::critical("Failed to de-register from autostart: {}", autoRet.error());
+            cfg.TryDisplayErrorDialog("Failed to de-register from autostart", autoRet.error());
             return NV_E_AUTOSTART;
         }
 
-        if (const auto taskRet = cfg.RemoveScheduledTask(); FAILED(std::get<0>(taskRet)))
+        if (const auto taskRet = cfg.RemoveScheduledTask(); !taskRet)
         {
             // TODO: better fallback action?
 
-            spdlog::critical("Failed to delete scheduled task, error: {}", std::get<1>(taskRet));
-            cfg.TryDisplayErrorDialog("Failed to delete scheduled task", std::get<1>(taskRet));
+            spdlog::critical("Failed to delete scheduled task: {}", taskRet.error());
+            cfg.TryDisplayErrorDialog("Failed to delete scheduled task", taskRet.error());
             return NV_E_SCHEDULED_TASK;
         }
 
@@ -202,8 +198,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // purge postpone data, if any
     if (cmdl[ {NV_CLI_PURGE_POSTPONE} ])
     {
-        int successCode = cfg.GetSuccessExitCode(NV_S_POSTPONE_PURGE);
-        return cfg.PurgePostponeData() ? successCode : NV_E_POSTPONE_PURGE_FAILED;
+        if (const auto r = cfg.PurgePostponeData(); !r)
+        {
+            spdlog::error("Failed to purge postpone data: {}", r.error());
+            return NV_E_POSTPONE_PURGE_FAILED;
+        }
+        return cfg.GetSuccessExitCode(NV_S_POSTPONE_PURGE);
     }
 
     // contact update server and get latest state and config
@@ -227,12 +227,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     {
         spdlog::debug("Newer updater version available, invoking self-update");
 
-        if (cfg.RunSelfUpdater())
+        if (const auto selfUpdate = cfg.RunSelfUpdater(); selfUpdate)
         {
             return cfg.GetSuccessExitCode(NV_S_SELF_UPDATER);
         }
-
-        spdlog::error("Failed to invoke self-update");
+        else
+        {
+            spdlog::error("Failed to invoke self-update: {}", selfUpdate.error());
+        }
     }
 
     // restart ourselves from a temporary location, if requested
@@ -241,19 +243,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         return cfg.GetSuccessExitCode(NV_S_LAUNCHED_TEMPORARY);
     }
 
-    bool isOutdated = false;
     // run local product detection
-    if (const auto ret = cfg.IsInstalledVersionOutdated(isOutdated); !std::get<0>(ret))
+    const auto outdated = cfg.IsInstalledVersionOutdated();
+    if (!outdated)
     {
         // TODO: add error handling
 
-        spdlog::critical("Failed to detect installed product version");
-        cfg.TryDisplayErrorDialog("Failed to detect installed product version", std::get<1>(ret));
+        spdlog::critical("Failed to detect installed product version: {}", outdated.error());
+        cfg.TryDisplayErrorDialog("Failed to detect installed product version", outdated.error());
         return NV_E_PRODUCT_DETECTION;
     }
 
     // we're up2date and silent, exit
-    if (!isOutdated)
+    if (!*outdated)
     {
         spdlog::info("Installed software is up-to-date");
         cfg.TryDisplayUpToDateDialog();
@@ -616,12 +618,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(30));
 
-                bool isDownloading = false;
-                bool hasFinished = false;
-                int statusCode = -1;
+                const auto downloadStatus = cfg.GetReleaseDownloadStatus();
 
                 // checks if a download is currently running or has been invoked
-                if (!cfg.GetReleaseDownloadStatus(isDownloading, hasFinished, statusCode))
+                if (!downloadStatus.has_value())
                 {
                     lastExitCode = 0;
                     totalToDownload = 0;
@@ -645,13 +645,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     instStep = DownloadAndInstallStep::Downloading;
                 }
 
+                const bool downloadHasFinished = downloadStatus.has_value() && downloadStatus->hasFinished;
+
                 // download has finished, advance step
-                if (instStep == DownloadAndInstallStep::Downloading && hasFinished)
+                if (instStep == DownloadAndInstallStep::Downloading && downloadHasFinished)
                 {
-                    spdlog::debug("Download finished with status code {}", statusCode);
-                    instStep = statusCode == httplib::OK_200
-                                   ? DownloadAndInstallStep::DownloadSucceeded
-                                   : DownloadAndInstallStep::DownloadFailed;
+                    if (downloadStatus->result.has_value() && downloadStatus->result->has_value())
+                    {
+                        spdlog::debug("Download finished successfully");
+                        instStep = DownloadAndInstallStep::DownloadSucceeded;
+                    }
+                    else
+                    {
+                        const std::string dlError = downloadStatus->result.has_value()
+                                                        ? downloadStatus->result->error()
+                                                        : "Download task completed without a result";
+                        spdlog::debug("Download failed: {}", dlError);
+                        cfg.SetLastDownloadError(dlError);
+                        instStep = DownloadAndInstallStep::DownloadFailed;
+                    }
+                    // result consumed — drop the completed future so subsequent frames
+                    // skip polling entirely instead of calling wait_for() on a ready future
+                    cfg.ResetReleaseDownloadState();
                 }
 
                 switch (instStep)
@@ -743,31 +758,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         isBackDisabled = false;
                         status = NV_E_DOWNLOAD_FAILED;
 
-                        // Render a single coherent message:
-                        // - Prefer the detailed reason from the downloader, if available.
-                        // - Otherwise fall back to cURL/HTTP derived message.
+                        ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed");
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(10));
                         if (const auto details = cfg.GetLastDownloadError(); !details.empty())
                         {
-                            ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed");
-                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(10));
                             ImGui::TextWrapped("%s", details.c_str());
-                        }
-                        else if (statusCode >= 0 && statusCode < CURL_LAST)
-                        {
-                            const auto curlCode = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(statusCode));
-                            if (!curlCode.empty())
-                            {
-                                ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, cURL error: %s", curlCode.data());
-                            }
-                            else
-                            {
-                                ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, cURL error: %d", statusCode);
-                            }
                         }
                         else
                         {
-                            ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Download failed, HTTP error: %s",
-                                        httplib::status_message(statusCode));
+                            ImGui::TextWrapped("The download failed. Please check your internet connection and retry.");
                         }
 
                         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(35));
@@ -795,42 +794,46 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
                     case DownloadAndInstallStep::InstallRunning:
                     {
-                        bool isRunning = false;
-                        bool hasSetupFinished = false;
-                        bool hasSucceeded = false;
-                        DWORD exitCode = 0;
-                        DWORD win32Error = 0;
+                        const auto setupStatus = cfg.GetSetupStatus();
 
-                        if (cfg.GetSetupStatus(isRunning, hasSetupFinished, hasSucceeded, exitCode, win32Error))
-                        {
-                            if (isRunning)
-                            {
-                                ImGui::Text("Installing...");
-                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(5));
-                                ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
-                            }
-                            else if (hasSetupFinished)
-                            {
-                                spdlog::info("Setup finished; succeeded: {}, exitCode: {}, win32Error: {}", hasSucceeded,
-                                             exitCode, win32Error);
-
-                                if (win32Error == ERROR_SUCCESS && winapi::IsMsiExecErrorCode(exitCode))
-                                {
-                                    spdlog::error("msiexec failed with {} ({})", winapi::GetLastErrorStdStr(exitCode), exitCode);
-
-                                    lastExitCode = exitCode;
-                                }
-
-                                SetLastError(win32Error);
-
-                                instStep = hasSucceeded
-                                               ? DownloadAndInstallStep::InstallSucceeded
-                                               : DownloadAndInstallStep::InstallFailed;
-                            }
-                        }
-                        else
+                        if (!setupStatus.has_value())
                         {
                             instStep = DownloadAndInstallStep::InstallFailed;
+                        }
+                        else if (setupStatus->isRunning)
+                        {
+                            ImGui::Text("Installing...");
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(5));
+                            ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
+                        }
+                        else if (setupStatus->hasFinished && setupStatus->result.has_value())
+                        {
+                            const auto& setupResult = *setupStatus->result;
+                            if (setupResult.has_value())
+                            {
+                                const auto& sr = *setupResult;
+                                spdlog::info("Setup finished successfully; exitCode: {}, win32Error: {}",
+                                             sr.exitCode, sr.win32Error);
+
+                                if (sr.win32Error == ERROR_SUCCESS && winapi::IsMsiExecErrorCode(sr.exitCode))
+                                {
+                                    spdlog::error("msiexec failed with {} ({})", winapi::GetLastErrorStdStr(sr.exitCode), sr.exitCode);
+                                    lastExitCode = sr.exitCode;
+                                    SetLastError(sr.win32Error);
+                                    instStep = DownloadAndInstallStep::InstallFailed;
+                                }
+                                else
+                                {
+                                    SetLastError(sr.win32Error);
+                                    instStep = DownloadAndInstallStep::InstallSucceeded;
+                                }
+                            }
+                            else
+                            {
+                                spdlog::error("Setup failed: {}", setupResult.error());
+                                cfg.SetLastDownloadError(setupResult.error());
+                                instStep = DownloadAndInstallStep::InstallFailed;
+                            }
                         }
                     }
 

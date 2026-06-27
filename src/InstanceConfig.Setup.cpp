@@ -76,39 +76,35 @@ bool models::InstanceConfig::InvokeSetupAsync(const std::stop_token& stopToken)
     }
 
     // Explicitly copy stopToken so that we don't pass a reference into another thread
-    setupTask = std::async(std::launch::async, &InstanceConfig::ExecuteSetup, this, std::stop_token { stopToken });
+    setupTask = std::async(std::launch::async, &InstanceConfig::ExecuteSetup, this, std::stop_token{stopToken});
 
     return true;
 }
 
 void models::InstanceConfig::ResetSetupState() { setupTask.reset(); }
 
-bool models::InstanceConfig::GetSetupStatus(bool& isRunning, bool& hasFinished, bool& hasSucceeded, DWORD& exitCode,
-                                            DWORD& win32Error) const
+std::optional<models::InstanceConfig::SetupStatus> models::InstanceConfig::GetSetupStatus() const
 {
     if (!setupTask.has_value())
     {
-        return false;
+        return std::nullopt;
     }
 
-    const std::future_status status = (*setupTask).wait_for(std::chrono::milliseconds(1));
+    const std::future_status futureStatus = (*setupTask).wait_for(std::chrono::milliseconds(1));
 
-    isRunning = status == std::future_status::timeout;
-    hasFinished = status == std::future_status::ready;
+    SetupStatus status{};
+    status.isRunning = futureStatus == std::future_status::timeout;
+    status.hasFinished = futureStatus == std::future_status::ready;
 
-    if (hasFinished)
+    if (status.hasFinished)
     {
-        const auto result = (*setupTask).get();
-
-        hasSucceeded = std::get<0>(result);
-        exitCode = std::get<1>(result);
-        win32Error = std::get<2>(result);
+        status.result = (*setupTask).get();
     }
 
-    return true;
+    return status;
 }
 
-std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(zip_t* zip) const
+std::expected<std::filesystem::path, std::string> models::InstanceConfig::ExtractReleaseZip(zip_t* zip) const
 {
     const auto zipPath = this->GetLocalReleaseTempFilePath();
     std::filesystem::path extractedPath = zipPath;
@@ -134,13 +130,13 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
             const auto zipError = zip_get_error(zip);
             zipErrorCode = zip_error_code_zip(zipError);
             spdlog::error("Failed to stat entry {} in zip: {} ({})", i, zip_error_strerror(zipError), zipErrorCode);
-            return std::nullopt;
+            return std::unexpected(std::format("Failed to stat zip entry {}: {}", i, zip_error_strerror(zipError)));
         }
         constexpr auto requiredFlags = ZIP_STAT_NAME | ZIP_STAT_SIZE;
         if ((stat.valid & requiredFlags) != requiredFlags)
         {
             spdlog::error("Entry {} in zip does not have required metadata.", i);
-            return std::nullopt;
+            return std::unexpected(std::format("Zip entry {} is missing required metadata", i));
         }
         unique_zip_file zipFile(zip_fopen_index(zip, i, 0), &zip_fclose);
         if (!zipFile)
@@ -149,7 +145,7 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
             spdlog::error("Failed to open file `{}` in zip - skipping: {} ({})", i,
                           ((stat.valid & ZIP_STAT_NAME) ? stat.name : "<UNNAMED>"), zip_error_strerror(zipError),
                           zip_error_code_zip(zipError));
-            return std::nullopt;
+            return std::unexpected(std::format("Failed to open zip entry {}: {}", i, zip_error_strerror(zipError)));
         }
 
         const auto outPath = (extractedPath / stat.name).lexically_normal();
@@ -160,7 +156,7 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
             if (rel.empty() || *rel.begin() == L"..")
             {
                 spdlog::error("Zip entry '{}' escapes extraction root, skipping", stat.name);
-                return std::nullopt;
+                return std::unexpected(std::format("Zip entry '{}' escapes extraction root", stat.name));
             }
         }
 
@@ -188,7 +184,7 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
                         const auto zipError = zip_file_get_error(zipFile.get());
                         spdlog::error("Failed to read chunk from file in zip: {} ({})", zip_error_strerror(zipError),
                                       zip_error_code_zip(zipError));
-                        return std::nullopt;
+                        return std::unexpected(std::format("Failed to read from zip: {}", zip_error_strerror(zipError)));
                     }
                     f << std::string_view(buffer, bytesReadThisChunk);
                     bytesRead += bytesReadThisChunk;
@@ -197,7 +193,7 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
             catch (const std::exception& e)
             {
                 spdlog::error("Failed to open output file `{}` when extracting zip: {}", outPath, e.what());
-                return std::nullopt;
+                return std::unexpected(std::format("Failed to write zip entry to '{}': {}", outPath.string(), e.what()));
             }
         }
         if ((stat.valid & ZIP_STAT_MTIME) == ZIP_STAT_MTIME)
@@ -212,9 +208,9 @@ std::optional<std::filesystem::path> models::InstanceConfig::ExtractReleaseZip(z
 
 /**
  * \brief Spawns the setup of the update release and waits for it to finish.
- * \return Tuple of success boolean, process exit code and Win32 error code.
+ * \return SetupResult on success; unexpected error string on failure.
  */
-std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::stop_token& stopToken)
+std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteSetup(const std::stop_token& stopToken)
 {
     if (this->terminateProcessBeforeUpdate.has_value())
     {
@@ -222,7 +218,8 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::s
         if (!TerminateProcess(this->terminateProcessBeforeUpdate.value(), 0))
         {
             // TODO: better user feedback; task dialog? Or explicit message in main UI page?
-            return {false, NV_E_TERMINATE_PROCESS_BEFORE_UPDATE_FAILED, GetLastError()};
+            return std::unexpected(std::format("Failed to terminate process before update: {}",
+                                               winapi::GetLastErrorStdStr()));
         }
         spdlog::debug("Terminated PID {} due to {}", terminatePID, NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE);
     }
@@ -255,7 +252,10 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::s
         {
             // Extract the entire zip to a temporary location first, so we don't break the current install if extraction fails
             const auto extractedPath = this->ExtractReleaseZip(zip.get());
-            if (extractedPath)
+            if (!extractedPath)
+            {
+                return std::unexpected(extractedPath.error());
+            }
             {
                 using Disposition = ZipExtractFileDisposition;
                 const auto sourceRoot = std::filesystem::canonical(*extractedPath);
@@ -344,7 +344,6 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::s
 
                 success = true;
             }
-            // else: ExtractReleaseZip returned nullopt (Zip-Slip, read error, etc.) — success stays false
         }
         //
         // Most probably an MSI or similar, offload execution to the default shell launch action
@@ -455,5 +454,12 @@ std::tuple<bool, DWORD, DWORD> models::InstanceConfig::ExecuteSetup(const std::s
     }
 
 exit:
-    return std::make_tuple(success, exitCode, win32Error);
+    if (!success)
+    {
+        return std::unexpected(win32Error != ERROR_SUCCESS
+                                   ? std::format("Setup failed: {} (exitCode={}, win32Error={:#x})",
+                                                 winapi::GetLastErrorStdStr(win32Error), exitCode, win32Error)
+                                   : std::format("Setup failed with exit code {}", exitCode));
+    }
+    return SetupResult{exitCode, win32Error};
 }

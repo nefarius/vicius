@@ -10,6 +10,7 @@
 #include <windows.h>
 #include <shellapi.h>
 
+#include <expected>
 #include <filesystem>
 #include <format>
 #include <sstream>

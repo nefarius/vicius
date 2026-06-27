@@ -55,16 +55,18 @@ namespace util
         return semver::version::parse(versionString.str());
     }
 
-    bool ParseCommandLineArguments(argh::parser& cmdl)
+    std::expected<void, std::string> ParseCommandLineArguments(argh::parser& cmdl)
     {
         int nArgs;
 
-        const LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+        LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
         // even with no arguments passed, this is expected to succeed
         if (nullptr == szArglist)
         {
-            return false;
+            return std::unexpected("CommandLineToArgvW failed to parse the command line");
         }
+
+        auto arglistGuard = sg::make_scope_guard([szArglist]() noexcept { LocalFree(szArglist); });
 
         std::vector<const char*> argv;
         std::vector<std::string> narrow;
@@ -84,7 +86,7 @@ namespace util
         // we now have the same format as a classic main argv to parse
         cmdl.parse(nArgs, argv.data());
 
-        return true;
+        return {};
     }
 
     std::string trim(const std::string& str, const std::string& whitespace)
@@ -432,7 +434,7 @@ namespace winapi
         return true;
     }
 
-    _Use_decl_annotations_ bool GetUserTemporaryDirectory(_Inout_ std::string& path)
+    std::expected<std::string, std::string> GetUserTemporaryDirectory()
     {
         std::string tempPath(MAX_PATH, '\0');
         // this expands typically to %TEMP% or %LOCALAPPDATA%\Temp
@@ -442,53 +444,53 @@ namespace winapi
             if (GetEnvironmentVariableA("TEMP", tempPath.data(), MAX_PATH) == FALSE)
             {
                 spdlog::error("Failed to get path to temporary directory, error: {0:#x}", GetLastError());
-                return false;
+                return std::unexpected("Failed to resolve temporary directory");
             }
         }
 
         spdlog::debug("tempPath = {}", tempPath);
         util::stripNulls(tempPath);
-        path = tempPath;
-
-        return true;
+        return tempPath;
     }
 
-    bool GetNewTemporaryFile(_Inout_ std::string& path, _In_opt_ const std::string& parent)
+    std::expected<std::string, std::string> GetNewTemporaryFile(_In_opt_ const std::string& parent)
     {
         std::string tempDir = parent;
 
-        if (parent.empty()) GetUserTemporaryDirectory(tempDir);
-
-        if (tempDir.empty()) return false;
+        if (parent.empty())
+        {
+            if (auto r = GetUserTemporaryDirectory(); r)
+                tempDir = *r;
+            else
+                return std::unexpected(r.error());
+        }
 
         std::string tempFile(MAX_PATH, '\0');
 
         if (GetTempFileNameA(tempDir.c_str(), "VICIUS", 0, tempFile.data()) == FALSE)
         {
             spdlog::error("Failed to get temporary file name, error: {:#x}", GetLastError());
-            return false;
+            return std::unexpected(std::format("Failed to create temporary file in '{}': {}", tempDir,
+                                               GetLastErrorStdStr()));
         }
 
         util::stripNulls(tempFile);
-        path = tempFile;
-        return true;
+        return tempFile;
     }
 
-    bool GetProgramDataPath(std::string& path)
+    std::expected<std::string, std::string> GetProgramDataPath()
     {
         std::string tempPath(MAX_PATH, '\0');
 
         if (!GetEnvironmentVariableA("ProgramData", tempPath.data(), MAX_PATH))
         {
             spdlog::error("Failed to get path to ProgramData directory, error: {0:#x}", GetLastError());
-            return false;
+            return std::unexpected("Failed to resolve %ProgramData% directory");
         }
 
         spdlog::debug("tempPath = {}", tempPath);
         util::stripNulls(tempPath);
-        path = tempPath;
-
-        return true;
+        return tempPath;
     }
 
     // stolen from: https://building.enlyze.com/posts/writing-win32-apps-like-its-2020-part-3/

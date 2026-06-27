@@ -528,12 +528,12 @@ models::InstanceConfig::~InstanceConfig()
     spdlog::default_logger()->flush();
 }
 
-std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated(bool& isOutdated)
+std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated()
 {
     if (remote.releases.empty())
     {
         spdlog::error("Server provided no releases, no data to compare to");
-        return std::make_tuple(false, "Server provided no releases, no data to compare to");
+        return std::unexpected("Server provided no releases, no data to compare to");
     }
 
     const auto& release = GetSelectedRelease();
@@ -552,14 +552,14 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                 util::toSemVerCompatible(asString);
                 const semver::version localVersion = semver::version::parse(asString);
 
-                isOutdated = release.GetDetectionSemVersion() > localVersion;
+                const bool isOutdated = release.GetDetectionSemVersion() > localVersion;
                 spdlog::debug("isOutdated = {}", isOutdated);
-                return std::make_tuple(true, "OK");
+                return isOutdated;
             }
             catch (const std::exception& e)
             {
                 spdlog::error("Failed to convert value {} into SemVer, error: {}", asString, e.what());
-                return std::make_tuple(false, std::format("String to SemVer conversion failed: {}", e.what()));
+                return std::unexpected(std::format("String to SemVer conversion failed: {}", e.what()));
             }
         }
 
@@ -584,7 +584,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                     hive = HKEY_CLASSES_ROOT;
                     break;
                 case RegistryHive::Invalid:
-                    return std::make_tuple(false, "Invalid hive value");
+                    return std::unexpected("Invalid hive value");
             }
 
             const auto subKey = ConvertAnsiToWide(cfg.key);
@@ -601,7 +601,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             if (const winreg::RegResult result = key.TryOpen(hive, subKey, flags); !result)
             {
                 spdlog::error("Failed to open {}\\{} key", magic_enum::enum_name(cfg.hive), cfg.key);
-                return std::make_tuple(false, "Failed to open registry key for reading");
+                return std::unexpected("Failed to open registry key for reading");
             }
 
             const auto resource = key.TryGetStringValue(valueName);
@@ -609,11 +609,12 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             if (!resource.IsValid())
             {
                 spdlog::error("Failed to access value {}", cfg.value);
-                return std::make_tuple(false, "Failed to read registry value");
+                return std::unexpected("Failed to read registry value");
             }
 
             const std::wstring value = resource.GetValue();
 
+            bool isOutdated = false;
             try
             {
                 std::string nVersion = ConvertWideToANSI(value);
@@ -626,10 +627,10 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             catch (const std::exception& e)
             {
                 spdlog::error("Failed to convert value {} into SemVer, error: {}", ConvertWideToANSI(value), e.what());
-                return std::make_tuple(false, std::format("String to SemVer conversion failed: {}", e.what()));
+                return std::unexpected(std::format("String to SemVer conversion failed: {}", e.what()));
             }
 
-            return std::make_tuple(true, "OK");
+            return isOutdated;
         }
         //
         // Detect product by comparing version resource
@@ -643,15 +644,16 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             if (!std::filesystem::exists(filePath))
             {
                 spdlog::error("File {} doesn't exist", filePath);
-                return std::make_tuple(false, "File to hash not found");
+                return std::unexpected("Product detection file not found");
             }
 
             if (cfg.statement == VersionResource::Invalid)
             {
                 spdlog::error("Invalid resource statement provided");
-                return std::make_tuple(false, "Invalid resource statement provided");
+                return std::unexpected("Invalid resource statement provided");
             }
 
+            bool isOutdated = false;
             try
             {
                 switch (cfg.statement)
@@ -673,10 +675,10 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             catch (...)
             {
                 spdlog::error("Failed to get version resource from {}", filePath);
-                return std::make_tuple(false, "Failed to read file version resource");
+                return std::unexpected("Failed to read file version resource");
             }
 
-            return std::make_tuple(true, "OK");
+            return isOutdated;
         }
         //
         // Detect product by comparing expected file sizes
@@ -689,9 +691,10 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             if (!release.detectionSize.has_value())
             {
                 spdlog::error("Selected release is missing size data");
-                return std::make_tuple(false, "Selected release is missing size data");
+                return std::unexpected("Selected release is missing size data");
             }
 
+            bool isOutdated = false;
             try
             {
                 const auto filePath = RenderInjaTemplate(cfg.input, cfg.data);
@@ -699,7 +702,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                 if (!std::filesystem::exists(filePath))
                 {
                     spdlog::error("File {} doesn't exist", filePath);
-                    return std::make_tuple(false, "File to hash not found");
+                    return std::unexpected("Product detection file not found");
                 }
 
                 const std::filesystem::path file{filePath};
@@ -710,10 +713,10 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             catch (...)
             {
                 spdlog::error("Failed to get file size from {}", cfg.input);
-                return std::make_tuple(false, "Failed to read file size");
+                return std::unexpected("Failed to read file size");
             }
 
-            return std::make_tuple(true, "OK");
+            return isOutdated;
         }
         //
         // Detect product by hashing a given file checksum
@@ -727,13 +730,13 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             if (!release.detectionChecksum.has_value())
             {
                 spdlog::error("Selected release is missing checksum data");
-                return std::make_tuple(false, "Selected release is missing checksum data");
+                return std::unexpected("Selected release is missing checksum data");
             }
 
             if (!std::filesystem::exists(filePath))
             {
                 spdlog::error("File {} doesn't exist", filePath);
-                return std::make_tuple(false, "File to hash not found");
+                return std::unexpected("File to hash not found");
             }
 
             std::ifstream file(filePath, std::ios::binary);
@@ -741,7 +744,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             if (!file.is_open())
             {
                 spdlog::error("Failed to open file {}", filePath);
-                return std::make_tuple(false, "Failed to open file");
+                return std::unexpected("Failed to open file");
             }
 
             // improve hashing speed
@@ -770,15 +773,14 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                             if (file.fail())
                             {
                                 spdlog::error("Failed to read file {} to end", filePath);
-                                return std::make_tuple(false, "Failed to read file");
+                                return std::unexpected("Failed to read file");
                             }
                         }
                     }
 
-                    isOutdated = !util::icompare(alg.getHash(), hashCfg.checksum);
+                    const bool isOutdated = !util::icompare(alg.getHash(), hashCfg.checksum);
                     spdlog::debug("isOutdated = {}", isOutdated);
-
-                    return std::make_tuple(true, "OK");
+                    return isOutdated;
                 }
                 case ChecksumAlgorithm::SHA1:
                 {
@@ -798,15 +800,14 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                             if (file.fail())
                             {
                                 spdlog::error("Failed to read file {} to end", filePath);
-                                return std::make_tuple(false, "Failed to read file");
+                                return std::unexpected("Failed to read file");
                             }
                         }
                     }
 
-                    isOutdated = !util::icompare(alg.getHash(), hashCfg.checksum);
+                    const bool isOutdated = !util::icompare(alg.getHash(), hashCfg.checksum);
                     spdlog::debug("isOutdated = {}", isOutdated);
-
-                    return std::make_tuple(true, "OK");
+                    return isOutdated;
                 }
                 case ChecksumAlgorithm::SHA256:
                 {
@@ -826,19 +827,18 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                             if (file.fail())
                             {
                                 spdlog::error("Failed to read file {} to end", filePath);
-                                return std::make_tuple(false, "Failed to read file");
+                                return std::unexpected("Failed to read file");
                             }
                         }
                     }
 
-                    isOutdated = !util::icompare(alg.getHash(), hashCfg.checksum);
+                    const bool isOutdated = !util::icompare(alg.getHash(), hashCfg.checksum);
                     spdlog::debug("isOutdated = {}", isOutdated);
-
-                    return std::make_tuple(true, "OK");
+                    return isOutdated;
                 }
                 case ChecksumAlgorithm::Invalid:
                     spdlog::error("Invalid hashing algorithm specified");
-                    return std::make_tuple(false, "Invalid hashing algorithm");
+                    return std::unexpected("Invalid hashing algorithm");
             }
 
             break;
@@ -854,7 +854,7 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
             if (cfg.input.empty())
             {
                 spdlog::error("Custom expression is missing inja template");
-                return std::make_tuple(false, "Custom expression is missing inja template");
+                return std::unexpected("Custom expression is missing inja template");
             }
 
             json data;
@@ -869,28 +869,34 @@ std::tuple<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated
                 // expected return value of "true" for outdated and "false" for up2date
                 const auto result = RenderInjaTemplate(cfg.input, data);
 
-                // string to boolean conversion
-                std::istringstream(result) >> std::boolalpha >> isOutdated;
+                // string to boolean conversion — fail explicitly on invalid output
+                bool isOutdated = false;
+                std::istringstream iss(result);
+                if (!(iss >> std::boolalpha >> isOutdated))
+                {
+                    spdlog::error("Custom expression returned non-boolean value: '{}'", result);
+                    return std::unexpected(std::format("Custom expression returned non-boolean value: '{}'", result));
+                }
                 spdlog::debug("isOutdated = {}", isOutdated);
 
-                return std::make_tuple(true, "OK");
+                return isOutdated;
             }
             catch (const std::exception& ex)
             {
                 spdlog::error("Parsing custom expression failed, error: {}", ex.what());
-                return std::make_tuple(false, "Parsing custom expression failed");
+                return std::unexpected("Parsing custom expression failed");
             }
         }
         case ProductVersionDetectionMethod::Invalid:
             spdlog::error("Invalid detection method specified");
-            return std::make_tuple(false, "Invalid detection method");
+            return std::unexpected("Invalid detection method");
     }
 
     spdlog::error("No detection method matched");
-    return std::make_tuple(false, "Unsupported detection method");
+    return std::unexpected("Unsupported detection method");
 }
 
-std::tuple<bool, std::string> models::InstanceConfig::RegisterAutostart(const std::string& launchArgs) const
+std::expected<void, std::string> models::InstanceConfig::RegisterAutostart(const std::string& launchArgs) const
 {
     winreg::RegKey key;
     const auto subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
@@ -899,7 +905,7 @@ std::tuple<bool, std::string> models::InstanceConfig::RegisterAutostart(const st
     {
         spdlog::error("Failed to open {} (code: {}, message: {})",
                       ConvertWideToANSI(subKey), result.Code(), ConvertWideToANSI(result.ErrorMessage()));
-        return std::make_tuple(false, "Failed to open registry key");
+        return std::unexpected("Failed to open registry key");
     }
 
     std::stringstream ss;
@@ -910,13 +916,13 @@ std::tuple<bool, std::string> models::InstanceConfig::RegisterAutostart(const st
     {
         spdlog::error("Failed to write autostart value (code: {}, message: {})",
                       writeResult.Code(), ConvertWideToANSI(writeResult.ErrorMessage()));
-        return std::make_tuple(false, "Failed to write registry value");
+        return std::unexpected("Failed to write registry value");
     }
 
-    return std::make_tuple(true, "OK");
+    return {};
 }
 
-std::tuple<bool, std::string> models::InstanceConfig::RemoveAutostart() const
+std::expected<void, std::string> models::InstanceConfig::RemoveAutostart() const
 {
     winreg::RegKey key;
     const auto subKey = L"Software\\Microsoft\\Windows\\CurrentVersion\\Run";
@@ -924,16 +930,16 @@ std::tuple<bool, std::string> models::InstanceConfig::RemoveAutostart() const
     if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey); !result)
     {
         spdlog::error("Failed to open {}", ConvertWideToANSI(subKey));
-        return std::make_tuple(false, "Failed to open registry key");
+        return std::unexpected("Failed to open registry key");
     }
 
     if (const auto result = key.TryDeleteValue(ConvertAnsiToWide(appFilename)); !result)
     {
         spdlog::error("Failed to delete autostart value");
-        return std::make_tuple(false, "Failed to delete autostart value");
+        return std::unexpected("Failed to delete autostart value");
     }
 
-    return std::make_tuple(true, "OK");
+    return {};
 }
 
 void models::InstanceConfig::LaunchEmergencySite() const
@@ -949,12 +955,11 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
 {
     if (!this->merged.runAsTemporaryCopy || this->isTemporaryCopy) return false;
 
-    std::string userTempPath{};
-
-    if (!winapi::GetUserTemporaryDirectory(userTempPath)) return false;
+    const auto userTempPath = winapi::GetUserTemporaryDirectory();
+    if (!userTempPath) return false;
 
     std::filesystem::path temporaryUpdaterPath =
-        std::filesystem::path(userTempPath) / std::filesystem::path(std::format("{}.exe", this->appFilename));
+        std::filesystem::path(*userTempPath) / std::filesystem::path(std::format("{}.exe", this->appFilename));
 
     if (CopyFileA(this->appPath.string().c_str(), temporaryUpdaterPath.string().c_str(), FALSE) == FALSE) return false;
 
