@@ -55,5 +55,5 @@ namespace models
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-      UpdateConfig, updatesDisabled, latestVersion, latestUrl, latestChecksum, emergencyUrl, exitCode, helpUrl)
+      UpdateConfig, updatesDisabled, latestVersion, latestUrl, latestChecksum, emergencyUrl, exitCode, helpUrl, errorFallbackUrl)
 }

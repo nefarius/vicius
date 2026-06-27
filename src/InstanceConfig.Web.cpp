@@ -998,10 +998,10 @@ namespace
                     if (shared.signaturePolicy.has_value() && !strictVerification)
                         merged.signaturePolicy = shared.signaturePolicy.value();
 
-                    if (shared.signatureStrategy.has_value())
+                    if (shared.signatureStrategy.has_value() && !strictVerification)
                         merged.signatureStrategy = shared.signatureStrategy.value();
 
-                    if (shared.signatureConfig.has_value())
+                    if (shared.signatureConfig.has_value() && !strictVerification)
                         merged.signatureConfig = shared.signatureConfig.value();
                 }
 

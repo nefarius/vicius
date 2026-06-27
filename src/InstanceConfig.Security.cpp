@@ -432,8 +432,21 @@ std::expected<void, std::string> models::InstanceConfig::VerifySetupSignature(
         return {};
     }
 
-    // No pin configured and Relaxed policy - chain valid is sufficient
-    spdlog::info("VerifySetupSignature: no publisher pin configured, accepting (chain valid)");
+    // Reached here because the requested pin source could not be resolved:
+    //   - FromConfiguration was requested but no SignatureConfig is present, OR
+    //   - FromUpdaterBinary was requested but the updater binary itself is not signed.
+    // The Relaxed+FromUpdaterBinary+!isUpdaterSigned case was already accepted above (line 332-338).
+    // In Strict mode we must fail closed; accepting on chain-only would defeat the pin requirement.
+    if (policy == SignatureComparisonPolicy::Strict)
+    {
+        spdlog::error("VerifySetupSignature: strict mode requires a resolvable publisher pin "
+                      "(strategy={}, isUpdaterSigned={}), but none is available - rejecting",
+                      magic_enum::enum_name(strategy), isUpdaterSigned);
+        return std::unexpected("Strict verification requires a publisher pin but none could be resolved "
+                               "(check signatureStrategy / signatureConfig settings)");
+    }
+
+    spdlog::info("VerifySetupSignature: no publisher pin resolvable, accepting on chain validity (relaxed mode)");
     return {};
 }
 
