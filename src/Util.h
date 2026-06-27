@@ -69,4 +69,22 @@ namespace winapi
      * \param useDarkMode TRUE to set dark mode, FALSE for light/default.
      */
     void SetDarkMode(HWND hWnd, BOOL useDarkMode = TRUE);
+
+    /**
+     * \brief Reads the system accent color via DwmGetColorizationColor and converts it to
+     *        a linear ImVec4 suitable for ImGui style colors. Falls back to the Win11
+     *        Fluent default blue (#60CDFF) if DWM cannot supply a value.
+     * \return Accent color as ImVec4 (R, G, B, A) with full opacity.
+     */
+    ImVec4 GetAccentColor();
+
+    /**
+     * \brief Returns a lighter/desaturated variant of the accent color for hover states.
+     */
+    ImVec4 GetAccentColorHovered();
+
+    /**
+     * \brief Returns a darker/more-opaque variant of the accent color for pressed states.
+     */
+    ImVec4 GetAccentColorActive();
 }
