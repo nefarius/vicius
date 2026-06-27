@@ -513,12 +513,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::PushFont(G_Font_H2);
 
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(30));
+                ImGui::PushStyleColor(ImGuiCol_Button,        winapi::GetAccentColor());
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, winapi::GetAccentColorHovered());
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  winapi::GetAccentColorActive());
                 if (ImGui::Button(ICON_FK_DOWNLOAD " Display update details now"))
                 {
                     currentPage = cfg.HasSingleRelease()
                                       ? WizardPage::SingleVersionSummary
                                       : WizardPage::MultipleVersionsOverview;
                 }
+                ImGui::PopStyleColor(3);
 
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(20));
                 if (ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow"))
@@ -573,11 +577,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::EndChild();
 
                 ImGui::SetCursorPos(ImVec2(mainViewport->WorkSize.x - SCALED(215), navigateButtonOffsetY));
+                ImGui::PushStyleColor(ImGuiCol_Button,        winapi::GetAccentColor());
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, winapi::GetAccentColorHovered());
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive,  winapi::GetAccentColorActive());
                 if (ImGui::Button("Download and install"))
                 {
                     instStep = DownloadAndInstallStep::Begin;
                     currentPage = WizardPage::DownloadAndInstall;
                 }
+                ImGui::PopStyleColor(3);
 
                 ImGui::Unindent(leftBorderIndent);
 

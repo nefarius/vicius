@@ -559,4 +559,45 @@ namespace winapi
     {
         (void)DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
     }
+
+    ImVec4 GetAccentColor()
+    {
+        // Fluent Win11 dark-mode default accent: #60CDFF
+        constexpr ImVec4 fluentDefault{0.376f, 0.804f, 1.000f, 1.0f};
+
+        DWORD color = 0;
+        BOOL opaque = FALSE;
+        if (FAILED(DwmGetColorizationColor(&color, &opaque)))
+            return fluentDefault;
+
+        // DwmGetColorizationColor returns BGRA (0xAARRGGBB in little-endian storage)
+        const float r = static_cast<float>((color >> 16) & 0xFF) / 255.0f;
+        const float g = static_cast<float>((color >>  8) & 0xFF) / 255.0f;
+        const float b = static_cast<float>((color      ) & 0xFF) / 255.0f;
+
+        // Guard against near-black results (colorization disabled / grey theme)
+        if (r < 0.05f && g < 0.05f && b < 0.05f)
+            return fluentDefault;
+
+        return ImVec4{r, g, b, 1.0f};
+    }
+
+    ImVec4 GetAccentColorHovered()
+    {
+        const auto a = GetAccentColor();
+        // Lighten by blending 20 % toward white
+        return ImVec4{
+            a.x + (1.0f - a.x) * 0.20f,
+            a.y + (1.0f - a.y) * 0.20f,
+            a.z + (1.0f - a.z) * 0.20f,
+            1.0f
+        };
+    }
+
+    ImVec4 GetAccentColorActive()
+    {
+        const auto a = GetAccentColor();
+        // Darken by 15 %
+        return ImVec4{a.x * 0.85f, a.y * 0.85f, a.z * 0.85f, 1.0f};
+    }
 }
