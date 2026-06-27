@@ -138,7 +138,7 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
         {
             const DWORD launchError = GetLastError();
             const auto launchErrorMsg = winapi::GetLastErrorStdStr(launchError);
-            spdlog::error("Failed to run updater process, error: {0:#x} ({})", launchError, launchErrorMsg);
+            spdlog::error("Failed to run updater process, error: {:#x} ({})", launchError, launchErrorMsg);
             return std::unexpected(std::format("Failed to launch self-updater process: {}", launchErrorMsg));
         }
 
@@ -180,7 +180,7 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
         {
             const DWORD launchError = GetLastError();
             const auto launchErrorMsg = winapi::GetLastErrorStdStr(launchError);
-            spdlog::error("Failed to run elevated updater process, error: {0:#x} ({})", launchError, launchErrorMsg);
+            spdlog::error("Failed to run elevated updater process, error: {:#x} ({})", launchError, launchErrorMsg);
             return std::unexpected(std::format("Failed to launch elevated self-updater process: {}", launchErrorMsg));
         }
 
