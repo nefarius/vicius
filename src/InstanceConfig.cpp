@@ -320,7 +320,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
     else
     {
         // Extract extended cert info for subjectName comparison
-        if (crypto::ExtractSignatureInformation(ConvertAnsiToWide(appPath.string()).c_str(), &appCertInfo))
+        if (crypto::ExtractSignatureInformation(appPath.wstring().c_str(), &appCertInfo))
         {
             isUpdaterSigned = true;
             spdlog::info("Updater executable is signed; subject='{}'",

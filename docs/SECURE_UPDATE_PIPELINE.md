@@ -6,7 +6,7 @@ This document describes the five-layer defense-in-depth model implemented in vic
 
 ## Architecture overview
 
-```
+```text
 Fetch updates.json over TLS
          │
          ▼
@@ -35,8 +35,12 @@ Fetch updates.json over TLS
  Run setup / extract zip
 ```
 
-Each layer is independently opt-in so existing deployments keep working while
-tenants migrate to stricter settings.
+Most layers are independently opt-in so existing deployments keep working while
+tenants migrate to stricter settings.  **Exception: Layer 5 (HTTPS enforcement)
+is always active in release builds.**  Existing tenants whose `downloadUrl` or
+`latestUrl` values use plain `http://` must migrate those URLs to `https://`
+before shipping an updater built with this code, or they will break silently for
+all deployed clients.
 
 ---
 
@@ -209,9 +213,23 @@ To supply a checksum for the self-updater binary, add `latestChecksum` to the
 
 ## Layer 5 — URL scheme enforcement
 
-`downloadUrl` and `latestUrl` must use `https://`.  Plain `http://`, `file://`,
-and any other scheme are rejected.  In debug builds (`!NDEBUG`), HTTP to localhost
-(`127.0.0.1`, `[::1]`) is permitted for local test servers.
+`downloadUrl` (per release) and `latestUrl` (self-updater) **must use `https://`**
+in release builds.  Plain `http://`, `file://`, and any other scheme are rejected
+immediately after the manifest is parsed — before any download starts.
+
+> **Migration required for existing HTTP tenants.**  Any deployment whose manifest
+> contains `http://` download URLs will start failing once the updater is rebuilt
+> with this code.  Move those URLs to `https://` before shipping.
+
+### Allowed exceptions
+
+| Condition | Allowed URLs |
+|---|---|
+| Debug build (`!NDEBUG`) | `http://localhost`, `http://127.0.0.1`, `http://[::1]` |
+| Compile-time flag `NV_FLAGS_ALLOW_HTTP_DOWNLOAD` | Same localhost addresses as above |
+
+`NV_FLAGS_ALLOW_HTTP_DOWNLOAD` is intended for CI/integration-test pipelines that
+spin up a local HTTP server.  It must never be set in production builds.
 
 ---
 

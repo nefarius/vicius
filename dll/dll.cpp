@@ -53,12 +53,17 @@ static bool ComputeFileSHA256(const std::filesystem::path& filePath, std::string
 
     constexpr std::size_t chunkSize = 65536;
     std::vector<BYTE> buf(chunkSize);
-    while (!file.eof())
+    for (;;)
     {
         file.read(reinterpret_cast<char*>(buf.data()), static_cast<std::streamsize>(chunkSize));
         const std::streamsize n = file.gcount();
         if (n > 0 && BCryptHashData(hHash, buf.data(), static_cast<ULONG>(n), 0) != 0)
         { cleanHash(); cleanAlg(); return false; }
+        if (!file)
+        {
+            if (!file.eof()) { cleanHash(); cleanAlg(); return false; } // I/O error, not clean EOF
+            break;
+        }
     }
 
     if (BCryptFinishHash(hHash, hashBuf.data(), hashLen, 0) != 0)
@@ -109,12 +114,17 @@ static bool ComputeFileSHA1(const std::filesystem::path& filePath, std::string& 
 
     constexpr std::size_t chunkSize = 65536;
     std::vector<BYTE> buf(chunkSize);
-    while (!file.eof())
+    for (;;)
     {
         file.read(reinterpret_cast<char*>(buf.data()), static_cast<std::streamsize>(chunkSize));
         const std::streamsize n = file.gcount();
         if (n > 0 && BCryptHashData(hHash, buf.data(), static_cast<ULONG>(n), 0) != 0)
         { cleanHash(); cleanAlg(); return false; }
+        if (!file)
+        {
+            if (!file.eof()) { cleanHash(); cleanAlg(); return false; } // I/O error, not clean EOF
+            break;
+        }
     }
 
     if (BCryptFinishHash(hHash, hashBuf.data(), hashLen, 0) != 0)
@@ -378,15 +388,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 
     auto RestoreBackup = [&]()
     {
-        // Restore original from backup on failure
-        if (std::filesystem::exists(backup))
-        {
-            CopyFileA(backupFile.c_str(), original.string().c_str(), FALSE);
-            SetFileAttributesA(original.string().c_str(), FILE_ATTRIBUTE_NORMAL);
-            spdlog::info("Restored backup to {}", original.string());
-        }
-
-        // Clean up the downloaded temp file if it exists
+        // Clean up the failed download temp file first (it is always disposable).
         if (std::filesystem::exists(downloadPath))
         {
             if (DeleteFileA(downloadFile.c_str()) == FALSE)
@@ -395,12 +397,27 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
             }
         }
 
-        // Schedule backup removal (it's now either restored or no longer needed)
+        // Restore original from backup.  Only remove the backup after a confirmed copy;
+        // if CopyFileA fails, keep the backup intact so the user can recover manually.
         if (std::filesystem::exists(backup))
         {
-            if (DeleteFileA(backupFile.c_str()) == FALSE)
+            if (CopyFileA(backupFile.c_str(), original.string().c_str(), FALSE) != FALSE)
             {
-                MoveFileExA(backupFile.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
+                SetFileAttributesA(original.string().c_str(), FILE_ATTRIBUTE_NORMAL);
+                spdlog::info("Restored backup to {}", original.string());
+
+                // Backup is no longer needed - remove it.
+                if (DeleteFileA(backupFile.c_str()) == FALSE)
+                {
+                    MoveFileExA(backupFile.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
+                }
+            }
+            else
+            {
+                spdlog::error("CRITICAL: failed to restore {} from backup {} (error: {}). "
+                              "The backup is preserved at that path for manual recovery.",
+                              original.string(), backupFile, GetLastError());
+                // Do NOT delete the backup - it is the only good copy left.
             }
         }
     };

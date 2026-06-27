@@ -811,6 +811,15 @@ namespace
     for (size_t i = 0; i < candidateUrls.size(); i++)
     {
         const auto& requestUrl = candidateUrls[ i ];
+
+        if (!IsAllowedDownloadUrl(requestUrl))
+        {
+            spdlog::error("Manifest URL {} uses a disallowed scheme and will not be fetched", requestUrl);
+            // Treat as unavailable and try next candidate; if none remain, the
+            // outer loop exits and the caller receives the "no server reachable" error.
+            continue;
+        }
+
         spdlog::info("Requesting update info from {} ({}/{})", requestUrl, i + 1, candidateUrls.size());
 
         // ReSharper disable once CppTooWideScopeInitStatement
