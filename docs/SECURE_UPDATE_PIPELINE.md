@@ -155,15 +155,76 @@ Open `src/CustomizeMe.h` and uncomment + fill in the second line of your `.pub` 
 
 When `NV_MANIFEST_PUBLIC_KEY` is defined, manifest verification is **mandatory**.
 
+### Install minisign (Windows)
+
+`minisign` is an open-source signing tool by Frank Denis (the libsodium author)
+that produces Ed25519 keypairs and the `.minisig` detached signature files that
+the updater verifies.
+
+```powershell
+# winget (built into Windows 11 / updated Windows 10)
+winget install jedisct1.minisign
+
+# Scoop
+scoop install minisign
+
+# Chocolatey
+choco install minisign
+```
+
+Alternatively, download the pre-built `.zip` from the
+[minisign releases page](https://github.com/jedisct1/minisign/releases) and put
+`minisign.exe` on your `PATH`.
+
+### Generate a keypair (one-time)
+
+```powershell
+minisign -G
+# Writes:
+#   ~/.minisign/minisign.key   <- private key, keep secret
+#   ~/.minisign/minisign.pub   <- public key, second line goes into CustomizeMe.h
+```
+
+The public key file looks like:
+
+```text
+untrusted comment: minisign public key ABCDEF1234567890
+RWSxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Copy the second line (`RWS...`) into `src/CustomizeMe.h`:
+
+```cpp
+#define NV_MANIFEST_PUBLIC_KEY  "RWSxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+Rebuild the updater.  From this point on, manifests without a valid `.minisig`
+are rejected at runtime.
+
 ### Sign the manifest on every publish
 
-```sh
-minisign -S -s ~/.minisign/minisign.key -m updates.json
+```powershell
+minisign -S -s "$env:USERPROFILE\.minisign\minisign.key" -m updates.json
 # produces updates.json.minisig alongside updates.json
 ```
 
-Serve both files from the same URL base.  The updater automatically fetches
-`<manifestUrl>.minisig` and verifies it before parsing the JSON.
+Serve both files from the same URL base.  The updater fetches
+`<manifestUrl>.minisig` automatically and verifies it before parsing the JSON.
+
+### Verify locally (sanity check)
+
+```powershell
+minisign -V -p minisign.pub -m updates.json
+```
+
+### Operations reference
+
+| Topic | Detail |
+|---|---|
+| Keypair rotation | Generate a new pair, recompile with the new public key, ship a new updater build. |
+| Authenticode cert renewal | No action needed — the Ed25519 key is independent of the X.509 cert lifecycle. |
+| CI / automated signing | Store `minisign.key` as a CI secret; add `minisign -S ...` as the final step of your manifest publish pipeline. Use `-W` to create a passphrase-less key for unattended signing. |
+| Passphrase | `minisign -G` prompts for a passphrase; use `-W` to skip it for CI environments. |
 
 ### Rollback / downgrade protection
 
