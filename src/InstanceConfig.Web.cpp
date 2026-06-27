@@ -79,10 +79,9 @@ void models::InstanceConfig::SetCommonHeaders(_Inout_ std::unique_ptr<RestClient
 #endif
 }
 
-int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, const int releaseIndex)
+std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, const int releaseIndex)
 {
     UNREFERENCED_PARAMETER(releaseIndex);
-    lastDownloadError.clear();
     abortDownloadRequested.store(false, std::memory_order_relaxed);
 
     std::string downloadLocation;
@@ -99,36 +98,38 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         {
             spdlog::error("Failed to create download location {}, defaulting to TEMP path", rendered);
 
-            winapi::GetUserTemporaryDirectory(downloadLocation);
+            if (const auto tmp = winapi::GetUserTemporaryDirectory(); tmp)
+                downloadLocation = *tmp;
         }
     }
     else
     {
-        winapi::GetUserTemporaryDirectory(downloadLocation);
+        if (const auto tmp = winapi::GetUserTemporaryDirectory(); tmp)
+            downloadLocation = *tmp;
     }
 
     // if we're still empty, the previous methods all failed
     if (downloadLocation.empty())
     {
-        std::string programDataDir;
-
         // fallback to writable location for all users
-        if (!winapi::GetProgramDataPath(programDataDir))
+        const auto programDataDir = winapi::GetProgramDataPath();
+        if (!programDataDir)
         {
-            spdlog::error("Failed to get %ProgramData% directory, error: {0:#x}", GetLastError());
-            return -1;
+            spdlog::error("Failed to get %ProgramData% directory: {}", programDataDir.error());
+            return std::unexpected("Failed to resolve download directory: %ProgramData% unavailable");
         }
 
         // build new absolute path, e.g. "C:\ProgramData\nefarius\HidHide\downloads" or "C:\ProgramData\Updater\downloads"
         const std::filesystem::path subDir = manufacturer.empty() ? appFilename : std::filesystem::path(manufacturer) / product;
-        const std::filesystem::path targetDirectory = std::filesystem::path(programDataDir) / subDir / "downloads";
+        const std::filesystem::path targetDirectory = std::filesystem::path(*programDataDir) / subDir / "downloads";
 
         // ensure this location can be created
         if (!nefarius::winapi::fs::DirectoryCreate(targetDirectory.string()))
         {
             spdlog::error("Failed to create fallback download location {}, error: {:#x}", targetDirectory,
                           GetLastError());
-            return -1;
+            return std::unexpected(std::format("Failed to create download directory '{}': {}", targetDirectory.string(),
+                                               winapi::GetLastErrorStdStr()));
         }
 
         downloadLocation = targetDirectory.string();
@@ -141,11 +142,13 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     // Reuse existing temp file if present (allows resuming across user retries)
     if (release.localTempFilePath.empty())
     {
-        if (!winapi::GetNewTemporaryFile(tempFile, downloadLocation))
+        const auto newTempFile = winapi::GetNewTemporaryFile(downloadLocation);
+        if (!newTempFile)
         {
-            spdlog::error("Failed to get temporary file name");
-            return -1;
+            spdlog::error("Failed to get temporary file name: {}", newTempFile.error());
+            return std::unexpected(std::format("Failed to create temporary download file: {}", newTempFile.error()));
         }
+        tempFile = *newTempFile;
 
         spdlog::debug("tempFile = {}", tempFile);
         release.localTempFilePath = tempFile;
@@ -232,8 +235,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         if (abortDownloadRequested.load(std::memory_order_relaxed))
         {
             spdlog::info("Download aborted before starting next attempt");
-            lastDownloadError = "Download cancelled.";
-            return static_cast<int>(CURLE_ABORTED_BY_CALLBACK);
+            return std::unexpected("Download cancelled.");
         }
 
         const auto ua = std::format("{}/{}", appFilename, appVersion.str());
@@ -272,7 +274,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         catch (std::ios_base::failure& e)
         {
             spdlog::error("Failed to open file {}, error {}", release.localTempFilePath, e.what());
-            return -1;
+            return std::unexpected(std::format("Failed to open temporary file '{}': {}", release.localTempFilePath.string(), e.what()));
         }
 
         spdlog::debug("Starting release download from {} (timeout {}s)", release.downloadUrl, currentTimeoutSecs);
@@ -490,8 +492,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             if (abortDownloadRequested.load(std::memory_order_relaxed))
             {
                 spdlog::info("Download aborted");
-                lastDownloadError = "Download cancelled.";
-                return static_cast<int>(CURLE_ABORTED_BY_CALLBACK);
+                return std::unexpected("Download cancelled.");
             }
 
             // If we aborted because the server ignored the Range request, restart from scratch.
@@ -645,7 +646,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
             catch (std::ios_base::failure& e)
             {
                 spdlog::error("Failed to truncate file {}, error {}", release.localTempFilePath, e.what());
-                return -1;
+                return std::unexpected(std::format("Failed to truncate temporary file for restart: {}", e.what()));
             }
         }
 
@@ -722,7 +723,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
                 spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}", release.localTempFilePath,
                              GetLastError(), winapi::GetLastErrorStdStr());
             }
-            return code;
+            return std::unexpected("HTTP 404: Not Found");
         }
 
         if (--retryCount > 0)
@@ -742,12 +743,13 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
         }
 
         auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
-        errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
-        lastDownloadError = !lastFailureDetails.empty() ? lastFailureDetails : std::string(errorMessage);
-        spdlog::error("GET request failed with code {}, message {}", code, lastDownloadError);
+        const std::string finalErrorMsg = !lastFailureDetails.empty()
+                                              ? lastFailureDetails
+                                              : (errorMessage.empty() ? httplib::status_message(code) : std::string(errorMessage));
+        spdlog::error("GET request failed with code {}, message {}", code, finalErrorMsg);
 
         // Keep partial file to allow resuming on next user retry (only remove on 404 above)
-        return code;
+        return std::unexpected(finalErrorMsg);
     }
 }
 

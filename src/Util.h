@@ -4,11 +4,10 @@ namespace util
 {
     std::filesystem::path GetImageBasePathW();
     semver::version GetVersionFromFile(const std::filesystem::path& filePath);
-    bool ParseCommandLineArguments(argh::parser& cmdl);
+    [[nodiscard]] std::expected<void, std::string> ParseCommandLineArguments(argh::parser& cmdl);
     std::string trim(const std::string& str, const std::string& whitespace = " \t");
     bool icompare_pred(unsigned char a, unsigned char b);
     bool icompare(const std::string& a, const std::string& b);
-    bool IsAdmin(int& errorCode);
     void toCamelCase(std::string& s);
     void toSemVerCompatible(std::string& s);
     void stripNulls(std::string& s);
@@ -37,19 +36,17 @@ namespace winapi
 
     /**
      * \brief Attempts to retrieve the current users' temporary directory.
-     * \param path The path it will get written to.
-     * \return True on success, false otherwise.
+     * \return The temp directory path on success; unexpected error string on failure.
      */
-    _Must_inspect_result_ bool GetUserTemporaryDirectory(_Inout_ std::string& path);
+    [[nodiscard]] std::expected<std::string, std::string> GetUserTemporaryDirectory();
 
-    bool GetNewTemporaryFile(_Inout_ std::string& path, _In_opt_ const std::string& parent = std::string());
+    [[nodiscard]] std::expected<std::string, std::string> GetNewTemporaryFile(_In_opt_ const std::string& parent = std::string());
 
     /**
      * \brief Attempts to retrieve the %ProgramData% directory.
-     * \param path The path it will get written to.
-     * \return True on success, false otherwise.
+     * \return The ProgramData path on success; unexpected error string on failure.
      */
-    bool GetProgramDataPath(std::string& path);
+    [[nodiscard]] std::expected<std::string, std::string> GetProgramDataPath();
 
     /**
      * \brief Queries for the current monitor DPI value.

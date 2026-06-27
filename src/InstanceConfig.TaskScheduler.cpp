@@ -3,7 +3,7 @@
 #include "InstanceConfig.hpp"
 
 
-std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(const std::string& launchArgs) const
+std::expected<void, std::string> models::InstanceConfig::CreateScheduledTask(const std::string& launchArgs) const
 {
     // task name
     BSTR bstrTaskName = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
@@ -49,7 +49,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     HRESULT hr = CoInitialize(nullptr);
     if (FAILED(hr))
     {
-        return std::make_tuple(hr, "COM initialization failed");
+        return std::unexpected(std::format("COM initialization failed (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Create an instance of the Task Service.
@@ -60,7 +60,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("CoCreateInstance failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Failed to create an instance of ITaskService");
+        return std::unexpected(std::format("Failed to create an instance of ITaskService (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Connect to the task service.
@@ -72,7 +72,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("Connect failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "ITaskService Connect failed");
+        return std::unexpected(std::format("ITaskService Connect failed (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Get the pointer to the root task folder that will hold the new task that is registered.
@@ -86,7 +86,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("GetFolder failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot get Root Folder pointer");
+        return std::unexpected(std::format("Cannot get Root Folder pointer (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  If the same task exists, remove it.
@@ -105,7 +105,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("NewTask failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Failed to create a task definition");
+        return std::unexpected(std::format("Failed to create a task definition (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Get the registration info for setting the identification.
@@ -120,7 +120,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("get_RegistrationInfo failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot get identification pointer");
+        return std::unexpected(std::format("Cannot get identification pointer (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     hr = pRegInfo->put_Author(bstrAuthor);
@@ -134,7 +134,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("put_Author failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot get identification info");
+        return std::unexpected(std::format("Cannot get identification info (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
 #pragma region Triggers
@@ -151,7 +151,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("get_Triggers failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot get trigger collection");
+        return std::unexpected(std::format("Cannot get trigger collection (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     ITrigger* pTrigger = nullptr;
@@ -166,7 +166,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("pTriggerCollection->Create failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot create trigger");
+        return std::unexpected(std::format("Cannot create trigger (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     IDailyTrigger* pDailyTrigger = nullptr;
@@ -181,7 +181,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("pTrigger->QueryInterface failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "QueryInterface call for IDailyTrigger failed");
+        return std::unexpected(std::format("QueryInterface call for IDailyTrigger failed (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     hr = pDailyTrigger->put_Id(bstrId);
@@ -194,7 +194,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("put_Id failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot put trigger ID");
+        return std::unexpected(std::format("Cannot put trigger ID (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Set the time the trigger is started
@@ -208,7 +208,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("put_StartBoundary failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot put the start boundary");
+        return std::unexpected(std::format("Cannot put the start boundary (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Define the interval for the daily trigger. An interval of 2 produces an
@@ -221,7 +221,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         pDailyTrigger->Release();
         pTask->Release();
 
-        return std::make_tuple(hr, "Cannot set daily interval");
+        return std::unexpected(std::format("Cannot set daily interval (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
 #pragma endregion
@@ -243,7 +243,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("get_Actions failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot get task collection pointer");
+        return std::unexpected(std::format("Cannot get task collection pointer (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Create the action, specifying that it is an executable action.
@@ -259,7 +259,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("pActionCollection->Create failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot create the action");
+        return std::unexpected(std::format("Cannot create the action (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     IExecAction* pExecAction = nullptr;
@@ -275,7 +275,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("pAction->QueryInterface failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "QueryInterface call failed on IExecAction");
+        return std::unexpected(std::format("QueryInterface call failed on IExecAction (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Set the path of the executable to bstrExecutablePath.
@@ -289,7 +289,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("put_Path failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot add path for executable action");
+        return std::unexpected(std::format("Cannot add path for executable action (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     // set launch arguments
@@ -305,7 +305,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("put_Arguments failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot launch arguments for executable action");
+        return std::unexpected(std::format("Cannot set launch arguments for executable action (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
 #pragma endregion
@@ -320,20 +320,20 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     {
         pRootFolder->Release();
         pTask->Release();
-        return std::make_tuple(hr, "Cannot get principal");
+        return std::unexpected(std::format("Cannot get principal (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Set up principal information:
     hr = pPrincipal->put_Id(_bstr_t(L"Author"));
     if (FAILED(hr))
     {
-        return std::make_tuple(hr, "Cannot set principal ID");
+        return std::unexpected(std::format("Cannot set principal ID (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     hr = pPrincipal->put_LogonType(TASK_LOGON_INTERACTIVE_TOKEN);
     if (FAILED(hr))
     {
-        return std::make_tuple(hr, "Cannot set logon type");
+        return std::unexpected(std::format("Cannot set logon type (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Run the task with the least privileges (LUA)
@@ -343,7 +343,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     {
         pRootFolder->Release();
         pTask->Release();
-        return std::make_tuple(hr, "Cannot put principal run level");
+        return std::unexpected(std::format("Cannot put principal run level (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
 #pragma endregion
@@ -362,7 +362,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("get_Settings failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Cannot get task settings");
+        return std::unexpected(std::format("Cannot get task settings (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     // Allow task to be run when run schedule was missed
@@ -375,7 +375,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("put_StartWhenAvailable failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Failed to set start when available");
+        return std::unexpected(std::format("Failed to set start when available (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     pTaskSettings->Release();
@@ -401,7 +401,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
         _com_error err(hr);
         LPCTSTR errMsg = err.ErrorMessage();
         spdlog::error("RegisterTaskDefinition failed with {}", ConvertWideToANSI(errMsg));
-        return std::make_tuple(hr, "Error saving the Task");
+        return std::unexpected(std::format("Error saving the Task (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Success!  now clean up...
@@ -409,10 +409,10 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::CreateScheduledTask(con
     pTask->Release();
     pRegisteredTask->Release();
 
-    return std::make_tuple(hr, "Success!");
+    return {};
 }
 
-std::tuple<HRESULT, std::string> models::InstanceConfig::RemoveScheduledTask() const
+std::expected<void, std::string> models::InstanceConfig::RemoveScheduledTask() const
 {
     BSTR bstrTaskName = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
 
@@ -427,7 +427,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::RemoveScheduledTask() c
     HRESULT hr = CoInitialize(nullptr);
     if (FAILED(hr))
     {
-        return std::make_tuple(hr, "COM initialization failed");
+        return std::unexpected(std::format("COM initialization failed (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Create an instance of the Task Service.
@@ -435,7 +435,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::RemoveScheduledTask() c
     hr = CoCreateInstance(CLSID_TaskScheduler, nullptr, CLSCTX_INPROC_SERVER, IID_ITaskService, (void**)&pService);
     if (FAILED(hr))
     {
-        return std::make_tuple(hr, "Failed to create an instance of ITaskService");
+        return std::unexpected(std::format("Failed to create an instance of ITaskService (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Connect to the task service.
@@ -444,7 +444,7 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::RemoveScheduledTask() c
     {
         pService->Release();
 
-        return std::make_tuple(hr, "ITaskService Connect failed");
+        return std::unexpected(std::format("ITaskService Connect failed (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     //  Get the pointer to the root task folder that will hold the new task that is registered.
@@ -455,12 +455,12 @@ std::tuple<HRESULT, std::string> models::InstanceConfig::RemoveScheduledTask() c
     {
         pService->Release();
 
-        return std::make_tuple(hr, "Cannot get Root Folder pointer");
+        return std::unexpected(std::format("Cannot get Root Folder pointer (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     pRootFolder->DeleteTask(bstrTaskName, 0);
     pRootFolder->Release();
     pService->Release();
 
-    return std::make_tuple(hr, "Success!");
+    return {};
 }

@@ -16,24 +16,25 @@ bool models::InstanceConfig::DownloadReleaseAsync(int releaseIndex, curl_progres
     return true;
 }
 
-[[nodiscard]] bool models::InstanceConfig::GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, int& statusCode) const
+[[nodiscard]] std::optional<models::InstanceConfig::DownloadStatus> models::InstanceConfig::GetReleaseDownloadStatus() const
 {
     if (!downloadTask.has_value())
     {
-        return false;
+        return std::nullopt;
     }
 
-    const std::future_status status = downloadTask->wait_for(std::chrono::milliseconds(1));
+    const std::future_status futureStatus = downloadTask->wait_for(std::chrono::milliseconds(1));
 
-    isDownloading = status == std::future_status::timeout;
-    hasFinished = status == std::future_status::ready;
+    DownloadStatus status{};
+    status.isDownloading = futureStatus == std::future_status::timeout;
+    status.hasFinished = futureStatus == std::future_status::ready;
 
-    if (hasFinished)
+    if (status.hasFinished)
     {
-        statusCode = downloadTask->get();
+        status.result = downloadTask->get();
     }
 
-    return true;
+    return status;
 }
 
 void models::InstanceConfig::ResetReleaseDownloadState() { downloadTask.reset(); }

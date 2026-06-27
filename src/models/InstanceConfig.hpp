@@ -36,6 +36,13 @@ namespace models
     /**
      * \brief Local configuration file model.
      */
+    /** Holds the outcome of a completed setup process. */
+    struct SetupResult
+    {
+        DWORD exitCode{};
+        DWORD win32Error{};
+    };
+
     class InstanceConfig
     {
         /** The application instance handle */
@@ -69,9 +76,9 @@ namespace models
         UpdateResponse remote;
 
         /** The download task */
-        std::optional<std::shared_future<int>> downloadTask;
+        std::optional<std::shared_future<std::expected<int, std::string>>> downloadTask;
         /** The setup task */
-        std::optional<std::shared_future<std::tuple<bool, DWORD, DWORD>>> setupTask;
+        std::optional<std::shared_future<std::expected<SetupResult, std::string>>> setupTask;
         /** The selected release numeric ID */
         int selectedRelease{0};
         /** Human-readable download failure reason from last attempt (if any) */
@@ -100,11 +107,11 @@ namespace models
         /** True if the updater exe itself carries a valid Authenticode signature */
         bool isUpdaterSigned{false};
 
-        int DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
+        std::expected<int, std::string> DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
 
         void SetCommonHeaders(_Inout_ std::unique_ptr<RestClient::Connection>& conn) const;
 
-        std::tuple<bool, DWORD, DWORD> ExecuteSetup(const std::stop_token&);
+        std::expected<SetupResult, std::string> ExecuteSetup(const std::stop_token&);
 
     public:
         static constexpr int MAX_TIMEOUT_SECS = 180; // 3 minutes
@@ -235,19 +242,24 @@ namespace models
         * \brief Extract the zip file containing updated executables.
         *
         * \param zip the zip file; the caller retains ownership.
-        * \return Path of folder containing extracted zip file contents on success, empty otherwise.
+        * \return Path of folder containing extracted zip file contents on success; unexpected error string on failure.
         */
-        std::optional<std::filesystem::path> ExtractReleaseZip(zip_t* zip) const;
+        [[nodiscard]] std::expected<std::filesystem::path, std::string> ExtractReleaseZip(zip_t* zip) const;
+
+        /** Returned by GetReleaseDownloadStatus when a download task has been invoked. */
+        struct DownloadStatus
+        {
+            bool isDownloading{};
+            bool hasFinished{};
+            /** On success (hasFinished && result.has_value()): HTTP 200. On failure: unexpected error string. */
+            std::optional<std::expected<int, std::string>> result{};
+        };
 
         /**
          * \brief Checks the current download status.
-         * \param isDownloading True if a download is currently running in the background.
-         * \param hasFinished True if the download has finished (either with error or successful).
-         * \param statusCode The HTTP status code (set when hasFinished is true).
-         * \return True if a download has been invoked, false otherwise.
+         * \return nullopt if no download was invoked; otherwise a DownloadStatus snapshot.
          */
-        _Must_inspect_result_ [[nodiscard]] bool
-        GetReleaseDownloadStatus(bool& isDownloading, bool& hasFinished, int& statusCode) const;
+        [[nodiscard]] std::optional<DownloadStatus> GetReleaseDownloadStatus() const;
 
         /**
          * \brief Reset the download async task state.
@@ -266,33 +278,32 @@ namespace models
 
         /**
          * \brief Checks the version of the installed product against the latest available release.
-         * \param isOutdated True if the detected installed version is older than the latest server release.
-         * \return True if detection succeeded, false on error.
+         * \return True (outdated) or false (up-to-date) on success; unexpected error string on failure.
          */
-        std::tuple<bool, std::string> IsInstalledVersionOutdated(bool& isOutdated);
+        [[nodiscard]] std::expected<bool, std::string> IsInstalledVersionOutdated();
 
-        std::tuple<HRESULT, std::string> CreateScheduledTask(const std::string& launchArgs = NV_CLI_BACKGROUND) const;
+        [[nodiscard]] std::expected<void, std::string> CreateScheduledTask(const std::string& launchArgs = NV_CLI_BACKGROUND) const;
 
-        std::tuple<HRESULT, std::string> RemoveScheduledTask() const;
+        [[nodiscard]] std::expected<void, std::string> RemoveScheduledTask() const;
 
         /**
          * \brief Registers the updater executable in current users' autostart.
          * \param launchArgs Optional launch arguments when run at autostart.
-         * \return True on success, false on error.
+         * \return Empty on success; unexpected error string on failure.
          */
-        std::tuple<bool, std::string> RegisterAutostart(const std::string& launchArgs = NV_CLI_AUTOSTART) const;
+        [[nodiscard]] std::expected<void, std::string> RegisterAutostart(const std::string& launchArgs = NV_CLI_AUTOSTART) const;
 
         /**
          * \brief Removes the autostart entry for the current user.
-         * \return True on success, false otherwise.
+         * \return Empty on success; unexpected error string on failure.
          */
-        std::tuple<bool, std::string> RemoveAutostart() const;
+        [[nodiscard]] std::expected<void, std::string> RemoveAutostart() const;
 
         /**
          * \brief Extracts the embedded self-updater DLL resource into our own app as ADS.
-         * \return True on success, false otherwise.
+         * \return Empty on success; unexpected error string on failure.
          */
-        std::tuple<bool, std::string> ExtractSelfUpdater() const;
+        [[nodiscard]] std::expected<void, std::string> ExtractSelfUpdater() const;
 
         /**
          * \brief Checks if the current app working directory can be written to.
@@ -302,9 +313,9 @@ namespace models
 
         /**
          * \brief Attempts to spawn the self-updater component.
-         * \return True on success (end this process if the case), false on error.
+         * \return Empty on success (end this process if the case); unexpected error string on failure.
          */
-        bool RunSelfUpdater() const;
+        [[nodiscard]] std::expected<void, std::string> RunSelfUpdater() const;
 
         /**
          * \brief Attempts to bing up the up-to-date dialog.
@@ -388,7 +399,7 @@ namespace models
         /**
          * \brief Removes the postpone data from the registry, if any.
          */
-        bool PurgePostponeData();
+        [[nodiscard]] std::expected<void, std::string> PurgePostponeData();
 
         /**
          * \brief Checks whether we're still in the postpone window.
@@ -408,8 +419,17 @@ namespace models
 
         void ResetSetupState();
 
-        [[nodiscard]] bool
-        GetSetupStatus(bool& isRunning, bool& hasFinished, bool& hasSucceeded, DWORD& exitCode, DWORD& win32Error) const;
+        /** Returned by GetSetupStatus when a setup task has been invoked. */
+        struct SetupStatus
+        {
+            bool isRunning{};
+            bool hasFinished{};
+            std::optional<std::expected<SetupResult, std::string>> result{};
+        };
+
+        /** \brief Polls the in-progress setup task.
+         *  \return nullopt if no task was started; otherwise a SetupStatus snapshot. */
+        [[nodiscard]] std::optional<SetupStatus> GetSetupStatus() const;
 
         bool TryRunTemporaryProcess() const;
 

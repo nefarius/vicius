@@ -4,30 +4,30 @@
 #include "InstanceConfig.hpp"
 
 
-std::tuple<bool, std::string> models::InstanceConfig::ExtractSelfUpdater() const
+std::expected<void, std::string> models::InstanceConfig::ExtractSelfUpdater() const
 {
     const HRSRC updater_res = FindResource(appInstance, MAKEINTRESOURCE(IDR_DLL_SELF_UPDATER), RT_RCDATA);
     if (!updater_res)
     {
-        return std::make_tuple(false, winapi::GetLastErrorStdStr());
+        return std::unexpected(winapi::GetLastErrorStdStr());
     }
 
     const HGLOBAL updater_global = LoadResource(appInstance, updater_res);
     if (!updater_global)
     {
-        return std::make_tuple(false, winapi::GetLastErrorStdStr());
+        return std::unexpected(winapi::GetLastErrorStdStr());
     }
 
     const int updater_size = static_cast<int>(SizeofResource(appInstance, updater_res));
     if (updater_size <= 0)
     {
-        return std::make_tuple(false, "Self-updater resource is empty");
+        return std::unexpected("Self-updater resource is empty");
     }
 
     const LPVOID updater_data = LockResource(updater_global);
     if (!updater_data)
     {
-        return std::make_tuple(false, "Failed to lock self-updater resource");
+        return std::unexpected("Failed to lock self-updater resource");
     }
 
     std::stringstream ss;
@@ -38,7 +38,7 @@ std::tuple<bool, std::string> models::InstanceConfig::ExtractSelfUpdater() const
 
     if (self == INVALID_HANDLE_VALUE)
     {
-        return std::make_tuple(false, winapi::GetLastErrorStdStr());
+        return std::unexpected(winapi::GetLastErrorStdStr());
     }
 
     DWORD bytesWritten = 0;
@@ -50,12 +50,12 @@ std::tuple<bool, std::string> models::InstanceConfig::ExtractSelfUpdater() const
         const DWORD error = GetLastError();
         CloseHandle(self);
         SetLastError(error);
-        return std::make_tuple(false, winapi::GetLastErrorStdStr());
+        return std::unexpected(winapi::GetLastErrorStdStr());
     }
 
     CloseHandle(self);
 
-    return std::make_tuple(true, "OK");
+    return {};
 }
 
 bool models::InstanceConfig::HasWritePermissions() const
@@ -73,7 +73,7 @@ bool models::InstanceConfig::HasWritePermissions() const
     return error == ERROR_SHARING_VIOLATION;
 }
 
-bool models::InstanceConfig::RunSelfUpdater() const
+std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
 {
     const auto workDir = appPath.parent_path();
     std::stringstream dllPath;
@@ -137,7 +137,7 @@ bool models::InstanceConfig::RunSelfUpdater() const
                             &pi))
         {
             spdlog::error("Failed to run updater process, error: {0:#x}", GetLastError());
-            return false;
+            return std::unexpected(std::format("Failed to launch self-updater process: {}", winapi::GetLastErrorStdStr()));
         }
 
         spdlog::debug("Process launched");
@@ -177,7 +177,7 @@ bool models::InstanceConfig::RunSelfUpdater() const
         if (!ShellExecuteExA(&shExInfo))
         {
             spdlog::error("Failed to run elevated updater process, error: {0:#x}", GetLastError());
-            return false;
+            return std::unexpected(std::format("Failed to launch elevated self-updater process: {}", winapi::GetLastErrorStdStr()));
         }
 
         spdlog::debug("Process launched");
@@ -185,5 +185,5 @@ bool models::InstanceConfig::RunSelfUpdater() const
         CloseHandle(shExInfo.hProcess);
     }
 
-    return true;
+    return {};
 }

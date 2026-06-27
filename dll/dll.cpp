@@ -23,33 +23,33 @@ static std::string ConvertWideToANSI(const std::wstring& wstr)
 // Checksum helpers (BCrypt-based, no external hash library dependency)
 // ============================================================================
 
-static bool ComputeFileSHA256(const std::filesystem::path& filePath, std::string& outHex)
+static std::expected<std::string, std::string> ComputeFileSHA256(const std::filesystem::path& filePath)
 {
     BCRYPT_ALG_HANDLE hAlg = nullptr;
     BCRYPT_HASH_HANDLE hHash = nullptr;
     std::vector<BYTE> hashObj, hashBuf;
 
     if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, nullptr, 0) != 0)
-        return false;
+        return std::unexpected("BCryptOpenAlgorithmProvider failed");
 
     auto cleanAlg = [&]{ if (hAlg) { BCryptCloseAlgorithmProvider(hAlg, 0); hAlg = nullptr; } };
 
     DWORD objLen = 0, hashLen = 0, result = 0;
     if (BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&objLen, sizeof(DWORD), &result, 0) != 0)
-    { cleanAlg(); return false; }
+    { cleanAlg(); return std::unexpected("BCryptGetProperty(OBJECT_LENGTH) failed"); }
     if (BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH, (PUCHAR)&hashLen, sizeof(DWORD), &result, 0) != 0)
-    { cleanAlg(); return false; }
+    { cleanAlg(); return std::unexpected("BCryptGetProperty(HASH_LENGTH) failed"); }
 
     hashObj.resize(objLen);
     hashBuf.resize(hashLen);
 
     if (BCryptCreateHash(hAlg, &hHash, hashObj.data(), objLen, nullptr, 0, 0) != 0)
-    { cleanAlg(); return false; }
+    { cleanAlg(); return std::unexpected("BCryptCreateHash failed"); }
 
     auto cleanHash = [&]{ if (hHash) { BCryptDestroyHash(hHash); hHash = nullptr; } };
 
     std::ifstream file(filePath, std::ios::binary);
-    if (!file.is_open()) { cleanHash(); cleanAlg(); return false; }
+    if (!file.is_open()) { cleanHash(); cleanAlg(); return std::unexpected(std::format("Failed to open '{}' for hashing", filePath.string())); }
 
     constexpr std::size_t chunkSize = 65536;
     std::vector<BYTE> buf(chunkSize);
@@ -58,16 +58,16 @@ static bool ComputeFileSHA256(const std::filesystem::path& filePath, std::string
         file.read(reinterpret_cast<char*>(buf.data()), static_cast<std::streamsize>(chunkSize));
         const std::streamsize n = file.gcount();
         if (n > 0 && BCryptHashData(hHash, buf.data(), static_cast<ULONG>(n), 0) != 0)
-        { cleanHash(); cleanAlg(); return false; }
+        { cleanHash(); cleanAlg(); return std::unexpected("BCryptHashData failed"); }
         if (!file)
         {
-            if (!file.eof()) { cleanHash(); cleanAlg(); return false; } // I/O error, not clean EOF
+            if (!file.eof()) { cleanHash(); cleanAlg(); return std::unexpected("I/O error reading file for hashing"); }
             break;
         }
     }
 
     if (BCryptFinishHash(hHash, hashBuf.data(), hashLen, 0) != 0)
-    { cleanHash(); cleanAlg(); return false; }
+    { cleanHash(); cleanAlg(); return std::unexpected("BCryptFinishHash failed"); }
 
     cleanHash();
     cleanAlg();
@@ -80,37 +80,36 @@ static bool ComputeFileSHA256(const std::filesystem::path& filePath, std::string
         std::snprintf(nibbles, sizeof(nibbles), "%02x", hashBuf[i]);
         hex += nibbles;
     }
-    outHex = std::move(hex);
-    return true;
+    return hex;
 }
 
-static bool ComputeFileSHA1(const std::filesystem::path& filePath, std::string& outHex)
+static std::expected<std::string, std::string> ComputeFileSHA1(const std::filesystem::path& filePath)
 {
     BCRYPT_ALG_HANDLE hAlg = nullptr;
     BCRYPT_HASH_HANDLE hHash = nullptr;
     std::vector<BYTE> hashObj, hashBuf;
 
     if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA1_ALGORITHM, nullptr, 0) != 0)
-        return false;
+        return std::unexpected("BCryptOpenAlgorithmProvider failed");
 
     auto cleanAlg = [&]{ if (hAlg) { BCryptCloseAlgorithmProvider(hAlg, 0); hAlg = nullptr; } };
 
     DWORD objLen = 0, hashLen = 0, result = 0;
     if (BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&objLen, sizeof(DWORD), &result, 0) != 0)
-    { cleanAlg(); return false; }
+    { cleanAlg(); return std::unexpected("BCryptGetProperty(OBJECT_LENGTH) failed"); }
     if (BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH, (PUCHAR)&hashLen, sizeof(DWORD), &result, 0) != 0)
-    { cleanAlg(); return false; }
+    { cleanAlg(); return std::unexpected("BCryptGetProperty(HASH_LENGTH) failed"); }
 
     hashObj.resize(objLen);
     hashBuf.resize(hashLen);
 
     if (BCryptCreateHash(hAlg, &hHash, hashObj.data(), objLen, nullptr, 0, 0) != 0)
-    { cleanAlg(); return false; }
+    { cleanAlg(); return std::unexpected("BCryptCreateHash failed"); }
 
     auto cleanHash = [&]{ if (hHash) { BCryptDestroyHash(hHash); hHash = nullptr; } };
 
     std::ifstream file(filePath, std::ios::binary);
-    if (!file.is_open()) { cleanHash(); cleanAlg(); return false; }
+    if (!file.is_open()) { cleanHash(); cleanAlg(); return std::unexpected(std::format("Failed to open '{}' for hashing", filePath.string())); }
 
     constexpr std::size_t chunkSize = 65536;
     std::vector<BYTE> buf(chunkSize);
@@ -119,16 +118,16 @@ static bool ComputeFileSHA1(const std::filesystem::path& filePath, std::string& 
         file.read(reinterpret_cast<char*>(buf.data()), static_cast<std::streamsize>(chunkSize));
         const std::streamsize n = file.gcount();
         if (n > 0 && BCryptHashData(hHash, buf.data(), static_cast<ULONG>(n), 0) != 0)
-        { cleanHash(); cleanAlg(); return false; }
+        { cleanHash(); cleanAlg(); return std::unexpected("BCryptHashData failed"); }
         if (!file)
         {
-            if (!file.eof()) { cleanHash(); cleanAlg(); return false; } // I/O error, not clean EOF
+            if (!file.eof()) { cleanHash(); cleanAlg(); return std::unexpected("I/O error reading file for hashing"); }
             break;
         }
     }
 
     if (BCryptFinishHash(hHash, hashBuf.data(), hashLen, 0) != 0)
-    { cleanHash(); cleanAlg(); return false; }
+    { cleanHash(); cleanAlg(); return std::unexpected("BCryptFinishHash failed"); }
 
     cleanHash();
     cleanAlg();
@@ -141,15 +140,14 @@ static bool ComputeFileSHA1(const std::filesystem::path& filePath, std::string& 
         std::snprintf(nibbles, sizeof(nibbles), "%02x", hashBuf[i]);
         hex += nibbles;
     }
-    outHex = std::move(hex);
-    return true;
+    return hex;
 }
 
 // ============================================================================
 // Authenticode helpers (WinVerifyTrust - revocation checked, no lifetime flag)
 // ============================================================================
 
-static bool VerifyAuthenticode(const std::wstring& filePath)
+static std::expected<void, std::string> VerifyAuthenticode(const std::wstring& filePath)
 {
     WINTRUST_FILE_INFO fileInfo = {};
     fileInfo.cbStruct = sizeof(WINTRUST_FILE_INFO);
@@ -180,7 +178,9 @@ static bool VerifyAuthenticode(const std::wstring& filePath)
     wtData.dwStateAction = WTD_STATEACTION_CLOSE;
     WinVerifyTrust(nullptr, &wvtPolicyGuid, &wtData);
 
-    return lStatus == ERROR_SUCCESS;
+    if (lStatus != ERROR_SUCCESS)
+        return std::unexpected(std::format("WinVerifyTrust failed (status=0x{:08X})", static_cast<unsigned long>(lStatus)));
+    return {};
 }
 
 // ============================================================================
@@ -443,16 +443,15 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
         // 1. Checksum verification
         if (!expectedChecksum.empty())
         {
-            std::string computed;
-            bool hashOk = false;
+            std::expected<std::string, std::string> hashResult;
 
             if (checksumAlg == "sha256" || checksumAlg.empty())
             {
-                hashOk = ComputeFileSHA256(downloadPath, computed);
+                hashResult = ComputeFileSHA256(downloadPath);
             }
             else if (checksumAlg == "sha1")
             {
-                hashOk = ComputeFileSHA1(downloadPath, computed);
+                hashResult = ComputeFileSHA1(downloadPath);
             }
             else
             {
@@ -464,9 +463,9 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
                 return;
             }
 
-            if (!hashOk)
+            if (!hashResult)
             {
-                spdlog::error("Failed to compute checksum of downloaded file {}", downloadFile);
+                spdlog::error("Failed to compute checksum of downloaded file {}: {}", downloadFile, hashResult.error());
                 RestoreBackup();
                 if (!silent)
                     MessageBoxA(hwnd, "Failed to compute checksum of the downloaded updater binary.",
@@ -474,11 +473,11 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
                 return;
             }
 
-            spdlog::debug("Checksum: computed={} expected={}", computed, expectedChecksum);
+            spdlog::debug("Checksum: computed={} expected={}", *hashResult, expectedChecksum);
 
-            if (!IHexEqual(computed, expectedChecksum))
+            if (!IHexEqual(*hashResult, expectedChecksum))
             {
-                spdlog::error("Checksum MISMATCH: computed {} != expected {}", computed, expectedChecksum);
+                spdlog::error("Checksum MISMATCH: computed {} != expected {}", *hashResult, expectedChecksum);
                 RestoreBackup();
                 if (!silent)
                     MessageBoxA(hwnd,
@@ -492,12 +491,12 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
         }
 
         // 2. Authenticode / WinVerifyTrust verification
-        const bool sigOk = VerifyAuthenticode(downloadPath.wstring());
+        const auto sigResult = VerifyAuthenticode(downloadPath.wstring());
 
-        if (!sigOk)
+        if (!sigResult)
         {
             // An unsigned binary is treated as suspicious in self-update context
-            spdlog::error("Authenticode verification FAILED for downloaded updater binary {}", downloadFile);
+            spdlog::error("Authenticode verification FAILED for downloaded updater binary {}: {}", downloadFile, sigResult.error());
             RestoreBackup();
             if (!silent)
                 MessageBoxA(hwnd,

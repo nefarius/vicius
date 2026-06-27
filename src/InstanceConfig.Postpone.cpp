@@ -32,7 +32,7 @@ void models::InstanceConfig::SetPostponeData()
     }
 }
 
-bool models::InstanceConfig::PurgePostponeData()
+std::expected<void, std::string> models::InstanceConfig::PurgePostponeData()
 {
     winreg::RegKey key;
     const auto subKeyTemplate = std::format(NV_POSTPONE_TS_KEY_TEMPLATE, appFilename);
@@ -41,16 +41,16 @@ bool models::InstanceConfig::PurgePostponeData()
     if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey, KEY_ALL_ACCESS); !result)
     {
         spdlog::error("Failed to open postpone key, error {}", ConvertWideToANSI(result.ErrorMessage()));
-        return false;
+        return std::unexpected(std::format("Failed to open postpone key: {}", ConvertWideToANSI(result.ErrorMessage())));
     }
 
     if (const winreg::RegResult result = key.TryDeleteValue(NV_POSTPONE_TS_VALUE_NAME); !result)
     {
         spdlog::error("Failed to delete postpone value, error {}", ConvertWideToANSI(result.ErrorMessage()));
-        return false;
+        return std::unexpected(std::format("Failed to delete postpone value: {}", ConvertWideToANSI(result.ErrorMessage())));
     }
 
-    return true;
+    return {};
 }
 
 bool models::InstanceConfig::IsInPostponePeriod()
