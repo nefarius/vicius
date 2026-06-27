@@ -252,7 +252,10 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
         {
             // Extract the entire zip to a temporary location first, so we don't break the current install if extraction fails
             const auto extractedPath = this->ExtractReleaseZip(zip.get());
-            if (extractedPath)
+            if (!extractedPath)
+            {
+                return std::unexpected(extractedPath.error());
+            }
             {
                 using Disposition = ZipExtractFileDisposition;
                 const auto sourceRoot = std::filesystem::canonical(*extractedPath);
@@ -341,7 +344,6 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
 
                 success = true;
             }
-            // else: ExtractReleaseZip returned unexpected (Zip-Slip, read error, etc.) — success stays false
         }
         //
         // Most probably an MSI or similar, offload execution to the default shell launch action

@@ -644,7 +644,7 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
             if (!std::filesystem::exists(filePath))
             {
                 spdlog::error("File {} doesn't exist", filePath);
-                return std::unexpected("File to hash not found");
+                return std::unexpected("Product detection file not found");
             }
 
             if (cfg.statement == VersionResource::Invalid)
@@ -702,7 +702,7 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
                 if (!std::filesystem::exists(filePath))
                 {
                     spdlog::error("File {} doesn't exist", filePath);
-                    return std::unexpected("File to hash not found");
+                    return std::unexpected("Product detection file not found");
                 }
 
                 const std::filesystem::path file{filePath};
@@ -869,9 +869,14 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
                 // expected return value of "true" for outdated and "false" for up2date
                 const auto result = RenderInjaTemplate(cfg.input, data);
 
-                // string to boolean conversion
+                // string to boolean conversion — fail explicitly on invalid output
                 bool isOutdated = false;
-                std::istringstream(result) >> std::boolalpha >> isOutdated;
+                std::istringstream iss(result);
+                if (!(iss >> std::boolalpha >> isOutdated))
+                {
+                    spdlog::error("Custom expression returned non-boolean value: '{}'", result);
+                    return std::unexpected(std::format("Custom expression returned non-boolean value: '{}'", result));
+                }
                 spdlog::debug("isOutdated = {}", isOutdated);
 
                 return isOutdated;

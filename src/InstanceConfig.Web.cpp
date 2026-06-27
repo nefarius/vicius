@@ -116,7 +116,7 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
         if (!programDataDir)
         {
             spdlog::error("Failed to get %ProgramData% directory: {}", programDataDir.error());
-            return std::unexpected("Failed to resolve download directory: %ProgramData% unavailable");
+            return std::unexpected(programDataDir.error());
         }
 
         // build new absolute path, e.g. "C:\ProgramData\nefarius\HidHide\downloads" or "C:\ProgramData\Updater\downloads"
@@ -146,7 +146,7 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
         if (!newTempFile)
         {
             spdlog::error("Failed to get temporary file name: {}", newTempFile.error());
-            return std::unexpected(std::format("Failed to create temporary download file: {}", newTempFile.error()));
+            return std::unexpected(newTempFile.error());
         }
         tempFile = *newTempFile;
 

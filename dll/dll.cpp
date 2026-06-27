@@ -215,12 +215,14 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 
     int nArgs;
 
-    const LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+    LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
     // even with no arguments passed, this is expected to succeed
     if (nullptr == szArglist)
     {
         return;
     }
+
+    struct ArglistDeleter { LPWSTR* p; ~ArglistDeleter() { if (p) LocalFree(p); } } arglistGuard{szArglist};
 
     std::vector<const char*> argv;
     std::vector<std::string> narrow;
@@ -307,7 +309,8 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
     const std::string expectedChecksum = cmdl({"--checksum"}).str();
     const std::string checksumAlg = [&]
     {
-        const std::string alg = cmdl({"--checksum-alg"}).str();
+        std::string alg = cmdl({"--checksum-alg"}).str();
+        std::ranges::transform(alg, alg.begin(), ::tolower);
         return alg.empty() ? std::string("sha256") : alg;
     }();
 

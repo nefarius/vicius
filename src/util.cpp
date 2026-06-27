@@ -59,12 +59,14 @@ namespace util
     {
         int nArgs;
 
-        const LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+        LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
         // even with no arguments passed, this is expected to succeed
         if (nullptr == szArglist)
         {
             return std::unexpected("CommandLineToArgvW failed to parse the command line");
         }
+
+        auto arglistGuard = sg::make_scope_guard([szArglist]() noexcept { LocalFree(szArglist); });
 
         std::vector<const char*> argv;
         std::vector<std::string> narrow;

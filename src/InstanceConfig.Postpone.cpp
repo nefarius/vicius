@@ -40,12 +40,22 @@ std::expected<void, std::string> models::InstanceConfig::PurgePostponeData()
 
     if (const winreg::RegResult result = key.TryOpen(HKEY_CURRENT_USER, subKey, KEY_ALL_ACCESS); !result)
     {
+        if (result.Code() == ERROR_FILE_NOT_FOUND || result.Code() == ERROR_PATH_NOT_FOUND)
+        {
+            spdlog::debug("Postpone key not present, nothing to purge");
+            return {};
+        }
         spdlog::error("Failed to open postpone key, error {}", ConvertWideToANSI(result.ErrorMessage()));
         return std::unexpected(std::format("Failed to open postpone key: {}", ConvertWideToANSI(result.ErrorMessage())));
     }
 
     if (const winreg::RegResult result = key.TryDeleteValue(NV_POSTPONE_TS_VALUE_NAME); !result)
     {
+        if (result.Code() == ERROR_FILE_NOT_FOUND)
+        {
+            spdlog::debug("Postpone value not present, nothing to purge");
+            return {};
+        }
         spdlog::error("Failed to delete postpone value, error {}", ConvertWideToANSI(result.ErrorMessage()));
         return std::unexpected(std::format("Failed to delete postpone value: {}", ConvertWideToANSI(result.ErrorMessage())));
     }

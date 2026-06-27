@@ -32,8 +32,8 @@ std::expected<void, std::string> models::InstanceConfig::CreateScheduledTask(con
     spdlog::debug("argsBuilt = {}", argsBuilt);
     BSTR bstrLaunchArgs = SysAllocString(ConvertAnsiToWide(argsBuilt).c_str());
 
-    // clean up all resources when going out of scope
-    auto guard = sg::make_scope_guard(
+    // clean up BSTR resources when going out of scope (always)
+    auto bstrGuard = sg::make_scope_guard(
       [ bstrTaskName, bstrExecutablePath, bstrId, bstrAuthor, bstrStart, bstrLaunchArgs ]() noexcept
       {
           if (bstrTaskName) SysFreeString(bstrTaskName);
@@ -42,8 +42,6 @@ std::expected<void, std::string> models::InstanceConfig::CreateScheduledTask(con
           if (bstrAuthor) SysFreeString(bstrAuthor);
           if (bstrStart) SysFreeString(bstrStart);
           if (bstrLaunchArgs) SysFreeString(bstrLaunchArgs);
-
-          CoUninitialize();
       });
 
     HRESULT hr = CoInitialize(nullptr);
@@ -51,6 +49,9 @@ std::expected<void, std::string> models::InstanceConfig::CreateScheduledTask(con
     {
         return std::unexpected(std::format("COM initialization failed (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
+
+    // CoUninitialize only when CoInitialize succeeded
+    auto comGuard = sg::make_scope_guard([]() noexcept { CoUninitialize(); });
 
     //  Create an instance of the Task Service.
     ITaskService* pService = nullptr;
@@ -188,6 +189,7 @@ std::expected<void, std::string> models::InstanceConfig::CreateScheduledTask(con
 
     if (FAILED(hr))
     {
+        pDailyTrigger->Release();
         pRootFolder->Release();
         pTask->Release();
 
@@ -202,6 +204,7 @@ std::expected<void, std::string> models::InstanceConfig::CreateScheduledTask(con
 
     if (FAILED(hr))
     {
+        pDailyTrigger->Release();
         pRootFolder->Release();
         pTask->Release();
 
@@ -214,11 +217,11 @@ std::expected<void, std::string> models::InstanceConfig::CreateScheduledTask(con
     //  Define the interval for the daily trigger. An interval of 2 produces an
     //  every other day schedule
     hr = pDailyTrigger->put_DaysInterval(1);
+    pDailyTrigger->Release();
 
     if (FAILED(hr))
     {
         pRootFolder->Release();
-        pDailyTrigger->Release();
         pTask->Release();
 
         return std::unexpected(std::format("Cannot set daily interval (hr=0x{:08X})", static_cast<unsigned>(hr)));
@@ -283,6 +286,7 @@ std::expected<void, std::string> models::InstanceConfig::CreateScheduledTask(con
 
     if (FAILED(hr))
     {
+        pExecAction->Release();
         pRootFolder->Release();
         pTask->Release();
 
@@ -327,12 +331,18 @@ std::expected<void, std::string> models::InstanceConfig::CreateScheduledTask(con
     hr = pPrincipal->put_Id(_bstr_t(L"Author"));
     if (FAILED(hr))
     {
+        pPrincipal->Release();
+        pRootFolder->Release();
+        pTask->Release();
         return std::unexpected(std::format("Cannot set principal ID (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
     hr = pPrincipal->put_LogonType(TASK_LOGON_INTERACTIVE_TOKEN);
     if (FAILED(hr))
     {
+        pPrincipal->Release();
+        pRootFolder->Release();
+        pTask->Release();
         return std::unexpected(std::format("Cannot set logon type (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
 
@@ -367,6 +377,7 @@ std::expected<void, std::string> models::InstanceConfig::CreateScheduledTask(con
 
     // Allow task to be run when run schedule was missed
     hr = pTaskSettings->put_StartWhenAvailable(TRUE);
+    pTaskSettings->Release();
     if (FAILED(hr))
     {
         pRootFolder->Release();
@@ -377,8 +388,6 @@ std::expected<void, std::string> models::InstanceConfig::CreateScheduledTask(con
         spdlog::error("put_StartWhenAvailable failed with {}", ConvertWideToANSI(errMsg));
         return std::unexpected(std::format("Failed to set start when available (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
-
-    pTaskSettings->Release();
 
 #pragma endregion
 
@@ -416,12 +425,10 @@ std::expected<void, std::string> models::InstanceConfig::RemoveScheduledTask() c
 {
     BSTR bstrTaskName = SysAllocString(ConvertAnsiToWide(appFilename).c_str());
 
-    auto guard = sg::make_scope_guard(
+    auto bstrGuard = sg::make_scope_guard(
       [ bstrTaskName ]() noexcept
       {
           if (bstrTaskName) SysFreeString(bstrTaskName);
-
-          CoUninitialize();
       });
 
     HRESULT hr = CoInitialize(nullptr);
@@ -429,6 +436,8 @@ std::expected<void, std::string> models::InstanceConfig::RemoveScheduledTask() c
     {
         return std::unexpected(std::format("COM initialization failed (hr=0x{:08X})", static_cast<unsigned>(hr)));
     }
+
+    auto comGuard = sg::make_scope_guard([]() noexcept { CoUninitialize(); });
 
     //  Create an instance of the Task Service.
     ITaskService* pService = nullptr;

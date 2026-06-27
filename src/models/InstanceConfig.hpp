@@ -251,7 +251,9 @@ namespace models
         {
             bool isDownloading{};
             bool hasFinished{};
-            /** On success (hasFinished && result.has_value()): HTTP 200. On failure: unexpected error string. */
+            /** Present when hasFinished is true (task produced a terminal result). The inner expected
+             *  holds HTTP 200 on success or an error string on failure — a present optional does NOT
+             *  imply the operation succeeded; check result->has_value() for that. */
             std::optional<std::expected<int, std::string>> result{};
         };
 

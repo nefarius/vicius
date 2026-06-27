@@ -816,10 +816,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                                 {
                                     spdlog::error("msiexec failed with {} ({})", winapi::GetLastErrorStdStr(sr.exitCode), sr.exitCode);
                                     lastExitCode = sr.exitCode;
+                                    SetLastError(sr.win32Error);
+                                    instStep = DownloadAndInstallStep::InstallFailed;
                                 }
-
-                                SetLastError(sr.win32Error);
-                                instStep = DownloadAndInstallStep::InstallSucceeded;
+                                else
+                                {
+                                    SetLastError(sr.win32Error);
+                                    instStep = DownloadAndInstallStep::InstallSucceeded;
+                                }
                             }
                             else
                             {
