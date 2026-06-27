@@ -420,12 +420,12 @@ namespace models
 
         /**
          * \brief Verifies the downloaded setup file integrity (checksum + Authenticode publisher pin).
-         * \return Tuple of (success, human-readable reason on failure).
+         * \return Empty on success; unexpected error string on failure.
          * \remarks Called between DownloadSucceeded and PrepareInstall in the UI state machine.
          *          Checksum: if present in the release it MUST match; absent = allowed in Relaxed, rejected in strict mode.
          *          Signature: governed by merged.signatureVerificationMode (WhenPresent / Required).
          */
-        [[nodiscard]] std::tuple<bool, std::string> VerifyReleaseIntegrity();
+        [[nodiscard]] std::expected<void, std::string> VerifyReleaseIntegrity();
 
         /**
          * \brief Validates the Authenticode signature of a file and optionally pins the publisher.
@@ -433,9 +433,9 @@ namespace models
          * \param releaseSig Optional per-release certificate pin (overrides global strategy).
          * \param policy The comparison policy to apply.
          * \param strategy The pin strategy to use.
-         * \return Tuple of (success, human-readable reason on failure).
+         * \return Empty on success; unexpected error string on failure.
          */
-        [[nodiscard]] std::tuple<bool, std::string> VerifySetupSignature(
+        [[nodiscard]] std::expected<void, std::string> VerifySetupSignature(
             const std::filesystem::path& filePath,
             const std::optional<models::SignatureConfig>& releaseSig,
             models::SignatureComparisonPolicy policy,
@@ -446,9 +446,9 @@ namespace models
          * \brief Verifies a detached minisign Ed25519 signature over the raw manifest body.
          * \param manifestBody The raw bytes of the fetched JSON.
          * \param minisigBody The raw contents of the .minisig sidecar file.
-         * \return Tuple of (success, human-readable reason on failure).
+         * \return Empty on success; unexpected error string on failure.
          */
-        [[nodiscard]] static std::tuple<bool, std::string> VerifyManifestSignature(
+        [[nodiscard]] static std::expected<void, std::string> VerifyManifestSignature(
             const std::string& manifestBody,
             const std::string& minisigBody);
 

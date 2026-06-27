@@ -884,11 +884,11 @@ namespace
                             "Update blocked because NV_MANIFEST_PUBLIC_KEY is configured.");
                     }
 
-                    const auto [sigOk, sigReason] = VerifyManifestSignature(body, minisigBody);
-                    if (!sigOk)
+                    const auto sigResult = VerifyManifestSignature(body, minisigBody);
+                    if (!sigResult)
                     {
-                        spdlog::error("Manifest signature verification failed: {}", sigReason);
-                        return std::make_tuple(false, std::format("Manifest signature invalid: {}", sigReason));
+                        spdlog::error("Manifest signature verification failed: {}", sigResult.error());
+                        return std::make_tuple(false, std::format("Manifest signature invalid: {}", sigResult.error()));
                     }
 
                     spdlog::info("Manifest signature verified successfully");

@@ -191,7 +191,7 @@ namespace
 // Layer 1: Setup Checksum Verification
 // ============================================================================
 
-std::tuple<bool, std::string> models::InstanceConfig::VerifyReleaseIntegrity()
+std::expected<void, std::string> models::InstanceConfig::VerifyReleaseIntegrity()
 {
     const auto& release = GetSelectedRelease();
     const auto tempFile = GetLocalReleaseTempFilePath(GetSelectedReleaseId());
@@ -208,7 +208,7 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifyReleaseIntegrity()
         if (!std::filesystem::exists(tempFile))
         {
             spdlog::error("Checksum verification: downloaded file not found at {}", tempFile.string());
-            return {false, "Downloaded file not found for checksum verification"};
+            return std::unexpected("Downloaded file not found for checksum verification");
         }
 
         std::string computed;
@@ -228,13 +228,13 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifyReleaseIntegrity()
                 break;
             case ChecksumAlgorithm::Invalid:
                 spdlog::error("Checksum verification: invalid algorithm specified in manifest");
-                return {false, "Invalid checksum algorithm specified in manifest"};
+                return std::unexpected("Invalid checksum algorithm specified in manifest");
         }
 
         if (computed.empty())
         {
             spdlog::error("Checksum verification: failed to hash file {}", tempFile.string());
-            return {false, "Failed to compute file checksum"};
+            return std::unexpected("Failed to compute file checksum");
         }
 
         spdlog::debug("Checksum verification: computed={}, expected={}", computed, hashCfg.checksum);
@@ -243,7 +243,7 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifyReleaseIntegrity()
         {
             spdlog::error("Checksum verification FAILED: computed {} does not match expected {}",
                           computed, hashCfg.checksum);
-            return {false, std::format("Checksum mismatch: expected {}, got {}", hashCfg.checksum, computed)};
+            return std::unexpected(std::format("Checksum mismatch: expected {}, got {}", hashCfg.checksum, computed));
         }
 
         spdlog::info("Checksum verification passed");
@@ -253,7 +253,7 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifyReleaseIntegrity()
         if (strictVerification)
         {
             spdlog::error("Checksum verification: no checksum in manifest and strict mode is active");
-            return {false, "No checksum provided by the update server and strict verification is enabled"};
+            return std::unexpected("No checksum provided by the update server and strict verification is enabled");
         }
         spdlog::warn("Checksum verification: no checksum provided, skipping (relaxed mode)");
     }
@@ -266,7 +266,7 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifyReleaseIntegrity()
     if (verificationMode == SignatureVerificationMode::Disabled)
     {
         spdlog::info("Authenticode verification is disabled by configuration");
-        return {true, "OK"};
+        return {};
     }
 
     // Resolve effective policy and strategy (release-level overrides global)
@@ -278,28 +278,28 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifyReleaseIntegrity()
                                          ? release.signature
                                          : merged.signatureConfig;
 
-    const auto [sigOk, sigReason] = VerifySetupSignature(tempFile, effectiveSigConfig, effectivePolicy, effectiveStrategy);
+    const auto sigResult = VerifySetupSignature(tempFile, effectiveSigConfig, effectivePolicy, effectiveStrategy);
 
-    if (!sigOk)
+    if (!sigResult)
     {
         // If the file is unsigned and we are in WhenPresent mode, accept it
         if (verificationMode == SignatureVerificationMode::WhenPresent &&
-            sigReason.find("not signed") != std::string::npos)
+            sigResult.error().find("not signed") != std::string::npos)
         {
             spdlog::warn("Authenticode verification: file is unsigned, accepting (WhenPresent mode)");
-            return {true, "OK"};
+            return {};
         }
-        return {false, sigReason};
+        return std::unexpected(sigResult.error());
     }
 
-    return {true, "OK"};
+    return {};
 }
 
 // ============================================================================
 // Layer 2 + 3: Authenticode Verification + Publisher Pinning
 // ============================================================================
 
-std::tuple<bool, std::string> models::InstanceConfig::VerifySetupSignature(
+std::expected<void, std::string> models::InstanceConfig::VerifySetupSignature(
     const std::filesystem::path& filePath,
     const std::optional<models::SignatureConfig>& releaseSig,
     models::SignatureComparisonPolicy policy,
@@ -319,12 +319,12 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifySetupSignature(
         if (sigInfo.lValidationResult == TRUST_E_NOSIGNATURE)
         {
             spdlog::warn("VerifySetupSignature: file is not signed: {}", filePath.string());
-            return {false, "File is not signed"};
+            return std::unexpected(std::string("File is not signed"));
         }
 
         const LONG result = sigInfo.lValidationResult;
         spdlog::error("VerifySetupSignature: WinVerifyTrust failed with {:#x} for {}", result, filePath.string());
-        return {false, std::format("Authenticode chain validation failed ({:#x})", static_cast<unsigned long>(result))};
+        return std::unexpected(std::format("Authenticode chain validation failed ({:#x})", static_cast<unsigned long>(result)));
     }
 
     spdlog::info("VerifySetupSignature: Authenticode chain valid for {}", filePath.string());
@@ -334,7 +334,7 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifySetupSignature(
         strategy == SignatureVerificationStrategy::FromUpdaterBinary && !isUpdaterSigned)
     {
         spdlog::info("VerifySetupSignature: relaxed mode, no pin configured - accepting");
-        return {true, "OK"};
+        return {};
     }
 
     // Extract cert info from the downloaded file for pinning
@@ -352,10 +352,10 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifySetupSignature(
         if (policy == SignatureComparisonPolicy::Strict)
         {
             spdlog::error("VerifySetupSignature: could not extract cert info for pinning in strict mode");
-            return {false, "Could not extract certificate information for publisher pin verification"};
+            return std::unexpected("Could not extract certificate information for publisher pin verification");
         }
         spdlog::warn("VerifySetupSignature: could not extract cert info, relaxed mode - accepting");
-        return {true, "OK"};
+        return {};
     }
 
     const std::string fileSubject  = WstrToUtf8(fileInfo.SubjectName);
@@ -366,8 +366,7 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifySetupSignature(
                   fileSubject, fileIssuer, fileSerial);
 
     // Determine the effective pin source
-    const bool hasReleaseSig = releaseSig.has_value();
-    const bool useFromConfig = hasReleaseSig ||
+    const bool useFromConfig = releaseSig.has_value() ||
                                strategy == SignatureVerificationStrategy::FromConfiguration;
 
     if (useFromConfig && releaseSig.has_value())
@@ -386,11 +385,11 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifySetupSignature(
             });
         }
 
-        bool pinMatch = PinMatches(pin.subjectName, fileSubject)
-                     && PinMatches(pin.issuerName,  fileIssuer)
-                     && PinMatches(pin.serialNumber, fileSerial)
-                     && PinMatches(pin.thumbprintSha1,   fileSha1)
-                     && PinMatches(pin.thumbprintSha256,  fileSha256);
+        const bool pinMatch = PinMatches(pin.subjectName,     fileSubject)
+                           && PinMatches(pin.issuerName,      fileIssuer)
+                           && PinMatches(pin.serialNumber,    fileSerial)
+                           && PinMatches(pin.thumbprintSha1,  fileSha1)
+                           && PinMatches(pin.thumbprintSha256, fileSha256);
 
         if (!pinMatch)
         {
@@ -403,11 +402,11 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifySetupSignature(
                           pin.serialNumber.value_or("<any>"),
                           pin.thumbprintSha1.value_or("<any>"),
                           pin.thumbprintSha256.value_or("<any>"));
-            return {false, "Publisher certificate does not match the configured pin"};
+            return std::unexpected("Publisher certificate does not match the configured pin");
         }
 
         spdlog::info("VerifySetupSignature: publisher pin matched (FromConfiguration)");
-        return {true, "OK"};
+        return {};
     }
 
     if (strategy == SignatureVerificationStrategy::FromUpdaterBinary && isUpdaterSigned)
@@ -424,18 +423,18 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifySetupSignature(
         {
             spdlog::error("VerifySetupSignature: publisher mismatch (FromUpdaterBinary): "
                           "updater='{}' setup='{}'", updaterSubject, fileSubject);
-            return {false, std::format(
+            return std::unexpected(std::format(
                 "Setup publisher ('{}') does not match updater publisher ('{}').",
-                fileSubject, updaterSubject)};
+                fileSubject, updaterSubject));
         }
 
         spdlog::info("VerifySetupSignature: publisher matched (FromUpdaterBinary, subjectName)");
-        return {true, "OK"};
+        return {};
     }
 
     // No pin configured and Relaxed policy - chain valid is sufficient
     spdlog::info("VerifySetupSignature: no publisher pin configured, accepting (chain valid)");
-    return {true, "OK"};
+    return {};
 }
 
 // ============================================================================
@@ -531,13 +530,13 @@ static bool ParseMinisignPublicKey(const char* pubKeyStr,
     return true;
 }
 
-std::tuple<bool, std::string> models::InstanceConfig::VerifyManifestSignature(
+std::expected<void, std::string> models::InstanceConfig::VerifyManifestSignature(
     const std::string& manifestBody,
     const std::string& minisigBody)
 {
     if (sodium_init() < 0)
     {
-        return {false, "Failed to initialize libsodium"};
+        return std::unexpected("Failed to initialize libsodium");
     }
 
     // Parse the .minisig sidecar
@@ -545,26 +544,27 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifyManifestSignature(
     std::vector<unsigned char> sig;
     if (!ParseMinisigFile(minisigBody, keyId, sig))
     {
-        return {false, "Failed to parse manifest signature file (.minisig)"};
+        return std::unexpected("Failed to parse manifest signature file (.minisig)");
     }
 
     spdlog::debug("VerifyManifestSignature: key id from .minisig = {}", keyId);
 
     if (sig.size() != crypto_sign_BYTES)
     {
-        return {false, std::format("Invalid signature length: expected {}, got {}", crypto_sign_BYTES, sig.size())};
+        return std::unexpected(std::format("Invalid signature length: expected {}, got {}",
+                                           crypto_sign_BYTES, sig.size()));
     }
 
     // Decode the compiled-in public key
     std::vector<unsigned char> pubKey;
     if (!ParseMinisignPublicKey(NV_MANIFEST_PUBLIC_KEY, pubKey))
     {
-        return {false, "Failed to decode the compiled-in manifest public key (NV_MANIFEST_PUBLIC_KEY)"};
+        return std::unexpected("Failed to decode the compiled-in manifest public key (NV_MANIFEST_PUBLIC_KEY)");
     }
 
     if (pubKey.size() != crypto_sign_PUBLICKEYBYTES)
     {
-        return {false, "Invalid compiled-in public key length"};
+        return std::unexpected("Invalid compiled-in public key length");
     }
 
     // Verify signature over raw manifest bytes
@@ -578,11 +578,11 @@ std::tuple<bool, std::string> models::InstanceConfig::VerifyManifestSignature(
     if (result != 0)
     {
         spdlog::error("VerifyManifestSignature: Ed25519 signature verification FAILED");
-        return {false, "Manifest signature is invalid - the update manifest may have been tampered with"};
+        return std::unexpected("Manifest signature is invalid - the update manifest may have been tampered with");
     }
 
     spdlog::info("VerifyManifestSignature: manifest signature valid");
-    return {true, "OK"};
+    return {};
 }
 
 bool models::InstanceConfig::CheckAndUpdateManifestVersion(const uint64_t signedVersion) const

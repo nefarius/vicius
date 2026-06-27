@@ -689,18 +689,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         ImGui::Text(ICON_FK_SHIELD " Verifying download integrity...");
 
                         // Run synchronously (fast: checksum + WinVerifyTrust; no UI blocking concern)
-                        const auto [verOk, verReason] = cfg.VerifyReleaseIntegrity();
+                        const auto verResult = cfg.VerifyReleaseIntegrity();
 
-                        if (verOk)
+                        if (verResult)
                         {
                             spdlog::info("Verification passed, advancing to install");
                             instStep = DownloadAndInstallStep::PrepareInstall;
                         }
                         else
                         {
-                            spdlog::error("Verification failed: {}", verReason);
-                            // Store reason so VerificationFailed can display it
-                            cfg.SetLastDownloadError(verReason);
+                            spdlog::error("Verification failed: {}", verResult.error());
+                            cfg.SetLastDownloadError(verResult.error());
                             instStep = DownloadAndInstallStep::VerificationFailed;
                         }
 
