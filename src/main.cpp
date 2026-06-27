@@ -207,12 +207,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     }
 
     // contact update server and get latest state and config
-    if (const auto ret = cfg.RequestUpdateInfo(); !std::get<0>(ret))
+    if (const auto ret = cfg.RequestUpdateInfo(); !ret)
     {
         // TODO: add fallback actions
 
         spdlog::critical("Failed to get server response");
-        cfg.TryDisplayErrorDialog("Failed to get server response", std::get<1>(ret));
+        cfg.TryDisplayErrorDialog("Failed to get server response", ret.error());
         return NV_E_SERVER_RESPONSE;
     }
 

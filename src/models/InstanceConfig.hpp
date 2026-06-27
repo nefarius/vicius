@@ -171,7 +171,7 @@ namespace models
          * \brief Requests the update configuration from the remote server.
          * \return True on success, false otherwise.
          */
-        [[nodiscard]] std::tuple<bool, std::string> RequestUpdateInfo();
+        [[nodiscard]] std::expected<void, std::string> RequestUpdateInfo();
 
         /**
          * \brief Checks if a newer release than the local version is available.

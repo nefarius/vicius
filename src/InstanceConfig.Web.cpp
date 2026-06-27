@@ -786,7 +786,7 @@ namespace
 // RequestUpdateInfo
 // ============================================================================
 
-[[nodiscard]] std::tuple<bool, std::string> models::InstanceConfig::RequestUpdateInfo()
+[[nodiscard]] std::expected<void, std::string> models::InstanceConfig::RequestUpdateInfo()
 {
     auto conn = std::make_unique<RestClient::Connection>("");
 
@@ -863,7 +863,7 @@ namespace
                     break; // try next candidate URL
                 }
 
-                return std::make_tuple(false, std::format("HTTP error {}", errorMessage));
+                return std::unexpected(std::format("HTTP error {}", errorMessage));
             }
 
             try
@@ -888,7 +888,7 @@ namespace
                     if (sigCode != httplib::OK_200 || minisigBody.empty())
                     {
                         spdlog::error("Failed to fetch manifest signature from {} (code {})", minisigUrl, sigCode);
-                        return std::make_tuple(false,
+                        return std::unexpected(
                             "Manifest signature (.minisig) could not be fetched. "
                             "Update blocked because NV_MANIFEST_PUBLIC_KEY is configured.");
                     }
@@ -897,7 +897,7 @@ namespace
                     if (!sigResult)
                     {
                         spdlog::error("Manifest signature verification failed: {}", sigResult.error());
-                        return std::make_tuple(false, std::format("Manifest signature invalid: {}", sigResult.error()));
+                        return std::unexpected(std::format("Manifest signature invalid: {}", sigResult.error()));
                     }
 
                     spdlog::info("Manifest signature verified successfully");
@@ -926,7 +926,7 @@ namespace
                     if (!CheckAndUpdateManifestVersion(manifestVersion))
                     {
                         spdlog::error("Manifest version rollback detected (version {}), blocking update", manifestVersion);
-                        return std::make_tuple(false,
+                        return std::unexpected(
                             "The update manifest appears to be a downgrade attempt and has been rejected.");
                     }
                 }
@@ -941,7 +941,7 @@ namespace
                     {
                         spdlog::error("Release '{}' has a disallowed downloadUrl scheme: {}",
                                       release.name, release.downloadUrl);
-                        return std::make_tuple(false,
+                        return std::unexpected(
                             std::format("Release '{}' uses a non-HTTPS downloadUrl which is not allowed for security reasons.",
                                         release.name));
                     }
@@ -953,7 +953,7 @@ namespace
                     if (inst.latestUrl.has_value() && !IsAllowedDownloadUrl(inst.latestUrl.value()))
                     {
                         spdlog::error("instance.latestUrl has a disallowed scheme: {}", inst.latestUrl.value());
-                        return std::make_tuple(false,
+                        return std::unexpected(
                             "The self-updater URL (instance.latestUrl) uses a non-HTTPS scheme which is not allowed.");
                     }
                 }
@@ -963,7 +963,7 @@ namespace
                 {
                     spdlog::info("{} authority specified (or empty response), ignoring server parameters",
                                  magic_enum::enum_name(authority));
-                    return std::make_tuple(true, "OK");
+                    return {};
                 }
 
                 // merge values that can be supplied both locally and remotely
@@ -1005,7 +1005,7 @@ namespace
                         merged.signatureConfig = shared.signatureConfig.value();
                 }
 
-                return std::make_tuple(true, "OK");
+                return {};
             }
             catch (const json::exception& e)
             {
@@ -1019,7 +1019,7 @@ namespace
                     break; // try next candidate URL
                 }
 
-                return std::make_tuple(false, std::format("JSON parsing error: {}", e.what()));
+                return std::unexpected(std::format("JSON parsing error: {}", e.what()));
             }
             catch (const std::exception& e)
             {
@@ -1031,10 +1031,10 @@ namespace
                     break; // try next candidate URL
                 }
 
-                return std::make_tuple(false, std::format("Unknown error error: {}", e.what()));
+                return std::unexpected(std::format("Unknown error error: {}", e.what()));
             }
         }
     }
 
-    return std::make_tuple(false, "No update server URL could be reached");
+    return std::unexpected("No update server URL could be reached");
 }
