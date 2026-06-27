@@ -173,19 +173,36 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     spdlog::debug("LoadFonts: regular='{}' bold='{}'",
         regularFont.string(), boldFont.string());
 
-    // Embedded Ruda resources (fallback, always present in the binary)
-    const HRSRC ruda_bold_res        = FindResource(hInstance, MAKEINTRESOURCE(IDR_FONT_RUDA_BOLD), RT_FONT);
-    const int   ruda_bold_size       = static_cast<int>(SizeofResource(hInstance, ruda_bold_res));
-    const LPVOID ruda_bold_data      = LockResource(LoadResource(hInstance, ruda_bold_res));
+    // Embedded Ruda resources (fallback, always present in the binary).
+    // These are compile-time resources — a null handle or zero size means the
+    // RC file was not compiled in, which is always a build defect.
+    const HRSRC ruda_bold_res = FindResource(hInstance, MAKEINTRESOURCE(IDR_FONT_RUDA_BOLD), RT_FONT);
+    _ASSERT(ruda_bold_res != nullptr);
+    const HGLOBAL ruda_bold_global = LoadResource(hInstance, ruda_bold_res);
+    _ASSERT(ruda_bold_global != nullptr);
+    const int    ruda_bold_size = static_cast<int>(SizeofResource(hInstance, ruda_bold_res));
+    _ASSERT(ruda_bold_size > 0);
+    const LPVOID ruda_bold_data = LockResource(ruda_bold_global);
+    _ASSERT(ruda_bold_data != nullptr);
 
-    const HRSRC ruda_regular_res     = FindResource(hInstance, MAKEINTRESOURCE(IDR_FONT_RUDA_REGULAR), RT_FONT);
-    const int   ruda_regular_size    = static_cast<int>(SizeofResource(hInstance, ruda_regular_res));
-    const LPVOID ruda_regular_data   = LockResource(LoadResource(hInstance, ruda_regular_res));
+    const HRSRC ruda_regular_res = FindResource(hInstance, MAKEINTRESOURCE(IDR_FONT_RUDA_REGULAR), RT_FONT);
+    _ASSERT(ruda_regular_res != nullptr);
+    const HGLOBAL ruda_regular_global = LoadResource(hInstance, ruda_regular_res);
+    _ASSERT(ruda_regular_global != nullptr);
+    const int    ruda_regular_size = static_cast<int>(SizeofResource(hInstance, ruda_regular_res));
+    _ASSERT(ruda_regular_size > 0);
+    const LPVOID ruda_regular_data = LockResource(ruda_regular_global);
+    _ASSERT(ruda_regular_data != nullptr);
 
     // Fork Awesome (always embedded)
-    const HRSRC fk_res   = FindResource(hInstance, MAKEINTRESOURCE(IDR_FONT_FK), RT_FONT);
-    const int   fk_size  = static_cast<int>(SizeofResource(hInstance, fk_res));
-    const LPVOID fk_data = LockResource(LoadResource(hInstance, fk_res));
+    const HRSRC fk_res = FindResource(hInstance, MAKEINTRESOURCE(IDR_FONT_FK), RT_FONT);
+    _ASSERT(fk_res != nullptr);
+    const HGLOBAL fk_global = LoadResource(hInstance, fk_res);
+    _ASSERT(fk_global != nullptr);
+    const int    fk_size = static_cast<int>(SizeofResource(hInstance, fk_res));
+    _ASSERT(fk_size > 0);
+    const LPVOID fk_data = LockResource(fk_global);
+    _ASSERT(fk_data != nullptr);
 
     // Shared font configs
     ImFontConfig base_cfg;
