@@ -1,0 +1,73 @@
+{
+  "$comment": "Example vicius updates.json with full security hardening (Layer 1-5 from the Secure Update Pipeline plan).",
+
+  "shared": {
+    "windowTitle": "My Product Updater",
+    "productName": "My Product",
+
+    "detectionMethod": "RegistryValue",
+    "detection": {
+      "hive": "HKLM",
+      "key": "Software\\MyCompany\\MyProduct",
+      "valueName": "Version",
+      "statement": "SemverRange",
+      "data": {}
+    },
+
+    "$comment_signature": "Global Authenticode verification settings.",
+    "signatureVerificationMode": "Required",
+    "signaturePolicy": "Strict",
+    "signatureStrategy": "FromConfiguration",
+    "signatureConfig": {
+      "$comment": "Pin by subject name (stable across cert renewals). Add serialNumber/thumbprint only if you also rotate them here on each renewal.",
+      "subjectName": "My Company, Inc.",
+      "issuerName": "DigiCert Trusted G4 Code Signing RSA4096 SHA384 2021 CA1"
+    }
+  },
+
+  "$comment_instance": "Self-updater binary information (Layer 4). latestChecksum is passed to the self-updater DLL for verification before swap.",
+  "instance": {
+    "latestVersion": "2.0.0",
+    "latestUrl": "https://updates.example.com/MyProduct/Updater.exe",
+    "latestChecksum": {
+      "checksum": "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899",
+      "checksumAlg": "SHA256"
+    }
+  },
+
+  "$comment_manifest_version": "Rollback protection: increase this monotonically on every manifest publish. Deployed clients reject manifests with a lower version than the last seen.",
+  "manifestVersion": 42,
+
+  "releases": [
+    {
+      "name": "My Product 1.2.3",
+      "version": "1.2.3",
+      "summary": "# Release Notes\n\nSecurity and stability improvements.",
+      "publishedAt": "2026-06-01T12:00:00Z",
+
+      "$comment_download": "Layer 5: HTTPS only (http:// and file:// are rejected by the updater).",
+      "downloadUrl": "https://updates.example.com/MyProduct/setup-1.2.3.exe",
+
+      "$comment_checksum": "Layer 1: SHA-256 checksum of the setup file (hex). Must match before execution.",
+      "checksum": {
+        "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "checksumAlg": "SHA256"
+      },
+
+      "$comment_signature": "Layer 2/3: Per-release cert pin (FromConfiguration). These values travel inside the signed manifest so rotating them on cert renewal is safe.",
+      "signatureStrategy": "FromConfiguration",
+      "signaturePolicy": "Strict",
+      "signature": {
+        "subjectName": "My Company, Inc.",
+        "issuerName": "DigiCert Trusted G4 Code Signing RSA4096 SHA384 2021 CA1",
+        "$comment_volatile": "Add serialNumber/thumbprintSha256 here only when you want extra-strict pinning AND you will update this manifest before switching certs.",
+        "serialNumber": "0a:1b:2c:3d:4e:5f",
+        "thumbprintSha256": "deadbeef0000000000000000000000000000000000000000000000000000beef"
+      },
+
+      "exitCode": {
+        "successCodes": [0, 3010]
+      }
+    }
+  ]
+}

@@ -29,6 +29,7 @@
     "cpp-httplib",
     "libzip",
     "neflib",
-    "directxtk"
+    "directxtk",
+    "libsodium"
   ]
 }

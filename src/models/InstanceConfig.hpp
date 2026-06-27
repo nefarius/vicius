@@ -90,9 +90,15 @@ namespace models
         bool overrideSuccessCode{false};
         /** The value supplied by NV_CLI_PARAM_OVERRIDE_OK */
         int overriddenSuccessCode{ERROR_SUCCESS};
+        /** True if --strict-verification was passed or enabled via config */
+        bool strictVerification{false};
 
-        // TODO: implement me!
+        /** WinTrust result for the updater exe itself (populated at startup) */
         NSIGINFO appSigInfo{};
+        /** Extended cert info for the updater exe (populated at startup when signed) */
+        crypto::SIGNATURE_INFORMATION appCertInfo{};
+        /** True if the updater exe itself carries a valid Authenticode signature */
+        bool isUpdaterSigned{false};
 
         int DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
 
@@ -159,11 +165,13 @@ namespace models
          */
         [[nodiscard]] std::string GetLastDownloadError() const { return lastDownloadError; }
 
+        void SetLastDownloadError(const std::string& error) { lastDownloadError = error; }
+
         /**
          * \brief Requests the update configuration from the remote server.
          * \return True on success, false otherwise.
          */
-        [[nodiscard]] std::tuple<bool, std::string> RequestUpdateInfo();
+        [[nodiscard]] std::expected<void, std::string> RequestUpdateInfo();
 
         /**
          * \brief Checks if a newer release than the local version is available.
@@ -409,6 +417,48 @@ namespace models
         {
             return this->overrideSuccessCode ? this->overriddenSuccessCode : exitCode;
         }
+
+        /**
+         * \brief Verifies the downloaded setup file integrity (checksum + Authenticode publisher pin).
+         * \return Empty on success; unexpected error string on failure.
+         * \remarks Called between DownloadSucceeded and PrepareInstall in the UI state machine.
+         *          Checksum: if present in the release it MUST match; absent = allowed in Relaxed, rejected in strict mode.
+         *          Signature: governed by merged.signatureVerificationMode (WhenPresent / Required).
+         */
+        [[nodiscard]] std::expected<void, std::string> VerifyReleaseIntegrity();
+
+        /**
+         * \brief Validates the Authenticode signature of a file and optionally pins the publisher.
+         * \param filePath The file to verify.
+         * \param releaseSig Optional per-release certificate pin (overrides global strategy).
+         * \param policy The comparison policy to apply.
+         * \param strategy The pin strategy to use.
+         * \return Empty on success; unexpected error string on failure.
+         */
+        [[nodiscard]] std::expected<void, std::string> VerifySetupSignature(
+            const std::filesystem::path& filePath,
+            const std::optional<models::SignatureConfig>& releaseSig,
+            models::SignatureComparisonPolicy policy,
+            models::SignatureVerificationStrategy strategy) const;
+
+#if defined(NV_MANIFEST_PUBLIC_KEY)
+        /**
+         * \brief Verifies a detached minisign Ed25519 signature over the raw manifest body.
+         * \param manifestBody The raw bytes of the fetched JSON.
+         * \param minisigBody The raw contents of the .minisig sidecar file.
+         * \return Empty on success; unexpected error string on failure.
+         */
+        [[nodiscard]] static std::expected<void, std::string> VerifyManifestSignature(
+            const std::string& manifestBody,
+            const std::string& minisigBody);
+
+        /**
+         * \brief Reads and enforces the manifest version anti-rollback counter from the registry.
+         * \param signedVersion The monotonic version from the verified manifest.
+         * \return True if the version is acceptable (>= stored), false if it is a rollback attempt.
+         */
+        [[nodiscard]] bool CheckAndUpdateManifestVersion(uint64_t signedVersion) const;
+#endif
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InstanceConfig, serverUrlTemplate, fallbackServerUrlTemplates, filenameRegex,

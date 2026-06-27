@@ -30,6 +30,8 @@
 #define NV_CLI_PARAM_FORCE_LOCAL_VERSION             "--force-local-version"
 // internal
 #define NV_CLI_TEMPORARY                             "--temporary"
+/** Enable strict verification: checksum required, Authenticode required, pin must match */
+#define NV_CLI_STRICT_VERIFICATION                   "--strict-verification"
 
 //
 // App exit codes
@@ -53,6 +55,11 @@
 #define NV_E_INVALID_PARAMETERS                      112
 #define NV_E_INVALID_MODULE_NAME                     113
 #define NV_E_CREATE_D3D_DEVICE                       114
+#define NV_E_CHECKSUM_MISMATCH                       115
+#define NV_E_SIGNATURE_INVALID                       116
+#define NV_E_PUBLISHER_MISMATCH                      117
+#define NV_E_MANIFEST_SIGNATURE_INVALID              118
+#define NV_E_MANIFEST_DOWNGRADE                      119
 
 //
 // Success codes

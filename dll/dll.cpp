@@ -3,6 +3,12 @@
 
 #include "framework.h"
 #include "dll.h"
+#include <wintrust.h>
+#include <softpub.h>
+#include <bcrypt.h>
+
+#pragma comment(lib, "wintrust.lib")
+#pragma comment(lib, "bcrypt.lib")
 
 static std::string ConvertWideToANSI(const std::wstring& wstr)
 {
@@ -11,6 +17,181 @@ static std::string ConvertWideToANSI(const std::wstring& wstr)
     std::string str(count, 0);
     WideCharToMultiByte(CP_ACP, 0, wstr.c_str(), -1, &str[0], count, nullptr, nullptr);
     return str;
+}
+
+// ============================================================================
+// Checksum helpers (BCrypt-based, no external hash library dependency)
+// ============================================================================
+
+static bool ComputeFileSHA256(const std::filesystem::path& filePath, std::string& outHex)
+{
+    BCRYPT_ALG_HANDLE hAlg = nullptr;
+    BCRYPT_HASH_HANDLE hHash = nullptr;
+    std::vector<BYTE> hashObj, hashBuf;
+
+    if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA256_ALGORITHM, nullptr, 0) != 0)
+        return false;
+
+    auto cleanAlg = [&]{ if (hAlg) { BCryptCloseAlgorithmProvider(hAlg, 0); hAlg = nullptr; } };
+
+    DWORD objLen = 0, hashLen = 0, result = 0;
+    if (BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&objLen, sizeof(DWORD), &result, 0) != 0)
+    { cleanAlg(); return false; }
+    if (BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH, (PUCHAR)&hashLen, sizeof(DWORD), &result, 0) != 0)
+    { cleanAlg(); return false; }
+
+    hashObj.resize(objLen);
+    hashBuf.resize(hashLen);
+
+    if (BCryptCreateHash(hAlg, &hHash, hashObj.data(), objLen, nullptr, 0, 0) != 0)
+    { cleanAlg(); return false; }
+
+    auto cleanHash = [&]{ if (hHash) { BCryptDestroyHash(hHash); hHash = nullptr; } };
+
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file.is_open()) { cleanHash(); cleanAlg(); return false; }
+
+    constexpr std::size_t chunkSize = 65536;
+    std::vector<BYTE> buf(chunkSize);
+    for (;;)
+    {
+        file.read(reinterpret_cast<char*>(buf.data()), static_cast<std::streamsize>(chunkSize));
+        const std::streamsize n = file.gcount();
+        if (n > 0 && BCryptHashData(hHash, buf.data(), static_cast<ULONG>(n), 0) != 0)
+        { cleanHash(); cleanAlg(); return false; }
+        if (!file)
+        {
+            if (!file.eof()) { cleanHash(); cleanAlg(); return false; } // I/O error, not clean EOF
+            break;
+        }
+    }
+
+    if (BCryptFinishHash(hHash, hashBuf.data(), hashLen, 0) != 0)
+    { cleanHash(); cleanAlg(); return false; }
+
+    cleanHash();
+    cleanAlg();
+
+    std::string hex;
+    hex.reserve(hashLen * 2);
+    for (DWORD i = 0; i < hashLen; ++i)
+    {
+        char nibbles[3];
+        std::snprintf(nibbles, sizeof(nibbles), "%02x", hashBuf[i]);
+        hex += nibbles;
+    }
+    outHex = std::move(hex);
+    return true;
+}
+
+static bool ComputeFileSHA1(const std::filesystem::path& filePath, std::string& outHex)
+{
+    BCRYPT_ALG_HANDLE hAlg = nullptr;
+    BCRYPT_HASH_HANDLE hHash = nullptr;
+    std::vector<BYTE> hashObj, hashBuf;
+
+    if (BCryptOpenAlgorithmProvider(&hAlg, BCRYPT_SHA1_ALGORITHM, nullptr, 0) != 0)
+        return false;
+
+    auto cleanAlg = [&]{ if (hAlg) { BCryptCloseAlgorithmProvider(hAlg, 0); hAlg = nullptr; } };
+
+    DWORD objLen = 0, hashLen = 0, result = 0;
+    if (BCryptGetProperty(hAlg, BCRYPT_OBJECT_LENGTH, (PUCHAR)&objLen, sizeof(DWORD), &result, 0) != 0)
+    { cleanAlg(); return false; }
+    if (BCryptGetProperty(hAlg, BCRYPT_HASH_LENGTH, (PUCHAR)&hashLen, sizeof(DWORD), &result, 0) != 0)
+    { cleanAlg(); return false; }
+
+    hashObj.resize(objLen);
+    hashBuf.resize(hashLen);
+
+    if (BCryptCreateHash(hAlg, &hHash, hashObj.data(), objLen, nullptr, 0, 0) != 0)
+    { cleanAlg(); return false; }
+
+    auto cleanHash = [&]{ if (hHash) { BCryptDestroyHash(hHash); hHash = nullptr; } };
+
+    std::ifstream file(filePath, std::ios::binary);
+    if (!file.is_open()) { cleanHash(); cleanAlg(); return false; }
+
+    constexpr std::size_t chunkSize = 65536;
+    std::vector<BYTE> buf(chunkSize);
+    for (;;)
+    {
+        file.read(reinterpret_cast<char*>(buf.data()), static_cast<std::streamsize>(chunkSize));
+        const std::streamsize n = file.gcount();
+        if (n > 0 && BCryptHashData(hHash, buf.data(), static_cast<ULONG>(n), 0) != 0)
+        { cleanHash(); cleanAlg(); return false; }
+        if (!file)
+        {
+            if (!file.eof()) { cleanHash(); cleanAlg(); return false; } // I/O error, not clean EOF
+            break;
+        }
+    }
+
+    if (BCryptFinishHash(hHash, hashBuf.data(), hashLen, 0) != 0)
+    { cleanHash(); cleanAlg(); return false; }
+
+    cleanHash();
+    cleanAlg();
+
+    std::string hex;
+    hex.reserve(hashLen * 2);
+    for (DWORD i = 0; i < hashLen; ++i)
+    {
+        char nibbles[3];
+        std::snprintf(nibbles, sizeof(nibbles), "%02x", hashBuf[i]);
+        hex += nibbles;
+    }
+    outHex = std::move(hex);
+    return true;
+}
+
+// ============================================================================
+// Authenticode helpers (WinVerifyTrust - revocation checked, no lifetime flag)
+// ============================================================================
+
+static bool VerifyAuthenticode(const std::wstring& filePath)
+{
+    WINTRUST_FILE_INFO fileInfo = {};
+    fileInfo.cbStruct = sizeof(WINTRUST_FILE_INFO);
+    fileInfo.pcwszFilePath = filePath.c_str();
+    fileInfo.hFile = nullptr;
+    fileInfo.pgKnownSubject = nullptr;
+
+    GUID wvtPolicyGuid = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+
+    WINTRUST_DATA wtData = {};
+    wtData.cbStruct = sizeof(WINTRUST_DATA);
+    wtData.pPolicyCallbackData = nullptr;
+    wtData.pSIPClientData = nullptr;
+    wtData.dwUIChoice = WTD_UI_NONE;
+    wtData.fdwRevocationChecks = WTD_REVOKE_WHOLECHAIN;
+    wtData.dwUnionChoice = WTD_CHOICE_FILE;
+    wtData.pFile = &fileInfo;
+    wtData.dwStateAction = WTD_STATEACTION_VERIFY;
+    wtData.hWVTStateData = nullptr;
+    wtData.pwszURLReference = nullptr;
+    // Do NOT set WTD_LIFETIME_SIGNING so time-stamped expired certs remain valid
+    wtData.dwProvFlags = WTD_REVOCATION_CHECK_CHAIN;
+    wtData.dwUIContext = 0;
+
+    const LONG lStatus = WinVerifyTrust(nullptr, &wvtPolicyGuid, &wtData);
+
+    // Release state data
+    wtData.dwStateAction = WTD_STATEACTION_CLOSE;
+    WinVerifyTrust(nullptr, &wvtPolicyGuid, &wtData);
+
+    return lStatus == ERROR_SUCCESS;
+}
+
+// ============================================================================
+// Case-insensitive hex string comparison (for checksum matching)
+// ============================================================================
+static bool IHexEqual(const std::string& a, const std::string& b)
+{
+    if (a.size() != b.size()) return false;
+    return std::equal(a.begin(), a.end(), b.begin(),
+                      [](unsigned char ca, unsigned char cb)
+                      { return std::tolower(ca) == std::tolower(cb); });
 }
 
 static std::string GetRandomString()
@@ -58,9 +239,11 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
     argh::parser cmdl;
 
     cmdl.add_params({
-        "--pid", // PID of the parent process
-        "--url", // latest updater download URL
-        "--path", // the target file path
+        "--pid",           // PID of the parent process
+        "--url",           // latest updater download URL
+        "--path",          // the target file path
+        "--checksum",      // expected SHA256 hex digest of downloaded file
+        "--checksum-alg",  // checksum algorithm: sha256 (default), sha1
         "--log-level"
     });
 
@@ -120,15 +303,39 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
         return;
     }
 
+    // Optional integrity parameters
+    const std::string expectedChecksum = cmdl({"--checksum"}).str();
+    const std::string checksumAlg = [&]
+    {
+        const std::string alg = cmdl({"--checksum-alg"}).str();
+        return alg.empty() ? std::string("sha256") : alg;
+    }();
+
+    if (!expectedChecksum.empty())
+    {
+        spdlog::info("Checksum verification requested: alg={} expected={}", checksumAlg, expectedChecksum);
+    }
+    else
+    {
+        spdlog::warn("No --checksum provided; self-update will proceed without checksum verification");
+    }
+
     std::filesystem::path original = cmdl({"--path"}).str();
     spdlog::debug("original = {}", original.string());
     const auto workDir = original.parent_path();
-    // hint: we must remain on the same drive, or renaming will fail!
-    std::filesystem::path randomName(GetRandomString());
-    spdlog::debug("randomName = {}", randomName.string());
-    std::filesystem::path temp = original.parent_path() / randomName;
-    std::string tempFile = temp.string();
-    spdlog::debug("tempFile = {}", tempFile);
+
+    // Backup name - remains on same drive so rename is atomic
+    std::filesystem::path backupName(GetRandomString() + ".bak");
+    std::filesystem::path backup = workDir / backupName;
+    std::string backupFile = backup.string();
+    spdlog::debug("backup = {}", backupFile);
+
+    // Download to a separate temp file first, then verify before swapping
+    std::filesystem::path downloadName(GetRandomString() + ".tmp");
+    std::filesystem::path downloadPath = workDir / downloadName;
+    std::string downloadFile = downloadPath.string();
+    spdlog::debug("downloadFile = {}", downloadFile);
+
     curlpp::Cleanup myCleanup;
     HANDLE hProcess = nullptr;
     int retries = 20; // 2 seconds timeout
@@ -173,39 +380,154 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
     }
     while (hProcess);
 
-    spdlog::debug("Preparing download");
+    spdlog::debug("Preparing download to temp file");
 
     std::ofstream outStream;
     const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
     outStream.exceptions(exceptionMask);
 
-    try
+    auto RestoreBackup = [&]()
     {
-        // we can not yet directly write to it but move it to free the original name!
-        MoveFileA(original.string().c_str(), tempFile.c_str());
-        SetFileAttributesA(tempFile.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
-        spdlog::debug("Moved file {} to hidden file {}", original.string(), tempFile);
-
-        spdlog::debug("Starting download");
-        // download directly to main file stream
-        outStream.open(original, std::ios::binary | std::ofstream::ate);
-        outStream << curlpp::options::Url(url);
-
-        spdlog::info("Downloading {} finished", url);
-
-        if (DeleteFileA(tempFile.c_str()) == FALSE)
+        // Clean up the failed download temp file first (it is always disposable).
+        if (std::filesystem::exists(downloadPath))
         {
-            spdlog::warn("Failed to delete file {}, scheduling removal on reboot", tempFile);
-
-            // if it still fails, schedule nuking the old file at next reboot
-            MoveFileExA(
-                tempFile.c_str(),
-                nullptr,
-                MOVEFILE_DELAY_UNTIL_REBOOT
-            );
+            if (DeleteFileA(downloadFile.c_str()) == FALSE)
+            {
+                MoveFileExA(downloadFile.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
+            }
         }
 
+        // Restore original from backup.  Only remove the backup after a confirmed copy;
+        // if CopyFileA fails, keep the backup intact so the user can recover manually.
+        if (std::filesystem::exists(backup))
+        {
+            if (CopyFileA(backupFile.c_str(), original.string().c_str(), FALSE) != FALSE)
+            {
+                SetFileAttributesA(original.string().c_str(), FILE_ATTRIBUTE_NORMAL);
+                spdlog::info("Restored backup to {}", original.string());
+
+                // Backup is no longer needed - remove it.
+                if (DeleteFileA(backupFile.c_str()) == FALSE)
+                {
+                    MoveFileExA(backupFile.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
+                }
+            }
+            else
+            {
+                spdlog::error("CRITICAL: failed to restore {} from backup {} (error: {}). "
+                              "The backup is preserved at that path for manual recovery.",
+                              original.string(), backupFile, GetLastError());
+                // Do NOT delete the backup - it is the only good copy left.
+            }
+        }
+    };
+
+    try
+    {
+        // Move the original to a hidden backup (frees the target filename for the final rename)
+        MoveFileA(original.string().c_str(), backupFile.c_str());
+        SetFileAttributesA(backupFile.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
+        spdlog::debug("Moved original {} to backup {}", original.string(), backupFile);
+
+        // Download to the separate temp file (NOT the original location yet)
+        spdlog::info("Downloading {} to {}", url, downloadFile);
+        outStream.open(downloadPath, std::ios::binary | std::ofstream::ate);
+        outStream << curlpp::options::Url(url);
         outStream.close();
+        spdlog::info("Download finished");
+
+        // ----------------------------------------------------------------
+        // Integrity verification before swap
+        // ----------------------------------------------------------------
+
+        // 1. Checksum verification
+        if (!expectedChecksum.empty())
+        {
+            std::string computed;
+            bool hashOk = false;
+
+            if (checksumAlg == "sha256" || checksumAlg.empty())
+            {
+                hashOk = ComputeFileSHA256(downloadPath, computed);
+            }
+            else if (checksumAlg == "sha1")
+            {
+                hashOk = ComputeFileSHA1(downloadPath, computed);
+            }
+            else
+            {
+                spdlog::error("Unknown checksum algorithm: {}", checksumAlg);
+                RestoreBackup();
+                if (!silent)
+                    MessageBoxA(hwnd, "Unknown checksum algorithm in self-update arguments.",
+                                "Self-update verification failed", MB_ICONERROR | MB_OK);
+                return;
+            }
+
+            if (!hashOk)
+            {
+                spdlog::error("Failed to compute checksum of downloaded file {}", downloadFile);
+                RestoreBackup();
+                if (!silent)
+                    MessageBoxA(hwnd, "Failed to compute checksum of the downloaded updater binary.",
+                                "Self-update verification failed", MB_ICONERROR | MB_OK);
+                return;
+            }
+
+            spdlog::debug("Checksum: computed={} expected={}", computed, expectedChecksum);
+
+            if (!IHexEqual(computed, expectedChecksum))
+            {
+                spdlog::error("Checksum MISMATCH: computed {} != expected {}", computed, expectedChecksum);
+                RestoreBackup();
+                if (!silent)
+                    MessageBoxA(hwnd,
+                                "The downloaded updater binary checksum does not match the expected value.\n"
+                                "The download may have been corrupted or tampered with.",
+                                "Self-update verification failed", MB_ICONERROR | MB_OK);
+                return;
+            }
+
+            spdlog::info("Checksum verification PASSED");
+        }
+
+        // 2. Authenticode / WinVerifyTrust verification
+        const bool sigOk = VerifyAuthenticode(downloadPath.wstring());
+
+        if (!sigOk)
+        {
+            // An unsigned binary is treated as suspicious in self-update context
+            spdlog::error("Authenticode verification FAILED for downloaded updater binary {}", downloadFile);
+            RestoreBackup();
+            if (!silent)
+                MessageBoxA(hwnd,
+                            "The downloaded updater binary does not have a valid Authenticode signature.\n"
+                            "Self-update has been aborted for security reasons.",
+                            "Self-update verification failed", MB_ICONERROR | MB_OK);
+            return;
+        }
+
+        spdlog::info("Authenticode verification PASSED");
+
+        // ----------------------------------------------------------------
+        // Verification passed - swap into place
+        // ----------------------------------------------------------------
+        if (!MoveFileA(downloadFile.c_str(), original.string().c_str()))
+        {
+            spdlog::error("Failed to rename {} to {} (error: {})",
+                          downloadFile, original.string(), GetLastError());
+            RestoreBackup();
+            return;
+        }
+
+        spdlog::info("Swapped verified download into {}", original.string());
+
+        // Clean up the backup
+        if (DeleteFileA(backupFile.c_str()) == FALSE)
+        {
+            spdlog::warn("Failed to delete backup {}, scheduling removal on reboot", backupFile);
+            MoveFileExA(backupFile.c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
+        }
 
         spdlog::info("Spawning main process install procedure");
 
@@ -266,22 +588,10 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
     }
     catch (...)
     {
-        // welp
+        spdlog::error("Unknown error during self-update");
     }
 
-    // restore original file on failure
-    CopyFileA(tempFile.c_str(), original.string().c_str(), FALSE);
-    SetFileAttributesA(original.string().c_str(), FILE_ATTRIBUTE_NORMAL);
-    // attempt to delete temporary copy
-    if (DeleteFileA(tempFile.c_str()) == FALSE)
-    {
-        // if it still fails, schedule nuking the old file at next reboot
-        MoveFileExA(
-            tempFile.c_str(),
-            nullptr,
-            MOVEFILE_DELAY_UNTIL_REBOOT
-        );
-    }
-
-    spdlog::warn("Finished with warning or errors");
+    // Restore original on any unhandled failure
+    RestoreBackup();
+    spdlog::warn("Finished with errors - original binary restored");
 }

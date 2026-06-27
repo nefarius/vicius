@@ -751,7 +751,42 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     }
 }
 
-[[nodiscard]] std::tuple<bool, std::string> models::InstanceConfig::RequestUpdateInfo()
+// ============================================================================
+// Helpers
+// ============================================================================
+
+namespace
+{
+    /**
+     * \brief Returns true if the URL uses HTTPS (or, in debug builds, HTTP localhost).
+     * Rejects http://, file://, and any other non-HTTPS scheme.
+     */
+    bool IsAllowedDownloadUrl(const std::string& url)
+    {
+        if (url.empty()) return false;
+
+        // HTTPS is always allowed
+        if (url.rfind("https://", 0) == 0) return true;
+
+#if !defined(NDEBUG) || defined(NV_FLAGS_ALLOW_HTTP_DOWNLOAD)
+        // In debug builds, allow plain HTTP for local test servers
+        if (url.rfind("http://localhost", 0) == 0 ||
+            url.rfind("http://127.0.0.1", 0) == 0 ||
+            url.rfind("http://[::1]", 0) == 0)
+        {
+            return true;
+        }
+#endif
+
+        return false;
+    }
+}
+
+// ============================================================================
+// RequestUpdateInfo
+// ============================================================================
+
+[[nodiscard]] std::expected<void, std::string> models::InstanceConfig::RequestUpdateInfo()
 {
     auto conn = std::make_unique<RestClient::Connection>("");
 
@@ -776,6 +811,15 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
     for (size_t i = 0; i < candidateUrls.size(); i++)
     {
         const auto& requestUrl = candidateUrls[ i ];
+
+        if (!IsAllowedDownloadUrl(requestUrl))
+        {
+            spdlog::error("Manifest URL {} uses a disallowed scheme and will not be fetched", requestUrl);
+            // Treat as unavailable and try next candidate; if none remain, the
+            // outer loop exits and the caller receives the "no server reachable" error.
+            continue;
+        }
+
         spdlog::info("Requesting update info from {} ({}/{})", requestUrl, i + 1, candidateUrls.size());
 
         // ReSharper disable once CppTooWideScopeInitStatement
@@ -819,11 +863,47 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
                     break; // try next candidate URL
                 }
 
-                return std::make_tuple(false, std::format("HTTP error {}", errorMessage));
+                return std::unexpected(std::format("HTTP error {}", errorMessage));
             }
 
             try
             {
+                //
+                // Layer 3: Manifest signature verification (Ed25519 / minisign)
+                // Must happen BEFORE json::parse so a tampered body is never trusted.
+                //
+#if defined(NV_MANIFEST_PUBLIC_KEY)
+                {
+                    // Derive the .minisig sidecar URL by appending ".minisig" to the manifest URL
+                    const std::string minisigUrl = requestUrl + ".minisig";
+                    spdlog::debug("Fetching manifest signature from {}", minisigUrl);
+
+                    auto sigConn = std::make_unique<RestClient::Connection>("");
+                    sigConn->SetUserAgent(ua);
+                    sigConn->SetTimeout(MAX_TIMEOUT_SECS);
+                    SetCommonHeaders(sigConn);
+
+                    auto [ sigCode, minisigBody, _2 ] = sigConn->get(minisigUrl);
+
+                    if (sigCode != httplib::OK_200 || minisigBody.empty())
+                    {
+                        spdlog::error("Failed to fetch manifest signature from {} (code {})", minisigUrl, sigCode);
+                        return std::unexpected(
+                            "Manifest signature (.minisig) could not be fetched. "
+                            "Update blocked because NV_MANIFEST_PUBLIC_KEY is configured.");
+                    }
+
+                    const auto sigResult = VerifyManifestSignature(body, minisigBody);
+                    if (!sigResult)
+                    {
+                        spdlog::error("Manifest signature verification failed: {}", sigResult.error());
+                        return std::unexpected(std::format("Manifest signature invalid: {}", sigResult.error()));
+                    }
+
+                    spdlog::info("Manifest signature verified successfully");
+                }
+#endif
+
                 const json reply = json::parse(body);
                 remote = reply.get<UpdateResponse>();
 
@@ -836,15 +916,57 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
                     return lhs.GetSemVersion() > rhs.GetSemVersion();
                 });
 
+                //
+                // Layer 3: Rollback / downgrade protection
+                //
+#if defined(NV_MANIFEST_PUBLIC_KEY)
+                if (reply.contains("manifestVersion") && reply["manifestVersion"].is_number_unsigned())
+                {
+                    const uint64_t manifestVersion = reply["manifestVersion"].get<uint64_t>();
+                    if (!CheckAndUpdateManifestVersion(manifestVersion))
+                    {
+                        spdlog::error("Manifest version rollback detected (version {}), blocking update", manifestVersion);
+                        return std::unexpected(
+                            "The update manifest appears to be a downgrade attempt and has been rejected.");
+                    }
+                }
+#endif
+
+                //
+                // Layer 5: Enforce HTTPS on all download URLs from the manifest
+                //
+                for (const auto& release : remote.releases)
+                {
+                    if (!IsAllowedDownloadUrl(release.downloadUrl))
+                    {
+                        spdlog::error("Release '{}' has a disallowed downloadUrl scheme: {}",
+                                      release.name, release.downloadUrl);
+                        return std::unexpected(
+                            std::format("Release '{}' uses a non-HTTPS downloadUrl which is not allowed for security reasons.",
+                                        release.name));
+                    }
+                }
+
+                if (remote.instance.has_value())
+                {
+                    const auto& inst = remote.instance.value();
+                    if (inst.latestUrl.has_value() && !IsAllowedDownloadUrl(inst.latestUrl.value()))
+                    {
+                        spdlog::error("instance.latestUrl has a disallowed scheme: {}", inst.latestUrl.value());
+                        return std::unexpected(
+                            "The self-updater URL (instance.latestUrl) uses a non-HTTPS scheme which is not allowed.");
+                    }
+                }
+
                 // bail out now if we are not supposed to obey the server settings
                 if (authority == Authority::Local || !reply.contains("shared"))
                 {
                     spdlog::info("{} authority specified (or empty response), ignoring server parameters",
                                  magic_enum::enum_name(authority));
-                    return std::make_tuple(true, "OK");
+                    return {};
                 }
 
-                // merge values that can be supplied both locally end remotely
+                // merge values that can be supplied both locally and remotely
                 if (remote.shared.has_value())
                 {
                     const auto& shared = remote.shared.value();
@@ -868,9 +990,22 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
                     if (shared.downloadLocation.has_value()) merged.downloadLocation = shared.downloadLocation.value();
 
                     if (shared.runAsTemporaryCopy.has_value()) merged.runAsTemporaryCopy = shared.runAsTemporaryCopy.value();
+
+                    // Signature verification settings from server (do not override strict mode set by CLI)
+                    if (shared.signatureVerificationMode.has_value() && !strictVerification)
+                        merged.signatureVerificationMode = shared.signatureVerificationMode.value();
+
+                    if (shared.signaturePolicy.has_value() && !strictVerification)
+                        merged.signaturePolicy = shared.signaturePolicy.value();
+
+                    if (shared.signatureStrategy.has_value() && !strictVerification)
+                        merged.signatureStrategy = shared.signatureStrategy.value();
+
+                    if (shared.signatureConfig.has_value() && !strictVerification)
+                        merged.signatureConfig = shared.signatureConfig.value();
                 }
 
-                return std::make_tuple(true, "OK");
+                return {};
             }
             catch (const json::exception& e)
             {
@@ -884,7 +1019,7 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
                     break; // try next candidate URL
                 }
 
-                return std::make_tuple(false, std::format("JSON parsing error: {}", e.what()));
+                return std::unexpected(std::format("JSON parsing error: {}", e.what()));
             }
             catch (const std::exception& e)
             {
@@ -896,10 +1031,10 @@ int models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, c
                     break; // try next candidate URL
                 }
 
-                return std::make_tuple(false, std::format("Unknown error error: {}", e.what()));
+                return std::unexpected(std::format("Unknown error error: {}", e.what()));
             }
         }
     }
 
-    return std::make_tuple(false, "No update server URL could be reached");
+    return std::unexpected("No update server URL could be reached");
 }

@@ -2,6 +2,7 @@
 
 #include "ProductDetection.hpp"
 #include "DownloadLocationConfig.h"
+#include "SignatureValidation.hpp"
 
 using json = nlohmann::json;
 
@@ -28,6 +29,14 @@ namespace models
         std::optional<DownloadLocationConfig> downloadLocation;
         /** True to run as temporary copy */
         std::optional<bool> runAsTemporaryCopy;
+        /** Global Authenticode verification mode (default: WhenPresent) */
+        std::optional<SignatureVerificationMode> signatureVerificationMode;
+        /** Global Authenticode comparison policy (default: Relaxed) */
+        std::optional<SignatureComparisonPolicy> signaturePolicy;
+        /** Global Authenticode pin strategy (default: FromUpdaterBinary) */
+        std::optional<SignatureVerificationStrategy> signatureStrategy;
+        /** Global Authenticode certificate pin (used with FromConfiguration strategy) */
+        std::optional<SignatureConfig> signatureConfig;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SharedConfig,
@@ -37,5 +46,9 @@ namespace models
                                                     detection,
                                                     installationErrorUrl,
                                                     downloadLocation,
-                                                    runAsTemporaryCopy)
+                                                    runAsTemporaryCopy,
+                                                    signatureVerificationMode,
+                                                    signaturePolicy,
+                                                    signatureStrategy,
+                                                    signatureConfig)
 }
