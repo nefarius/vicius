@@ -664,6 +664,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                         cfg.SetLastDownloadError(dlError);
                         instStep = DownloadAndInstallStep::DownloadFailed;
                     }
+                    // result consumed — drop the completed future so subsequent frames
+                    // skip polling entirely instead of calling wait_for() on a ready future
+                    cfg.ResetReleaseDownloadState();
                 }
 
                 switch (instStep)
