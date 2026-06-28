@@ -26,7 +26,14 @@ internal sealed class E2EHappyZipEndpoint : EndpointWithoutRequest
             return;
         }
 
-        string zipPath = Path.Combine(E2EGuard.ArtifactsDir, "payload.zip");
+        string artifactsDir = E2EGuard.ArtifactsDir;
+        if (string.IsNullOrEmpty(artifactsDir))
+            ThrowError("E2E_ARTIFACTS_DIR is not set", 500);
+
+        string zipPath = Path.Combine(artifactsDir, "payload.zip");
+        if (!File.Exists(zipPath))
+            ThrowError("E2E fixture 'payload.zip' not found in artifacts directory", 500);
+
         string checksum = E2EGuard.ComputeSha256(zipPath);
         string baseUrl = E2EGuard.BaseUrl(HttpContext);
 

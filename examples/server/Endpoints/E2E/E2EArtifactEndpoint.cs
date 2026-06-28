@@ -27,9 +27,10 @@ internal sealed class E2EArtifactEndpoint : Endpoint<E2EArtifactRequest>
         if (string.IsNullOrEmpty(artifactsDir))
             ThrowError("E2E_ARTIFACTS_DIR is not set", 500);
 
-        // Sanitize: reject any path containing directory separators so only
-        // flat filenames in the artifacts root can be requested.
-        if (req.Name.Contains('/') || req.Name.Contains('\\') || req.Name.Contains(".."))
+        // Sanitize: reject separators, traversal sequences, and any rooted/drive-relative
+        // name (e.g. "C:evil") that would escape artifactsDir after Path.Combine.
+        if (req.Name.Contains('/') || req.Name.Contains('\\') || req.Name.Contains("..") ||
+            Path.IsPathRooted(req.Name))
         {
             await Send.NotFoundAsync(ct);
             return;

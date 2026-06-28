@@ -220,7 +220,20 @@ jobs:
 
       - name: Install minisign
         shell: pwsh
-        run: choco install minisign -y --no-progress
+        run: |
+          # Chocolatey ships a pre-0.9 binary that lacks the -W (passwordless) flag.
+          # Download 0.11 directly from the upstream GitHub release instead.
+          $zip = Join-Path $env:RUNNER_TEMP 'minisign.zip'
+          Invoke-WebRequest `
+            -Uri 'https://github.com/jedisct1/minisign/releases/download/0.11/minisign-win64.zip' `
+            -OutFile $zip
+          Expand-Archive -Path $zip `
+            -DestinationPath (Join-Path $env:RUNNER_TEMP 'minisign') -Force
+          $exe = Get-ChildItem `
+            -Path   (Join-Path $env:RUNNER_TEMP 'minisign') `
+            -Filter 'minisign.exe' -Recurse |
+            Select-Object -First 1 -ExpandProperty FullName
+          Add-Content -Path $env:GITHUB_PATH -Value (Split-Path $exe)
 
       # ── Ephemeral signing key (generated fresh every run, never committed) ──
 

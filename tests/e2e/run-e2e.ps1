@@ -98,6 +98,10 @@ function Start-E2EServer {
     $ready = $false
     Write-Host "  Waiting for server readiness at $readyUrl ..."
     while ((Get-Date) -lt $deadline) {
+        if ($job.HasExited) {
+            $stderr = Get-Content (Join-Path $LogDir 'server.stderr.txt') -Raw -ErrorAction SilentlyContinue
+            throw "Example server exited unexpectedly (exit code $($job.ExitCode)).`nRecent stderr:`n$stderr"
+        }
         try {
             $r = Invoke-WebRequest -Uri $readyUrl -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
             if ($r.StatusCode -eq 200) { $ready = $true; break }

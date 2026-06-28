@@ -16,16 +16,12 @@ internal static class E2EGuard
     public static string ArtifactsDir =>
         Environment.GetEnvironmentVariable("E2E_ARTIFACTS_DIR") ?? string.Empty;
 
-    /// <summary>
-    ///     Computes the lowercase hex SHA-256 digest of a file.
-    ///     Returns a string of 64 zero characters if the file does not exist (so the
-    ///     endpoint can still return a structurally valid response that will fail the
-    ///     checksum check on the client side — useful for the ChecksumMismatch scenario).
-    /// </summary>
+    /// <summary>Computes the lowercase hex SHA-256 digest of a file.</summary>
+    /// <exception cref="FileNotFoundException">Thrown when <paramref name="filePath"/> does not exist.</exception>
     public static string ComputeSha256(string filePath)
     {
         if (!File.Exists(filePath))
-            return new string('0', 64);
+            throw new FileNotFoundException($"E2E fixture not found: {filePath}", filePath);
 
         using SHA256 sha = SHA256.Create();
         using FileStream fs = File.OpenRead(filePath);

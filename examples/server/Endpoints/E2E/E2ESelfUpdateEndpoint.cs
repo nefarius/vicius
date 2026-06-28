@@ -54,7 +54,7 @@ internal sealed class E2ESelfUpdateEndpoint : EndpointWithoutRequest
                     Version = System.Version.Parse("2.0.0"),
                     PublishedAt = DateTimeOffset.UtcNow,
                     Summary = string.Empty,
-                    DownloadUrl = "https://example.com/not-reached.zip"
+                    DownloadUrl = $"{baseUrl}/api/e2e/artifacts/payload.zip"
                 }
             }
         };

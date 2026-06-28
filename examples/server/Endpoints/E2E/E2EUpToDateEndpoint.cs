@@ -27,6 +27,8 @@ internal sealed class E2EUpToDateEndpoint : EndpointWithoutRequest
             return;
         }
 
+        string baseUrl = E2EGuard.BaseUrl(HttpContext);
+
         UpdateResponse response = new()
         {
             Shared = new SharedConfig
@@ -42,8 +44,8 @@ internal sealed class E2EUpToDateEndpoint : EndpointWithoutRequest
                     Version = System.Version.Parse("2.0.0"),
                     PublishedAt = DateTimeOffset.UtcNow,
                     Summary = string.Empty,
-                    // downloadUrl is never reached since the client is up-to-date
-                    DownloadUrl = "https://example.com/not-reached.zip"
+                    // Never fetched — client exits as up-to-date before downloading
+                    DownloadUrl = $"{baseUrl}/api/e2e/artifacts/payload.zip"
                 }
             }
         };

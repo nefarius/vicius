@@ -27,7 +27,14 @@ internal sealed class E2EHappyExeEndpoint : EndpointWithoutRequest
             return;
         }
 
-        string exePath = Path.Combine(E2EGuard.ArtifactsDir, "setup.exe");
+        string artifactsDir = E2EGuard.ArtifactsDir;
+        if (string.IsNullOrEmpty(artifactsDir))
+            ThrowError("E2E_ARTIFACTS_DIR is not set", 500);
+
+        string exePath = Path.Combine(artifactsDir, "setup.exe");
+        if (!File.Exists(exePath))
+            ThrowError("E2E fixture 'setup.exe' not found in artifacts directory", 500);
+
         string checksum = E2EGuard.ComputeSha256(exePath);
         string baseUrl = E2EGuard.BaseUrl(HttpContext);
 
