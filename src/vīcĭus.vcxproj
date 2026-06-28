@@ -318,6 +318,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Crypto.cpp" />
+    <ClCompile Include="Http.cpp" />
     <ClCompile Include="InstanceConfig.Security.cpp" />
     <ClCompile Include="imgui_md.cpp">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -361,6 +362,7 @@
     <ClInclude Include="ADL.hpp" />
     <ClInclude Include="argh.h" />
     <ClInclude Include="Crypto.h" />
+    <ClInclude Include="Http.h" />
     <ClInclude Include="CustomizeMe.h" />
     <ClInclude Include="DownloadAndInstall.hpp" />
     <ClInclude Include="Formatters.h" />

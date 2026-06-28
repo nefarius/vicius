@@ -1,7 +1,8 @@
 #pragma once
-#include <restclient-cpp/connection.h>
 #include <curl/curl.h>
 #include <atomic>
+#include <list>
+#include <string>
 
 #include "UpdateResponse.hpp"
 #include "MergedConfig.hpp"
@@ -109,7 +110,7 @@ namespace models
 
         std::expected<int, std::string> DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
 
-        void SetCommonHeaders(_Inout_ std::unique_ptr<RestClient::Connection>& conn) const;
+        [[nodiscard]] std::list<std::string> BuildCommonHeaders() const;
 
         std::expected<SetupResult, std::string> ExecuteSetup(const std::stop_token&);
 

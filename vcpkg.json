@@ -16,7 +16,6 @@
     },
     "argh",
     "fmt",
-    "restclient-cpp",
     "nlohmann-json",
     "magic-enum",
     "z4kn4fein-semver",

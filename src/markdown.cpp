@@ -1,8 +1,6 @@
 #include "pch.h"
+#include "Http.h"
 #include "imgui_md.h"
-
-#include <restclient-cpp/restclient.h>
-#include <restclient-cpp/connection.h>
 
 #include <directxtk/WICTextureLoader.h>
 #include <winrt/base.h>
@@ -179,13 +177,15 @@ struct changelog : imgui_md
     // ReSharper disable once CppMemberFunctionMayBeStatic
     OptionalD3DResource DownloadImageTexture(const std::string& url) const
     {
-        const auto conn = std::make_unique<RestClient::Connection>("");
-        conn->FollowRedirects(true, 5);
-        conn->SetTimeout(5);
+        auto getResult = web::HttpGet(url, {
+            .timeoutSecs        = 5,
+            .connectTimeoutSecs = 10,
+            .maxRedirects       = 5,
+        });
 
-        const RestClient::Response response = conn->get(url);
+        if (!getResult || getResult->httpCode != httplib::OK_200) return std::nullopt;
 
-        if (response.code != httplib::OK_200) return std::nullopt;
+        const auto& response = *getResult;
 
         winrt::com_ptr<ID3D11Resource> txt;
         winrt::com_ptr<ID3D11ShaderResourceView> srv;

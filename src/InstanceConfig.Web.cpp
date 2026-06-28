@@ -1,4 +1,5 @@
 #include "pch.h"
+#include "Http.h"
 #include "Util.h"
 #include "InstanceConfig.hpp"
 
@@ -6,77 +7,41 @@
 #include <curlpp/Options.hpp>
 
 
-void models::InstanceConfig::SetCommonHeaders(_Inout_ std::unique_ptr<RestClient::Connection>& conn) const
+std::list<std::string> models::InstanceConfig::BuildCommonHeaders() const
 {
-    //
-    // If a backend server is used, it can alter the response based on
-    // these header values, classic web servers will just ignore them
-    //
+    std::list<std::string> lines;
 
 #if !defined(NV_FLAGS_NO_VENDOR_HEADERS)
-    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Manufacturer", manufacturer);
-    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Product", product);
-    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Version", appVersion.str());
+    lines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Manufacturer: {}", manufacturer));
+    lines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Product: {}", product));
+    lines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Version: {}", appVersion.str()));
     if (!channel.empty())
-    {
-        conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Channel", channel);
-    }
+        lines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Channel: {}", channel));
 
-    //
-    // Report updater process architecture
-    //
-
-    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-Process-Architecture",
 #if defined(_M_AMD64)
-                       "x64"
+    lines.push_back("X-" NV_HTTP_HEADERS_NAME "-Process-Architecture: x64");
 #elif defined(_M_ARM64)
-                       "arm64"
+    lines.push_back("X-" NV_HTTP_HEADERS_NAME "-Process-Architecture: arm64");
 #else
-                       "x86"
+    lines.push_back("X-" NV_HTTP_HEADERS_NAME "-Process-Architecture: x86");
 #endif
-        );
-
-    //
-    // Report OS/CPU architecture
-    //
 
     const SYSTEM_INFO si = nefarius::winapi::SafeGetNativeSystemInfo();
-
     std::string arch;
-
     switch (si.wProcessorArchitecture)
     {
-        case PROCESSOR_ARCHITECTURE_AMD64:
-            arch = "x64";
-            break;
-        case PROCESSOR_ARCHITECTURE_ARM64:
-            arch = "arm64";
-            break;
-        case PROCESSOR_ARCHITECTURE_INTEL:
-            arch = "x86";
-            break;
-        default:
-            arch = "<unknown>";
-            break;
+        case PROCESSOR_ARCHITECTURE_AMD64: arch = "x64";   break;
+        case PROCESSOR_ARCHITECTURE_ARM64: arch = "arm64"; break;
+        case PROCESSOR_ARCHITECTURE_INTEL: arch = "x86";   break;
+        default:                           arch = "<unknown>"; break;
     }
+    lines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture: {}", arch));
 
-    conn->AppendHeader("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture", arch);
-
-    //
-    // Custom headers passed via CLI
-    //
-
-    if (!additionalHeaders.empty())
-    {
-        for (const auto& [ fst, snd ] : additionalHeaders)
-        {
-            const auto name = std::format("X-" NV_HTTP_HEADERS_NAME "-{}", fst);
-            const auto value = snd;
-            conn->AppendHeader(name, value);
-        }
-    }
-
+    for (const auto& [fst, snd] : additionalHeaders)
+        lines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-{}: {}", fst, snd));
 #endif
+
+    return lines;
 }
 
 std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, const int releaseIndex)
@@ -382,58 +347,8 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
             }
         };
 
-        // Build headers (equivalent to SetCommonHeaders + additionalHeaders)
-        std::list<std::string> headerLines;
-#if !defined(NV_FLAGS_NO_VENDOR_HEADERS)
-        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Manufacturer: {}", manufacturer));
-        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Product: {}", product));
-        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Version: {}", appVersion.str()));
-        if (!channel.empty())
-        {
-            headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Channel: {}", channel));
-        }
-
-#if defined(_M_AMD64)
-        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Process-Architecture: x64"));
-#elif defined(_M_ARM64)
-        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Process-Architecture: arm64"));
-#else
-        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-Process-Architecture: x86"));
-#endif
-
-        const SYSTEM_INFO si = nefarius::winapi::SafeGetNativeSystemInfo();
-        std::string arch;
-        switch (si.wProcessorArchitecture)
-        {
-            case PROCESSOR_ARCHITECTURE_AMD64:
-                arch = "x64";
-                break;
-            case PROCESSOR_ARCHITECTURE_ARM64:
-                arch = "arm64";
-                break;
-            case PROCESSOR_ARCHITECTURE_INTEL:
-                arch = "x86";
-                break;
-            default:
-                arch = "<unknown>";
-                break;
-        }
-        headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-OS-Architecture: {}", arch));
-
-        if (!additionalHeaders.empty())
-        {
-            for (const auto& [fst, snd] : additionalHeaders)
-            {
-                headerLines.push_back(std::format("X-" NV_HTTP_HEADERS_NAME "-{}: {}", fst, snd));
-            }
-        }
-#endif
-
-        // Trim any whitespace; curlpp will turn std::list into a curl_slist internally.
-        for (auto& line : headerLines)
-        {
-            trimInPlace(line);
-        }
+        // Build common vendor + additional headers via the shared helper
+        std::list<std::string> headerLines = BuildCommonHeaders();
 
         curlpp::Easy req;
         req.setOpt(curlpp::options::Url(release.downloadUrl));
@@ -790,19 +705,18 @@ namespace
 
 [[nodiscard]] std::expected<void, std::string> models::InstanceConfig::RequestUpdateInfo()
 {
-    auto conn = std::make_unique<RestClient::Connection>("");
-
     const auto ua = std::format("{}/{}", appFilename, appVersion.str());
     spdlog::debug("Setting User Agent to {}", ua);
-    conn->SetUserAgent(ua);
-    conn->FollowRedirects(true, MAX_REDIRECTS);
-    int currentTimeoutSecs = MAX_TIMEOUT_SECS;
 
-    RestClient::HeaderFields headers;
-    headers[ "Accept" ] = "application/json";
-    conn->SetHeaders(headers);
+    long currentTimeoutSecs = MAX_TIMEOUT_SECS;
 
-    SetCommonHeaders(conn);
+    // Assemble per-request headers once; Accept header prepended here.
+    auto buildManifestHeaders = [&]() -> std::list<std::string>
+    {
+        auto lines = BuildCommonHeaders();
+        lines.push_front("Accept: application/json");
+        return lines;
+    };
 
     std::vector<std::string> candidateUrls;
     candidateUrls.reserve(1 + fallbackUpdateRequestUrls.size());
@@ -830,21 +744,33 @@ namespace
 
         while (true)
         {
-            conn->SetTimeout(currentTimeoutSecs);
+            auto getResult = web::HttpGet(requestUrl, {
+                .userAgent          = ua,
+                .headers            = buildManifestHeaders(),
+                .timeoutSecs        = currentTimeoutSecs,
+                .connectTimeoutSecs = 60,
+                .maxRedirects       = MAX_REDIRECTS,
+            });
 
-            auto [ code, body, _ ] = conn->get(requestUrl);
-
-            if (code != httplib::OK_200)
+            // Transport failure (connection error, TLS failure, stall timeout, …)
+            if (!getResult)
             {
-                if (code != httplib::NotFound_404 && --retryCount > 0)
+                const std::string& transportError = getResult.error();
+                const bool isTimeout =
+                    transportError.find("timeout") != std::string::npos ||
+                    transportError.find("Timeout") != std::string::npos ||
+                    transportError.find("timed out") != std::string::npos ||
+                    transportError.find("Timed out") != std::string::npos;
+
+                if (--retryCount > 0)
                 {
-                    spdlog::debug("Web request failed (code {}), retrying {} more time(s)", code, retryCount);
+                    spdlog::debug("Web request failed ({}), retrying {} more time(s)", transportError, retryCount);
 
                     std::mt19937_64 eng{std::random_device{}()};
                     std::uniform_int_distribution<> dist{1000, 5000};
                     std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
 
-                    if (code == CURLE_OPERATION_TIMEDOUT)
+                    if (isTimeout)
                     {
                         long nxt = std::lround(currentTimeoutSecs * 1.5);
                         currentTimeoutSecs = std::min(nxt, 900L);
@@ -854,18 +780,44 @@ namespace
                     continue;
                 }
 
-                auto errorMessage = magic_enum::enum_name<CURLcode>(static_cast<CURLcode>(code));
-                errorMessage = errorMessage.empty() ? httplib::status_message(code) : errorMessage;
-                spdlog::error("GET request failed with code {}, message {}", code, errorMessage);
+                spdlog::error("GET request failed: {}", transportError);
 
-                // If the error is a cURL error (not an HTTP status), attempt fallbacks if available
-                if (code > 0 && code < CURL_LAST && (i + 1) < candidateUrls.size())
+                if ((i + 1) < candidateUrls.size())
                 {
-                    spdlog::warn("Primary URL not accessible ({}), attempting fallback", errorMessage);
+                    spdlog::warn("Primary URL not accessible ({}), attempting fallback", transportError);
                     break; // try next candidate URL
                 }
 
-                return std::unexpected(std::format("HTTP error {}", errorMessage));
+                return std::unexpected(transportError);
+            }
+
+            const auto& res  = *getResult;
+            const int    code = static_cast<int>(res.httpCode);
+            const std::string& body = res.body;
+
+            // HTTP-level failure (server reachable but returned an error status)
+            if (code != httplib::OK_200)
+            {
+                if (code != httplib::NotFound_404 && --retryCount > 0)
+                {
+                    spdlog::debug("Web request failed (HTTP {}), retrying {} more time(s)", code, retryCount);
+
+                    std::mt19937_64 eng{std::random_device{}()};
+                    std::uniform_int_distribution<> dist{1000, 5000};
+                    std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
+                    continue;
+                }
+
+                const std::string statusText = httplib::status_message(code);
+                spdlog::error("GET request failed with HTTP {}: {}", code, statusText);
+
+                if ((i + 1) < candidateUrls.size())
+                {
+                    spdlog::warn("Manifest URL returned HTTP {}, attempting fallback", code);
+                    break; // try next candidate URL
+                }
+
+                return std::unexpected(std::format("HTTP {} {}", code, statusText));
             }
 
             try
@@ -880,22 +832,37 @@ namespace
                     const std::string minisigUrl = requestUrl + ".minisig";
                     spdlog::debug("Fetching manifest signature from {}", minisigUrl);
 
-                    auto sigConn = std::make_unique<RestClient::Connection>("");
-                    sigConn->SetUserAgent(ua);
-                    sigConn->SetTimeout(MAX_TIMEOUT_SECS);
-                    SetCommonHeaders(sigConn);
+                    auto sigGetResult = web::HttpGet(minisigUrl, {
+                        .userAgent          = ua,
+                        .headers            = BuildCommonHeaders(),
+                        .timeoutSecs        = MAX_TIMEOUT_SECS,
+                        .connectTimeoutSecs = 60,
+                        .maxRedirects       = MAX_REDIRECTS,
+                    });
 
-                    auto [ sigCode, minisigBody, _2 ] = sigConn->get(minisigUrl);
+                    const bool sigOk = sigGetResult.has_value()
+                        && sigGetResult->httpCode == httplib::OK_200
+                        && !sigGetResult->body.empty();
 
-                    if (sigCode != httplib::OK_200 || minisigBody.empty())
+                    if (!sigOk)
                     {
-                        spdlog::error("Failed to fetch manifest signature from {} (code {})", minisigUrl, sigCode);
+                        const std::string reason = sigGetResult
+                            ? std::format("HTTP {}", sigGetResult->httpCode)
+                            : sigGetResult.error();
+                        spdlog::error("Failed to fetch manifest signature from {} ({})", minisigUrl, reason);
+
+                        if ((i + 1) < candidateUrls.size())
+                        {
+                            spdlog::warn("Manifest signature unavailable from {}, attempting fallback", requestUrl);
+                            break; // try next candidate URL
+                        }
+
                         return std::unexpected(
                             "Manifest signature (.minisig) could not be fetched. "
                             "Update blocked because NV_MANIFEST_PUBLIC_KEY is configured.");
                     }
 
-                    const auto sigResult = VerifyManifestSignature(body, minisigBody);
+                    const auto sigResult = VerifyManifestSignature(body, sigGetResult->body);
                     if (!sigResult)
                     {
                         spdlog::error("Manifest signature verification failed: {}", sigResult.error());

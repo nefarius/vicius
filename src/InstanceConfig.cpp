@@ -4,15 +4,12 @@
 #include "InstanceConfig.hpp"
 #include "NAuthenticode.h"
 
-
 models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, PDWORD abortError)
     : appInstance(hInstance)
 {
     //
     // Initialize everything in here that depends on CLI arguments, the environment and a potential configuration file
     //
-
-    RestClient::init();
 
 #pragma region Logging
 
@@ -503,8 +500,6 @@ models::InstanceConfig::~InstanceConfig()
     // Ensure no in-flight download uses libcurl while we tear down global state.
     RequestAbortDownload();
     WaitForDownloadToFinish();
-
-    RestClient::disable();
 
     // clean up release resources
     for (const auto& release : remote.releases)

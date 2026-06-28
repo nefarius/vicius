@@ -5,6 +5,8 @@
 #include "InstanceConfig.hpp"
 #include "DownloadAndInstall.hpp"
 
+#include <curlpp/cURLpp.hpp>
+
 
 //
 // Enable visual styles
@@ -79,6 +81,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     }
 
     DWORD earlyAbortCode = 0;
+
+    // curlpp/libcurl global state must outlive all network activity, including
+    // async image fetches that run on detached futures owned by the static
+    // changelog renderer in markdown.cpp. Initialise here so it spans the
+    // entire application lifetime and is torn down after cfg (and every task it
+    // owns) has been destroyed.
+    curlpp::initialize();
+    const auto curlppGuard = sg::make_scope_guard([] { curlpp::terminate(); });
 
     // updater configuration, defaults and app state
     models::InstanceConfig cfg(hInstance, cmdl, &earlyAbortCode);
