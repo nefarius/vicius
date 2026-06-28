@@ -321,47 +321,49 @@ jobs:
         shell: pwsh
         run: |
           $dir = $env:E2E_ARTIFACTS_DIR
-          New-Item -ItemType Directory -Path (Join-Path $dir "SignedManifest")    -Force
-          New-Item -ItemType Directory -Path (Join-Path $dir "TamperedManifest") -Force
+          New-Item -ItemType Directory -Path (Join-Path $dir 'SignedManifest')    -Force
+          New-Item -ItemType Directory -Path (Join-Path $dir 'TamperedManifest') -Force
 
-          # Build the manifest JSON that will be signed.
-          # signatureVerificationMode=Disabled so the downloaded payload (unsigned ZIP)
-          # passes Authenticode verification on the client side.
-          $manifest = @"
-{
-  "shared": {
-    "windowTitle": "E2E Signed Manifest Test",
-    "productName": "E2E Test Product",
-    "signatureVerificationMode": "Disabled"
-  },
-  "releases": [
-    {
-      "name": "E2E Signed Update v2.0.0",
-      "version": "2.0.0",
-      "publishedAt": "2026-01-01T00:00:00Z",
-      "downloadUrl": "http://localhost:5200/api/e2e/artifacts/payload.zip",
-      "checksum": {
-        "checksumAlg": "SHA256",
-        "checksum": "$env:E2E_PAYLOAD_HASH"
-      }
-    }
-  ]
-}
-"@
-          $manifestPath = Join-Path $dir "SignedManifest\updates.json"
-          # Write with LF line endings; minisign signs the exact bytes on disk.
+          # Build the manifest as a PowerShell ordered hashtable and serialise with
+          # ConvertTo-Json.  A here-string (@"..."@) cannot be used here because
+          # its closing delimiter must sit at column 0, which conflicts with the YAML
+          # block-scalar indentation rules and triggers a YAML parse error.
+          $hash = $env:E2E_PAYLOAD_HASH
+          $manifestObj = [ordered]@{
+            shared = [ordered]@{
+              windowTitle               = 'E2E Signed Manifest Test'
+              productName               = 'E2E Test Product'
+              signatureVerificationMode = 'Disabled'
+            }
+            releases = @(
+              [ordered]@{
+                name        = 'E2E Signed Update v2.0.0'
+                version     = '2.0.0'
+                publishedAt = '2026-01-01T00:00:00Z'
+                downloadUrl = 'http://localhost:5200/api/e2e/artifacts/payload.zip'
+                checksum    = [ordered]@{
+                  checksumAlg = 'SHA256'
+                  checksum    = $hash
+                }
+              }
+            )
+          }
+          $manifest = $manifestObj | ConvertTo-Json -Depth 10
+
+          $manifestPath = Join-Path $dir 'SignedManifest\updates.json'
+          # Write with LF line endings so minisign signs exactly the bytes the
+          # server will serve (the endpoint uses File.OpenRead, not text mode).
           [System.IO.File]::WriteAllText($manifestPath, $manifest.Replace("`r`n", "`n"))
 
           # Sign with the ephemeral key (produces updates.json.minisig next to the file)
-          minisign -S `
-            -s "$env:RUNNER_TEMP\e2e.key" `
-            -m $manifestPath
+          minisign -S -s "$env:RUNNER_TEMP\e2e.key" -m $manifestPath
 
-          # Tampered copy: change the version string so the stored signature no
-          # longer matches — the client should return NV_E_SERVER_RESPONSE=104.
+          # Tampered copy: mutate one field so the original signature no longer
+          # covers the body — the client should return NV_E_SERVER_RESPONSE=104.
           $tampered = $manifest.Replace('"version": "2.0.0"', '"version": "9.9.9"')
-          $tamperedPath = Join-Path $dir "TamperedManifest\updates.json"
-          [System.IO.File]::WriteAllText($tamperedPath, $tampered.Replace("`r`n", "`n"))
+          [System.IO.File]::WriteAllText(
+            (Join-Path $dir 'TamperedManifest\updates.json'),
+            $tampered.Replace("`r`n", "`n"))
           # Note: the server endpoint intentionally serves the ORIGINAL .minisig
           # for TamperedManifest requests — no copy needed here.
 
