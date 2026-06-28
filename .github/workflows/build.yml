@@ -29,13 +29,16 @@ permissions:
 
 env:
   UPDATER_NAME: example_Demo_Updater
-  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+  VCPKG_BINARY_SOURCES: "clear;nuget,GitHubPackages,readwrite"
 
 jobs:
   # ─── Build ─────────────────────────────────────────────────────────────────
   build:
     name: Build (${{ matrix.platform }})
     runs-on: windows-2022
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         # Solution platform names (x86 maps to Win32 in the .vcxproj)
@@ -53,13 +56,15 @@ jobs:
         shell: pwsh
         run: git submodule update --init --depth 1 vcpkg
 
-      # x-gha binary cache requires these two vars to be exported explicitly.
-      - name: Export GHA cache variables for vcpkg
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL',      process.env.ACTIONS_CACHE_URL      || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN',  process.env.ACTIONS_RUNTIME_TOKEN  || '');
+      - name: Configure NuGet credentials for vcpkg binary cache
+        shell: pwsh
+        run: |
+          nuget sources add `
+            -Name "GitHubPackages" `
+            -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" `
+            -Username "${{ github.actor }}" `
+            -Password "${{ secrets.GITHUB_TOKEN }}" `
+            -StorePasswordInClearText
 
       # ── Version stamping ───────────────────────────────────────────────────
 
