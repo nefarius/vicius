@@ -406,8 +406,8 @@ try {
             }
         },
         @{
-            # Non-PE file has no version resource; GetWin32ResourceFileVersion throws, which is
-            # caught by the catch(...) fallback in IsInstalledVersionOutdated => outdated => 203.
+            # Non-PE file has no version resource; GetWin32ResourceFileVersion returns
+            # std::unexpected, which the caller maps to outdated => 203.
             Name            = 'CorruptFileVersion'
             SourceBin       = $MainBin
             ExeName         = 'e2e_CorruptFileVersion_Updater.exe'

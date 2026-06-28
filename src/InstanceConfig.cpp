@@ -701,40 +701,39 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
             }
 
             bool isOutdated = false;
-            try
+            switch (cfg.statement)
             {
-                switch (cfg.statement)
+                case VersionResource::FILEVERSION:
                 {
-                    case VersionResource::FILEVERSION:
+                    const auto fileVer = winapi::GetWin32ResourceFileVersion(filePath);
+                    if (!fileVer)
                     {
-                        const auto fileVer = winapi::GetWin32ResourceFileVersion(filePath);
-                        isOutdated =
-                            util::CompareVersions(release.GetDetectionSemVersion().value_or(fileVer), fileVer) > 0;
-                        break;
+                        spdlog::warn("{}; treating as outdated", fileVer.error());
+                        return true;
                     }
-                    case VersionResource::PRODUCTVERSION:
-                    {
-                        const auto prodVer = winapi::GetWin32ResourceProductVersion(filePath);
-                        isOutdated =
-                            util::CompareVersions(release.GetDetectionSemVersion().value_or(prodVer), prodVer) > 0;
-                        break;
-                    }
-                    case VersionResource::Invalid:
-                        spdlog::warn("Unexpected version resource statement");
-                        isOutdated = true;
-                        break;
+                    isOutdated =
+                        util::CompareVersions(release.GetDetectionSemVersion().value_or(*fileVer), *fileVer) > 0;
+                    break;
                 }
-
-                spdlog::debug("isOutdated = {}", isOutdated);
+                case VersionResource::PRODUCTVERSION:
+                {
+                    const auto prodVer = winapi::GetWin32ResourceProductVersion(filePath);
+                    if (!prodVer)
+                    {
+                        spdlog::warn("{}; treating as outdated", prodVer.error());
+                        return true;
+                    }
+                    isOutdated =
+                        util::CompareVersions(release.GetDetectionSemVersion().value_or(*prodVer), *prodVer) > 0;
+                    break;
+                }
+                case VersionResource::Invalid:
+                    spdlog::warn("Unexpected version resource statement");
+                    isOutdated = true;
+                    break;
             }
-            catch (...)
-            {
-                // The file exists but its version resource could not be read or compared.
-                // Treat as outdated so the update can proceed rather than hard-failing.
-                spdlog::warn("Failed to read version resource from {}; treating as outdated", filePath);
-                return true;
-            }
 
+            spdlog::debug("isOutdated = {}", isOutdated);
             return isOutdated;
         }
         //

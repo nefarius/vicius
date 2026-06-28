@@ -31,8 +31,8 @@ namespace util
 
 namespace winapi
 {
-    semver::version GetWin32ResourceFileVersion(const std::filesystem::path& filePath);
-    semver::version GetWin32ResourceProductVersion(const std::filesystem::path& filePath);
+    std::expected<semver::version, std::string> GetWin32ResourceFileVersion(const std::filesystem::path& filePath);
+    std::expected<semver::version, std::string> GetWin32ResourceProductVersion(const std::filesystem::path& filePath);
     std::string GetLastErrorStdStr(DWORD errorCode = 0);
 
     /**
