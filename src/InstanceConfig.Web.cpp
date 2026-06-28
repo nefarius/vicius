@@ -810,6 +810,13 @@ namespace
 
                 const std::string statusText = httplib::status_message(code);
                 spdlog::error("GET request failed with HTTP {}: {}", code, statusText);
+
+                if ((i + 1) < candidateUrls.size())
+                {
+                    spdlog::warn("Manifest URL returned HTTP {}, attempting fallback", code);
+                    break; // try next candidate URL
+                }
+
                 return std::unexpected(std::format("HTTP {} {}", code, statusText));
             }
 
@@ -843,6 +850,13 @@ namespace
                             ? std::format("HTTP {}", sigGetResult->httpCode)
                             : sigGetResult.error();
                         spdlog::error("Failed to fetch manifest signature from {} ({})", minisigUrl, reason);
+
+                        if ((i + 1) < candidateUrls.size())
+                        {
+                            spdlog::warn("Manifest signature unavailable from {}, attempting fallback", requestUrl);
+                            break; // try next candidate URL
+                        }
+
                         return std::unexpected(
                             "Manifest signature (.minisig) could not be fetched. "
                             "Update blocked because NV_MANIFEST_PUBLIC_KEY is configured.");
