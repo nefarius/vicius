@@ -373,16 +373,52 @@ namespace models
 
         /**
          * \brief Whether the selected release's setup should be launched elevated (As Administrator).
-         * \return True if runAsAdmin is enabled at the release or instance level, false otherwise.
+         *
+         * \remark The runAsAdmin flag is server-controlled metadata and is therefore only honoured
+         *         when the operator's configuration provides strong authenticity guarantees.
+         *         Specifically it requires either:
+         *           (a) signatureVerificationMode == Required — VerifyReleaseIntegrity() (called
+         *               before ExecuteSetup) has already enforced a valid Authenticode chain, so
+         *               the binary is guaranteed to be signed; or
+         *           (b) --strict-verification was passed on the command line — a local, non-server-
+         *               controlled opt-in that implies (a) and enforces additional checks.
+         *         In the default WhenPresent / Disabled modes the flag is silently ignored so that a
+         *         compromised server cannot trigger a UAC prompt for an unauthenticated payload.
+         *
+         * \return True only when elevation is requested AND authenticity conditions are satisfied.
          */
         bool RunAsAdmin()
         {
-            if (const auto& release = GetSelectedRelease(); release.runAsAdmin.has_value())
+            // Determine the raw flag (release-level first, then instance-level fallback).
+            const bool wantsAdmin = [&]() -> bool
             {
-                return release.runAsAdmin.value();
+                if (const auto& release = GetSelectedRelease(); release.runAsAdmin.has_value())
+                {
+                    return release.runAsAdmin.value();
+                }
+                return remote.instance.has_value() && remote.instance.value().runAsAdmin.value_or(false);
+            }();
+
+            if (!wantsAdmin)
+            {
+                return false;
             }
 
-            return remote.instance.has_value() && remote.instance.value().runAsAdmin.value_or(false);
+            // Guard: only honour the server-supplied flag when the active verification
+            // configuration mandates strong payload authenticity.
+            const bool verificationIsStrong =
+                (merged.signatureVerificationMode == SignatureVerificationMode::Required) ||
+                strictVerification;
+
+            if (!verificationIsStrong)
+            {
+                spdlog::warn("RunAsAdmin: runAsAdmin requested but signature verification mode is "
+                             "not Required and --strict-verification is not active; "
+                             "ignoring elevation request to prevent unauthenticated UAC prompt");
+                return false;
+            }
+
+            return true;
         }
 
         /**
