@@ -74,7 +74,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
     // Defaults and embedded stuff
     //
 
-    this->isSilent = cmdl[ {NV_CLI_BACKGROUND} ] || cmdl[ {NV_CLI_SILENT} ] || cmdl[ {NV_CLI_AUTOSTART} ];
+    this->isSilent = cmdl[ {NV_CLI_BACKGROUND} ] || cmdl[ {NV_CLI_SILENT} ] || cmdl[ {NV_CLI_AUTOSTART} ]
+                  || cmdl[ {NV_CLI_SILENT_UPDATE} ];
     this->ignorePostponePeriod = cmdl[ {NV_CLI_IGNORE_POSTPONE} ];
 
 #if !defined(NV_FLAGS_NO_SERVER_URL_RESOURCE)
