@@ -71,9 +71,17 @@ namespace winapi
     void SetDarkMode(HWND hWnd, BOOL useDarkMode = TRUE);
 
     /**
+     * \brief Reads HKCU\...\Themes\Personalize!AppsUseLightTheme to determine whether
+     *        the user has selected a light application theme in Windows Settings.
+     * \return true if light theme is active, false for dark; or an unexpected string
+     *         describing the registry read failure so callers can log and fall back.
+     */
+    [[nodiscard]] std::expected<bool, std::string> IsLightThemeActive();
+
+    /**
      * \brief Reads the system accent color via DwmGetColorizationColor and converts it to
      *        a linear ImVec4 suitable for ImGui style colors. Falls back to the Win11
-     *        Fluent default blue (#60CDFF) if DWM cannot supply a value.
+     *        Fluent default blue (#60CDFF dark / #0078D4 light) if DWM cannot supply a value.
      * \return Accent color as ImVec4 (R, G, B, A) with full opacity.
      */
     ImVec4 GetAccentColor();
