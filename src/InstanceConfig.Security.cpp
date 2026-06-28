@@ -321,10 +321,11 @@ std::expected<void, std::string> models::InstanceConfig::VerifySetupSignature(
         // mode still rejects it via the unsigned-error path in the caller):
         //   TRUST_E_NOSIGNATURE          - a signable file that carries no signature
         //   TRUST_E_SUBJECT_FORM_UNKNOWN - non-PE payload (e.g. a .zip archive)
-        //   TRUST_E_PROVIDER_UNKNOWN     - no trust provider recognises the subject
+        // Any other status (e.g. TRUST_E_PROVIDER_UNKNOWN, where verification
+        // could not even be performed) falls through to the generic failure path
+        // below rather than being silently accepted as "unsigned".
         if (sigInfo.lValidationResult == TRUST_E_NOSIGNATURE ||
-            sigInfo.lValidationResult == TRUST_E_SUBJECT_FORM_UNKNOWN ||
-            sigInfo.lValidationResult == TRUST_E_PROVIDER_UNKNOWN)
+            sigInfo.lValidationResult == TRUST_E_SUBJECT_FORM_UNKNOWN)
         {
             spdlog::warn("VerifySetupSignature: file is not signed ({:#x}): {}",
                          static_cast<unsigned long>(sigInfo.lValidationResult), filePath.string());
