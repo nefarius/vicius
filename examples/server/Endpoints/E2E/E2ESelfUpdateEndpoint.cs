@@ -25,12 +25,10 @@ internal sealed class E2ESelfUpdateEndpoint : EndpointWithoutRequest
     {
         if (!E2EGuard.IsEnabled)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
-        string updaterPath = Path.Combine(E2EGuard.ArtifactsDir, "updater_selfupdate.exe");
-        string checksum = E2EGuard.ComputeSha256(updaterPath);
         string baseUrl = E2EGuard.BaseUrl(HttpContext);
 
         UpdateResponse response = new()
@@ -38,13 +36,8 @@ internal sealed class E2ESelfUpdateEndpoint : EndpointWithoutRequest
             Instance = new UpdateConfig
             {
                 // A version that will always exceed whatever the built updater's version is.
-                LatestVersion = Version.Parse("999.0.0.0"),
-                LatestUrl = $"{baseUrl}/api/e2e/artifacts/updater_selfupdate.exe",
-                LatestChecksum = new ChecksumParameters
-                {
-                    ChecksumAlg = ChecksumAlgorithm.SHA256,
-                    Checksum = checksum
-                }
+                LatestVersion = System.Version.Parse("999.0.0.0"),
+                LatestUrl = $"{baseUrl}/api/e2e/artifacts/updater_selfupdate.exe"
             },
             Shared = new SharedConfig
             {
@@ -58,8 +51,9 @@ internal sealed class E2ESelfUpdateEndpoint : EndpointWithoutRequest
                 new UpdateRelease
                 {
                     Name = "E2E Release v2.0.0",
-                    Version = Version.Parse("2.0.0"),
+                    Version = System.Version.Parse("2.0.0"),
                     PublishedAt = DateTimeOffset.UtcNow,
+                    Summary = string.Empty,
                     DownloadUrl = "https://example.com/not-reached.zip"
                 }
             }

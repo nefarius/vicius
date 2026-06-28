@@ -22,7 +22,7 @@ internal sealed class E2EHappyZipEndpoint : EndpointWithoutRequest
     {
         if (!E2EGuard.IsEnabled)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -42,8 +42,9 @@ internal sealed class E2EHappyZipEndpoint : EndpointWithoutRequest
                 new UpdateRelease
                 {
                     Name = "E2E ZIP Update v2.0.0",
-                    Version = Version.Parse("2.0.0"),
+                    Version = System.Version.Parse("2.0.0"),
                     PublishedAt = DateTimeOffset.UtcNow,
+                    Summary = string.Empty,
                     DownloadUrl = $"{baseUrl}/api/e2e/artifacts/payload.zip",
                     Checksum = new ChecksumParameters
                     {

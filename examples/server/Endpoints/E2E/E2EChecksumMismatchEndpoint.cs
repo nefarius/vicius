@@ -23,7 +23,7 @@ internal sealed class E2EChecksumMismatchEndpoint : EndpointWithoutRequest
     {
         if (!E2EGuard.IsEnabled)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -41,8 +41,9 @@ internal sealed class E2EChecksumMismatchEndpoint : EndpointWithoutRequest
                 new UpdateRelease
                 {
                     Name = "E2E Checksum Mismatch Update v2.0.0",
-                    Version = Version.Parse("2.0.0"),
+                    Version = System.Version.Parse("2.0.0"),
                     PublishedAt = DateTimeOffset.UtcNow,
+                    Summary = string.Empty,
                     DownloadUrl = $"{baseUrl}/api/e2e/artifacts/payload.zip",
                     // Deliberately wrong checksum — all zeros
                     Checksum = new ChecksumParameters

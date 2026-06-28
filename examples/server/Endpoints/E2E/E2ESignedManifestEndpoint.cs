@@ -29,24 +29,20 @@ internal sealed class E2ESignedManifestEndpoint : Endpoint<E2ESignedManifestRequ
     {
         if (!E2EGuard.IsEnabled)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
         string artifactsDir = E2EGuard.ArtifactsDir;
         if (string.IsNullOrEmpty(artifactsDir))
-        {
-            AddError("E2E_ARTIFACTS_DIR environment variable is not set");
-            await SendErrorsAsync(500, ct);
-            return;
-        }
+            ThrowError("E2E_ARTIFACTS_DIR is not set", 500);
 
         // Guard: only allow the two known products and the two known filenames.
         bool isManifest = req.Filename == "updates.json";
         bool isMinisig = req.Filename == "updates.json.minisig";
         if (!isManifest && !isMinisig)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -65,12 +61,15 @@ internal sealed class E2ESignedManifestEndpoint : Endpoint<E2ESignedManifestRequ
 
         if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
         string contentType = isMinisig ? "application/octet-stream" : "application/json";
-        await SendStreamAsync(File.OpenRead(filePath), contentType: contentType, cancellation: ct);
+        HttpContext.Response.ContentType = contentType;
+        HttpContext.Response.StatusCode = 200;
+        await using FileStream fs = File.OpenRead(filePath);
+        await fs.CopyToAsync(HttpContext.Response.Body, ct);
     }
 }
 

@@ -23,7 +23,7 @@ internal sealed class E2EUpToDateEndpoint : EndpointWithoutRequest
     {
         if (!E2EGuard.IsEnabled)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -39,8 +39,9 @@ internal sealed class E2EUpToDateEndpoint : EndpointWithoutRequest
                 new UpdateRelease
                 {
                     Name = "E2E Release v2.0.0",
-                    Version = Version.Parse("2.0.0"),
+                    Version = System.Version.Parse("2.0.0"),
                     PublishedAt = DateTimeOffset.UtcNow,
+                    Summary = string.Empty,
                     // downloadUrl is never reached since the client is up-to-date
                     DownloadUrl = "https://example.com/not-reached.zip"
                 }

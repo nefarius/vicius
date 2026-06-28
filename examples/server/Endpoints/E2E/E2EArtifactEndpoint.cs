@@ -19,23 +19,19 @@ internal sealed class E2EArtifactEndpoint : Endpoint<E2EArtifactRequest>
     {
         if (!E2EGuard.IsEnabled)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
         string artifactsDir = E2EGuard.ArtifactsDir;
         if (string.IsNullOrEmpty(artifactsDir))
-        {
-            AddError("E2E_ARTIFACTS_DIR environment variable is not set");
-            await SendErrorsAsync(500, ct);
-            return;
-        }
+            ThrowError("E2E_ARTIFACTS_DIR is not set", 500);
 
         // Sanitize: reject any path containing directory separators so only
         // flat filenames in the artifacts root can be requested.
         if (req.Name.Contains('/') || req.Name.Contains('\\') || req.Name.Contains(".."))
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -43,18 +39,20 @@ internal sealed class E2EArtifactEndpoint : Endpoint<E2EArtifactRequest>
 
         if (!File.Exists(filePath))
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
         string contentType = Path.GetExtension(req.Name).ToLowerInvariant() switch
         {
             ".zip" => "application/zip",
-            ".exe" => "application/octet-stream",
             _ => "application/octet-stream"
         };
 
-        await SendStreamAsync(File.OpenRead(filePath), contentType: contentType, cancellation: ct);
+        HttpContext.Response.ContentType = contentType;
+        HttpContext.Response.StatusCode = 200;
+        await using FileStream fs = File.OpenRead(filePath);
+        await fs.CopyToAsync(HttpContext.Response.Body, ct);
     }
 }
 

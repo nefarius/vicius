@@ -23,7 +23,7 @@ internal sealed class E2EHappyExeEndpoint : EndpointWithoutRequest
     {
         if (!E2EGuard.IsEnabled)
         {
-            await SendNotFoundAsync(ct);
+            await Send.NotFoundAsync(ct);
             return;
         }
 
@@ -43,8 +43,9 @@ internal sealed class E2EHappyExeEndpoint : EndpointWithoutRequest
                 new UpdateRelease
                 {
                     Name = "E2E EXE Update v2.0.0",
-                    Version = Version.Parse("2.0.0"),
+                    Version = System.Version.Parse("2.0.0"),
                     PublishedAt = DateTimeOffset.UtcNow,
+                    Summary = string.Empty,
                     DownloadUrl = $"{baseUrl}/api/e2e/artifacts/setup.exe",
                     Checksum = new ChecksumParameters
                     {
