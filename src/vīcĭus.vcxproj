@@ -119,18 +119,25 @@
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(UpdaterName)</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\</OutDir>
+    <!-- Isolate intermediates per updater variant so two builds with different
+         UpdaterName/CustomIncludes on the same machine never share objects,
+         PCH or .tlog files (which would otherwise cause stale reuse or a
+         Rebuild's Clean to delete a sibling variant's output binary). -->
+    <IntDir>$(Platform)\$(Configuration)\$(UpdaterName)\</IntDir>
     <RunCodeAnalysis Condition="'$(CI)'==''">false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(UpdaterName)</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\$(UpdaterName)\</IntDir>
     <RunCodeAnalysis Condition="'$(CI)'==''">false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>$(UpdaterName)</TargetName>
     <OutDir>$(SolutionDir)bin\$(PlatformShortName)\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\$(UpdaterName)\</IntDir>
     <RunCodeAnalysis Condition="'$(CI)'==''">false</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">

@@ -267,10 +267,12 @@ jobs:
       - name: Build signed-manifest E2E updater (+ NV_MANIFEST_PUBLIC_KEY)
         shell: pwsh
         run: |
-          # /t:Rebuild ensures the changed post-customize header (different key)
-          # is picked up even if intermediate object timestamps look current.
+          # Each updater variant compiles into its own IntDir (keyed by
+          # UpdaterName in the .vcxproj), so this variant always builds fresh
+          # against the sig CustomIncludes without disturbing the main variant's
+          # already-produced bin\x64\e2e_Main_Updater.exe. No /t:Rebuild needed.
           msbuild "vīcĭus.sln" `
-            /m /t:Rebuild `
+            /m `
             /p:Configuration=Release `
             /p:Platform=x64 `
             /p:UpdaterName="e2eSig_Sig_Updater" `
