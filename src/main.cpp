@@ -346,7 +346,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         spdlog::info("Silent update: verification passed, launching setup");
 
-        cfg.InvokeSetupAsync(silentStopSource.get_token());
+        if (!cfg.InvokeSetupAsync(silentStopSource.get_token()))
+        {
+            spdlog::critical("Silent update: failed to launch setup (already in progress?)");
+            cfg.TryDisplayErrorDialog("Silent update failed", "Failed to launch setup process");
+            return NV_E_SETUP_LAUNCH_FAILED;
+        }
 
         // Poll setup status; setup runs a child process so we just spin-wait.
         for (;;)
@@ -355,8 +360,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
             if (!setupStatus.has_value())
             {
-                spdlog::critical("Silent update: setup task was not started");
-                cfg.TryDisplayErrorDialog("Silent update failed", "Setup task was not started");
+                spdlog::critical("Silent update: setup task not found after launch");
+                cfg.TryDisplayErrorDialog("Silent update failed", "Setup task not found after launch");
                 return NV_E_SETUP_FAILED;
             }
 
