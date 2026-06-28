@@ -31,6 +31,8 @@ namespace models
         std::optional<std::string> helpUrl;
         /** URL of the error article */
         std::optional<std::string> errorFallbackUrl;
+        /** If true, the downloaded setup is launched elevated (As Administrator) via the "runas" verb */
+        std::optional<bool> runAsAdmin;
 
         /**
          * \brief Converts the version string to a SemVer type.
@@ -55,5 +57,5 @@ namespace models
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-      UpdateConfig, updatesDisabled, latestVersion, latestUrl, latestChecksum, emergencyUrl, exitCode, helpUrl, errorFallbackUrl)
+      UpdateConfig, updatesDisabled, latestVersion, latestUrl, latestChecksum, emergencyUrl, exitCode, helpUrl, errorFallbackUrl, runAsAdmin)
 }

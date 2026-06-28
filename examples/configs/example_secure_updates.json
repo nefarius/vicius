@@ -67,7 +67,10 @@
 
       "exitCode": {
         "successCodes": [0, 3010]
-      }
+      },
+
+      "$comment_runAsAdmin": "Optional. Set to true to launch the setup elevated (As Administrator) via the 'runas' verb. Useful when the installer has no elevation manifest of its own.",
+      "runAsAdmin": true
     }
   ]
 }
