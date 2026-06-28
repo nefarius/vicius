@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -21,7 +22,7 @@ public sealed class DateTimeOffsetConverter : JsonConverter<DateTimeOffset>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, DateTimeOffset date, JsonSerializerOptions options)
     {
-        writer.WriteStringValue(date.ToUniversalTime().ToString(_format));
+        writer.WriteStringValue(date.ToUniversalTime().ToString(_format, CultureInfo.InvariantCulture));
     }
 
     /// <inheritdoc />
@@ -30,7 +31,7 @@ public sealed class DateTimeOffsetConverter : JsonConverter<DateTimeOffset>
         return DateTimeOffset.ParseExact(
             reader.GetString()!,
             _format,
-            null,
-            System.Globalization.DateTimeStyles.AssumeUniversal);
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.AssumeUniversal);
     }
 }
