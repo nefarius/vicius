@@ -653,10 +653,14 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
 
             const std::wstring value = resource.GetValue();
 
+            // Convert once outside the try so the catch can log nVersion safely
+            // without risk of a second conversion throwing and masking the fallback.
+            const std::string nVersionRaw = ConvertWideToANSI(value);
+
             bool isOutdated = false;
             try
             {
-                std::string nVersion = ConvertWideToANSI(value);
+                std::string nVersion = nVersionRaw;
                 util::toSemVerCompatible(nVersion);
                 const semver::version localVersion = semver::version::parse(nVersion);
 
@@ -669,7 +673,7 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
                 // The registry value is present but its content is not a parseable version string.
                 // Treat the local install as outdated so the server's trusted update can proceed.
                 spdlog::warn("Cannot parse registry version '{}' as SemVer ({}); treating as outdated",
-                             ConvertWideToANSI(value), e.what());
+                             nVersionRaw, e.what());
                 return true;
             }
 
