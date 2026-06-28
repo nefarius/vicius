@@ -594,8 +594,11 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
             }
             catch (const std::exception& e)
             {
-                spdlog::error("Failed to convert value {} into SemVer, error: {}", asString, e.what());
-                return std::unexpected(std::format("String to SemVer conversion failed: {}", e.what()));
+                // The version string is present but unparseable. Treat the local install as
+                // outdated so the server's trusted update can proceed rather than hard-failing.
+                spdlog::warn("Cannot parse local version '{}' as SemVer ({}); treating as outdated",
+                             asString, e.what());
+                return true;
             }
         }
 
@@ -663,8 +666,11 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
             }
             catch (const std::exception& e)
             {
-                spdlog::error("Failed to convert value {} into SemVer, error: {}", ConvertWideToANSI(value), e.what());
-                return std::unexpected(std::format("String to SemVer conversion failed: {}", e.what()));
+                // The registry value is present but its content is not a parseable version string.
+                // Treat the local install as outdated so the server's trusted update can proceed.
+                spdlog::warn("Cannot parse registry version '{}' as SemVer ({}); treating as outdated",
+                             ConvertWideToANSI(value), e.what());
+                return true;
             }
 
             return isOutdated;
@@ -719,8 +725,10 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
             }
             catch (...)
             {
-                spdlog::error("Failed to get version resource from {}", filePath);
-                return std::unexpected("Failed to read file version resource");
+                // The file exists but its version resource could not be read or compared.
+                // Treat as outdated so the update can proceed rather than hard-failing.
+                spdlog::warn("Failed to read version resource from {}; treating as outdated", filePath);
+                return true;
             }
 
             return isOutdated;

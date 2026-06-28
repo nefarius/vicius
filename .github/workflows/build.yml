@@ -324,6 +324,13 @@ jobs:
           Copy-Item -Path "bin\x64\e2e_Main_Updater.exe" `
             -Destination (Join-Path $dir "updater_selfupdate.exe")
 
+          # corrupt_version.bin — non-PE bytes; GetWin32ResourceFileVersion returns the
+          # sentinel 0.0.1 for files with no readable version resource, allowing the
+          # CorruptFileVersion scenario to exercise that path without crashing.
+          [System.IO.File]::WriteAllBytes(
+            (Join-Path $dir "corrupt_version.bin"),
+            [byte[]](0x00, 0x01, 0x02, 0x03, 0xFF, 0xFE, 0xFD, 0xFC))
+
           # Export paths for subsequent steps
           $hash = (Get-FileHash (Join-Path $dir "payload.zip") -Algorithm SHA256).Hash.ToLowerInvariant()
           "E2E_PAYLOAD_HASH=$hash" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
