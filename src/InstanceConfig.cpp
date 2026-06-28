@@ -270,7 +270,30 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
 
 #pragma endregion
 
-    appVersion = semver::version::parse(util::GetVersionFromFile(appPath).str() + NV_CUSTOM_VERSION_SUFFIX);
+    try
+    {
+        const auto fileVersion = util::GetVersionFromFile(appPath);
+        if (const std::string suffix = NV_CUSTOM_VERSION_SUFFIX; suffix.empty())
+        {
+            // Keeps the 4th (revision) segment that GetVersionFromFile stashes as build metadata.
+            appVersion = fileVersion;
+        }
+        else
+        {
+            // A custom suffix is a SemVer pre-release/build tail; attach it to the numeric
+            // core. The revision is intentionally dropped here so the resulting string stays
+            // valid (build metadata must not precede a pre-release component).
+            std::string suffixed = std::format("{}.{}.{}{}",
+                                               fileVersion.major(), fileVersion.minor(), fileVersion.patch(), suffix);
+            util::toSemVerCompatible(suffixed);
+            appVersion = semver::version::parse(suffixed);
+        }
+    }
+    catch (const std::exception& e)
+    {
+        spdlog::error("Failed to determine app version from {}: {}", appPath.string(), e.what());
+        appVersion = semver::version{0, 0, 0};
+    }
     spdlog::debug("appVersion = {}", appVersion.str());
 
     appFilename = appPath.stem().string();
@@ -548,7 +571,8 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
                 util::toSemVerCompatible(asString);
                 const semver::version localVersion = semver::version::parse(asString);
 
-                const bool isOutdated = release.GetDetectionSemVersion() > localVersion;
+                const bool isOutdated =
+                    util::CompareVersions(release.GetDetectionSemVersion().value_or(localVersion), localVersion) > 0;
                 spdlog::debug("isOutdated = {}", isOutdated);
                 return isOutdated;
             }
@@ -617,7 +641,8 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
                 util::toSemVerCompatible(nVersion);
                 const semver::version localVersion = semver::version::parse(nVersion);
 
-                isOutdated = release.GetDetectionSemVersion() > localVersion;
+                isOutdated =
+                    util::CompareVersions(release.GetDetectionSemVersion().value_or(localVersion), localVersion) > 0;
                 spdlog::debug("isOutdated = {}", isOutdated);
             }
             catch (const std::exception& e)
@@ -655,11 +680,19 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
                 switch (cfg.statement)
                 {
                     case VersionResource::FILEVERSION:
-                        isOutdated = release.GetDetectionSemVersion() > winapi::GetWin32ResourceFileVersion(filePath);
+                    {
+                        const auto fileVer = winapi::GetWin32ResourceFileVersion(filePath);
+                        isOutdated =
+                            util::CompareVersions(release.GetDetectionSemVersion().value_or(fileVer), fileVer) > 0;
                         break;
+                    }
                     case VersionResource::PRODUCTVERSION:
-                        isOutdated = release.GetDetectionSemVersion() > winapi::GetWin32ResourceProductVersion(filePath);
+                    {
+                        const auto prodVer = winapi::GetWin32ResourceProductVersion(filePath);
+                        isOutdated =
+                            util::CompareVersions(release.GetDetectionSemVersion().value_or(prodVer), prodVer) > 0;
                         break;
+                    }
                     case VersionResource::Invalid:
                         spdlog::warn("Unexpected version resource statement");
                         isOutdated = true;

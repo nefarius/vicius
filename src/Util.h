@@ -10,6 +10,21 @@ namespace util
     bool icompare(const std::string& a, const std::string& b);
     void toCamelCase(std::string& s);
     void toSemVerCompatible(std::string& s);
+
+    /**
+     * \brief Three-way compares two versions, honouring a 4th ("revision") segment.
+     *
+     * SemVer only models major.minor.patch(+prerelease); toSemVerCompatible() stashes
+     * the optional 4th segment of common Win32 versions (e.g. "1.2.3.4") as numeric
+     * build metadata ("1.2.3+4"). Standard SemVer precedence ignores build metadata,
+     * which would silently drop that 4th segment from comparisons. This helper applies
+     * normal SemVer precedence first and, when the core/prerelease parts are equal,
+     * breaks the tie on the numeric build metadata (a missing/non-numeric value counts
+     * as 0, so "1.2.3" and "1.2.3.0" compare equal while "1.2.3.4" outranks both).
+     *
+     * \return Negative if a precedes b, 0 if equal, positive if a succeeds b.
+     */
+    int CompareVersions(const semver::version& a, const semver::version& b);
     void stripNulls(std::string& s);
     void stripNulls(std::wstring& s);
 }

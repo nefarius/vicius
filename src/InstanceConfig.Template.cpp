@@ -468,7 +468,7 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
                              const semver::version lhs = semver::version::parse(lhsValue);
                              const semver::version rhs = semver::version::parse(rhsValue);
 
-                             return lhs == rhs;
+                             return util::CompareVersions(lhs, rhs) == 0;
                          }
                          catch (const std::exception& ex)
                          {
@@ -496,7 +496,7 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
                              const semver::version lhs = semver::version::parse(lhsValue);
                              const semver::version rhs = semver::version::parse(rhsValue);
 
-                             return lhs > rhs;
+                             return util::CompareVersions(lhs, rhs) > 0;
                          }
                          catch (const std::exception& ex)
                          {
@@ -524,7 +524,7 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
                              const semver::version lhs = semver::version::parse(lhsValue);
                              const semver::version rhs = semver::version::parse(rhsValue);
 
-                             return lhs < rhs;
+                             return util::CompareVersions(lhs, rhs) < 0;
                          }
                          catch (const std::exception& ex)
                          {

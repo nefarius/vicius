@@ -882,7 +882,7 @@ namespace
                 // top release is always latest by version, even if the response wasn't the right order
                 std::ranges::sort(remote.releases, [](const UpdateRelease& lhs, const UpdateRelease& rhs)
                 {
-                    return lhs.GetSemVersion() > rhs.GetSemVersion();
+                    return util::CompareVersions(lhs.GetSemVersion(), rhs.GetSemVersion()) > 0;
                 });
 
                 //

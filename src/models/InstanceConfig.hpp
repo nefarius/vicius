@@ -7,6 +7,7 @@
 #include "UpdateResponse.hpp"
 #include "MergedConfig.hpp"
 #include "NAuthenticode.h"
+#include "../Util.h"
 
 using json = nlohmann::json;
 
@@ -196,7 +197,7 @@ namespace models
 
             const auto latest = GetSelectedRelease().GetSemVersion();
 
-            return latest > currentVersion;
+            return util::CompareVersions(latest, currentVersion) > 0;
         }
 
         /**
@@ -214,7 +215,7 @@ namespace models
             {
                 const auto latest = remote.instance.value().GetLatestUpdaterSemVersion();
 
-                return latest > appVersion;
+                return util::CompareVersions(latest, appVersion) > 0;
             }
 
             return false;
