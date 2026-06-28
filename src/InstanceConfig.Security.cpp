@@ -316,9 +316,18 @@ std::expected<void, std::string> models::InstanceConfig::VerifySetupSignature(
 
     if (!chainOk)
     {
-        if (sigInfo.lValidationResult == TRUST_E_NOSIGNATURE)
+        // Treat "no Authenticode signature could possibly apply" the same as an
+        // explicitly unsigned file so WhenPresent mode accepts it (and Required
+        // mode still rejects it via the unsigned-error path in the caller):
+        //   TRUST_E_NOSIGNATURE          - a signable file that carries no signature
+        //   TRUST_E_SUBJECT_FORM_UNKNOWN - non-PE payload (e.g. a .zip archive)
+        //   TRUST_E_PROVIDER_UNKNOWN     - no trust provider recognises the subject
+        if (sigInfo.lValidationResult == TRUST_E_NOSIGNATURE ||
+            sigInfo.lValidationResult == TRUST_E_SUBJECT_FORM_UNKNOWN ||
+            sigInfo.lValidationResult == TRUST_E_PROVIDER_UNKNOWN)
         {
-            spdlog::warn("VerifySetupSignature: file is not signed: {}", filePath.string());
+            spdlog::warn("VerifySetupSignature: file is not signed ({:#x}): {}",
+                         static_cast<unsigned long>(sigInfo.lValidationResult), filePath.string());
             return std::unexpected(std::string("File is not signed"));
         }
 
