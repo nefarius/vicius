@@ -229,10 +229,7 @@ jobs:
             -OutFile $zip
           Expand-Archive -Path $zip `
             -DestinationPath (Join-Path $env:RUNNER_TEMP 'minisign') -Force
-          $exe = Get-ChildItem `
-            -Path   (Join-Path $env:RUNNER_TEMP 'minisign') `
-            -Filter 'minisign.exe' -Recurse |
-            Select-Object -First 1 -ExpandProperty FullName
+          $exe = Join-Path $env:RUNNER_TEMP 'minisign' 'minisign-win64' 'x86_64' 'minisign.exe'
           Add-Content -Path $env:GITHUB_PATH -Value (Split-Path $exe)
 
       # ── Ephemeral signing key (generated fresh every run, never committed) ──
