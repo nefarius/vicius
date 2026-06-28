@@ -177,13 +177,15 @@ struct changelog : imgui_md
     // ReSharper disable once CppMemberFunctionMayBeStatic
     OptionalD3DResource DownloadImageTexture(const std::string& url) const
     {
-        const web::HttpResult response = web::HttpGet(url, {
-            .timeoutSecs      = 5,
+        auto getResult = web::HttpGet(url, {
+            .timeoutSecs        = 5,
             .connectTimeoutSecs = 10,
-            .maxRedirects     = 5,
+            .maxRedirects       = 5,
         });
 
-        if (response.curlCode != CURLE_OK || response.httpCode != httplib::OK_200) return std::nullopt;
+        if (!getResult || getResult->httpCode != httplib::OK_200) return std::nullopt;
+
+        const auto& response = *getResult;
 
         winrt::com_ptr<ID3D11Resource> txt;
         winrt::com_ptr<ID3D11ShaderResourceView> srv;

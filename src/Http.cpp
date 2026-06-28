@@ -8,7 +8,7 @@
 
 namespace web
 {
-    HttpResult HttpGet(const std::string& url, const HttpGetOptions& opts)
+    std::expected<HttpResult, std::string> HttpGet(const std::string& url, const HttpGetOptions& opts)
     {
         HttpResult result{};
 
@@ -22,9 +22,13 @@ namespace web
 
             std::string line(buffer, buffer + bytes);
 
-            // Status line, e.g. "HTTP/1.1 200 OK" or "HTTP/2 200"
+            // Status line, e.g. "HTTP/1.1 200 OK" or "HTTP/2 200".
+            // On redirects curl fires the header callback for each response in the
+            // chain, so reset the accumulated headers each time a new response begins
+            // so that result.headers only reflects the final response.
             if (line.rfind("HTTP/", 0) == 0)
             {
+                result.headers.clear();
                 const auto firstSpace = line.find(' ');
                 if (firstSpace != std::string::npos && (firstSpace + 4) <= line.size())
                 {
@@ -41,8 +45,8 @@ namespace web
             std::string value = line.substr(colon + 1);
 
             auto isSpace = [](unsigned char c) { return std::isspace(c) != 0; };
-            while (!key.empty()   && isSpace(static_cast<unsigned char>(key.back())))   key.pop_back();
-            while (!value.empty() && (value.back() == '\r' || value.back() == '\n'))    value.pop_back();
+            while (!key.empty()   && isSpace(static_cast<unsigned char>(key.back())))    key.pop_back();
+            while (!value.empty() && (value.back() == '\r' || value.back() == '\n'))     value.pop_back();
             while (!value.empty() && isSpace(static_cast<unsigned char>(value.front()))) value.erase(value.begin());
             while (!value.empty() && isSpace(static_cast<unsigned char>(value.back())))  value.pop_back();
 
@@ -88,22 +92,11 @@ namespace web
         }
         catch (const curlpp::RuntimeError& e)
         {
-            // Map well-known timeout phrasing to CURLE_OPERATION_TIMEDOUT so callers
-            // can apply exponential back-off without parsing error strings.
-            const std::string msg = e.what();
-            const bool isTimeout =
-                msg.find("Timeout")   != std::string::npos ||
-                msg.find("timeout")   != std::string::npos ||
-                msg.find("timed out") != std::string::npos ||
-                msg.find("Timed out") != std::string::npos;
-
-            result.curlCode = isTimeout ? CURLE_OPERATION_TIMEDOUT : CURLE_RECV_ERROR;
-            result.error    = msg;
+            return std::unexpected(std::string(e.what()));
         }
         catch (const curlpp::LogicError& e)
         {
-            result.curlCode = CURLE_FAILED_INIT;
-            result.error    = e.what();
+            return std::unexpected(std::string(e.what()));
         }
 
         return result;

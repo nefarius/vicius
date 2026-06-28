@@ -4,24 +4,23 @@
 #include <string>
 #include <list>
 #include <unordered_map>
+#include <expected>
 
 
 namespace web
 {
     /**
-     * \brief Result of a completed HttpGet call.
+     * \brief Payload returned by a successful HttpGet call.
      *
-     * curlCode carries the transport-level outcome (CURLE_OK on success).
-     * httpCode holds the last parsed HTTP status line value (0 if none was received).
-     * error is human-readable and non-empty when curlCode != CURLE_OK.
+     * httpCode holds the last parsed HTTP status line value.
+     * The caller is responsible for checking whether the status is acceptable
+     * (e.g. 200 OK vs 404 Not Found); HttpGet only fails at the transport level.
      */
     struct HttpResult
     {
-        CURLcode curlCode{CURLE_OK};
         long httpCode{0};
         std::string body;
         std::unordered_map<std::string, std::string> headers;
-        std::string error;
     };
 
     /**
@@ -43,9 +42,14 @@ namespace web
     /**
      * \brief Performs an in-memory HTTP GET using curlpp.
      *
-     * On transport failure curlCode is set to the relevant CURLcode and error
-     * contains a human-readable description; httpCode may still be non-zero if
-     * a status line was received before the transfer was aborted.
+     * Returns the response on success. Returns std::unexpected with a
+     * human-readable message on transport failure (connection error, TLS
+     * handshake failure, stall timeout, etc.). HTTP error status codes (4xx,
+     * 5xx) are NOT transport failures — they are returned inside HttpResult so
+     * the caller can apply its own retry / fallback logic.
+     *
+     * Timeout failures include the word "timeout" in the error string, which
+     * callers can test to apply exponential back-off.
      */
-    HttpResult HttpGet(const std::string& url, const HttpGetOptions& opts);
+    std::expected<HttpResult, std::string> HttpGet(const std::string& url, const HttpGetOptions& opts);
 }
