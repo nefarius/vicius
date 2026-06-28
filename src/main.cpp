@@ -306,6 +306,97 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 #pragma endregion
 
+#pragma region Silent update
+
+    if (cmdl[ {NV_CLI_SILENT_UPDATE} ])
+    {
+        spdlog::info("Silent update mode: downloading and installing update");
+
+        std::stop_source silentStopSource;
+
+        // Download: no progress reporting needed in headless mode
+        cfg.DownloadReleaseAsync(
+            cfg.GetSelectedReleaseId(),
+            [](void*, double, double, double, double) -> int { return CURLE_OK; });
+
+        cfg.WaitForDownloadToFinish();
+
+        const auto dlStatus = cfg.GetReleaseDownloadStatus();
+        cfg.ResetReleaseDownloadState();
+
+        if (!dlStatus.has_value() || !dlStatus->hasFinished
+            || !dlStatus->result.has_value() || !dlStatus->result->has_value())
+        {
+            const std::string dlError = (dlStatus.has_value() && dlStatus->result.has_value())
+                                            ? dlStatus->result->error()
+                                            : "Download did not complete";
+            spdlog::critical("Silent update: download failed: {}", dlError);
+            cfg.TryDisplayErrorDialog("Silent update failed", dlError);
+            return NV_E_DOWNLOAD_FAILED;
+        }
+
+        spdlog::info("Silent update: download succeeded, verifying integrity");
+
+        if (const auto verResult = cfg.VerifyReleaseIntegrity(); !verResult)
+        {
+            spdlog::critical("Silent update: verification failed: {}", verResult.error());
+            cfg.TryDisplayErrorDialog("Silent update failed", verResult.error());
+            return NV_E_SIGNATURE_INVALID;
+        }
+
+        spdlog::info("Silent update: verification passed, launching setup");
+
+        if (!cfg.InvokeSetupAsync(silentStopSource.get_token()))
+        {
+            spdlog::critical("Silent update: failed to launch setup (already in progress?)");
+            cfg.TryDisplayErrorDialog("Silent update failed", "Failed to launch setup process");
+            return NV_E_SETUP_LAUNCH_FAILED;
+        }
+
+        // Poll setup status; setup runs a child process so we just spin-wait.
+        for (;;)
+        {
+            const auto setupStatus = cfg.GetSetupStatus();
+
+            if (!setupStatus.has_value())
+            {
+                spdlog::critical("Silent update: setup task not found after launch");
+                cfg.TryDisplayErrorDialog("Silent update failed", "Setup task not found after launch");
+                return NV_E_SETUP_FAILED;
+            }
+
+            if (setupStatus->isRunning)
+            {
+                Sleep(250);
+                continue;
+            }
+
+            if (setupStatus->hasFinished && setupStatus->result.has_value())
+            {
+                const auto& setupResult = *setupStatus->result;
+                if (setupResult.has_value())
+                {
+                    spdlog::info("Silent update: setup finished; exitCode={}, win32Error={}",
+                                 setupResult->exitCode, setupResult->win32Error);
+                    return cfg.GetSuccessExitCode(NV_S_UPDATE_FINISHED);
+                }
+                else
+                {
+                    spdlog::critical("Silent update: setup failed: {}", setupResult.error());
+                    cfg.TryDisplayErrorDialog("Silent update failed", setupResult.error());
+                    return NV_E_SETUP_FAILED;
+                }
+            }
+
+            // Neither running nor finished with a result — treat as failure.
+            spdlog::critical("Silent update: setup ended in unknown state");
+            cfg.TryDisplayErrorDialog("Silent update failed", "Setup ended in unknown state");
+            return NV_E_SETUP_FAILED;
+        }
+    }
+
+#pragma endregion
+
     //
     // Main GUI creation
     //
