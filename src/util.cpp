@@ -501,8 +501,8 @@ namespace winapi
             }
         }
 
-        spdlog::debug("tempPath = {}", tempPath);
         util::stripNulls(tempPath);
+        spdlog::debug("tempPath = {}", tempPath);
         return tempPath;
     }
 
@@ -541,8 +541,8 @@ namespace winapi
             return std::unexpected("Failed to resolve %ProgramData% directory");
         }
 
-        spdlog::debug("tempPath = {}", tempPath);
         util::stripNulls(tempPath);
+        spdlog::debug("tempPath = {}", tempPath);
         return tempPath;
     }
 
