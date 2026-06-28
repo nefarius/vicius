@@ -478,7 +478,8 @@ std::expected<void, std::string> models::InstanceConfig::VerifySetupSignature(
  */
 static bool ParseMinisigFile(const std::string& minisigBody,
                              std::string& outKeyId,
-                             std::vector<unsigned char>& outSig)
+                             std::vector<unsigned char>& outSig,
+                             bool& outPrehashed)
 {
     // Split into lines
     std::vector<std::string> lines;
@@ -508,8 +509,15 @@ static bool ParseMinisigFile(const std::string& minisigBody,
     // Layout: 2 bytes algo + 8 bytes key id + 64 bytes Ed25519 sig = 74 bytes total
     if (actualLen < 74) return false;
 
-    // First 2 bytes: algorithm ("Ed" for Ed25519)
-    if (decoded[0] != 'E' || decoded[1] != 'd') return false;
+    // First 2 bytes: algorithm tag.
+    //   "Ed" = legacy   : pure Ed25519 over the raw message
+    //   "ED" = prehashed : Ed25519 over BLAKE2b-512 of the message
+    // minisign has defaulted to the prehashed ("ED") format since 0.6, so we
+    // must accept both and verify accordingly (see VerifyManifestSignature).
+    if (decoded[0] != 'E') return false;
+    if (decoded[1] == 'd')      outPrehashed = false;
+    else if (decoded[1] == 'D') outPrehashed = true;
+    else                        return false;
 
     // Bytes 2-9: key id (we store as hex string for logging)
     std::string keyId;
@@ -564,7 +572,8 @@ std::expected<void, std::string> models::InstanceConfig::VerifyManifestSignature
     // Parse the .minisig sidecar
     std::string keyId;
     std::vector<unsigned char> sig;
-    if (!ParseMinisigFile(minisigBody, keyId, sig))
+    bool prehashed = false;
+    if (!ParseMinisigFile(minisigBody, keyId, sig, prehashed))
     {
         return std::unexpected("Failed to parse manifest signature file (.minisig)");
     }
@@ -589,17 +598,36 @@ std::expected<void, std::string> models::InstanceConfig::VerifyManifestSignature
         return std::unexpected("Invalid compiled-in public key length");
     }
 
-    // Verify signature over raw manifest bytes
-    const int result = crypto_sign_verify_detached(
-        sig.data(),
-        reinterpret_cast<const unsigned char*>(manifestBody.data()),
-        manifestBody.size(),
-        pubKey.data()
-    );
+    // Verify the detached Ed25519 signature. In prehashed ("ED") mode the
+    // signature covers BLAKE2b-512 of the body (minisign's default), so we must
+    // hash the manifest first and verify over the 64-byte digest; in legacy
+    // ("Ed") mode the signature covers the raw body directly.
+    int result;
+    if (prehashed)
+    {
+        unsigned char digest[crypto_generichash_BYTES_MAX];
+        crypto_generichash(
+            digest, sizeof digest,
+            reinterpret_cast<const unsigned char*>(manifestBody.data()),
+            manifestBody.size(),
+            nullptr, 0
+        );
+        result = crypto_sign_verify_detached(sig.data(), digest, sizeof digest, pubKey.data());
+    }
+    else
+    {
+        result = crypto_sign_verify_detached(
+            sig.data(),
+            reinterpret_cast<const unsigned char*>(manifestBody.data()),
+            manifestBody.size(),
+            pubKey.data()
+        );
+    }
 
     if (result != 0)
     {
-        spdlog::error("VerifyManifestSignature: Ed25519 signature verification FAILED");
+        spdlog::error("VerifyManifestSignature: Ed25519 signature verification FAILED ({} mode)",
+                      prehashed ? "prehashed" : "legacy");
         return std::unexpected("Manifest signature is invalid - the update manifest may have been tampered with");
     }
 
