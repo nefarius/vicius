@@ -280,11 +280,27 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
         }
         else
         {
-            // A custom suffix is a SemVer pre-release/build tail; attach it to the numeric
-            // core. The revision is intentionally dropped here so the resulting string stays
-            // valid (build metadata must not precede a pre-release component).
-            std::string suffixed = std::format("{}.{}.{}{}",
-                                               fileVersion.major(), fileVersion.minor(), fileVersion.patch(), suffix);
+            // Custom suffix is a SemVer pre-release or build tail on the numeric core.
+            // Keep the Win32 revision (already in build metadata) so distinct builds
+            // do not compare equal after suffixing.
+            const std::string& revision = fileVersion.build_meta();
+            std::string suffixed;
+            if (suffix.starts_with("+"))
+            {
+                suffixed = revision.empty()
+                             ? std::format("{}.{}.{}{}", fileVersion.major(), fileVersion.minor(), fileVersion.patch(),
+                                           suffix)
+                             : std::format("{}.{}.{}+{}.{}", fileVersion.major(), fileVersion.minor(), fileVersion.patch(),
+                                           revision, suffix.substr(1));
+            }
+            else
+            {
+                suffixed = std::format("{}.{}.{}{}", fileVersion.major(), fileVersion.minor(), fileVersion.patch(), suffix);
+                if (!revision.empty())
+                {
+                    suffixed += std::format("+{}", revision);
+                }
+            }
             util::toSemVerCompatible(suffixed);
             appVersion = semver::version::parse(suffixed);
         }
