@@ -454,6 +454,13 @@ std::expected<void, std::string> models::InstanceConfig::VerifySetupSignature(
 // Layer 4 (manifest): Ed25519 / minisign signature verification
 // ============================================================================
 
+// sodium_base642bin_MAXLEN was not added to the libsodium headers until after
+// the 1.0.22 release that vcpkg ships.  Provide a local fallback so the build
+// does not depend on a newer header.
+#ifndef sodium_base642bin_MAXLEN
+#  define sodium_base642bin_MAXLEN(b64_len) (3 * ((b64_len) / 4) + 3)
+#endif
+
 #if defined(NV_MANIFEST_PUBLIC_KEY)
 
 /**
