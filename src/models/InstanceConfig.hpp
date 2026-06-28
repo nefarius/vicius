@@ -145,6 +145,7 @@ namespace models
 
         std::string GetWindowTitle() const { return merged.windowTitle; }
         std::string GetProductName() const { return merged.productName; }
+        bool IsRemindButtonHidden() const { return merged.hideRemindButton; }
 
         bool SetSelectedRelease(const int releaseIndex = 0)
         {

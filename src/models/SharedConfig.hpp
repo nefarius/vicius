@@ -37,6 +37,8 @@ namespace models
         std::optional<SignatureVerificationStrategy> signatureStrategy;
         /** Global Authenticode certificate pin (used with FromConfiguration strategy) */
         std::optional<SignatureConfig> signatureConfig;
+        /** True to hide the "Remind me tomorrow" button in the UI */
+        std::optional<bool> hideRemindButton;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SharedConfig,
@@ -50,5 +52,6 @@ namespace models
                                                     signatureVerificationMode,
                                                     signaturePolicy,
                                                     signatureStrategy,
-                                                    signatureConfig)
+                                                    signatureConfig,
+                                                    hideRemindButton)
 }

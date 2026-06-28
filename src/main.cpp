@@ -624,12 +624,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 }
                 ImGui::PopStyleColor(3);
 
-                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(20));
-                if (ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow"))
+                if (!cfg.IsRemindButtonHidden())
                 {
-                    cfg.SetPostponeData();
-                    status = cfg.GetSuccessExitCode(NV_S_USER_POSTPONED);
-                    PostQuitMessage((int)status);
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(20));
+                    if (ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow"))
+                    {
+                        cfg.SetPostponeData();
+                        status = cfg.GetSuccessExitCode(NV_S_USER_POSTPONED);
+                        PostQuitMessage((int)status);
+                    }
                 }
 
                 if (cfg.GetHelpUrl().has_value())
