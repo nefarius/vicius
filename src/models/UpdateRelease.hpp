@@ -99,6 +99,8 @@ namespace models
         std::optional<ZipExtractFileDisposition> zipExtractDefaultFileDisposition;
         /** Override the behavior for specific files in a zip update */
         std::optional<std::unordered_map<std::string, ZipExtractFileDisposition>> zipExtractFileDispositionOverrides;
+        /** If true, the downloaded setup is launched elevated (As Administrator) via the "runas" verb */
+        std::optional<bool> runAsAdmin;
 
         /** Full pathname of the local temporary file */
         std::filesystem::path localTempFilePath{};
@@ -135,5 +137,6 @@ namespace models
                                                     detectionSize,
                                                     detectionVersion,
                                                     zipExtractDefaultFileDisposition,
-                                                    zipExtractFileDispositionOverrides)
+                                                    zipExtractFileDispositionOverrides,
+                                                    runAsAdmin)
 }

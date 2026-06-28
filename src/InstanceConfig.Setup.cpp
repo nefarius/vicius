@@ -227,6 +227,7 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
     const auto& release = this->GetSelectedRelease();
     const auto& tempFile = this->GetLocalReleaseTempFilePath();
     std::string openFile = tempFile.string();
+    const bool runAsAdmin = this->RunAsAdmin();
 
     DWORD win32Error = ERROR_SUCCESS;
     DWORD exitCode = 0;
@@ -356,7 +357,7 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
             execInfo.cbSize = sizeof(SHELLEXECUTEINFO);
             execInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
             execInfo.hwnd = this->windowHandle;
-            execInfo.lpVerb = NULL;
+            execInfo.lpVerb = runAsAdmin ? "runas" : NULL;
             execInfo.lpFile = openFile.c_str();
             execInfo.lpParameters = args.c_str();
             execInfo.lpDirectory = NULL;
@@ -383,8 +384,46 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
         }
     }
     //
-    // Executables can directly be spawned via CreateProcess
+    // Executables: if elevation is requested use ShellExecuteEx ("runas"),
+    // otherwise spawn directly via CreateProcess.
     //
+    else if (runAsAdmin)
+    {
+        const std::string args = release.launchArguments.value_or(std::string{});
+
+        SHELLEXECUTEINFOA execInfo = {};
+        execInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+        execInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
+        execInfo.hwnd = this->windowHandle;
+        execInfo.lpVerb = "runas";
+        execInfo.lpFile = openFile.c_str();
+        execInfo.lpParameters = args.c_str();
+        execInfo.lpDirectory = NULL;
+        execInfo.nShow = SW_SHOW;
+        execInfo.hInstApp = NULL;
+
+        if (!ShellExecuteExA(&execInfo))
+        {
+            win32Error = GetLastError();
+
+            spdlog::error("Failed to launch elevated {}, error {:#x}, message {}", tempFile, win32Error,
+                          winapi::GetLastErrorStdStr());
+
+            goto exit;
+        }
+
+        spdlog::debug("Elevated setup process launched successfully");
+
+        if (CancellableWait(execInfo.hProcess, stopToken) == WaitResult::Success)
+        {
+            GetExitCodeProcess(execInfo.hProcess, &exitCode);
+        }
+        else
+        {
+            exitCode = this->GetSuccessExitCode(NV_S_CLOSED_WHILE_UPDATER_RUNNING);
+        }
+        CloseHandle(execInfo.hProcess);
+    }
     else
     {
         STARTUPINFOA info = {};

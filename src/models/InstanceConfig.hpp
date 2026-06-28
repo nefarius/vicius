@@ -372,6 +372,20 @@ namespace models
         }
 
         /**
+         * \brief Whether the selected release's setup should be launched elevated (As Administrator).
+         * \return True if runAsAdmin is enabled at the release or instance level, false otherwise.
+         */
+        bool RunAsAdmin()
+        {
+            if (const auto& release = GetSelectedRelease(); release.runAsAdmin.has_value())
+            {
+                return release.runAsAdmin.value();
+            }
+
+            return remote.instance.has_value() && remote.instance.value().runAsAdmin.value_or(false);
+        }
+
+        /**
          * \brief Attempts to display the UAC info dialog.
          * \param force True to ignore silent flags, false otherwise (default).
          */
