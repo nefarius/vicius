@@ -151,7 +151,7 @@ jobs:
           path: artifacts
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@65d7f2d534ac1bc67fcd62888c5f4f3d2cb2b236  # v5.3.0
         with:
           python-version: '3.12'
 
@@ -175,7 +175,7 @@ jobs:
         shell: pwsh
         timeout-minutes: 15
         env:
-          VICIUS_EXE: ${{ github.workspace }}\artifacts\bin\x64\${{ env.UPDATER_NAME }}.exe
+          VICIUS_EXE: ${{ github.workspace }}\artifacts\x64\${{ env.UPDATER_NAME }}.exe
         run: |
           pytest tests\e2e -v --timeout=120
 

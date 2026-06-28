@@ -86,32 +86,41 @@ def _cert_sha1_thumbprint(cert_path: Path) -> str:
 
 def _trust_cert_in_root_store(cert_path: Path) -> str:
     """
-    Import cert into LocalMachine\\Root (Schannel trust store).
-    Requires administrator privileges on Windows.
+    Import cert into CurrentUser\\Root (Schannel trusts both LocalMachine and
+    CurrentUser root stores; the user store requires no administrator rights).
     Returns the SHA-1 thumbprint for later removal.
     """
     result = subprocess.run(
-        ["certutil", "-addstore", "-f", "Root", str(cert_path)],
+        ["certutil", "-user", "-addstore", "-f", "Root", str(cert_path)],
         capture_output=True,
         text=True,
     )
     if result.returncode != 0:
         raise RuntimeError(
-            "certutil -addstore Root failed — this requires administrator privileges.\n"
+            "certutil -user -addstore Root failed.\n"
             f"stdout: {result.stdout.strip()}\n"
             f"stderr: {result.stderr.strip()}\n"
-            "Run the test process as Administrator, or import the cert manually:\n"
-            f"  certutil -addstore Root \"{cert_path}\""
+            "Import the cert manually:\n"
+            f"  certutil -user -addstore Root \"{cert_path}\""
         )
     return _cert_sha1_thumbprint(cert_path)
 
 
 def _remove_cert_from_root_store(thumbprint: str) -> None:
-    """Remove cert by SHA-1 thumbprint from LocalMachine\\Root; ignore errors."""
-    subprocess.run(
-        ["certutil", "-delstore", "Root", thumbprint],
+    """Remove cert by SHA-1 thumbprint from CurrentUser\\Root; raises on failure."""
+    result = subprocess.run(
+        ["certutil", "-user", "-delstore", "Root", thumbprint],
         capture_output=True,
+        text=True,
     )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"certutil -user -delstore Root {thumbprint} failed — "
+            f"test certificate may remain in the CurrentUser\\Root store.\n"
+            f"stdout: {result.stdout.strip()}\n"
+            f"stderr: {result.stderr.strip()}\n"
+            f"Remove manually: certutil -user -delstore Root {thumbprint}"
+        )
 
 
 # ===========================================================================
@@ -178,7 +187,7 @@ def _compile_fake_setup(src: Path, out: Path) -> None:
 @pytest.fixture(scope="session")
 def tls_cert(tmp_path_factory: pytest.TempPathFactory) -> Generator[dict, None, None]:
     """
-    Generate a self-signed TLS cert, trust it in LocalMachine\\Root,
+    Generate a self-signed TLS cert, trust it in CurrentUser\\Root,
     and remove it during teardown.
 
     Yields a dict with keys: cert_file (str), key_file (str), thumbprint (str).

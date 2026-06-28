@@ -185,17 +185,19 @@ def test_download_404(workdir, mock_server, fake_setup_exe):
 
 @pytest.mark.timeout(120)
 def test_server_unreachable(tmp_path, updater_exe):
-    # Grab an ephemeral port number then immediately release the socket so
-    # nothing is listening on it.
+    # Bind to an ephemeral port but do NOT call listen() or close() until after
+    # the updater exits.  The port stays reserved (OS sends RST to any SYN
+    # rather than ETIMEDOUT), and no other process can steal the port mid-run.
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(("127.0.0.1", 0))
     dead_port = s.getsockname()[1]
-    s.close()
+    try:
+        template = f"https://127.0.0.1:{dead_port}/api/{{}}/updates.json"
+        workdir = make_workdir(tmp_path, updater_exe, template)
+        result = run_updater(workdir, timeout=120)
+    finally:
+        s.close()
 
-    template = f"https://127.0.0.1:{dead_port}/api/{{}}/updates.json"
-    workdir = make_workdir(tmp_path, updater_exe, template)
-
-    result = run_updater(workdir, timeout=120)
     assert result.returncode == NV_E_SERVER_RESPONSE, (
         f"Expected NV_E_SERVER_RESPONSE ({NV_E_SERVER_RESPONSE}), "
         f"got {result.returncode}"
@@ -278,29 +280,32 @@ def test_packed_binary_smoke(tmp_path, updater_exe):
     if not packed.is_file():
         pytest.skip(f"Packed binary not found at {packed}; skipping smoke test")
 
+    # Keep the socket bound for the full run so no other process can steal the port.
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(("127.0.0.1", 0))
     dead_port = s.getsockname()[1]
-    s.close()
+    try:
+        # Copy packed binary under the expected tenant name so the filename
+        # regex can still extract manufacturer/product.
+        dest = tmp_path / UPDATER_EXE_NAME
+        shutil.copy2(str(packed), str(dest))
 
-    # For the packed binary we copy it under the expected tenant name so that
-    # the filename regex can still extract manufacturer/product.
-    dest = tmp_path / UPDATER_EXE_NAME
-    shutil.copy2(str(packed), str(dest))
-
-    config = {
-        "instance": {
-            "serverUrlTemplate": f"https://127.0.0.1:{dead_port}/api/{{}}/updates.json"
+        config = {
+            "instance": {
+                "serverUrlTemplate": f"https://127.0.0.1:{dead_port}/api/{{}}/updates.json"
+            }
         }
-    }
-    (tmp_path / UPDATER_CONFIG_NAME).write_text(json.dumps(config), encoding="utf-8")
+        (tmp_path / UPDATER_CONFIG_NAME).write_text(json.dumps(config), encoding="utf-8")
 
-    result = subprocess.run(
-        [str(dest), "--silent-update", "--force-local-version", "1.0.0",
-         "--ignore-busy-state", "--skip-self-update"],
-        cwd=str(tmp_path),
-        timeout=120,
-    )
+        result = subprocess.run(
+            [str(dest), "--silent-update", "--force-local-version", "1.0.0",
+             "--ignore-busy-state", "--skip-self-update"],
+            cwd=str(tmp_path),
+            timeout=120,
+        )
+    finally:
+        s.close()
+
     assert result.returncode == NV_E_SERVER_RESPONSE, (
         f"Expected NV_E_SERVER_RESPONSE ({NV_E_SERVER_RESPONSE}) from packed binary, "
         f"got {result.returncode}"
