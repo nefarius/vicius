@@ -49,10 +49,14 @@ namespace models
             try
             {
                 // Normalise the same way release versions are handled so common
-                // Win32 forms parse cleanly: strip a leading "v"/whitespace and
-                // map 4-segment versions (e.g. "999.0.0.0") onto semver via
+                // Win32 forms parse cleanly: trim whitespace, strip a leading "v",
+                // and map 4-segment versions (e.g. "999.0.0.0") onto semver via
                 // toSemVerCompatible ("1.2.3.4" -> "1.2.3+4").
-                std::string value = util::trim(latestVersion.value(), "v \t");
+                std::string value = util::trim(latestVersion.value());
+                if (!value.empty() && value.front() == 'v')
+                {
+                    value.erase(value.begin());
+                }
                 util::toSemVerCompatible(value);
                 return semver::version::parse(value);
             }
