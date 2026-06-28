@@ -45,11 +45,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
-        # The vcpkg submodule is large (~200 MB); the runner ships its own
-        # preinstalled vcpkg, so we skip cloning it.
         with:
           submodules: false
           persist-credentials: false
+
+      - name: Init vcpkg submodule (shallow)
+        shell: pwsh
+        run: git submodule update --init --depth 1 vcpkg
 
       # x-gha binary cache requires these two vars to be exported explicitly.
       - name: Export GHA cache variables for vcpkg
