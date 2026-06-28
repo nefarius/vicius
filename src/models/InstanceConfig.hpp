@@ -43,6 +43,7 @@ namespace models
     {
         DWORD exitCode{};
         DWORD win32Error{};
+        bool  succeeded{};
     };
 
     class InstanceConfig
