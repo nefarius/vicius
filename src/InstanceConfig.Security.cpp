@@ -316,9 +316,19 @@ std::expected<void, std::string> models::InstanceConfig::VerifySetupSignature(
 
     if (!chainOk)
     {
-        if (sigInfo.lValidationResult == TRUST_E_NOSIGNATURE)
+        // Treat "no Authenticode signature could possibly apply" the same as an
+        // explicitly unsigned file so WhenPresent mode accepts it (and Required
+        // mode still rejects it via the unsigned-error path in the caller):
+        //   TRUST_E_NOSIGNATURE          - a signable file that carries no signature
+        //   TRUST_E_SUBJECT_FORM_UNKNOWN - non-PE payload (e.g. a .zip archive)
+        // Any other status (e.g. TRUST_E_PROVIDER_UNKNOWN, where verification
+        // could not even be performed) falls through to the generic failure path
+        // below rather than being silently accepted as "unsigned".
+        if (sigInfo.lValidationResult == TRUST_E_NOSIGNATURE ||
+            sigInfo.lValidationResult == TRUST_E_SUBJECT_FORM_UNKNOWN)
         {
-            spdlog::warn("VerifySetupSignature: file is not signed: {}", filePath.string());
+            spdlog::warn("VerifySetupSignature: file is not signed ({:#x}): {}",
+                         static_cast<unsigned long>(sigInfo.lValidationResult), filePath.string());
             return std::unexpected(std::string("File is not signed"));
         }
 
@@ -469,7 +479,8 @@ std::expected<void, std::string> models::InstanceConfig::VerifySetupSignature(
  */
 static bool ParseMinisigFile(const std::string& minisigBody,
                              std::string& outKeyId,
-                             std::vector<unsigned char>& outSig)
+                             std::vector<unsigned char>& outSig,
+                             bool& outPrehashed)
 {
     // Split into lines
     std::vector<std::string> lines;
@@ -486,7 +497,7 @@ static bool ParseMinisigFile(const std::string& minisigBody,
 
     // Decode line 1 (base64)
     const auto& b64 = lines[1];
-    const auto decodedLen = static_cast<size_t>(sodium_base642bin_MAXLEN(b64.size()));
+    const size_t decodedLen = b64.size(); // base64 text is always longer than its decoded form
     std::vector<unsigned char> decoded(decodedLen);
     size_t actualLen = 0;
 
@@ -499,8 +510,15 @@ static bool ParseMinisigFile(const std::string& minisigBody,
     // Layout: 2 bytes algo + 8 bytes key id + 64 bytes Ed25519 sig = 74 bytes total
     if (actualLen < 74) return false;
 
-    // First 2 bytes: algorithm ("Ed" for Ed25519)
-    if (decoded[0] != 'E' || decoded[1] != 'd') return false;
+    // First 2 bytes: algorithm tag.
+    //   "Ed" = legacy   : pure Ed25519 over the raw message
+    //   "ED" = prehashed : Ed25519 over BLAKE2b-512 of the message
+    // minisign has defaulted to the prehashed ("ED") format since 0.6, so we
+    // must accept both and verify accordingly (see VerifyManifestSignature).
+    if (decoded[0] != 'E') return false;
+    if (decoded[1] == 'd')      outPrehashed = false;
+    else if (decoded[1] == 'D') outPrehashed = true;
+    else                        return false;
 
     // Bytes 2-9: key id (we store as hex string for logging)
     std::string keyId;
@@ -526,7 +544,7 @@ static bool ParseMinisigFile(const std::string& minisigBody,
 static bool ParseMinisignPublicKey(const char* pubKeyStr,
                                    std::vector<unsigned char>& outPubKey)
 {
-    const size_t maxLen = sodium_base642bin_MAXLEN(strlen(pubKeyStr));
+    const size_t maxLen = strlen(pubKeyStr); // base64 text is always longer than its decoded form
     std::vector<unsigned char> decoded(maxLen);
     size_t actualLen = 0;
 
@@ -555,7 +573,8 @@ std::expected<void, std::string> models::InstanceConfig::VerifyManifestSignature
     // Parse the .minisig sidecar
     std::string keyId;
     std::vector<unsigned char> sig;
-    if (!ParseMinisigFile(minisigBody, keyId, sig))
+    bool prehashed = false;
+    if (!ParseMinisigFile(minisigBody, keyId, sig, prehashed))
     {
         return std::unexpected("Failed to parse manifest signature file (.minisig)");
     }
@@ -580,17 +599,36 @@ std::expected<void, std::string> models::InstanceConfig::VerifyManifestSignature
         return std::unexpected("Invalid compiled-in public key length");
     }
 
-    // Verify signature over raw manifest bytes
-    const int result = crypto_sign_verify_detached(
-        sig.data(),
-        reinterpret_cast<const unsigned char*>(manifestBody.data()),
-        manifestBody.size(),
-        pubKey.data()
-    );
+    // Verify the detached Ed25519 signature. In prehashed ("ED") mode the
+    // signature covers BLAKE2b-512 of the body (minisign's default), so we must
+    // hash the manifest first and verify over the 64-byte digest; in legacy
+    // ("Ed") mode the signature covers the raw body directly.
+    int result;
+    if (prehashed)
+    {
+        unsigned char digest[crypto_generichash_BYTES_MAX];
+        crypto_generichash(
+            digest, sizeof digest,
+            reinterpret_cast<const unsigned char*>(manifestBody.data()),
+            manifestBody.size(),
+            nullptr, 0
+        );
+        result = crypto_sign_verify_detached(sig.data(), digest, sizeof digest, pubKey.data());
+    }
+    else
+    {
+        result = crypto_sign_verify_detached(
+            sig.data(),
+            reinterpret_cast<const unsigned char*>(manifestBody.data()),
+            manifestBody.size(),
+            pubKey.data()
+        );
+    }
 
     if (result != 0)
     {
-        spdlog::error("VerifyManifestSignature: Ed25519 signature verification FAILED");
+        spdlog::error("VerifyManifestSignature: Ed25519 signature verification FAILED ({} mode)",
+                      prehashed ? "prehashed" : "legacy");
         return std::unexpected("Manifest signature is invalid - the update manifest may have been tampered with");
     }
 

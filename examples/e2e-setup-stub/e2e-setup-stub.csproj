@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net10.0</TargetFramework>
+        <RootNamespace>E2ESetupStub</RootNamespace>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <!--
+            Targeting win-x64 so that GetBinaryTypeA returns a valid binary type
+            on the GitHub Actions windows-2022 runner. The apphost wrapper produced
+            by the .NET SDK is a real Win32 PE, which causes the vicius updater to
+            launch it via CreateProcess (the EXE path in ExecuteSetup).
+        -->
+        <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+        <SelfContained>false</SelfContained>
+        <PublishSingleFile>true</PublishSingleFile>
+        <AssemblyName>e2e-setup-stub</AssemblyName>
+    </PropertyGroup>
+
+</Project>

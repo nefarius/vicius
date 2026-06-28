@@ -178,6 +178,228 @@ jobs:
       - name: Build examples.sln
         run: dotnet build "examples.sln" -c Release
 
+  # ─── E2E Tests ─────────────────────────────────────────────────────────────
+  e2e:
+    name: E2E Tests (x64)
+    runs-on: windows-2022
+    needs: [build]
+    permissions:
+      contents: read
+      packages: write   # required to read/write the vcpkg NuGet binary cache
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          submodules: false
+          persist-credentials: false
+
+      - name: Init vcpkg submodule (shallow)
+        shell: pwsh
+        run: git submodule update --init --depth 1 vcpkg
+
+      - name: Configure NuGet credentials for vcpkg binary cache
+        shell: pwsh
+        run: |
+          nuget sources add `
+            -Name "GitHubPackages" `
+            -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" `
+            -Username "${{ github.actor }}" `
+            -Password "${{ secrets.GITHUB_TOKEN }}" `
+            -StorePasswordInClearText
+          nuget setapikey "${{ secrets.GITHUB_TOKEN }}" `
+            -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce  # v2
+
+      - name: Set up .NET 10
+        uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2  # v5.3.0
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install minisign
+        shell: pwsh
+        run: |
+          # Chocolatey ships a pre-0.9 binary that lacks the -W (passwordless) flag.
+          # Download 0.12 directly from the upstream GitHub release instead.
+          $zip = Join-Path $env:RUNNER_TEMP 'minisign.zip'
+          Invoke-WebRequest `
+            -Uri 'https://github.com/jedisct1/minisign/releases/download/0.12/minisign-0.12-win64.zip' `
+            -OutFile $zip
+          Expand-Archive -Path $zip `
+            -DestinationPath (Join-Path $env:RUNNER_TEMP 'minisign') -Force
+          $exe = Join-Path $env:RUNNER_TEMP 'minisign' 'minisign-win64' 'x86_64' 'minisign.exe'
+          Add-Content -Path $env:GITHUB_PATH -Value (Split-Path $exe)
+
+      # ── Ephemeral signing key (generated fresh every run, never committed) ──
+
+      - name: Generate ephemeral minisign keypair
+        shell: pwsh
+        run: |
+          minisign -G -W `
+            -p "$env:RUNNER_TEMP\e2e.pub" `
+            -s "$env:RUNNER_TEMP\e2e.key"
+          # Second line of the .pub file is the raw base64 key string (RWS...)
+          $pubKey = (Get-Content "$env:RUNNER_TEMP\e2e.pub")[1]
+          "E2E_MINISIGN_PUBKEY=$pubKey" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Write signed-manifest variant customize header
+        shell: pwsh
+        run: |
+          $template = Get-Content 'tests\e2e\include\sig\ViciusPostCustomizeMe.h.tpl' -Raw
+          $header = $template.Replace('%%PUBLIC_KEY%%', $env:E2E_MINISIGN_PUBKEY)
+          Set-Content -Path 'tests\e2e\include\sig\ViciusPostCustomizeMe.h' -Value $header
+
+      # ── Compile E2E updater variants (x64 only) ────────────────────────────
+
+      - name: Build main E2E updater (NV_FLAGS_ALLOW_HTTP_DOWNLOAD, localhost URL)
+        shell: pwsh
+        run: |
+          msbuild "vīcĭus.sln" `
+            /m `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:UpdaterName="e2e_Main_Updater" `
+            /p:CustomIncludes="$env:GITHUB_WORKSPACE\tests\e2e\include\main\" `
+            /p:CI=true
+
+      - name: Build signed-manifest E2E updater (+ NV_MANIFEST_PUBLIC_KEY)
+        shell: pwsh
+        run: |
+          # Each updater variant compiles into its own IntDir (keyed by
+          # UpdaterName in the .vcxproj), so this variant always builds fresh
+          # against the sig CustomIncludes without disturbing the main variant's
+          # already-produced bin\x64\e2e_Main_Updater.exe. No /t:Rebuild needed.
+          msbuild "vīcĭus.sln" `
+            /m `
+            /p:Configuration=Release `
+            /p:Platform=x64 `
+            /p:UpdaterName="e2eSig_Sig_Updater" `
+            /p:CustomIncludes="$env:GITHUB_WORKSPACE\tests\e2e\include\sig\" `
+            /p:CI=true
+
+      # ── Build .NET components ──────────────────────────────────────────────
+
+      - name: Publish setup stub (framework-dependent, win-x64)
+        shell: pwsh
+        run: |
+          dotnet publish examples\e2e-setup-stub\e2e-setup-stub.csproj `
+            -c Release -r win-x64 --no-self-contained `
+            -o stub-publish
+
+      - name: Build example server (for --no-build run in driver)
+        shell: pwsh
+        run: dotnet build examples\server\server.csproj -c Release --nologo
+
+      # ── Negative-control artifact ──────────────────────────────────────────
+
+      - name: Download vicius-x64 artifact (for HttpRejected test)
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          name: vicius-x64
+          path: prod-artifact
+
+      # ── Prepare E2E_ARTIFACTS_DIR ──────────────────────────────────────────
+
+      - name: Create artifacts directory and base files
+        shell: pwsh
+        run: |
+          $dir = "$env:GITHUB_WORKSPACE\e2e-artifacts"
+          New-Item -ItemType Directory -Path $dir -Force
+
+          # payload.zip — tiny archive the HappyZip updater will extract
+          $zipSrc = Join-Path $env:RUNNER_TEMP "zip-content"
+          New-Item -ItemType Directory -Path $zipSrc -Force
+          Set-Content -Path (Join-Path $zipSrc "test.txt") `
+            -Value "E2E test payload - vicius integration test"
+          Compress-Archive -Path "$zipSrc\*" `
+            -DestinationPath (Join-Path $dir "payload.zip") -Force
+
+          # setup.exe — the stub installer (must be a real PE; the apphost qualifies)
+          Copy-Item -Path "stub-publish\e2e-setup-stub.exe" `
+            -Destination (Join-Path $dir "setup.exe")
+
+          # updater_selfupdate.exe — the binary the self-updater DLL tries to swap in
+          Copy-Item -Path "bin\x64\e2e_Main_Updater.exe" `
+            -Destination (Join-Path $dir "updater_selfupdate.exe")
+
+          # Export paths for subsequent steps
+          $hash = (Get-FileHash (Join-Path $dir "payload.zip") -Algorithm SHA256).Hash.ToLowerInvariant()
+          "E2E_PAYLOAD_HASH=$hash" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "E2E_ARTIFACTS_DIR=$dir"  | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Generate, sign, and tamper the SignedManifest manifests
+        shell: pwsh
+        run: |
+          $dir = $env:E2E_ARTIFACTS_DIR
+          New-Item -ItemType Directory -Path (Join-Path $dir 'SignedManifest')    -Force
+          New-Item -ItemType Directory -Path (Join-Path $dir 'TamperedManifest') -Force
+
+          # Build the manifest as a PowerShell ordered hashtable and serialise with
+          # ConvertTo-Json.  A here-string (@"..."@) cannot be used here because
+          # its closing delimiter must sit at column 0, which conflicts with the YAML
+          # block-scalar indentation rules and triggers a YAML parse error.
+          $hash = $env:E2E_PAYLOAD_HASH
+          $manifestObj = [ordered]@{
+            shared = [ordered]@{
+              windowTitle               = 'E2E Signed Manifest Test'
+              productName               = 'E2E Test Product'
+              signatureVerificationMode = 'Disabled'
+            }
+            releases = @(
+              [ordered]@{
+                name        = 'E2E Signed Update v2.0.0'
+                version     = '2.0.0'
+                publishedAt = '2026-01-01T00:00:00Z'
+                downloadUrl = 'http://localhost:5200/api/e2e/artifacts/payload.zip'
+                checksum    = [ordered]@{
+                  checksumAlg = 'SHA256'
+                  checksum    = $hash
+                }
+              }
+            )
+          }
+          $manifest = $manifestObj | ConvertTo-Json -Depth 10
+
+          $manifestPath = Join-Path $dir 'SignedManifest\updates.json'
+          # Write with LF line endings so minisign signs exactly the bytes the
+          # server will serve (the endpoint uses File.OpenRead, not text mode).
+          [System.IO.File]::WriteAllText($manifestPath, $manifest.Replace("`r`n", "`n"))
+
+          # Sign with the ephemeral key (produces updates.json.minisig next to the file)
+          minisign -S -s "$env:RUNNER_TEMP\e2e.key" -m $manifestPath
+
+          # Tampered copy: mutate one field so the original signature no longer
+          # covers the body — the client should return NV_E_SERVER_RESPONSE=104.
+          $tampered = $manifest.Replace('"version": "2.0.0"', '"version": "9.9.9"')
+          [System.IO.File]::WriteAllText(
+            (Join-Path $dir 'TamperedManifest\updates.json'),
+            $tampered.Replace("`r`n", "`n"))
+          # Note: the server endpoint intentionally serves the ORIGINAL .minisig
+          # for TamperedManifest requests — no copy needed here.
+
+      # ── Run the test suite ─────────────────────────────────────────────────
+
+      - name: Run E2E test suite
+        shell: pwsh
+        run: |
+          pwsh tests\e2e\run-e2e.ps1 `
+            -MainBin      "bin\x64\e2e_Main_Updater.exe" `
+            -SigBin       "bin\x64\e2eSig_Sig_Updater.exe" `
+            -ProdBin      "prod-artifact\x64\example_Demo_Updater.exe" `
+            -ArtifactsDir "$env:E2E_ARTIFACTS_DIR" `
+            -ServerDir    "examples\server" `
+            -LogDir       "e2e-logs"
+
+      - name: Upload E2E logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: e2e-logs
+          path: e2e-logs/**
+          if-no-files-found: ignore
+
   # ─── Release ───────────────────────────────────────────────────────────────
   release:
     name: Publish GitHub Release
