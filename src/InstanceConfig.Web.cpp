@@ -1005,6 +1005,8 @@ namespace
 
                     if (shared.signatureConfig.has_value() && !strictVerification)
                         merged.signatureConfig = shared.signatureConfig.value();
+
+                    if (shared.hideRemindButton.has_value()) merged.hideRemindButton = shared.hideRemindButton.value();
                 }
 
                 return {};

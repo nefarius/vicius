@@ -37,6 +37,8 @@ namespace models
         SignatureVerificationStrategy signatureStrategy{SignatureVerificationStrategy::FromUpdaterBinary};
         /** Explicit certificate pin (used with FromConfiguration strategy) */
         std::optional<SignatureConfig> signatureConfig;
+        /** True to hide the "Remind me tomorrow" button in the UI */
+        bool hideRemindButton{false};
 
         MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME) { }
 
@@ -64,5 +66,6 @@ namespace models
                                                     signatureVerificationMode,
                                                     signaturePolicy,
                                                     signatureStrategy,
-                                                    signatureConfig)
+                                                    signatureConfig,
+                                                    hideRemindButton)
 }
