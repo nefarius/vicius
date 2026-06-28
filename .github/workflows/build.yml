@@ -222,10 +222,10 @@ jobs:
         shell: pwsh
         run: |
           # Chocolatey ships a pre-0.9 binary that lacks the -W (passwordless) flag.
-          # Download 0.11 directly from the upstream GitHub release instead.
+          # Download 0.12 directly from the upstream GitHub release instead.
           $zip = Join-Path $env:RUNNER_TEMP 'minisign.zip'
           Invoke-WebRequest `
-            -Uri 'https://github.com/jedisct1/minisign/releases/download/0.11/minisign-win64.zip' `
+            -Uri 'https://github.com/jedisct1/minisign/releases/download/0.12/minisign-0.12-win64.zip' `
             -OutFile $zip
           Expand-Archive -Path $zip `
             -DestinationPath (Join-Path $env:RUNNER_TEMP 'minisign') -Force
