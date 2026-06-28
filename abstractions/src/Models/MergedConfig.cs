@@ -8,9 +8,12 @@ namespace Nefarius.Vicius.Abstractions.Models;
 /// </summary>
 /// <remarks>Keep in sync with <see cref="SharedConfig" />.</remarks>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 public sealed class MergedConfig
 {
+    private ProductVersionDetectionImplementation _detection = null!;
+
     /// <summary>
     ///     The process window title visible in the taskbar.
     /// </summary>
@@ -25,15 +28,34 @@ public sealed class MergedConfig
 
     /// <summary>
     ///     The implementation to use to detect the locally installed product version to compare release versions against.
+    ///     Derived automatically from <see cref="Detection" />; do not set independently.
     /// </summary>
     [Required]
-    public required ProductVersionDetectionMethod DetectionMethod { get; set; }
+    public ProductVersionDetectionMethod DetectionMethod { get; private set; }
 
     /// <summary>
     ///     The details of the selected <see cref="DetectionMethod" />.
+    ///     Setting this property automatically keeps <see cref="DetectionMethod" /> in sync.
     /// </summary>
     [Required]
-    public required ProductVersionDetectionImplementation Detection { get; set; }
+    public required ProductVersionDetectionImplementation Detection
+    {
+        get => _detection;
+        set
+        {
+            DetectionMethod = value switch
+            {
+                RegistryValueConfig _ => ProductVersionDetectionMethod.RegistryValue,
+                FileVersionConfig _ => ProductVersionDetectionMethod.FileVersion,
+                FileSizeConfig _ => ProductVersionDetectionMethod.FileSize,
+                FileChecksumConfig _ => ProductVersionDetectionMethod.FileChecksum,
+                CustomExpressionConfig _ => ProductVersionDetectionMethod.CustomExpression,
+                FixedVersionConfig _ => ProductVersionDetectionMethod.FixedVersion,
+                _ => DetectionMethod
+            };
+            _detection = value;
+        }
+    }
 
     /// <summary>
     ///     URL pointing to a help article opening when an update error occurred.

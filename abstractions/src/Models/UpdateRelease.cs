@@ -44,7 +44,7 @@ public sealed class ChecksumParameters
     ///     The algorithm to use to calculate the checksum/hash.
     /// </summary>
     [Required]
-    public ChecksumAlgorithm ChecksumAlg { get; set; }
+    public required ChecksumAlgorithm ChecksumAlg { get; set; }
 }
 
 /// <summary>

@@ -6,7 +6,7 @@ alwaysApply: false
 
 # C++ ↔ C# Model Parity
 
-`src/models/*.hpp` is the **source of truth**. `abstractions/src/Models/*.cs` must mirror every serialized field.
+`src/models/*.{h,hpp}` is the **source of truth**. `abstractions/src/Models/*.cs` must mirror every serialized field.
 Whenever you change a model on either side, update the other in the same PR.
 
 ## File mapping

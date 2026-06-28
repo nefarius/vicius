@@ -13,7 +13,7 @@ public sealed class DateTimeOffsetConverter : JsonConverter<DateTimeOffset>
     private readonly string _format;
 
     /// <inheritdoc />
-    public DateTimeOffsetConverter(string format = "yyyy-MM-ddThh:mm:ssZ")
+    public DateTimeOffsetConverter(string format = "yyyy-MM-ddTHH:mm:ssZ")
     {
         _format = format;
     }
@@ -21,12 +21,16 @@ public sealed class DateTimeOffsetConverter : JsonConverter<DateTimeOffset>
     /// <inheritdoc />
     public override void Write(Utf8JsonWriter writer, DateTimeOffset date, JsonSerializerOptions options)
     {
-        writer.WriteStringValue(date.ToString(_format));
+        writer.WriteStringValue(date.ToUniversalTime().ToString(_format));
     }
 
     /// <inheritdoc />
     public override DateTimeOffset Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        return DateTime.ParseExact(reader.GetString(), _format, null);
+        return DateTimeOffset.ParseExact(
+            reader.GetString()!,
+            _format,
+            null,
+            System.Globalization.DateTimeStyles.AssumeUniversal);
     }
 }

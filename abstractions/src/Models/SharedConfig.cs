@@ -39,6 +39,7 @@ public sealed class SharedConfig
         {
             DetectionMethod = value switch
             {
+                null => null,
                 RegistryValueConfig _ => ProductVersionDetectionMethod.RegistryValue,
                 FileVersionConfig _ => ProductVersionDetectionMethod.FileVersion,
                 FileSizeConfig _ => ProductVersionDetectionMethod.FileSize,
