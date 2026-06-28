@@ -150,6 +150,7 @@ jobs:
     outputs:
       examples: ${{ steps.filter.outputs.examples }}
       abstractions: ${{ steps.filter.outputs.abstractions }}
+      abstractions_docs: ${{ steps.filter.outputs.abstractions_docs }}
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
         with:
@@ -165,7 +166,8 @@ jobs:
               - '.github/workflows/build.yml'
             abstractions:
               - 'abstractions/**'
-              - '!abstractions/docs/**'
+            abstractions_docs:
+              - 'abstractions/docs/**'
 
   # ─── Build examples ────────────────────────────────────────────────────────
   build-examples:
@@ -188,13 +190,19 @@ jobs:
     name: Generate Abstractions API docs
     runs-on: ubuntu-latest
     needs: changes
-    # Only auto-commit on pushes to master; skip for PRs and when nothing changed.
+    # Only auto-commit on pushes to master; skip for PRs, when nothing changed,
+    # or when only auto-generated docs were touched (bot commit loop prevention).
     if: >-
       github.event_name == 'push' &&
       github.ref == 'refs/heads/master' &&
-      needs.changes.outputs.abstractions == 'true'
+      needs.changes.outputs.abstractions == 'true' &&
+      needs.changes.outputs.abstractions_docs != 'true'
     permissions:
       contents: write
+    # Serialise concurrent runs so two rapid pushes cannot race on git push.
+    concurrency:
+      group: abstractions-docs
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
@@ -222,11 +230,18 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add abstractions/docs
-          git diff --cached --exit-code || git commit -m "Update API documentation"
+          if git diff --cached --exit-code; then
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "Update API documentation"
+            echo "committed=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Push changes
-        if: success() && steps.check-for-changes.outcome == 'success'
-        run: git push
+        if: steps.check-for-changes.outputs.committed == 'true'
+        run: |
+          git pull --rebase origin master
+          git push
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
