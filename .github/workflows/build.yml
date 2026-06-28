@@ -29,13 +29,19 @@ permissions:
 
 env:
   UPDATER_NAME: example_Demo_Updater
-  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+  VCPKG_BINARY_SOURCES: "clear;nuget,GitHubPackages,readwrite"
+  # Parallel matrix jobs may race to push the same internal vcpkg packages;
+  # -SkipDuplicate makes nuget exit 0 instead of 1 when a version already exists.
+  VCPKG_NUGET_PUSH_OPTIONS: "-SkipDuplicate"
 
 jobs:
   # ─── Build ─────────────────────────────────────────────────────────────────
   build:
     name: Build (${{ matrix.platform }})
     runs-on: windows-2022
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         # Solution platform names (x86 maps to Win32 in the .vcxproj)
@@ -45,19 +51,25 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
-        # The vcpkg submodule is large (~200 MB); the runner ships its own
-        # preinstalled vcpkg, so we skip cloning it.
         with:
           submodules: false
           persist-credentials: false
 
-      # x-gha binary cache requires these two vars to be exported explicitly.
-      - name: Export GHA cache variables for vcpkg
-        uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b  # v7
-        with:
-          script: |
-            core.exportVariable('ACTIONS_CACHE_URL',      process.env.ACTIONS_CACHE_URL      || '');
-            core.exportVariable('ACTIONS_RUNTIME_TOKEN',  process.env.ACTIONS_RUNTIME_TOKEN  || '');
+      - name: Init vcpkg submodule (shallow)
+        shell: pwsh
+        run: git submodule update --init --depth 1 vcpkg
+
+      - name: Configure NuGet credentials for vcpkg binary cache
+        shell: pwsh
+        run: |
+          nuget sources add `
+            -Name "GitHubPackages" `
+            -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" `
+            -Username "${{ github.actor }}" `
+            -Password "${{ secrets.GITHUB_TOKEN }}" `
+            -StorePasswordInClearText
+          nuget setapikey "${{ secrets.GITHUB_TOKEN }}" `
+            -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
       # ── Version stamping ───────────────────────────────────────────────────
 
@@ -130,6 +142,41 @@ jobs:
           name: vicius-${{ matrix.platform }}
           path: bin/**/*.exe
           if-no-files-found: error
+
+  # ─── Detect changed paths ──────────────────────────────────────────────────
+  changes:
+    name: Detect changed paths
+    runs-on: ubuntu-latest
+    outputs:
+      examples: ${{ steps.filter.outputs.examples }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          persist-credentials: false
+      - uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590  # v3.0.3
+        id: filter
+        with:
+          filters: |
+            examples:
+              - 'examples/**'
+              - 'examples.sln'
+              - '.github/workflows/build.yml'
+
+  # ─── Build examples ────────────────────────────────────────────────────────
+  build-examples:
+    name: Build examples solution
+    runs-on: ubuntu-latest
+    needs: changes
+    if: needs.changes.outputs.examples == 'true'
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2  # v5.3.0
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build examples.sln
+        run: dotnet build "examples.sln" -c Release
 
   # ─── Release ───────────────────────────────────────────────────────────────
   release:
