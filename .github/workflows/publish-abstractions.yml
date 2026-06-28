@@ -1,0 +1,50 @@
+name: Publish Abstractions NuGet Package
+
+on:
+  push:
+    # Trigger only on abstraction-specific tags (e.g. abstractions-v1.5.0).
+    # This avoids collision with the C++ updater's vX.Y.Z release tags.
+    tags:
+      - 'abstractions-v*'
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write   # required for GitHub OIDC token issuance (Trusted Publishing)
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          fetch-depth: 0   # MinVer needs full history to compute the version
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@9a946fdbd5fb07b82b2f5a4466058b876ab72bb2  # v5.3.0
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Modify README for NuGet (strip HTML img tag)
+        run: sed -i 's/# <img[^>]*>/# /' abstractions/README.md
+
+      - name: Build
+        run: dotnet build abstractions/src/Nefarius.Vicius.Abstractions.csproj -c Release
+
+      - name: Pack
+        run: dotnet pack abstractions/src/Nefarius.Vicius.Abstractions.csproj -c Release -o abstractions/nupkg
+
+      # Exchange the GitHub OIDC token for a short-lived NuGet API key.
+      # Must run immediately before the push step (key expires in ~1 hour).
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: Nefarius   # nuget.org profile name (package owner, not email)
+
+      - name: Publish to NuGet.org
+        run: |
+          dotnet nuget push abstractions/nupkg/*.nupkg \
+            --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate

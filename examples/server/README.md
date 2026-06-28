@@ -17,4 +17,4 @@ docker build --push -t nefarius.azurecr.io/nefarius-vicius-server:latest .
 - [NJsonSchema for .NET](https://github.com/RicoSuter/NJsonSchema)
 - [FastEndpoints](https://fast-endpoints.com/)
 - [Nefarius.Utilities.AspNetCore](https://github.com/nefarius/Nefarius.Utilities.AspNetCore)
-- [Nefarius.Vicius.Abstractions](https://github.com/nefarius/Nefarius.Vicius.Abstractions)
+- [Nefarius.Vicius.Abstractions](../../abstractions/) (co-located in this repo)

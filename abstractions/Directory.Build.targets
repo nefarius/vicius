@@ -1,0 +1,5 @@
+<Project>
+  <!-- Intentionally empty: stops MSBuild from walking up to the root
+       Directory.Build.targets (which imports vcpkg) when building the
+       C# abstractions library. -->
+</Project>

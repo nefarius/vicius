@@ -1,0 +1,44 @@
+---
+description: Enforces cross-language parity between C++ model headers and their C# mirror types. Auto-attaches whenever a model file is open.
+globs: src/models/**,abstractions/src/Models/**,abstractions/src/Converters/**
+alwaysApply: false
+---
+
+# C++ ↔ C# Model Parity
+
+`src/models/*.hpp` is the **source of truth**. `abstractions/src/Models/*.cs` must mirror every serialized field.
+Whenever you change a model on either side, update the other in the same PR.
+
+## File mapping
+
+| C++ (`src/models/`) | C# (`abstractions/src/Models/`) |
+|---|---|
+| `CommonTypes.hpp` | `CommonTypes.cs` |
+| `SignatureValidation.hpp` | `SignatureValidation.cs` |
+| `ProductDetection.hpp` | `ProductDetection.cs` |
+| `DownloadLocationConfig.h` | `DownloadLocationConfig.cs` |
+| `SharedConfig.hpp` | `SharedConfig.cs` |
+| `MergedConfig.hpp` | `MergedConfig.cs` |
+| `UpdateRelease.hpp` | `UpdateRelease.cs` |
+| `UpdateConfig.hpp` | `UpdateConfig.cs` |
+| `UpdateResponse.hpp` | `UpdateResponse.cs` |
+| `InstanceConfig.hpp` | `InstanceConfig.cs` |
+
+## Naming contract
+
+- C# properties are **PascalCase**; they serialize to the **camelCase** field names used in the C++
+  `NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT` macros (the schema endpoint applies
+  `CamelCasePropertyNamesContractResolver` globally).
+- Enum member names must match `magic_enum::enum_name` output **exactly** (same casing, e.g. `WhenPresent`,
+  `FromUpdaterBinary`). Use `[EnumMember(Value = nameof(...))]` on the C# side.
+
+## Serialized-member checklist
+
+When adding or removing a serialized member:
+
+1. **C++ side**: update both the class body **and** the `NLOHMANN_DEFINE_TYPE_*` argument list.
+2. **C# side**: add/remove the property and update XML doc comments.
+3. **`SharedConfig` / `MergedConfig`** are intentionally kept in sync with each other
+   (see `\remarks Keep in sync with …` in both files). Update both when either changes.
+4. Only fields listed in the C++ serializer macro cross the wire — runtime-only members of
+   `InstanceConfig` (window handle, task handle, etc.) must **not** appear in the C# model.
