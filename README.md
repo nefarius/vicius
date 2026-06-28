@@ -113,6 +113,21 @@ For more details [check the issue tracker](../../issues).
 
 [<img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/jetbrains/jetbrains-original.svg" title="JetBrains ReSharper" alt="JetBrains" width="120" height="120"/>](https://www.jetbrains.com/resharper/)
 
+## C# Abstractions Library
+
+The [`abstractions/`](abstractions/) directory contains **Nefarius.Vicius.Abstractions** — the managed (C#) mirror of
+the C++ JSON payload models.
+
+- **External consumers** (backend servers, tooling) reference it as a
+  [NuGet package](https://www.nuget.org/packages/Nefarius.Vicius.Abstractions/).
+- **The [example server](examples/server)** in this repo references it directly as a `ProjectReference` to the
+  co-located [`abstractions/`](abstractions/) project, so a single PR can update both the C++ models and the C# types
+  together.
+
+> **Migrating from the old standalone package?**
+> The standalone [Nefarius.Vicius.Abstractions](https://github.com/nefarius/Nefarius.Vicius.Abstractions) repository has
+> been archived. The package id and namespace are unchanged; simply update your package source/version.
+
 ## Sources & 3rd party credits
 
 This tool benefits from these awesome projects ❤ (appearance in no special order):

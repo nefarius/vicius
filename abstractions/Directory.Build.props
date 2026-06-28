@@ -1,0 +1,34 @@
+<Project>
+
+  <PropertyGroup>
+    <!-- Copyright information -->
+    <Authors>Benjamin Höglinger-Stelzer</Authors>
+    <Copyright>Copyright © Benjamin Höglinger-Stelzer 2022-2026</Copyright>
+
+    <!-- Package Icon -->
+    <PackageIcon>NSS-128x128.png</PackageIcon>
+    <PackageIconUrl />
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+
+    <!-- Common solution settings -->
+    <OutputPath>$(SolutionDir)bin\</OutputPath>
+    <LangVersion>latest</LangVersion>
+
+    <!-- Docs and symbols generation -->
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Icon is optional: copy NSS-128x128.png from the old standalone repo into
+         abstractions/assets/ to have it included in the NuGet package. -->
+    <None Include="$(MSBuildThisFileDirectory)..\assets\NSS-128x128.png"
+          Pack="true" PackagePath="\"
+          Condition="Exists('$(MSBuildThisFileDirectory)..\assets\NSS-128x128.png')" />
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>

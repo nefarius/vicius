@@ -159,6 +159,7 @@ jobs:
           filters: |
             examples:
               - 'examples/**'
+              - 'abstractions/**'
               - 'examples.sln'
               - '.github/workflows/build.yml'
 
