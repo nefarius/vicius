@@ -493,12 +493,13 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
     }
 
 exit:
-    if (!success)
+    // Could not even launch the setup (win32Error is set by the goto exit paths).
+    if (win32Error != ERROR_SUCCESS)
     {
-        return std::unexpected(win32Error != ERROR_SUCCESS
-                                   ? std::format("Setup failed: {} (exitCode={}, win32Error={:#x})",
-                                                 winapi::GetLastErrorStdStr(win32Error), exitCode, win32Error)
-                                   : std::format("Setup failed with exit code {}", exitCode));
+        return std::unexpected(std::format("Setup failed: {} (win32Error={:#x})",
+                                           winapi::GetLastErrorStdStr(win32Error), win32Error));
     }
-    return SetupResult{exitCode, win32Error};
+
+    // Process ran to completion — carry the real exit code whether it succeeded or not.
+    return SetupResult{.exitCode = exitCode, .win32Error = win32Error, .succeeded = success};
 }

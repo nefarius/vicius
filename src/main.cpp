@@ -384,18 +384,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             if (setupStatus->hasFinished && setupStatus->result.has_value())
             {
                 const auto& setupResult = *setupStatus->result;
-                if (setupResult.has_value())
+                if (setupResult.has_value() && setupResult->succeeded)
                 {
-                    spdlog::info("Silent update: setup finished; exitCode={}, win32Error={}",
-                                 setupResult->exitCode, setupResult->win32Error);
+                    spdlog::info("Silent update: setup finished successfully; exitCode={}",
+                                 setupResult->exitCode);
                     return cfg.GetSuccessExitCode(NV_S_UPDATE_FINISHED);
                 }
-                else
-                {
-                    spdlog::critical("Silent update: setup failed: {}", setupResult.error());
-                    cfg.TryDisplayErrorDialog("Silent update failed", setupResult.error());
-                    return NV_E_SETUP_FAILED;
-                }
+
+                const std::string detail = setupResult.has_value()
+                    ? std::format("Setup failed with exit code {}", setupResult->exitCode)
+                    : setupResult.error();
+                spdlog::critical("Silent update: setup failed: {}", detail);
+                cfg.TryDisplayErrorDialog("Silent update failed", detail);
+                return NV_E_SETUP_FAILED;
             }
 
             // Neither running nor finished with a result — treat as failure.
@@ -715,6 +716,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             case WizardPage::DownloadAndInstall:
             {
                 static DWORD lastExitCode = 0;
+                static DWORD lastWin32Error = ERROR_SUCCESS;
                 static std::atomic<double> totalToDownload = 0;
                 static std::atomic<double> totalDownloaded = 0;
 
@@ -937,25 +939,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                             if (setupResult.has_value())
                             {
                                 const auto& sr = *setupResult;
-                                spdlog::info("Setup finished successfully; exitCode: {}, win32Error: {}",
-                                             sr.exitCode, sr.win32Error);
-
-                                if (sr.win32Error == ERROR_SUCCESS && winapi::IsMsiExecErrorCode(sr.exitCode))
+                                if (sr.succeeded)
                                 {
-                                    spdlog::error("msiexec failed with {} ({})", winapi::GetLastErrorStdStr(sr.exitCode), sr.exitCode);
-                                    lastExitCode = sr.exitCode;
-                                    SetLastError(sr.win32Error);
-                                    instStep = DownloadAndInstallStep::InstallFailed;
+                                    spdlog::info("Setup finished successfully; exitCode: {}, win32Error: {}",
+                                                 sr.exitCode, sr.win32Error);
+                                    instStep = DownloadAndInstallStep::InstallSucceeded;
                                 }
                                 else
                                 {
-                                    SetLastError(sr.win32Error);
-                                    instStep = DownloadAndInstallStep::InstallSucceeded;
+                                    spdlog::error("Setup failed; exitCode: {}, win32Error: {}",
+                                                  sr.exitCode, sr.win32Error);
+                                    lastExitCode   = sr.exitCode;
+                                    lastWin32Error = sr.win32Error;
+                                    cfg.SetLastDownloadError({});
+                                    instStep = DownloadAndInstallStep::InstallFailed;
                                 }
                             }
                             else
                             {
+                                // Launch or extraction failure — only a descriptive string is available.
                                 spdlog::error("Setup failed: {}", setupResult.error());
+                                lastExitCode   = 0;
+                                lastWin32Error = ERROR_SUCCESS;
                                 cfg.SetLastDownloadError(setupResult.error());
                                 instStep = DownloadAndInstallStep::InstallFailed;
                             }
@@ -977,27 +982,34 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                                                          nullptr, SW_SHOWNORMAL);
                                        });
 
-                        if (GetLastError() == ERROR_SUCCESS)
+                        if (lastWin32Error == ERROR_SUCCESS && lastExitCode != 0)
                         {
+                            // Process ran but returned a non-success exit code.
                             ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE
                                         " Error! Installation failed with an unexpected exit code (%lu).",
                                         lastExitCode);
 
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(15));
                             if (winapi::IsMsiExecErrorCode(lastExitCode))
                             {
-                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(15));
                                 ImGui::TextWrapped("Setup engine error: %s", winapi::GetLastErrorStdStr(lastExitCode).c_str());
                             }
                             else
                             {
-                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(15));
                                 ImGui::Text("Setup exit code: %lu", lastExitCode);
                             }
+                        }
+                        else if (const auto details = cfg.GetLastDownloadError(); !details.empty())
+                        {
+                            // Launch or extraction failure — surface the descriptive error string.
+                            ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed.");
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(15));
+                            ImGui::TextWrapped("%s", details.c_str());
                         }
                         else
                         {
                             ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Error! Installation failed, error %s.",
-                                        winapi::GetLastErrorStdStr().c_str());
+                                        winapi::GetLastErrorStdStr(lastWin32Error).c_str());
                         }
 
                         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(35));
