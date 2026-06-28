@@ -13,6 +13,8 @@ Function-scoped fixtures (reset for every test):
 
 from __future__ import annotations
 
+import ctypes
+import ctypes.wintypes
 import ipaddress
 import os
 import shutil
@@ -84,43 +86,138 @@ def _cert_sha1_thumbprint(cert_path: Path) -> str:
     return cert.fingerprint(_h.SHA1()).hex().upper()
 
 
+def _load_cert_der(cert_path: Path) -> bytes:
+    """Convert a PEM certificate file to DER bytes."""
+    from cryptography import x509 as _cx509
+    from cryptography.hazmat.primitives import serialization as _ser
+    return _cx509.load_pem_x509_certificate(cert_path.read_bytes()).public_bytes(
+        _ser.Encoding.DER
+    )
+
+
 def _trust_cert_in_root_store(cert_path: Path) -> str:
     """
-    Import cert into CurrentUser\\Root (Schannel trusts both LocalMachine and
-    CurrentUser root stores; the user store requires no administrator rights).
+    Import cert into CurrentUser\\Root via CertAddEncodedCertificateToStore.
+
+    Calls the raw Windows CryptAPI directly (no certutil, no PowerShell).
+    The raw API has no UI layer — Windows security dialogs are added by higher-level
+    callers (certutil, MMC) and never appear at this level, so CI never hangs.
+    Schannel trusts both LocalMachine and CurrentUser root stores; the user store
+    requires no administrator rights.
+
     Returns the SHA-1 thumbprint for later removal.
     """
-    result = subprocess.run(
-        ["certutil", "-user", "-addstore", "-f", "Root", str(cert_path)],
-        capture_output=True,
-        text=True,
+    _crypt32 = ctypes.windll.crypt32
+    _crypt32.CertOpenStore.restype = ctypes.c_void_p
+    _crypt32.CertAddEncodedCertificateToStore.restype = ctypes.c_bool
+    _crypt32.CertCloseStore.restype = ctypes.c_bool
+
+    CERT_STORE_PROV_SYSTEM      = 10
+    X509_ASN_ENCODING           = 0x00000001
+    CERT_SYSTEM_STORE_CURRENT_USER = 0x00010000
+    CERT_STORE_ADD_REPLACE_EXISTING = 3
+
+    der = _load_cert_der(cert_path)
+    buf = (ctypes.c_ubyte * len(der))(*der)
+
+    h_store = _crypt32.CertOpenStore(
+        CERT_STORE_PROV_SYSTEM,
+        X509_ASN_ENCODING,
+        None,
+        CERT_SYSTEM_STORE_CURRENT_USER,
+        ctypes.c_wchar_p("Root"),
     )
-    if result.returncode != 0:
+    if not h_store:
+        err = ctypes.GetLastError()
         raise RuntimeError(
-            "certutil -user -addstore Root failed.\n"
-            f"stdout: {result.stdout.strip()}\n"
-            f"stderr: {result.stderr.strip()}\n"
-            "Import the cert manually:\n"
-            f"  certutil -user -addstore Root \"{cert_path}\""
+            f"CertOpenStore(CurrentUser\\Root) failed: error {err:#010x}.\n"
+            "Import the test CA manually:\n"
+            "  $cert = New-Object Security.Cryptography.X509Certificates.X509Certificate2"
+            f" '{cert_path}'\n"
+            "  $store = New-Object Security.Cryptography.X509Certificates.X509Store"
+            "('Root','CurrentUser')\n"
+            "  $store.Open('ReadWrite'); $store.Add($cert); $store.Close()"
         )
+    try:
+        ok = _crypt32.CertAddEncodedCertificateToStore(
+            ctypes.c_void_p(h_store),
+            X509_ASN_ENCODING,
+            buf,
+            ctypes.c_ulong(len(der)),
+            CERT_STORE_ADD_REPLACE_EXISTING,
+            None,
+        )
+        if not ok:
+            err = ctypes.GetLastError()
+            raise RuntimeError(
+                f"CertAddEncodedCertificateToStore failed: error {err:#010x}."
+            )
+    finally:
+        _crypt32.CertCloseStore(ctypes.c_void_p(h_store), 0)
+
     return _cert_sha1_thumbprint(cert_path)
 
 
 def _remove_cert_from_root_store(thumbprint: str) -> None:
-    """Remove cert by SHA-1 thumbprint from CurrentUser\\Root; raises on failure."""
-    result = subprocess.run(
-        ["certutil", "-user", "-delstore", "Root", thumbprint],
-        capture_output=True,
-        text=True,
+    """
+    Remove cert by SHA-1 thumbprint from CurrentUser\\Root via CryptoAPI.
+    Raises RuntimeError on failure so teardown errors are always visible.
+    """
+    _crypt32 = ctypes.windll.crypt32
+    _crypt32.CertOpenStore.restype = ctypes.c_void_p
+    _crypt32.CertFindCertificateInStore.restype = ctypes.c_void_p
+    _crypt32.CertDeleteCertificateFromStore.restype = ctypes.c_bool
+    _crypt32.CertCloseStore.restype = ctypes.c_bool
+
+    CERT_STORE_PROV_SYSTEM      = 10
+    X509_ASN_ENCODING           = 0x00000001
+    CERT_SYSTEM_STORE_CURRENT_USER = 0x00010000
+    CERT_FIND_SHA1_HASH         = 0x00010000  # CERT_COMPARE_SHA1_HASH(1) << 16
+
+    class _BLOB(ctypes.Structure):
+        _fields_ = [
+            ("cbData", ctypes.c_ulong),
+            ("pbData", ctypes.POINTER(ctypes.c_ubyte)),
+        ]
+
+    sha1_bytes = bytes.fromhex(thumbprint)
+    sha1_buf   = (ctypes.c_ubyte * len(sha1_bytes))(*sha1_bytes)
+    blob       = _BLOB(len(sha1_bytes), sha1_buf)
+
+    h_store = _crypt32.CertOpenStore(
+        CERT_STORE_PROV_SYSTEM,
+        X509_ASN_ENCODING,
+        None,
+        CERT_SYSTEM_STORE_CURRENT_USER,
+        ctypes.c_wchar_p("Root"),
     )
-    if result.returncode != 0:
+    if not h_store:
+        err = ctypes.GetLastError()
         raise RuntimeError(
-            f"certutil -user -delstore Root {thumbprint} failed — "
-            f"test certificate may remain in the CurrentUser\\Root store.\n"
-            f"stdout: {result.stdout.strip()}\n"
-            f"stderr: {result.stderr.strip()}\n"
-            f"Remove manually: certutil -user -delstore Root {thumbprint}"
+            f"CertOpenStore(CurrentUser\\Root) for deletion failed: error {err:#010x}.\n"
+            f"Remove manually: Remove-Item 'Cert:\\CurrentUser\\Root\\{thumbprint}'"
         )
+    try:
+        p_cert = _crypt32.CertFindCertificateInStore(
+            ctypes.c_void_p(h_store),
+            X509_ASN_ENCODING,
+            0,
+            CERT_FIND_SHA1_HASH,
+            ctypes.byref(blob),
+            None,
+        )
+        if not p_cert:
+            return  # cert was already removed; not an error
+        # CertDeleteCertificateFromStore always frees p_cert even on failure.
+        ok = _crypt32.CertDeleteCertificateFromStore(ctypes.c_void_p(p_cert))
+        if not ok:
+            err = ctypes.GetLastError()
+            raise RuntimeError(
+                f"CertDeleteCertificateFromStore failed: error {err:#010x}.\n"
+                f"Remove manually: Remove-Item 'Cert:\\CurrentUser\\Root\\{thumbprint}'"
+            )
+    finally:
+        _crypt32.CertCloseStore(ctypes.c_void_p(h_store), 0)
 
 
 # ===========================================================================
