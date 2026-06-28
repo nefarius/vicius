@@ -30,6 +30,9 @@ permissions:
 env:
   UPDATER_NAME: example_Demo_Updater
   VCPKG_BINARY_SOURCES: "clear;nuget,GitHubPackages,readwrite"
+  # Parallel matrix jobs may race to push the same internal vcpkg packages;
+  # -SkipDuplicate makes nuget exit 0 instead of 1 when a version already exists.
+  VCPKG_NUGET_PUSH_OPTIONS: "-SkipDuplicate"
 
 jobs:
   # ─── Build ─────────────────────────────────────────────────────────────────
@@ -65,6 +68,8 @@ jobs:
             -Username "${{ github.actor }}" `
             -Password "${{ secrets.GITHUB_TOKEN }}" `
             -StorePasswordInClearText
+          nuget setapikey "${{ secrets.GITHUB_TOKEN }}" `
+            -Source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
       # ── Version stamping ───────────────────────────────────────────────────
 
