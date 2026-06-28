@@ -36,7 +36,10 @@ internal sealed class E2ESelfUpdateEndpoint : EndpointWithoutRequest
             Instance = new UpdateConfig
             {
                 // A version that will always exceed whatever the built updater's version is.
-                LatestVersion = System.Version.Parse("999.0.0.0"),
+                // Must be 3-part semver: the client parses this with semver and the updater's
+                // own version is derived as major.minor.build, so a 4-part Windows version
+                // (e.g. "999.0.0.0") fails to parse and silently disables the self-update check.
+                LatestVersion = System.Version.Parse("999.0.0"),
                 LatestUrl = $"{baseUrl}/api/e2e/artifacts/updater_selfupdate.exe"
             },
             Shared = new SharedConfig
