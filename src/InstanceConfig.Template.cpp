@@ -468,7 +468,7 @@ std::string models::InstanceConfig::RenderInjaTemplate(const std::string& tpl, c
                              const semver::version lhs = semver::version::parse(lhsValue);
                              const semver::version rhs = semver::version::parse(rhsValue);
 
-                             return util::CompareVersions(lhs, rhs) == 0;
+                             return lhs == rhs;
                          }
                          catch (const std::exception& ex)
                          {
