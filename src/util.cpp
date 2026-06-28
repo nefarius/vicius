@@ -189,33 +189,48 @@ namespace util
 
 namespace winapi
 {
-    semver::version GetWin32ResourceFileVersion(const std::filesystem::path& filePath)
+    std::expected<semver::version, std::string> GetWin32ResourceFileVersion(const std::filesystem::path& filePath)
     {
         const auto versionResult = nefarius::winapi::fs::GetFileVersionFromFile(filePath.string());
 
         if (!versionResult)
         {
-            return semver::version{0, 0, 1};
+            return std::unexpected("No FILEVERSION resource in " + filePath.string());
         }
 
         auto str = to_string(versionResult.value());
         util::toSemVerCompatible(str);
 
-        return semver::version::parse(str);
+        try
+        {
+            return semver::version::parse(str);
+        }
+        catch (const std::exception& e)
+        {
+            return std::unexpected("Failed to parse FILEVERSION '" + str + "': " + e.what());
+        }
     }
 
-    semver::version GetWin32ResourceProductVersion(const std::filesystem::path& filePath)
+    std::expected<semver::version, std::string> GetWin32ResourceProductVersion(const std::filesystem::path& filePath)
     {
         const auto versionResult = nefarius::winapi::fs::GetProductVersionFromFile(filePath.string());
 
         if (!versionResult)
         {
-            return semver::version{0, 0, 1};
+            return std::unexpected("No PRODUCTVERSION resource in " + filePath.string());
         }
 
         auto str = to_string(versionResult.value());
         util::toSemVerCompatible(str);
-        return semver::version::parse(str);
+
+        try
+        {
+            return semver::version::parse(str);
+        }
+        catch (const std::exception& e)
+        {
+            return std::unexpected("Failed to parse PRODUCTVERSION '" + str + "': " + e.what());
+        }
     }
 
     std::string GetLastErrorStdStr(DWORD errorCode)

@@ -128,14 +128,17 @@ function Stop-E2EServer([System.Diagnostics.Process] $job) {
 
 function Invoke-Scenario {
     param(
-        [string]   $Name,
-        [string]   $SourceBin,       # full path to the binary to copy
-        [string]   $ExeName,         # name the binary is copied to (determines tenant path)
-        [string]   $LocalVersion,    # --force-local-version value
-        [int]      $ExpectedExit,
-        [bool]     $SkipSelfUpdate   = $true,
-        [bool]     $NeedsInstall     = $false,
-        [hashtable]$Sidecar          = $null   # optional: @{ name = "..."; content = "..." }
+        [string]      $Name,
+        [string]      $SourceBin,                  # full path to the binary to copy
+        [string]      $ExeName,                    # name the binary is copied to (determines tenant path)
+        [string]      $LocalVersion    = '',        # --force-local-version value; empty = omit the flag
+        [int]         $ExpectedExit,
+        [bool]        $SkipSelfUpdate  = $true,
+        [bool]        $NeedsInstall    = $false,
+        [bool]        $UseLocalVersion = $true,     # false = omit --force-local-version (server-driven detection)
+        [hashtable]   $Sidecar         = $null,    # optional: @{ name = "..."; content = "..." }
+        [scriptblock] $PreScenario     = $null,    # runs before the binary is invoked
+        [scriptblock] $PostScenario    = $null     # runs in finally, even on failure
     )
 
     Write-Header "Scenario: $Name (expect exit $ExpectedExit)"
@@ -154,6 +157,11 @@ function Invoke-Scenario {
     $logFile = Join-Path $LogDir "$Name.log"
 
     try {
+        if ($null -ne $PreScenario) {
+            Write-Host "  Running pre-scenario hook..."
+            & $PreScenario
+        }
+
         # ── Optional install step (extracts DLL to Alternate Data Stream) ────
         if ($NeedsInstall) {
             Write-Host "  Running --install step..."
@@ -175,10 +183,15 @@ function Invoke-Scenario {
         $args = @(
             '--silent-update',
             '--ignore-busy-state',
-            '--force-local-version', $LocalVersion,
             '--log-to-file', $logFile,
             '--log-level', 'debug'
         )
+        # Only pass --force-local-version when the scenario uses FixedVersion detection.
+        # Server-driven detection scenarios (registry, file version) must omit it so the
+        # manifest's shared.detection block is honoured.
+        if ($UseLocalVersion -and $LocalVersion -ne '') {
+            $args = @('--force-local-version', $LocalVersion) + $args
+        }
         if ($SkipSelfUpdate) { $args += '--skip-self-update' }
 
         Write-Host "  Running: $ExeName $args"
@@ -215,6 +228,10 @@ function Invoke-Scenario {
     }
     finally {
         Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
+        if ($null -ne $PostScenario) {
+            Write-Host "  Running post-scenario hook..."
+            & $PostScenario
+        }
     }
 }
 
@@ -323,19 +340,106 @@ try {
             LocalVersion   = '0.0.1'
             ExpectedExit   = 104
             SkipSelfUpdate = $true
+        },
+
+        # ── Version parsing / 4-segment revision scenarios ───────────────────
+        # Reuse HappyZip (serves 2.0.0) by varying --force-local-version only.
+
+        @{
+            # Corrupt local version string must fall back to "outdated" (203)
+            # rather than hard-failing with NV_E_PRODUCT_DETECTION (105).
+            Name           = 'CorruptLocalVersion'
+            SourceBin      = $MainBin
+            ExeName        = 'e2e_HappyZip_Updater.exe'
+            LocalVersion   = 'not.a.version'
+            ExpectedExit   = 203
+            SkipSelfUpdate = $true
+        },
+        @{
+            # Local 4-segment "2.0.0.5" > server "2.0.0" (revision 0) => up-to-date.
+            Name           = 'LocalRevisionUpToDate'
+            SourceBin      = $MainBin
+            ExeName        = 'e2e_HappyZip_Updater.exe'
+            LocalVersion   = '2.0.0.5'
+            ExpectedExit   = 202
+            SkipSelfUpdate = $true
+        },
+        @{
+            # Local "2.0.0.0" equals server "2.0.0" (absent revision == 0) => up-to-date.
+            Name           = 'LocalRevisionEqual'
+            SourceBin      = $MainBin
+            ExeName        = 'e2e_HappyZip_Updater.exe'
+            LocalVersion   = '2.0.0.0'
+            ExpectedExit   = 202
+            SkipSelfUpdate = $true
+        },
+        @{
+            # Server advertises 4-segment "2.0.0.1"; local "2.0.0" (revision 0) is older => outdated.
+            Name           = 'ServerRevisionOutdated'
+            SourceBin      = $MainBin
+            ExeName        = 'e2e_FourSegment_Updater.exe'
+            LocalVersion   = '2.0.0'
+            ExpectedExit   = 203
+            SkipSelfUpdate = $true
+        },
+
+        # ── Detection-config corruption scenarios (no --force-local-version) ─
+
+        @{
+            # Registry value present but unparseable => treated as outdated (203).
+            Name            = 'CorruptRegistryVersion'
+            SourceBin       = $MainBin
+            ExeName         = 'e2e_CorruptRegistry_Updater.exe'
+            ExpectedExit    = 203
+            SkipSelfUpdate  = $true
+            UseLocalVersion = $false
+            PreScenario     = {
+                Write-Host "  Seeding HKCU:\Software\Nefarius\ViciusE2E with corrupt version..."
+                $null = New-Item -Path 'HKCU:\Software\Nefarius\ViciusE2E' -Force
+                Set-ItemProperty -Path 'HKCU:\Software\Nefarius\ViciusE2E' `
+                    -Name 'Version' -Value 'not_a_version' -Type String
+            }
+            PostScenario    = {
+                Write-Host "  Cleaning up HKCU:\Software\Nefarius\ViciusE2E..."
+                Remove-Item -Path 'HKCU:\Software\Nefarius\ViciusE2E' -Recurse -Force `
+                    -ErrorAction SilentlyContinue
+            }
+        },
+        @{
+            # Non-PE file has no version resource; GetWin32ResourceFileVersion returns
+            # std::unexpected, which the caller maps to outdated => 203.
+            Name            = 'CorruptFileVersion'
+            SourceBin       = $MainBin
+            ExeName         = 'e2e_CorruptFileVersion_Updater.exe'
+            ExpectedExit    = 203
+            SkipSelfUpdate  = $true
+            UseLocalVersion = $false
+        },
+        @{
+            # Negative control: registry key absent entirely => NV_E_PRODUCT_DETECTION (105).
+            # Confirms missing-key stays a hard error, not a graceful outdated fallback.
+            Name            = 'MissingRegistryKey'
+            SourceBin       = $MainBin
+            ExeName         = 'e2e_MissingRegistry_Updater.exe'
+            ExpectedExit    = 105
+            SkipSelfUpdate  = $true
+            UseLocalVersion = $false
         }
     )
 
     foreach ($s in $scenarios) {
         $invokeParams = @{
-            Name           = $s.Name
-            SourceBin      = $s.SourceBin
-            ExeName        = $s.ExeName
-            LocalVersion   = $s.LocalVersion
-            ExpectedExit   = $s.ExpectedExit
-            SkipSelfUpdate = $s.ContainsKey('SkipSelfUpdate') ? [bool]$s.SkipSelfUpdate : $true
-            NeedsInstall   = $s.ContainsKey('NeedsInstall')   ? [bool]$s.NeedsInstall   : $false
-            Sidecar        = $s.ContainsKey('Sidecar')        ? $s.Sidecar               : $null
+            Name            = $s.Name
+            SourceBin       = $s.SourceBin
+            ExeName         = $s.ExeName
+            LocalVersion    = $s.ContainsKey('LocalVersion')    ? $s.LocalVersion                    : ''
+            ExpectedExit    = $s.ExpectedExit
+            SkipSelfUpdate  = $s.ContainsKey('SkipSelfUpdate')  ? [bool]$s.SkipSelfUpdate             : $true
+            NeedsInstall    = $s.ContainsKey('NeedsInstall')    ? [bool]$s.NeedsInstall               : $false
+            UseLocalVersion = $s.ContainsKey('UseLocalVersion') ? [bool]$s.UseLocalVersion            : $true
+            Sidecar         = $s.ContainsKey('Sidecar')         ? $s.Sidecar                          : $null
+            PreScenario     = $s.ContainsKey('PreScenario')     ? $s.PreScenario                      : $null
+            PostScenario    = $s.ContainsKey('PostScenario')    ? $s.PostScenario                     : $null
         }
         $results.Add((Invoke-Scenario @invokeParams))
     }

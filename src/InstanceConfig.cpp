@@ -594,8 +594,11 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
             }
             catch (const std::exception& e)
             {
-                spdlog::error("Failed to convert value {} into SemVer, error: {}", asString, e.what());
-                return std::unexpected(std::format("String to SemVer conversion failed: {}", e.what()));
+                // The version string is present but unparseable. Treat the local install as
+                // outdated so the server's trusted update can proceed rather than hard-failing.
+                spdlog::warn("Cannot parse local version '{}' as SemVer ({}); treating as outdated",
+                             asString, e.what());
+                return true;
             }
         }
 
@@ -650,10 +653,14 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
 
             const std::wstring value = resource.GetValue();
 
+            // Convert once outside the try so the catch can log nVersion safely
+            // without risk of a second conversion throwing and masking the fallback.
+            const std::string nVersionRaw = ConvertWideToANSI(value);
+
             bool isOutdated = false;
             try
             {
-                std::string nVersion = ConvertWideToANSI(value);
+                std::string nVersion = nVersionRaw;
                 util::toSemVerCompatible(nVersion);
                 const semver::version localVersion = semver::version::parse(nVersion);
 
@@ -663,8 +670,11 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
             }
             catch (const std::exception& e)
             {
-                spdlog::error("Failed to convert value {} into SemVer, error: {}", ConvertWideToANSI(value), e.what());
-                return std::unexpected(std::format("String to SemVer conversion failed: {}", e.what()));
+                // The registry value is present but its content is not a parseable version string.
+                // Treat the local install as outdated so the server's trusted update can proceed.
+                spdlog::warn("Cannot parse registry version '{}' as SemVer ({}); treating as outdated",
+                             nVersionRaw, e.what());
+                return true;
             }
 
             return isOutdated;
@@ -691,38 +701,39 @@ std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutda
             }
 
             bool isOutdated = false;
-            try
+            switch (cfg.statement)
             {
-                switch (cfg.statement)
+                case VersionResource::FILEVERSION:
                 {
-                    case VersionResource::FILEVERSION:
+                    const auto fileVer = winapi::GetWin32ResourceFileVersion(filePath);
+                    if (!fileVer)
                     {
-                        const auto fileVer = winapi::GetWin32ResourceFileVersion(filePath);
-                        isOutdated =
-                            util::CompareVersions(release.GetDetectionSemVersion().value_or(fileVer), fileVer) > 0;
-                        break;
+                        spdlog::warn("{}; treating as outdated", fileVer.error());
+                        return true;
                     }
-                    case VersionResource::PRODUCTVERSION:
-                    {
-                        const auto prodVer = winapi::GetWin32ResourceProductVersion(filePath);
-                        isOutdated =
-                            util::CompareVersions(release.GetDetectionSemVersion().value_or(prodVer), prodVer) > 0;
-                        break;
-                    }
-                    case VersionResource::Invalid:
-                        spdlog::warn("Unexpected version resource statement");
-                        isOutdated = true;
-                        break;
+                    isOutdated =
+                        util::CompareVersions(release.GetDetectionSemVersion().value_or(*fileVer), *fileVer) > 0;
+                    break;
                 }
-
-                spdlog::debug("isOutdated = {}", isOutdated);
+                case VersionResource::PRODUCTVERSION:
+                {
+                    const auto prodVer = winapi::GetWin32ResourceProductVersion(filePath);
+                    if (!prodVer)
+                    {
+                        spdlog::warn("{}; treating as outdated", prodVer.error());
+                        return true;
+                    }
+                    isOutdated =
+                        util::CompareVersions(release.GetDetectionSemVersion().value_or(*prodVer), *prodVer) > 0;
+                    break;
+                }
+                case VersionResource::Invalid:
+                    spdlog::warn("Unexpected version resource statement");
+                    isOutdated = true;
+                    break;
             }
-            catch (...)
-            {
-                spdlog::error("Failed to get version resource from {}", filePath);
-                return std::unexpected("Failed to read file version resource");
-            }
 
+            spdlog::debug("isOutdated = {}", isOutdated);
             return isOutdated;
         }
         //
