@@ -73,9 +73,10 @@ namespace winapi
     /**
      * \brief Reads HKCU\...\Themes\Personalize!AppsUseLightTheme to determine whether
      *        the user has selected a light application theme in Windows Settings.
-     * \return true if light theme is active, false for dark or on any read failure.
+     * \return true if light theme is active, false for dark; or an unexpected string
+     *         describing the registry read failure so callers can log and fall back.
      */
-    bool IsLightThemeActive();
+    [[nodiscard]] std::expected<bool, std::string> IsLightThemeActive();
 
     /**
      * \brief Reads the system accent color via DwmGetColorizationColor and converts it to

@@ -401,7 +401,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // otherwise the effective font size becomes scale^2 on high DPI displays.
     ImGui::GetIO().FontGlobalScale = 1.0f;
 
-    g_theme = winapi::IsLightThemeActive() ? ui::Theme::Light : ui::Theme::Dark;
+    if (const auto lightTheme = winapi::IsLightThemeActive())
+        g_theme = *lightTheme ? ui::Theme::Light : ui::Theme::Dark;
+    else
+    {
+        spdlog::warn("Could not read Windows app theme, defaulting to dark: {}", lightTheme.error());
+        g_theme = ui::Theme::Dark;
+    }
     ui::LoadFonts(hInstance, 16, g_scaleFactor);
     ui::ApplyImGuiStyle(g_theme, g_scaleFactor);
     ImGui_ImplDX11_InvalidateDeviceObjects();
@@ -1145,9 +1151,13 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             // light and dark app mode in Windows Settings.
             if (lParam && lstrcmpW(reinterpret_cast<LPCWSTR>(lParam), L"ImmersiveColorSet") == 0)
             {
-                const ui::Theme newTheme = winapi::IsLightThemeActive()
-                    ? ui::Theme::Light
-                    : ui::Theme::Dark;
+                const auto lightResult = winapi::IsLightThemeActive();
+                if (!lightResult)
+                {
+                    spdlog::warn("ImmersiveColorSet: could not read Windows app theme: {}", lightResult.error());
+                    break;
+                }
+                const ui::Theme newTheme = *lightResult ? ui::Theme::Light : ui::Theme::Dark;
 
                 if (newTheme != g_theme)
                 {

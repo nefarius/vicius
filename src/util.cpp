@@ -560,7 +560,7 @@ namespace winapi
         (void)DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
     }
 
-    bool IsLightThemeActive()
+    std::expected<bool, std::string> IsLightThemeActive()
     {
         try
         {
@@ -572,9 +572,9 @@ namespace winapi
             const DWORD value = key.GetDwordValue(L"AppsUseLightTheme");
             return value != 0;
         }
-        catch (...)
+        catch (const std::exception& e)
         {
-            return false; // default to dark on any failure
+            return std::unexpected(std::string{e.what()});
         }
     }
 
@@ -583,7 +583,7 @@ namespace winapi
         // Theme-appropriate fallback accent:
         //   dark  → Fluent Win11 blue #60CDFF
         //   light → Win10/11 default blue #0078D4
-        const ImVec4 fallback = IsLightThemeActive()
+        const ImVec4 fallback = IsLightThemeActive().value_or(false)
             ? ImVec4{0.000f, 0.471f, 0.831f, 1.0f}  // #0078D4
             : ImVec4{0.376f, 0.804f, 1.000f, 1.0f};  // #60CDFF
 
