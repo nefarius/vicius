@@ -16,6 +16,8 @@ on:
       - 'assets/**'
       - '**/*.md'
       - '**/*.png'
+  # Allow manual bootstrapping of the initial docs generation and re-runs.
+  workflow_dispatch:
 
 # Cancel in-flight runs for the same ref (branch / PR).
 # Tag pushes are never cancelled so a release is never half-published.
@@ -190,13 +192,17 @@ jobs:
     name: Generate Abstractions API docs
     runs-on: ubuntu-latest
     needs: changes
-    # Only auto-commit on pushes to master; skip for PRs, when nothing changed,
-    # or when only auto-generated docs were touched (bot commit loop prevention).
+    # Run on manual dispatch (bootstrap / re-run), or on pushes to master where
+    # abstractions source changed but the auto-generated docs themselves did not
+    # (the docs-only guard prevents the bot's own commit from re-triggering this).
     if: >-
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/master' &&
-      needs.changes.outputs.abstractions == 'true' &&
-      needs.changes.outputs.abstractions_docs != 'true'
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event_name == 'push' &&
+        github.ref == 'refs/heads/master' &&
+        needs.changes.outputs.abstractions == 'true' &&
+        needs.changes.outputs.abstractions_docs != 'true'
+      )
     permissions:
       contents: write
     # Serialise concurrent runs so two rapid pushes cannot race on git push.
