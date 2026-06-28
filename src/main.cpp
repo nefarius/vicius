@@ -42,6 +42,9 @@ float g_scaledWidth;
 float g_scaledHeight;
 static HINSTANCE g_hInstance = nullptr;
 
+// Active UI theme (dark / light), follows the OS and updated on WM_SETTINGCHANGE
+static ui::Theme g_theme = ui::Theme::Dark;
+
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine, int iCmdShow)
 {
@@ -398,19 +401,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     // otherwise the effective font size becomes scale^2 on high DPI displays.
     ImGui::GetIO().FontGlobalScale = 1.0f;
 
+    g_theme = winapi::IsLightThemeActive() ? ui::Theme::Light : ui::Theme::Dark;
     ui::LoadFonts(hInstance, 16, g_scaleFactor);
-    ui::ApplyImGuiStyleDark(g_scaleFactor);
+    ui::ApplyImGuiStyle(g_theme, g_scaleFactor);
     ImGui_ImplDX11_InvalidateDeviceObjects();
     ImGui_ImplDX11_CreateDeviceObjects();
 
-    winapi::SetDarkMode(hwnd);
+    winapi::SetDarkMode(hwnd, g_theme == ui::Theme::Dark);
 
     // Show the window
     ::ShowWindow(hwnd, iCmdShow);
     ::UpdateWindow(hwnd);
 
-    auto& colors = ImGui::GetStyle().Colors;
-    ImVec4 clear_color = colors[ ImGuiCol_WindowBg ];
+    ImVec4 clear_color = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
 
     auto currentPage = WizardPage::Start;
     auto instStep = DownloadAndInstallStep::Begin;
@@ -943,7 +946,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 #pragma endregion
 
-        // Rendering
+        // Rendering — refresh clear color every frame so theme changes take effect immediately
+        clear_color = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
         ImGui::Render();
         const float clear_color_with_alpha[ 4 ] = {
             clear_color.x * clear_color.w,
@@ -1129,9 +1133,29 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             if (g_hInstance)
             {
                 ui::LoadFonts(g_hInstance, 16.0f, g_scaleFactor);
-                ui::ApplyImGuiStyleDark(g_scaleFactor);
+                ui::ApplyImGuiStyle(g_theme, g_scaleFactor);
                 ImGui_ImplDX11_InvalidateDeviceObjects();
                 ImGui_ImplDX11_CreateDeviceObjects();
+            }
+            break;
+        }
+        case WM_SETTINGCHANGE:
+        {
+            // "ImmersiveColorSet" is broadcast when the user switches between
+            // light and dark app mode in Windows Settings.
+            if (lParam && lstrcmpW(reinterpret_cast<LPCWSTR>(lParam), L"ImmersiveColorSet") == 0)
+            {
+                const ui::Theme newTheme = winapi::IsLightThemeActive()
+                    ? ui::Theme::Light
+                    : ui::Theme::Dark;
+
+                if (newTheme != g_theme)
+                {
+                    g_theme = newTheme;
+                    ui::ApplyImGuiStyle(g_theme, g_scaleFactor);
+                    winapi::SetDarkMode(hWnd, g_theme == ui::Theme::Dark);
+                    spdlog::debug("OS theme changed to {}", g_theme == ui::Theme::Dark ? "dark" : "light");
+                }
             }
             break;
         }

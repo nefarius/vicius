@@ -560,15 +560,37 @@ namespace winapi
         (void)DwmSetWindowAttribute(hWnd, DWMWA_USE_IMMERSIVE_DARK_MODE, &useDarkMode, sizeof(useDarkMode));
     }
 
+    bool IsLightThemeActive()
+    {
+        try
+        {
+            winreg::RegKey key{
+                HKEY_CURRENT_USER,
+                L"Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+                KEY_READ
+            };
+            const DWORD value = key.GetDwordValue(L"AppsUseLightTheme");
+            return value != 0;
+        }
+        catch (...)
+        {
+            return false; // default to dark on any failure
+        }
+    }
+
     ImVec4 GetAccentColor()
     {
-        // Fluent Win11 dark-mode default accent: #60CDFF
-        constexpr ImVec4 fluentDefault{0.376f, 0.804f, 1.000f, 1.0f};
+        // Theme-appropriate fallback accent:
+        //   dark  → Fluent Win11 blue #60CDFF
+        //   light → Win10/11 default blue #0078D4
+        const ImVec4 fallback = IsLightThemeActive()
+            ? ImVec4{0.000f, 0.471f, 0.831f, 1.0f}  // #0078D4
+            : ImVec4{0.376f, 0.804f, 1.000f, 1.0f};  // #60CDFF
 
         DWORD color = 0;
         BOOL opaque = FALSE;
         if (FAILED(DwmGetColorizationColor(&color, &opaque)))
-            return fluentDefault;
+            return fallback;
 
         // DwmGetColorizationColor returns BGRA (0xAARRGGBB in little-endian storage)
         const float r = static_cast<float>((color >> 16) & 0xFF) / 255.0f;
@@ -577,7 +599,7 @@ namespace winapi
 
         // Guard against near-black results (colorization disabled / grey theme)
         if (r < 0.05f && g < 0.05f && b < 0.05f)
-            return fluentDefault;
+            return fallback;
 
         return ImVec4{r, g, b, 1.0f};
     }

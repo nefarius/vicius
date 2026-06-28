@@ -13,93 +13,152 @@ extern ImFont* G_Font_Bold;
 
 
 /**
- * \brief Applies a Windows 11 Fluent-inspired dark theme.
- *        Safe to call multiple times (e.g. on WM_DPICHANGED) without accumulating scaling.
+ * \brief Applies a Windows 11 Fluent-inspired palette and shape metrics.
+ *        Safe to call multiple times (e.g. on WM_DPICHANGED / WM_SETTINGCHANGE)
+ *        without accumulating size scaling.
  */
-void ui::ApplyImGuiStyleDark(float scale)
+void ui::ApplyImGuiStyle(Theme theme, float scale)
 {
     ImGuiStyle& style = ImGui::GetStyle();
     style = ImGuiStyle();
-    ImGui::StyleColorsDark(&style);
 
     const ImVec4 accent        = winapi::GetAccentColor();
     const ImVec4 accentHovered = winapi::GetAccentColorHovered();
     const ImVec4 accentActive  = winapi::GetAccentColorActive();
 
-    // Fluent neutral dark surfaces (Fluent dark-mode layer tokens)
-    // Base:        #202020   Card/child:  #272727   Control:   #2D2D2D
-    // Subtle hover:#383838   Subtle press:#2A2A2A
     auto& c = style.Colors;
 
-    // Surfaces
-    c[ImGuiCol_WindowBg]          = ImVec4{0.125f, 0.125f, 0.125f, 1.000f}; // #202020
-    c[ImGuiCol_ChildBg]           = ImVec4{0.153f, 0.153f, 0.153f, 1.000f}; // #272727
-    c[ImGuiCol_PopupBg]           = ImVec4{0.153f, 0.153f, 0.153f, 0.980f};
-    c[ImGuiCol_MenuBarBg]         = ImVec4{0.153f, 0.153f, 0.153f, 1.000f};
+    if (theme == Theme::Dark)
+    {
+        ImGui::StyleColorsDark(&style);
 
-    // Borders — subtle white ~8 %
-    c[ImGuiCol_Border]            = ImVec4{1.000f, 1.000f, 1.000f, 0.078f};
-    c[ImGuiCol_BorderShadow]      = ImVec4{0.000f, 0.000f, 0.000f, 0.000f};
+        // Fluent neutral dark surfaces
+        // Base:#202020  Card:#272727  Control:#2D2D2D  Hover:#383838  Press:#2A2A2A
+        c[ImGuiCol_WindowBg]          = ImVec4{0.125f, 0.125f, 0.125f, 1.000f}; // #202020
+        c[ImGuiCol_ChildBg]           = ImVec4{0.153f, 0.153f, 0.153f, 1.000f}; // #272727
+        c[ImGuiCol_PopupBg]           = ImVec4{0.153f, 0.153f, 0.153f, 0.980f};
+        c[ImGuiCol_MenuBarBg]         = ImVec4{0.153f, 0.153f, 0.153f, 1.000f};
 
-    // Text
-    c[ImGuiCol_Text]              = ImVec4{1.000f, 1.000f, 1.000f, 1.000f};
-    c[ImGuiCol_TextDisabled]      = ImVec4{1.000f, 1.000f, 1.000f, 0.361f}; // ~#FFFFFF5C
+        // Borders — subtle white ~8 %
+        c[ImGuiCol_Border]            = ImVec4{1.000f, 1.000f, 1.000f, 0.078f};
+        c[ImGuiCol_BorderShadow]      = ImVec4{0.000f, 0.000f, 0.000f, 0.000f};
 
-    // Frame / input backgrounds
-    c[ImGuiCol_FrameBg]           = ImVec4{0.176f, 0.176f, 0.176f, 1.000f}; // #2D2D2D
-    c[ImGuiCol_FrameBgHovered]    = ImVec4{0.220f, 0.220f, 0.220f, 1.000f};
-    c[ImGuiCol_FrameBgActive]     = ImVec4{0.165f, 0.165f, 0.165f, 1.000f};
+        // Text
+        c[ImGuiCol_Text]              = ImVec4{1.000f, 1.000f, 1.000f, 1.000f};
+        c[ImGuiCol_TextDisabled]      = ImVec4{1.000f, 1.000f, 1.000f, 0.361f};
 
-    // Title bar (hidden in this app, but set consistently)
-    c[ImGuiCol_TitleBg]           = ImVec4{0.125f, 0.125f, 0.125f, 1.000f};
-    c[ImGuiCol_TitleBgActive]     = ImVec4{0.153f, 0.153f, 0.153f, 1.000f};
-    c[ImGuiCol_TitleBgCollapsed]  = ImVec4{0.125f, 0.125f, 0.125f, 1.000f};
+        // Frame / input backgrounds
+        c[ImGuiCol_FrameBg]           = ImVec4{0.176f, 0.176f, 0.176f, 1.000f}; // #2D2D2D
+        c[ImGuiCol_FrameBgHovered]    = ImVec4{0.220f, 0.220f, 0.220f, 1.000f};
+        c[ImGuiCol_FrameBgActive]     = ImVec4{0.165f, 0.165f, 0.165f, 1.000f};
 
-    // Buttons — Fluent "Subtle" button (neutral)
-    c[ImGuiCol_Button]            = ImVec4{0.196f, 0.196f, 0.196f, 1.000f}; // #323232
-    c[ImGuiCol_ButtonHovered]     = ImVec4{0.220f, 0.220f, 0.220f, 1.000f}; // #383838
-    c[ImGuiCol_ButtonActive]      = ImVec4{0.165f, 0.165f, 0.165f, 1.000f}; // #2A2A2A
+        // Title bar
+        c[ImGuiCol_TitleBg]           = ImVec4{0.125f, 0.125f, 0.125f, 1.000f};
+        c[ImGuiCol_TitleBgActive]     = ImVec4{0.153f, 0.153f, 0.153f, 1.000f};
+        c[ImGuiCol_TitleBgCollapsed]  = ImVec4{0.125f, 0.125f, 0.125f, 1.000f};
 
-    // Headers (collapsibles, selectables)
-    c[ImGuiCol_Header]            = ImVec4{0.196f, 0.196f, 0.196f, 1.000f};
-    c[ImGuiCol_HeaderHovered]     = ImVec4{0.220f, 0.220f, 0.220f, 1.000f};
-    c[ImGuiCol_HeaderActive]      = ImVec4{0.165f, 0.165f, 0.165f, 1.000f};
+        // Buttons — Fluent "Subtle" button
+        c[ImGuiCol_Button]            = ImVec4{0.196f, 0.196f, 0.196f, 1.000f}; // #323232
+        c[ImGuiCol_ButtonHovered]     = ImVec4{0.220f, 0.220f, 0.220f, 1.000f}; // #383838
+        c[ImGuiCol_ButtonActive]      = ImVec4{0.165f, 0.165f, 0.165f, 1.000f}; // #2A2A2A
 
-    // Scrollbar
-    c[ImGuiCol_ScrollbarBg]       = ImVec4{0.125f, 0.125f, 0.125f, 1.000f};
-    c[ImGuiCol_ScrollbarGrab]     = ImVec4{1.000f, 1.000f, 1.000f, 0.200f};
-    c[ImGuiCol_ScrollbarGrabHovered] = ImVec4{1.000f, 1.000f, 1.000f, 0.350f};
-    c[ImGuiCol_ScrollbarGrabActive]  = ImVec4{1.000f, 1.000f, 1.000f, 0.500f};
+        // Headers
+        c[ImGuiCol_Header]            = ImVec4{0.196f, 0.196f, 0.196f, 1.000f};
+        c[ImGuiCol_HeaderHovered]     = ImVec4{0.220f, 0.220f, 0.220f, 1.000f};
+        c[ImGuiCol_HeaderActive]      = ImVec4{0.165f, 0.165f, 0.165f, 1.000f};
 
-    // Slider / grab
-    c[ImGuiCol_SliderGrab]        = ImVec4{accent.x, accent.y, accent.z, 0.700f};
-    c[ImGuiCol_SliderGrabActive]  = accent;
+        // Scrollbar
+        c[ImGuiCol_ScrollbarBg]            = ImVec4{0.125f, 0.125f, 0.125f, 1.000f};
+        c[ImGuiCol_ScrollbarGrab]          = ImVec4{1.000f, 1.000f, 1.000f, 0.200f};
+        c[ImGuiCol_ScrollbarGrabHovered]   = ImVec4{1.000f, 1.000f, 1.000f, 0.350f};
+        c[ImGuiCol_ScrollbarGrabActive]    = ImVec4{1.000f, 1.000f, 1.000f, 0.500f};
 
-    // Checkmark / radio — accent
-    c[ImGuiCol_CheckMark]         = accent;
+        // Separator
+        c[ImGuiCol_Separator]         = ImVec4{1.000f, 1.000f, 1.000f, 0.078f};
 
-    // Separator — subtle
-    c[ImGuiCol_Separator]         = ImVec4{1.000f, 1.000f, 1.000f, 0.078f};
-    c[ImGuiCol_SeparatorHovered]  = accentHovered;
-    c[ImGuiCol_SeparatorActive]   = accent;
+        // Resize grip
+        c[ImGuiCol_ResizeGrip]        = ImVec4{1.000f, 1.000f, 1.000f, 0.050f};
+        c[ImGuiCol_ResizeGripHovered] = ImVec4{1.000f, 1.000f, 1.000f, 0.150f};
+        c[ImGuiCol_ResizeGripActive]  = ImVec4{1.000f, 1.000f, 1.000f, 0.250f};
 
-    // Resize grip — barely visible
-    c[ImGuiCol_ResizeGrip]        = ImVec4{1.000f, 1.000f, 1.000f, 0.050f};
-    c[ImGuiCol_ResizeGripHovered] = ImVec4{1.000f, 1.000f, 1.000f, 0.150f};
-    c[ImGuiCol_ResizeGripActive]  = ImVec4{1.000f, 1.000f, 1.000f, 0.250f};
+        // Tabs
+        c[ImGuiCol_Tab]               = ImVec4{0.153f, 0.153f, 0.153f, 1.000f};
+        c[ImGuiCol_TabHovered]        = ImVec4{0.220f, 0.220f, 0.220f, 1.000f};
+        c[ImGuiCol_TabActive]         = ImVec4{0.196f, 0.196f, 0.196f, 1.000f};
+        c[ImGuiCol_TabUnfocused]      = ImVec4{0.153f, 0.153f, 0.153f, 1.000f};
+        c[ImGuiCol_TabUnfocusedActive]= ImVec4{0.176f, 0.176f, 0.176f, 1.000f};
+    }
+    else // Theme::Light
+    {
+        ImGui::StyleColorsLight(&style);
 
-    // Tabs
-    c[ImGuiCol_Tab]               = ImVec4{0.153f, 0.153f, 0.153f, 1.000f};
-    c[ImGuiCol_TabHovered]        = ImVec4{0.220f, 0.220f, 0.220f, 1.000f};
-    c[ImGuiCol_TabActive]         = ImVec4{0.196f, 0.196f, 0.196f, 1.000f};
-    c[ImGuiCol_TabUnfocused]      = ImVec4{0.153f, 0.153f, 0.153f, 1.000f};
-    c[ImGuiCol_TabUnfocusedActive]= ImVec4{0.176f, 0.176f, 0.176f, 1.000f};
+        // Fluent neutral light surfaces
+        // Base:#F3F3F3  Card:#FBFBFB  Control:#FFFFFF  Hover:#F5F5F5  Press:#EFEFEF
+        c[ImGuiCol_WindowBg]          = ImVec4{0.953f, 0.953f, 0.953f, 1.000f}; // #F3F3F3
+        c[ImGuiCol_ChildBg]           = ImVec4{0.984f, 0.984f, 0.984f, 1.000f}; // #FBFBFB
+        c[ImGuiCol_PopupBg]           = ImVec4{0.984f, 0.984f, 0.984f, 0.980f};
+        c[ImGuiCol_MenuBarBg]         = ImVec4{0.984f, 0.984f, 0.984f, 1.000f};
 
-    // Plot histogram (used by IndeterminateProgressBar fill)
-    c[ImGuiCol_PlotHistogram]     = accent;
+        // Borders — subtle black ~8 %
+        c[ImGuiCol_Border]            = ImVec4{0.000f, 0.000f, 0.000f, 0.078f};
+        c[ImGuiCol_BorderShadow]      = ImVec4{0.000f, 0.000f, 0.000f, 0.000f};
+
+        // Text
+        c[ImGuiCol_Text]              = ImVec4{0.102f, 0.102f, 0.102f, 1.000f}; // #1A1A1A
+        c[ImGuiCol_TextDisabled]      = ImVec4{0.000f, 0.000f, 0.000f, 0.361f};
+
+        // Frame / input backgrounds
+        c[ImGuiCol_FrameBg]           = ImVec4{1.000f, 1.000f, 1.000f, 1.000f}; // #FFFFFF
+        c[ImGuiCol_FrameBgHovered]    = ImVec4{0.961f, 0.961f, 0.961f, 1.000f}; // #F5F5F5
+        c[ImGuiCol_FrameBgActive]     = ImVec4{0.937f, 0.937f, 0.937f, 1.000f}; // #EFEFEF
+
+        // Title bar
+        c[ImGuiCol_TitleBg]           = ImVec4{0.953f, 0.953f, 0.953f, 1.000f};
+        c[ImGuiCol_TitleBgActive]     = ImVec4{0.984f, 0.984f, 0.984f, 1.000f};
+        c[ImGuiCol_TitleBgCollapsed]  = ImVec4{0.953f, 0.953f, 0.953f, 1.000f};
+
+        // Buttons — Fluent "Subtle" button
+        c[ImGuiCol_Button]            = ImVec4{0.984f, 0.984f, 0.984f, 1.000f}; // #FBFBFB
+        c[ImGuiCol_ButtonHovered]     = ImVec4{0.941f, 0.941f, 0.941f, 1.000f}; // #F0F0F0
+        c[ImGuiCol_ButtonActive]      = ImVec4{0.898f, 0.898f, 0.898f, 1.000f}; // #E5E5E5
+
+        // Headers
+        c[ImGuiCol_Header]            = ImVec4{0.984f, 0.984f, 0.984f, 1.000f};
+        c[ImGuiCol_HeaderHovered]     = ImVec4{0.941f, 0.941f, 0.941f, 1.000f};
+        c[ImGuiCol_HeaderActive]      = ImVec4{0.898f, 0.898f, 0.898f, 1.000f};
+
+        // Scrollbar
+        c[ImGuiCol_ScrollbarBg]            = ImVec4{0.953f, 0.953f, 0.953f, 1.000f};
+        c[ImGuiCol_ScrollbarGrab]          = ImVec4{0.000f, 0.000f, 0.000f, 0.200f};
+        c[ImGuiCol_ScrollbarGrabHovered]   = ImVec4{0.000f, 0.000f, 0.000f, 0.350f};
+        c[ImGuiCol_ScrollbarGrabActive]    = ImVec4{0.000f, 0.000f, 0.000f, 0.500f};
+
+        // Separator
+        c[ImGuiCol_Separator]         = ImVec4{0.000f, 0.000f, 0.000f, 0.078f};
+
+        // Resize grip
+        c[ImGuiCol_ResizeGrip]        = ImVec4{0.000f, 0.000f, 0.000f, 0.050f};
+        c[ImGuiCol_ResizeGripHovered] = ImVec4{0.000f, 0.000f, 0.000f, 0.150f};
+        c[ImGuiCol_ResizeGripActive]  = ImVec4{0.000f, 0.000f, 0.000f, 0.250f};
+
+        // Tabs
+        c[ImGuiCol_Tab]               = ImVec4{0.984f, 0.984f, 0.984f, 1.000f};
+        c[ImGuiCol_TabHovered]        = ImVec4{0.941f, 0.941f, 0.941f, 1.000f};
+        c[ImGuiCol_TabActive]         = ImVec4{0.961f, 0.961f, 0.961f, 1.000f};
+        c[ImGuiCol_TabUnfocused]      = ImVec4{0.984f, 0.984f, 0.984f, 1.000f};
+        c[ImGuiCol_TabUnfocusedActive]= ImVec4{0.969f, 0.969f, 0.969f, 1.000f};
+    }
+
+    // Accent-colored tokens shared by both themes
+    c[ImGuiCol_SliderGrab]           = ImVec4{accent.x, accent.y, accent.z, 0.700f};
+    c[ImGuiCol_SliderGrabActive]     = accent;
+    c[ImGuiCol_CheckMark]            = accent;
+    c[ImGuiCol_SeparatorHovered]     = accentHovered;
+    c[ImGuiCol_SeparatorActive]      = accent;
+    c[ImGuiCol_PlotHistogram]        = accent;
     c[ImGuiCol_PlotHistogramHovered] = accentHovered;
 
-    // Fluent Win11 shape metrics
+    // Fluent Win11 shape metrics — identical for both themes
     style.WindowRounding    = 8.0f;
     style.ChildRounding     = 8.0f;
     style.FrameRounding     = 4.0f;
@@ -108,18 +167,16 @@ void ui::ApplyImGuiStyleDark(float scale)
     style.TabRounding       = 4.0f;
     style.ScrollbarRounding = 4.0f;
 
-    // Borders on frames give the Fluent "control stroke" appearance
-    style.FrameBorderSize   = 1.0f;
-    style.WindowBorderSize  = 1.0f;
-    style.PopupBorderSize   = 1.0f;
+    style.FrameBorderSize  = 1.0f;
+    style.WindowBorderSize = 1.0f;
+    style.PopupBorderSize  = 1.0f;
 
-    // Spacing / padding — slightly roomier than ImGui defaults
-    style.WindowPadding  = ImVec2{16.0f, 16.0f};
-    style.FramePadding   = ImVec2{12.0f,  6.0f};
-    style.ItemSpacing    = ImVec2{ 8.0f,  8.0f};
-    style.ItemInnerSpacing = ImVec2{6.0f, 6.0f};
-    style.ScrollbarSize  = 12.0f;
-    style.GrabMinSize    = 10.0f;
+    style.WindowPadding    = ImVec2{16.0f, 16.0f};
+    style.FramePadding     = ImVec2{12.0f,  6.0f};
+    style.ItemSpacing      = ImVec2{ 8.0f,  8.0f};
+    style.ItemInnerSpacing = ImVec2{ 6.0f,  6.0f};
+    style.ScrollbarSize    = 12.0f;
+    style.GrabMinSize      = 10.0f;
 
     style.ScaleAllSizes(scale);
 }
