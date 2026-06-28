@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UpdateRelease.hpp"
+#include "../Util.h"
 
 namespace models
 {
@@ -47,7 +48,17 @@ namespace models
 
             try
             {
-                return semver::version::parse(latestVersion.value());
+                // Normalise the same way release versions are handled so common
+                // Win32 forms parse cleanly: trim whitespace, strip a leading "v",
+                // and map 4-segment versions (e.g. "999.0.0.0") onto semver via
+                // toSemVerCompatible ("1.2.3.4" -> "1.2.3+4").
+                std::string value = util::trim(latestVersion.value());
+                if (!value.empty() && value.front() == 'v')
+                {
+                    value.erase(value.begin());
+                }
+                util::toSemVerCompatible(value);
+                return semver::version::parse(value);
             }
             catch (...)  // couldn't convert version string
             {

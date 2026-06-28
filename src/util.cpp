@@ -42,9 +42,13 @@ namespace util
                         const auto* verInfo = (VS_FIXEDFILEINFO*)lpBuffer;
                         if (verInfo->dwSignature == 0xfeef04bd)
                         {
+                            // Emit the full 4-part Win32 version; toSemVerCompatible
+                            // maps the 4th (revision) segment onto SemVer build metadata
+                            // so CompareVersions() can still honour it.
                             versionString << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionMS)) << "."
                                           << static_cast<ULONG>(LOWORD(verInfo->dwProductVersionMS)) << "."
-                                          << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionLS));
+                                          << static_cast<ULONG>(HIWORD(verInfo->dwProductVersionLS)) << "."
+                                          << static_cast<ULONG>(LOWORD(verInfo->dwProductVersionLS));
                         }
                     }
                 }
@@ -52,7 +56,41 @@ namespace util
             delete[] verData;
         }
 
-        return semver::version::parse(versionString.str());
+        auto normalized = versionString.str();
+        if (normalized.empty())
+        {
+            // No usable version resource; mirror the resource-helper fallback.
+            return semver::version{0, 0, 1};
+        }
+
+        toSemVerCompatible(normalized);
+        return semver::version::parse(normalized);
+    }
+
+    int CompareVersions(const semver::version& a, const semver::version& b)
+    {
+        // Major/minor/patch and prerelease follow standard SemVer precedence.
+        if (a < b) return -1;
+        if (b < a) return 1;
+
+        // Equal so far: break the tie on the numeric build metadata, which is where
+        // toSemVerCompatible() parks the optional 4th ("revision") version segment.
+        const auto numericBuildMeta = [](const semver::version& v) -> uint64_t
+        {
+            const std::string& meta = v.build_meta();
+            if (meta.empty() || !std::ranges::all_of(meta, [](unsigned char c) { return std::isdigit(c) != 0; }))
+            {
+                return 0; // absent or non-numeric build metadata counts as revision 0
+            }
+            try { return std::stoull(meta); }
+            catch (...) { return 0; }
+        };
+
+        const uint64_t ra = numericBuildMeta(a);
+        const uint64_t rb = numericBuildMeta(b);
+        if (ra < rb) return -1;
+        if (ra > rb) return 1;
+        return 0;
     }
 
     std::expected<void, std::string> ParseCommandLineArguments(argh::parser& cmdl)
