@@ -148,6 +148,7 @@ jobs:
             examples:
               - 'examples/**'
               - 'examples.sln'
+              - '.github/workflows/build.yml'
 
   # ─── Build examples ────────────────────────────────────────────────────────
   build-examples:
