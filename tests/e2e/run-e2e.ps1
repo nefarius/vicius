@@ -406,8 +406,8 @@ try {
             }
         },
         @{
-            # Non-PE file has no version resource; GetWin32ResourceFileVersion returns 0.0.1,
-            # which is older than server 2.0.0 => outdated => 203.
+            # Non-PE file has no version resource; GetWin32ResourceFileVersion throws, which is
+            # caught by the catch(...) fallback in IsInstalledVersionOutdated => outdated => 203.
             Name            = 'CorruptFileVersion'
             SourceBin       = $MainBin
             ExeName         = 'e2e_CorruptFileVersion_Updater.exe'

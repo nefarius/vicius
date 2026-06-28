@@ -195,7 +195,7 @@ namespace winapi
 
         if (!versionResult)
         {
-            return semver::version{0, 0, 1};
+            throw std::runtime_error("No FILEVERSION resource in " + filePath.string());
         }
 
         auto str = to_string(versionResult.value());
@@ -210,7 +210,7 @@ namespace winapi
 
         if (!versionResult)
         {
-            return semver::version{0, 0, 1};
+            throw std::runtime_error("No PRODUCTVERSION resource in " + filePath.string());
         }
 
         auto str = to_string(versionResult.value());
