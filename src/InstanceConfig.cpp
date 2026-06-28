@@ -4,6 +4,8 @@
 #include "InstanceConfig.hpp"
 #include "NAuthenticode.h"
 
+#include <curlpp/cURLpp.hpp>
+
 
 models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, PDWORD abortError)
     : appInstance(hInstance)
@@ -12,7 +14,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
     // Initialize everything in here that depends on CLI arguments, the environment and a potential configuration file
     //
 
-    RestClient::init();
+    curlpp::initialize();
 
 #pragma region Logging
 
@@ -504,7 +506,7 @@ models::InstanceConfig::~InstanceConfig()
     RequestAbortDownload();
     WaitForDownloadToFinish();
 
-    RestClient::disable();
+    curlpp::terminate();
 
     // clean up release resources
     for (const auto& release : remote.releases)
