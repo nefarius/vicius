@@ -741,8 +741,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                 const auto downloadStatus = cfg.GetReleaseDownloadStatus();
 
-                // checks if a download is currently running or has been invoked
-                if (!downloadStatus.has_value())
+                // checks if a download is currently running or has been invoked;
+                // guard on instStep so post-download states (Verifying, PrepareInstall, etc.)
+                // do not restart the download just because the completed task was reset
+                if (!downloadStatus.has_value() &&
+                    (instStep == DownloadAndInstallStep::Begin ||
+                     instStep == DownloadAndInstallStep::Downloading))
                 {
                     lastExitCode = 0;
                     totalToDownload = 0;
