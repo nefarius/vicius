@@ -25,7 +25,7 @@ dotnet run
 The project ships a committed `src/vīcĭus.vcxproj.user` that passes these
 arguments automatically:
 
-```
+```text
 --server-url http://localhost:5200/api/demo/Showcase/updates.json
 --log-level debug
 --log-to-file $(TargetDir)debug.log
@@ -37,7 +37,7 @@ The updater will:
 - Render the rich Markdown changelog (headings, lists, image, scrollbars, link).
 - Show the **Help** and **Remind me tomorrow** buttons.
 - Download the ~50 MB Microsoft-signed .NET Desktop Runtime (progress bar).
-- Verify the Authenticode signature (WhenPresent mode — passes for signed files).
+- Verify the Authenticode signature (Required + Strict, publisher pinned to subject `.NET` / issuer `Microsoft Code Signing PCA 2011`).
 - Accept exit codes **0** and **3010** as success.
 
 A `debug.log` file is written next to `Updater.exe` for each run.
