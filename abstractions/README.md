@@ -1,4 +1,4 @@
-# <img src="assets/NSS-128x128.png" align="left" />Nefarius.Vicius.Abstractions
+# <img src="../assets/NSS-128x128.png" align="left" />Nefarius.Vicius.Abstractions
 
 [![.NET](https://github.com/nefarius/vicius/actions/workflows/build.yml/badge.svg)](https://github.com/nefarius/vicius/actions/workflows/build.yml)
 ![Requirements](https://img.shields.io/badge/Requires-.NET%20Standard%202.0-blue.svg)
