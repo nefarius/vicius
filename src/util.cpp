@@ -631,48 +631,81 @@ namespace winapi
         }
     }
 
+    namespace
+    {
+        struct AccentColorCache
+        {
+            ImVec4 base{};
+            ImVec4 hovered{};
+            ImVec4 active{};
+            bool valid{false};
+        };
+
+        AccentColorCache g_accentCache;
+
+        // Compute and cache all three accent variants using a single registry + DWM read.
+        void RefreshAccentColorCache()
+        {
+            // Theme-appropriate fallback accent:
+            //   dark  → Fluent Win11 blue #60CDFF
+            //   light → Win10/11 default blue #0078D4
+            const ImVec4 fallback = IsLightThemeActive().value_or(false)
+                ? ImVec4{0.000f, 0.471f, 0.831f, 1.0f}  // #0078D4
+                : ImVec4{0.376f, 0.804f, 1.000f, 1.0f};  // #60CDFF
+
+            ImVec4 base = fallback;
+
+            DWORD color = 0;
+            BOOL opaque = FALSE;
+            if (SUCCEEDED(DwmGetColorizationColor(&color, &opaque)))
+            {
+                // DwmGetColorizationColor returns 0xAARRGGBB
+                const float r = static_cast<float>((color >> 16) & 0xFF) / 255.0f;
+                const float g = static_cast<float>((color >>  8) & 0xFF) / 255.0f;
+                const float b = static_cast<float>((color       ) & 0xFF) / 255.0f;
+
+                // Guard against near-black results (colorization disabled / grey theme)
+                if (r >= 0.05f || g >= 0.05f || b >= 0.05f)
+                    base = ImVec4{r, g, b, 1.0f};
+            }
+
+            g_accentCache.base    = base;
+            // Lighten by blending 20 % toward white
+            g_accentCache.hovered = ImVec4{
+                base.x + (1.0f - base.x) * 0.20f,
+                base.y + (1.0f - base.y) * 0.20f,
+                base.z + (1.0f - base.z) * 0.20f,
+                1.0f
+            };
+            // Darken by 15 %
+            g_accentCache.active  = ImVec4{base.x * 0.85f, base.y * 0.85f, base.z * 0.85f, 1.0f};
+            g_accentCache.valid   = true;
+        }
+    }
+
     ImVec4 GetAccentColor()
     {
-        // Theme-appropriate fallback accent:
-        //   dark  → Fluent Win11 blue #60CDFF
-        //   light → Win10/11 default blue #0078D4
-        const ImVec4 fallback = IsLightThemeActive().value_or(false)
-            ? ImVec4{0.000f, 0.471f, 0.831f, 1.0f}  // #0078D4
-            : ImVec4{0.376f, 0.804f, 1.000f, 1.0f};  // #60CDFF
-
-        DWORD color = 0;
-        BOOL opaque = FALSE;
-        if (FAILED(DwmGetColorizationColor(&color, &opaque)))
-            return fallback;
-
-        // DwmGetColorizationColor returns BGRA (0xAARRGGBB in little-endian storage)
-        const float r = static_cast<float>((color >> 16) & 0xFF) / 255.0f;
-        const float g = static_cast<float>((color >>  8) & 0xFF) / 255.0f;
-        const float b = static_cast<float>((color      ) & 0xFF) / 255.0f;
-
-        // Guard against near-black results (colorization disabled / grey theme)
-        if (r < 0.05f && g < 0.05f && b < 0.05f)
-            return fallback;
-
-        return ImVec4{r, g, b, 1.0f};
+        if (!g_accentCache.valid)
+            RefreshAccentColorCache();
+        return g_accentCache.base;
     }
 
     ImVec4 GetAccentColorHovered()
     {
-        const auto a = GetAccentColor();
-        // Lighten by blending 20 % toward white
-        return ImVec4{
-            a.x + (1.0f - a.x) * 0.20f,
-            a.y + (1.0f - a.y) * 0.20f,
-            a.z + (1.0f - a.z) * 0.20f,
-            1.0f
-        };
+        if (!g_accentCache.valid)
+            RefreshAccentColorCache();
+        return g_accentCache.hovered;
     }
 
     ImVec4 GetAccentColorActive()
     {
-        const auto a = GetAccentColor();
-        // Darken by 15 %
-        return ImVec4{a.x * 0.85f, a.y * 0.85f, a.z * 0.85f, 1.0f};
+        if (!g_accentCache.valid)
+            RefreshAccentColorCache();
+        return g_accentCache.active;
+    }
+
+    void InvalidateAccentColorCache()
+    {
+        g_accentCache.valid = false;
     }
 }

@@ -140,11 +140,14 @@ VOID NCertFreeSigInfo(NSIGINFO* pSigInfo)
         if (pSigInfo->lpszAuthority)
             pSigInfo->lpszAuthority = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszAuthority));
 
+        if (pSigInfo->lpszFriendlyName)
+            pSigInfo->lpszFriendlyName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszFriendlyName));
+
         if (pSigInfo->lpszProgramName)
-            pSigInfo->lpszProgramName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisher));
+            pSigInfo->lpszProgramName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszProgramName));
 
         if (pSigInfo->lpszPublisherLink)
-            pSigInfo->lpszPublisherLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisher));
+            pSigInfo->lpszPublisherLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisherLink));
 
         if (pSigInfo->lpszMoreInfoLink)
             pSigInfo->lpszMoreInfoLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszMoreInfoLink));
@@ -166,7 +169,7 @@ static BOOL NCertGetNameString(PCCERT_CONTEXT pCertContext, DWORD dwType, DWORD 
     if (pCertContext == nullptr)
         return FALSE;
 
-    DWORD dwData = CertGetNameString(pCertContext, dwType, 0, nullptr, nullptr, 0);
+    DWORD dwData = CertGetNameString(pCertContext, dwType, dwFlags, nullptr, nullptr, 0);
 
     if (dwData == 0)
         return FALSE;
@@ -236,6 +239,9 @@ static BOOL WGetSignTimestamp(PCRYPT_ATTRIBUTES pAttributes, SYSTEMTIME& stTime,
     {
         if (strcmp(lpszObjId, pAttributes->rgAttr[dwAttr].pszObjId) == 0)
         {
+            if (pAttributes->rgAttr[dwAttr].cValue == 0)
+                continue;
+
             DWORD dwSize = sizeof(FILETIME);
             FILETIME ftCert;
 
@@ -337,6 +343,9 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
                 continue;
             }
 
+            if (pSignerInfo->AuthAttrs.rgAttr[dwAttr].cValue == 0)
+                break;
+
             PSPC_SP_OPUS_INFO pOpus = nullptr;
             DWORD dwData = 0;
 
@@ -416,21 +425,30 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
         {
             if (pCertContext->pCertInfo->SerialNumber.cbData != 0)
             {
-                pSigInfo->lpszSerial = static_cast<LPTSTR>(NHeapAlloc(
-                    ((pCertContext->pCertInfo->SerialNumber.cbData * 2) + 1) * sizeof(TCHAR)));
+                const DWORD serialByteCount = pCertContext->pCertInfo->SerialNumber.cbData;
+                const size_t serialCharCapacity = static_cast<size_t>(serialByteCount) * 2 + 1;
+                pSigInfo->lpszSerial = static_cast<LPTSTR>(NHeapAlloc(serialCharCapacity * sizeof(TCHAR)));
 
                 if (pSigInfo->lpszSerial != nullptr)
                 {
                     LPTSTR lpszPointer = pSigInfo->lpszSerial;
+                    size_t remainingChars = serialCharCapacity;
 
-                    for (DWORD dwCount = pCertContext->pCertInfo->SerialNumber.cbData; dwCount != 0; dwCount--)
+                    for (DWORD dwCount = serialByteCount; dwCount != 0; dwCount--)
                     {
-                        lpszPointer += _stprintf_s(
+                        const int written = _stprintf_s(
                             lpszPointer,
-                            pCertContext->pCertInfo->SerialNumber.cbData,
+                            remainingChars,
                             _T("%02X"),
                             pCertContext->pCertInfo->SerialNumber.pbData[dwCount - 1]
                         );
+                        if (written < 0)
+                        {
+                            break;
+                        }
+
+                        lpszPointer += written;
+                        remainingChars -= static_cast<size_t>(written);
                     }
                 }
             }
@@ -507,12 +525,14 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
                 {
                     FILETIME ftLocal;
 
-                    if (!FileTimeToLocalFileTime(&ftCert, &ftLocal))
+                    if (FileTimeToLocalFileTime(&ftCert, &ftLocal)
+                        && FileTimeToSystemTime(&ftLocal, &pSigInfo->stSigTime))
                     {
-                        if (!FileTimeToSystemTime(&ftLocal, &pSigInfo->stSigTime))
-                        {
-                            memset(&pSigInfo->stSigTime, 0, sizeof(SYSTEMTIME));
-                        }
+                        pSigInfo->bHasSigTime = TRUE;
+                    }
+                    else
+                    {
+                        memset(&pSigInfo->stSigTime, 0, sizeof(SYSTEMTIME));
                     }
                 }
             }
@@ -522,6 +542,9 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
         {
             if (strcmp(pSignerInfo->UnauthAttrs.rgAttr[dwAttr].pszObjId, szOID_RSA_counterSign) == 0)
             {
+                if (pSignerInfo->UnauthAttrs.rgAttr[dwAttr].cValue == 0)
+                    break;
+
                 if (NCryptDecodeObject(
                         PKCS7_SIGNER_INFO,
                         &pSignerInfo->UnauthAttrs.rgAttr[dwAttr].rgValue[0],
@@ -645,14 +668,23 @@ BOOL NVerifyFileSignature(LPCTSTR lpszFileName, NSIGINFO* pSigInfo, HANDLE hHand
             if (pSigInfo->lpszPublisher)
                 pSigInfo->lpszPublisher = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisher));
 
+            if (pSigInfo->lpszPublisherEmail)
+                pSigInfo->lpszPublisherEmail = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisherEmail));
+
+            if (pSigInfo->lpszPublisherUrl)
+                pSigInfo->lpszPublisherUrl = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisherUrl));
+
             if (pSigInfo->lpszAuthority)
                 pSigInfo->lpszAuthority = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszAuthority));
 
+            if (pSigInfo->lpszFriendlyName)
+                pSigInfo->lpszFriendlyName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszFriendlyName));
+
             if (pSigInfo->lpszProgramName)
-                pSigInfo->lpszProgramName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisher));
+                pSigInfo->lpszProgramName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszProgramName));
 
             if (pSigInfo->lpszPublisherLink)
-                pSigInfo->lpszPublisherLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisher));
+                pSigInfo->lpszPublisherLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisherLink));
 
             if (pSigInfo->lpszMoreInfoLink)
                 pSigInfo->lpszMoreInfoLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszMoreInfoLink));

@@ -1049,9 +1049,13 @@ bool models::InstanceConfig::TryRunTemporaryProcess() const
     info.cb = sizeof(STARTUPINFOA);
     PROCESS_INFORMATION updateProcessInfo = {};
 
+    // CreateProcess may write into the command-line buffer; never pass string::c_str().
+    std::vector<char> cmdLineBuf(cliLine.begin(), cliLine.end());
+    cmdLineBuf.push_back('\0');
+
     // re-launch temporary copy with additional "--temporary" flag
     if (!CreateProcessA(temporaryUpdaterPath.string().c_str(),
-                        const_cast<LPSTR>(cliLine.c_str()),
+                        cmdLineBuf.data(),
                         nullptr,
                         nullptr,
                         TRUE,
