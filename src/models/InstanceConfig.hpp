@@ -507,9 +507,10 @@ namespace models
 
         /**
          * \brief Launches VerifyReleaseIntegrity on a background thread.
-         * \return true if the task was started; false if one is already running.
+         * \return Empty on success; unexpected error string if one is already running or
+         *         if the system cannot start the background thread (std::system_error).
          */
-        bool VerifyReleaseIntegrityAsync();
+        std::expected<void, std::string> VerifyReleaseIntegrityAsync();
 
         struct VerifyStatus
         {

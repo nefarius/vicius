@@ -730,11 +730,11 @@ namespace crypto
 
     void FreeSignatureInformation(PSIGNATURE_INFORMATION info)
     {
-        if (info->ProgramName != nullptr)
-            LocalFree(info->ProgramName);
-        if (info->PublisherLink != nullptr)
-            LocalFree(info->PublisherLink);
-        if (info->MoreInfoLink != nullptr)
-            LocalFree(info->MoreInfoLink);
+        if (info->ProgramName != nullptr)   { LocalFree(info->ProgramName);   info->ProgramName   = nullptr; }
+        if (info->PublisherLink != nullptr) { LocalFree(info->PublisherLink); info->PublisherLink = nullptr; }
+        if (info->MoreInfoLink != nullptr)  { LocalFree(info->MoreInfoLink);  info->MoreInfoLink  = nullptr; }
+        if (info->IssuerName != nullptr)    { LocalFree(info->IssuerName);    info->IssuerName    = nullptr; }
+        if (info->SubjectName != nullptr)   { LocalFree(info->SubjectName);   info->SubjectName   = nullptr; }
+        if (info->SerialNumber != nullptr)  { LocalFree(info->SerialNumber);  info->SerialNumber  = nullptr; }
     }
 }

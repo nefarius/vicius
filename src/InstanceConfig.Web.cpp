@@ -219,11 +219,14 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
             return httplib::OK_200;
         }
 
-        // Without an expected size, reuse a non-empty local file instead of issuing a
-        // doomed Range resume against a complete payload (servers return 416).
-        if (!expectedSize.has_value() && localSize > 0)
+        // Without an expected size, reuse a non-empty local file only when a checksum is
+        // configured downstream -- the checksum verification will catch any truncated or
+        // interrupted file.  Without that backstop an interrupted temp file would be
+        // accepted silently (especially in WhenPresent Authenticode mode), so we fall
+        // through and let the server respond; a 416 is already handled below by restarting.
+        if (!expectedSize.has_value() && localSize > 0 && release.checksum.has_value())
         {
-            spdlog::info("Reusing existing local download ({} bytes), skipping re-download", localSize);
+            spdlog::info("Reusing existing local download ({} bytes), checksum will verify integrity", localSize);
             return httplib::OK_200;
         }
 

@@ -191,13 +191,21 @@ namespace
 // Async wrapper (mirrors InvokeSetupAsync / GetSetupStatus / ResetSetupState)
 // ============================================================================
 
-bool models::InstanceConfig::VerifyReleaseIntegrityAsync()
+std::expected<void, std::string> models::InstanceConfig::VerifyReleaseIntegrityAsync()
 {
     if (verifyTask.has_value())
-        return false;
+        return std::unexpected("Verification already in progress");
 
-    verifyTask = std::async(std::launch::async, &InstanceConfig::VerifyReleaseIntegrity, this);
-    return true;
+    try
+    {
+        verifyTask = std::async(std::launch::async, &InstanceConfig::VerifyReleaseIntegrity, this);
+    }
+    catch (const std::system_error& e)
+    {
+        return std::unexpected(std::format("Failed to start verification thread: {}", e.what()));
+    }
+
+    return {};
 }
 
 std::optional<models::InstanceConfig::VerifyStatus> models::InstanceConfig::GetVerifyStatus() const
@@ -205,7 +213,7 @@ std::optional<models::InstanceConfig::VerifyStatus> models::InstanceConfig::GetV
     if (!verifyTask.has_value())
         return std::nullopt;
 
-    const std::future_status futureStatus = verifyTask->wait_for(std::chrono::milliseconds(1));
+    const std::future_status futureStatus = verifyTask->wait_for(std::chrono::seconds(0));
 
     VerifyStatus status{};
     status.isVerifying = futureStatus == std::future_status::timeout;
@@ -217,7 +225,19 @@ std::optional<models::InstanceConfig::VerifyStatus> models::InstanceConfig::GetV
     return status;
 }
 
-void models::InstanceConfig::ResetVerifyState() { verifyTask.reset(); }
+void models::InstanceConfig::ResetVerifyState()
+{
+    if (!verifyTask.has_value())
+        return;
+
+    // Only destroy the shared_future if the task has already completed; dropping a
+    // not-yet-ready shared_future that was created via std::async will block the
+    // calling thread (the render thread) until the background work finishes.
+    if (verifyTask->wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+        verifyTask.reset();
+    // Still running: leave it.  VerifyReleaseIntegrityAsync guards against re-launch,
+    // and GetVerifyStatus will eventually report completion on a later frame.
+}
 
 // ============================================================================
 // Layer 1: Setup Checksum Verification

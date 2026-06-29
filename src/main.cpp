@@ -830,7 +830,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     case DownloadAndInstallStep::Verifying:
                     {
                         // Launch the verification task on first entry; subsequent frames just poll.
-                        cfg.VerifyReleaseIntegrityAsync();
+                        // "already running" is the expected result on frames 2+, so only treat
+                        // other errors (thread-start failure) as fatal.
+                        if (const auto launched = cfg.VerifyReleaseIntegrityAsync(); !launched)
+                        {
+                            if (!cfg.GetVerifyStatus().has_value())
+                            {
+                                spdlog::error("Failed to start verification task: {}", launched.error());
+                                cfg.SetLastDownloadError(launched.error());
+                                instStep = DownloadAndInstallStep::VerificationFailed;
+                                break;
+                            }
+                        }
 
                         const auto verStatus = cfg.GetVerifyStatus();
 
