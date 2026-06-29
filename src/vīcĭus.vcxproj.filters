@@ -16,27 +16,36 @@
     <Filter Include="Header Files\3rd">
       <UniqueIdentifier>{b984c4fb-c3e1-4ed9-95b8-41e714e99caf}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Fonts">
-      <UniqueIdentifier>{1de30b69-55df-4e2f-babe-2b3e039da5a5}</UniqueIdentifier>
+    <Filter Include="Header Files\Authenticode">
+      <UniqueIdentifier>{3e1f3b27-7fcd-4ec5-85a7-5db19419cddf}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files\Models">
       <UniqueIdentifier>{5fd3e4b1-3c23-41e2-8e85-68cbcf63c68f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Models">
-      <UniqueIdentifier>{14461cff-a272-4ec8-8ee3-389549834389}</UniqueIdentifier>
+    <Filter Include="Source Files\3rd">
+      <UniqueIdentifier>{ed01f8d0-50bf-48ec-8341-88bcee3d50f6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\Authenticode">
       <UniqueIdentifier>{ac6d2972-a5be-4322-a7d8-1d8610a8f438}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\Authenticode">
-      <UniqueIdentifier>{3e1f3b27-7fcd-4ec5-85a7-5db19419cddf}</UniqueIdentifier>
+    <Filter Include="Source Files\Models">
+      <UniqueIdentifier>{14461cff-a272-4ec8-8ee3-389549834389}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\3rd">
-      <UniqueIdentifier>{ed01f8d0-50bf-48ec-8341-88bcee3d50f6}</UniqueIdentifier>
+    <Filter Include="Fonts">
+      <UniqueIdentifier>{1de30b69-55df-4e2f-babe-2b3e039da5a5}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Http.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="markdown.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ui.cpp">
@@ -45,28 +54,37 @@
     <ClCompile Include="util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="InstanceConfig.Web.cpp">
-      <Filter>Source Files\Models</Filter>
-    </ClCompile>
     <ClCompile Include="InstanceConfig.cpp">
-      <Filter>Source Files\Models</Filter>
-    </ClCompile>
-    <ClCompile Include="InstanceConfig.Download.cpp">
-      <Filter>Source Files\Models</Filter>
-    </ClCompile>
-    <ClCompile Include="InstanceConfig.TaskScheduler.cpp">
-      <Filter>Source Files\Models</Filter>
-    </ClCompile>
-    <ClCompile Include="InstanceConfig.Updater.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
     <ClCompile Include="InstanceConfig.Dialogs.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
-    <ClCompile Include="pch.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="InstanceConfig.Download.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="InstanceConfig.Postpone.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="InstanceConfig.Security.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="InstanceConfig.Setup.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="InstanceConfig.TaskScheduler.cpp">
+      <Filter>Source Files\Models</Filter>
     </ClCompile>
     <ClCompile Include="InstanceConfig.Template.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="InstanceConfig.Updater.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="InstanceConfig.Web.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
+    <ClCompile Include="UpdateRelease.cpp">
       <Filter>Source Files\Models</Filter>
     </ClCompile>
     <ClCompile Include="Crypto.cpp">
@@ -75,120 +93,27 @@
     <ClCompile Include="NAuthenticode.cpp">
       <Filter>Source Files\Authenticode</Filter>
     </ClCompile>
-    <ClCompile Include="UpdateRelease.cpp">
-      <Filter>Source Files\Models</Filter>
-    </ClCompile>
-    <ClCompile Include="InstanceConfig.Setup.cpp">
-      <Filter>Source Files\Models</Filter>
-    </ClCompile>
-    <ClCompile Include="MimeTypes.cpp">
+    <ClCompile Include="imgui_md.cpp">
       <Filter>Source Files\3rd</Filter>
     </ClCompile>
     <ClCompile Include="md4c.c">
       <Filter>Source Files\3rd</Filter>
     </ClCompile>
-    <ClCompile Include="imgui_md.cpp">
+    <ClCompile Include="MimeTypes.cpp">
       <Filter>Source Files\3rd</Filter>
-    </ClCompile>
-    <ClCompile Include="markdown.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="InstanceConfig.Postpone.cpp">
-      <Filter>Source Files\Models</Filter>
-    </ClCompile>
-    <ClCompile Include="Http.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="InstanceConfig.Security.cpp">
-      <Filter>Source Files\Models</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UniUtil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CustomizeMe.h">
+    <ClInclude Include="ADL.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Common.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="IconsForkAwesome.h">
-      <Filter>Header Files\3rd</Filter>
-    </ClInclude>
-    <ClInclude Include="WizardPage.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="models\InstanceConfig.hpp">
-      <Filter>Header Files\Models</Filter>
-    </ClInclude>
-    <ClInclude Include="models\UpdateResponse.hpp">
-      <Filter>Header Files\Models</Filter>
-    </ClInclude>
-    <ClInclude Include="ADL.hpp">
+    <ClInclude Include="CustomizeMe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="DownloadAndInstall.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="pch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inipp.h">
-      <Filter>Header Files\3rd</Filter>
-    </ClInclude>
-    <ClInclude Include="Crypto.h">
-      <Filter>Header Files\Authenticode</Filter>
-    </ClInclude>
-    <ClInclude Include="NAuthenticode.h">
-      <Filter>Header Files\Authenticode</Filter>
-    </ClInclude>
-    <ClInclude Include="models\CommonTypes.hpp">
-      <Filter>Header Files\Models</Filter>
-    </ClInclude>
-    <ClInclude Include="models\ProductDetection.hpp">
-      <Filter>Header Files\Models</Filter>
-    </ClInclude>
-    <ClInclude Include="models\SignatureValidation.hpp">
-      <Filter>Header Files\Models</Filter>
-    </ClInclude>
-    <ClInclude Include="models\SharedConfig.hpp">
-      <Filter>Header Files\Models</Filter>
-    </ClInclude>
-    <ClInclude Include="models\MergedConfig.hpp">
-      <Filter>Header Files\Models</Filter>
-    </ClInclude>
-    <ClInclude Include="models\UpdateRelease.hpp">
-      <Filter>Header Files\Models</Filter>
-    </ClInclude>
-    <ClInclude Include="models\UpdateConfig.hpp">
-      <Filter>Header Files\Models</Filter>
-    </ClInclude>
-    <ClInclude Include="Util.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="MimeTypes.h">
-      <Filter>Header Files\3rd</Filter>
-    </ClInclude>
-    <ClInclude Include="models\DownloadLocationConfig.h">
-      <Filter>Header Files\Models</Filter>
-    </ClInclude>
-    <ClInclude Include="argh.h">
-      <Filter>Header Files\3rd</Filter>
-    </ClInclude>
-    <ClInclude Include="md4c.h">
-      <Filter>Header Files\3rd</Filter>
-    </ClInclude>
-    <ClInclude Include="imgui_md.h">
-      <Filter>Header Files\3rd</Filter>
-    </ClInclude>
-    <ClInclude Include="ImGuiConfig.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Formatters.h">
@@ -196,6 +121,81 @@
     </ClInclude>
     <ClInclude Include="Http.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImGuiConfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UniUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WizardPage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="models\CommonTypes.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\DownloadLocationConfig.h">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\InstanceConfig.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\MergedConfig.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\ProductDetection.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\SharedConfig.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\SignatureValidation.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\UpdateConfig.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\UpdateRelease.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="models\UpdateResponse.hpp">
+      <Filter>Header Files\Models</Filter>
+    </ClInclude>
+    <ClInclude Include="Crypto.h">
+      <Filter>Header Files\Authenticode</Filter>
+    </ClInclude>
+    <ClInclude Include="NAuthenticode.h">
+      <Filter>Header Files\Authenticode</Filter>
+    </ClInclude>
+    <ClInclude Include="argh.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
+    <ClInclude Include="IconsForkAwesome.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_md.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
+    <ClInclude Include="inipp.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
+    <ClInclude Include="md4c.h">
+      <Filter>Header Files\3rd</Filter>
+    </ClInclude>
+    <ClInclude Include="MimeTypes.h">
+      <Filter>Header Files\3rd</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -209,10 +209,9 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <None Include="selfupdater\x64\selfupdater.dll" />
-    <None Include="cpp.hint" />
-  </ItemGroup>
-  <ItemGroup>
+    <Font Include="fonts\forkawesome-webfont.ttf">
+      <Filter>Fonts</Filter>
+    </Font>
     <Font Include="fonts\Ruda-Black.ttf">
       <Filter>Fonts</Filter>
     </Font>
@@ -231,11 +230,10 @@
     <Font Include="fonts\Ruda-SemiBold.ttf">
       <Filter>Fonts</Filter>
     </Font>
-    <Font Include="fonts\forkawesome-webfont.ttf">
-      <Filter>Fonts</Filter>
-    </Font>
   </ItemGroup>
   <ItemGroup>
     <CopyFileToFolders Include="nefarius_HidHide_Updater.json" />
+    <None Include="cpp.hint" />
+    <None Include="selfupdater\x64\selfupdater.dll" />
   </ItemGroup>
 </Project>
