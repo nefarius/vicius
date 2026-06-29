@@ -8,7 +8,8 @@ namespace Nefarius.Vicius.Example.Server.Endpoints;
 ///     Default happy-path showcase endpoint used for local debug runs.
 ///     Exercises all UI surfaces: forced-outdated detection, rich Markdown changelog
 ///     (headings / lists / link / image / scrollbars), help button, remind-me-tomorrow
-///     button, large download with progress bar, Authenticode verification (WhenPresent),
+///     button, large download with progress bar, strict Authenticode publisher-pin
+///     verification (Required + Strict, pinned to "Microsoft Corporation"),
 ///     and a successful install+exit-code flow.
 /// </summary>
 internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
@@ -48,9 +49,23 @@ internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
                 Detection = new FixedVersionConfig
                 {
                     Version = "0.0.1"
-                }
+                },
                 // HideRemindButton intentionally left unset → "Remind me tomorrow" button is visible.
-                // SignatureVerificationMode intentionally left unset → defaults to WhenPresent (Relaxed).
+
+                // Demonstrate full strict publisher-pin verification using the Microsoft-signed download.
+                // Required  → unsigned setups are rejected (chain validation is mandatory).
+                // Strict    → the subject name pin must match; a mismatch is a hard failure.
+                // SubjectName ".NET" and IssuerName "Microsoft Code Signing PCA 2011" are the
+                // actual values on the .NET Desktop Runtime installer cert (confirmed from logs).
+                // SubjectName is stable across renewals; IssuerName is semi-stable but provides
+                // an extra layer to demonstrate multi-field pinning in the demo.
+                SignatureVerificationMode = SignatureVerificationMode.Required,
+                SignaturePolicy = SignatureComparisonPolicy.Strict,
+                SignatureConfig = new SignatureConfig
+                {
+                    SubjectName = ".NET",
+                    IssuerName = "Microsoft Code Signing PCA 2011"
+                }
             },
             Releases =
             {
@@ -78,7 +93,7 @@ internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
                               - Long enough to need a vertical scroll bar — keep reading!
                               - Bullet list with many items to trigger scrollbars
                               - Download progress bar (large real-world installer below)
-                              - Authenticode verification (WhenPresent mode, Microsoft-signed binary)
+                              - Authenticode publisher-pin verification (Required + Strict, pinned to subject ".NET" / issuer "Microsoft Code Signing PCA 2011")
                               - Help button (top of start page, opens the Vicius docs)
                               - Remind me tomorrow button (start page)
                               - Back / Cancel navigation
@@ -110,7 +125,7 @@ internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
 
                               [Release notes on Microsoft Learn](https://learn.microsoft.com/dotnet/core/whats-new/)
                               """,
-                    // ~50 MB Microsoft-signed binary → drives progress bar + passes WhenPresent verification.
+                    // ~50 MB Microsoft-signed binary → drives progress bar + passes Required/Strict publisher-pin check.
                     DownloadUrl =
                         "https://download.visualstudio.microsoft.com/download/pr/bb581716-4cca-466e-9857-512e2371734b/5fe261422a7305171866fd7812d0976f/windowsdesktop-runtime-8.0.7-win-x64.exe",
                     LaunchArguments = "/norestart",
