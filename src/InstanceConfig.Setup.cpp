@@ -438,9 +438,12 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
             launchArgs << " " << release.launchArguments.value();
         }
 
-        const auto& args = launchArgs.str();
+        std::string args = launchArgs.str();
+        // CreateProcess may write into the command line buffer; never pass string::c_str().
+        std::vector<char> cmdLine(args.begin(), args.end());
+        cmdLine.push_back('\0');
 
-        if (!CreateProcessA(nullptr, const_cast<LPSTR>(args.c_str()), nullptr, nullptr, TRUE, 0, nullptr, nullptr, &info,
+        if (!CreateProcessA(nullptr, cmdLine.data(), nullptr, nullptr, TRUE, 0, nullptr, nullptr, &info,
                             &updateProcessInfo))
         {
             win32Error = GetLastError();

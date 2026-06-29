@@ -219,6 +219,14 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
             return httplib::OK_200;
         }
 
+        // Without an expected size, reuse a non-empty local file instead of issuing a
+        // doomed Range resume against a complete payload (servers return 416).
+        if (!expectedSize.has_value() && localSize > 0)
+        {
+            spdlog::info("Reusing existing local download ({} bytes), skipping re-download", localSize);
+            return httplib::OK_200;
+        }
+
         // If local size exceeds expected, drop it and start over
         if (expectedSize.has_value() && localSize > expectedSize.value())
         {

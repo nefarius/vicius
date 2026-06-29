@@ -140,11 +140,14 @@ VOID NCertFreeSigInfo(NSIGINFO* pSigInfo)
         if (pSigInfo->lpszAuthority)
             pSigInfo->lpszAuthority = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszAuthority));
 
+        if (pSigInfo->lpszFriendlyName)
+            pSigInfo->lpszFriendlyName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszFriendlyName));
+
         if (pSigInfo->lpszProgramName)
-            pSigInfo->lpszProgramName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisher));
+            pSigInfo->lpszProgramName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszProgramName));
 
         if (pSigInfo->lpszPublisherLink)
-            pSigInfo->lpszPublisherLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisher));
+            pSigInfo->lpszPublisherLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisherLink));
 
         if (pSigInfo->lpszMoreInfoLink)
             pSigInfo->lpszMoreInfoLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszMoreInfoLink));
@@ -416,21 +419,30 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
         {
             if (pCertContext->pCertInfo->SerialNumber.cbData != 0)
             {
-                pSigInfo->lpszSerial = static_cast<LPTSTR>(NHeapAlloc(
-                    ((pCertContext->pCertInfo->SerialNumber.cbData * 2) + 1) * sizeof(TCHAR)));
+                const DWORD serialByteCount = pCertContext->pCertInfo->SerialNumber.cbData;
+                const size_t serialCharCapacity = static_cast<size_t>(serialByteCount) * 2 + 1;
+                pSigInfo->lpszSerial = static_cast<LPTSTR>(NHeapAlloc(serialCharCapacity * sizeof(TCHAR)));
 
                 if (pSigInfo->lpszSerial != nullptr)
                 {
                     LPTSTR lpszPointer = pSigInfo->lpszSerial;
+                    size_t remainingChars = serialCharCapacity;
 
-                    for (DWORD dwCount = pCertContext->pCertInfo->SerialNumber.cbData; dwCount != 0; dwCount--)
+                    for (DWORD dwCount = serialByteCount; dwCount != 0; dwCount--)
                     {
-                        lpszPointer += _stprintf_s(
+                        const int written = _stprintf_s(
                             lpszPointer,
-                            pCertContext->pCertInfo->SerialNumber.cbData,
+                            remainingChars,
                             _T("%02X"),
                             pCertContext->pCertInfo->SerialNumber.pbData[dwCount - 1]
                         );
+                        if (written < 0)
+                        {
+                            break;
+                        }
+
+                        lpszPointer += written;
+                        remainingChars -= static_cast<size_t>(written);
                     }
                 }
             }
@@ -645,14 +657,23 @@ BOOL NVerifyFileSignature(LPCTSTR lpszFileName, NSIGINFO* pSigInfo, HANDLE hHand
             if (pSigInfo->lpszPublisher)
                 pSigInfo->lpszPublisher = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisher));
 
+            if (pSigInfo->lpszPublisherEmail)
+                pSigInfo->lpszPublisherEmail = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisherEmail));
+
+            if (pSigInfo->lpszPublisherUrl)
+                pSigInfo->lpszPublisherUrl = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisherUrl));
+
             if (pSigInfo->lpszAuthority)
                 pSigInfo->lpszAuthority = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszAuthority));
 
+            if (pSigInfo->lpszFriendlyName)
+                pSigInfo->lpszFriendlyName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszFriendlyName));
+
             if (pSigInfo->lpszProgramName)
-                pSigInfo->lpszProgramName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisher));
+                pSigInfo->lpszProgramName = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszProgramName));
 
             if (pSigInfo->lpszPublisherLink)
-                pSigInfo->lpszPublisherLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisher));
+                pSigInfo->lpszPublisherLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszPublisherLink));
 
             if (pSigInfo->lpszMoreInfoLink)
                 pSigInfo->lpszMoreInfoLink = static_cast<LPTSTR>(NHeapFree(pSigInfo->lpszMoreInfoLink));
