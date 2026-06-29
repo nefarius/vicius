@@ -169,7 +169,7 @@ static BOOL NCertGetNameString(PCCERT_CONTEXT pCertContext, DWORD dwType, DWORD 
     if (pCertContext == nullptr)
         return FALSE;
 
-    DWORD dwData = CertGetNameString(pCertContext, dwType, 0, nullptr, nullptr, 0);
+    DWORD dwData = CertGetNameString(pCertContext, dwType, dwFlags, nullptr, nullptr, 0);
 
     if (dwData == 0)
         return FALSE;
@@ -239,6 +239,9 @@ static BOOL WGetSignTimestamp(PCRYPT_ATTRIBUTES pAttributes, SYSTEMTIME& stTime,
     {
         if (strcmp(lpszObjId, pAttributes->rgAttr[dwAttr].pszObjId) == 0)
         {
+            if (pAttributes->rgAttr[dwAttr].cValue == 0)
+                continue;
+
             DWORD dwSize = sizeof(FILETIME);
             FILETIME ftCert;
 
@@ -339,6 +342,9 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
             {
                 continue;
             }
+
+            if (pSignerInfo->AuthAttrs.rgAttr[dwAttr].cValue == 0)
+                break;
 
             PSPC_SP_OPUS_INFO pOpus = nullptr;
             DWORD dwData = 0;
@@ -519,12 +525,14 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
                 {
                     FILETIME ftLocal;
 
-                    if (!FileTimeToLocalFileTime(&ftCert, &ftLocal))
+                    if (FileTimeToLocalFileTime(&ftCert, &ftLocal)
+                        && FileTimeToSystemTime(&ftLocal, &pSigInfo->stSigTime))
                     {
-                        if (!FileTimeToSystemTime(&ftLocal, &pSigInfo->stSigTime))
-                        {
-                            memset(&pSigInfo->stSigTime, 0, sizeof(SYSTEMTIME));
-                        }
+                        pSigInfo->bHasSigTime = TRUE;
+                    }
+                    else
+                    {
+                        memset(&pSigInfo->stSigTime, 0, sizeof(SYSTEMTIME));
                     }
                 }
             }
@@ -534,6 +542,9 @@ static BOOL NVerifyFileSignatureWorker(LPWSTR lpszFileName, WINTRUST_DATA& wtDat
         {
             if (strcmp(pSignerInfo->UnauthAttrs.rgAttr[dwAttr].pszObjId, szOID_RSA_counterSign) == 0)
             {
+                if (pSignerInfo->UnauthAttrs.rgAttr[dwAttr].cValue == 0)
+                    break;
+
                 if (NCryptDecodeObject(
                         PKCS7_SIGNER_INFO,
                         &pSignerInfo->UnauthAttrs.rgAttr[dwAttr].rgValue[0],

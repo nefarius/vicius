@@ -47,6 +47,9 @@ BOOL GetProgAndPublisherInfo(
             if (lstrcmpA(SPC_SP_OPUS_INFO_OBJID,
                          pSignerInfo->AuthAttrs.rgAttr[n].pszObjId) == 0)
             {
+                if (pSignerInfo->AuthAttrs.rgAttr[n].cValue == 0)
+                    break;
+
                 // Get Size of SPC_SP_OPUS_INFO structure.
                 fResult = CryptDecodeObject(
                     ENCODING,
@@ -175,6 +178,9 @@ BOOL GetDateOfTimeStamp(PCMSG_SIGNER_INFO pSignerInfo, SYSTEMTIME* st)
         if (lstrcmpA(szOID_RSA_signingTime,
                      pSignerInfo->AuthAttrs.rgAttr[n].pszObjId) == 0)
         {
+            if (pSignerInfo->AuthAttrs.rgAttr[n].cValue == 0)
+                break;
+
             // Decode and get FILETIME structure.
             dwData = sizeof(ft);
             fResult = CryptDecodeObject(
@@ -322,11 +328,14 @@ BOOL ExtractCertificateInfo(PCCERT_CONTEXT pCertContext, crypto::PSIGNATURE_INFO
 
     __try
     {
-        // Print Serial Number.
-        _tprintf(_T("Serial Number: "));
         dwData = pCertContext->pCertInfo->SerialNumber.cbData;
         // allocate two wide characters per serial byte and NULL terminator
         info->SerialNumber = static_cast<LPTSTR>(LocalAlloc(LPTR, ((dwData * 2) + 1) * sizeof(TCHAR)));
+        if (!info->SerialNumber)
+        {
+            spdlog::error("Unable to allocate memory for serial number");
+            __leave;
+        }
         LPTSTR lpszPointer = info->SerialNumber;
 
         for(DWORD n = 0; n < dwData; n++)
@@ -447,6 +456,9 @@ BOOL GetTimeStampSignerInfo(PCMSG_SIGNER_INFO pSignerInfo, PCMSG_SIGNER_INFO* pC
             if (lstrcmpA(pSignerInfo->UnauthAttrs.rgAttr[n].pszObjId,
                          szOID_RSA_counterSign) == 0)
             {
+                if (pSignerInfo->UnauthAttrs.rgAttr[n].cValue == 0)
+                    break;
+
                 // Get size of CMSG_SIGNER_INFO structure.
                 fResult = CryptDecodeObject(
                     ENCODING,
@@ -524,6 +536,7 @@ namespace crypto
         SYSTEMTIME st;
 
         ZeroMemory(&ProgPubInfo, sizeof(ProgPubInfo));
+        ZeroMemory(info, sizeof(*info));
         __try
         {
             lstrcpynW(szFileName, filePath, MAX_PATH);
@@ -644,6 +657,13 @@ namespace crypto
             // Get the timestamp certificate signerinfo structure.
             if (GetTimeStampSignerInfo(pSignerInfo, &pCounterSignerInfo))
             {
+                // Release the signer cert context before reusing the pointer.
+                if (pCertContext != nullptr)
+                {
+                    CertFreeCertificateContext(pCertContext);
+                    pCertContext = nullptr;
+                }
+
                 // Search for Timestamp certificate in the temporary
                 // certificate store.
                 CertInfo.Issuer = pCounterSignerInfo->Issuer;
