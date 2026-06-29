@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!--
+    Committed default debug arguments.
+    These point the Debug build at the local example server demo endpoint and enable
+    verbose file logging so a fresh clone can F5 both solutions and see a working demo.
+    See examples/server/Endpoints/DefaultDemoEndpoint.cs for the corresponding server side.
+  -->
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>--server-url http://localhost:5200/api/demo/Showcase/updates.json --log-level debug --log-to-file $(TargetDir)debug.log</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>--server-url http://localhost:5200/api/demo/Showcase/updates.json --log-level debug --log-to-file $(TargetDir)debug.log</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommandArguments>--server-url http://localhost:5200/api/demo/Showcase/updates.json --log-level debug --log-to-file $(TargetDir)debug.log</LocalDebuggerCommandArguments>
+  </PropertyGroup>
+</Project>
