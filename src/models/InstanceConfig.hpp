@@ -82,6 +82,8 @@ namespace models
         std::optional<std::shared_future<std::expected<int, std::string>>> downloadTask;
         /** The setup task */
         std::optional<std::shared_future<std::expected<SetupResult, std::string>>> setupTask;
+        /** The integrity-verification task */
+        std::optional<std::shared_future<std::expected<void, std::string>>> verifyTask;
         /** The selected release numeric ID */
         int selectedRelease{0};
         /** Human-readable download failure reason from last attempt (if any) */
@@ -502,6 +504,31 @@ namespace models
          *          Signature: governed by merged.signatureVerificationMode (WhenPresent / Required).
          */
         [[nodiscard]] std::expected<void, std::string> VerifyReleaseIntegrity();
+
+        /**
+         * \brief Launches VerifyReleaseIntegrity on a background thread.
+         * \return true if the task was started; false if one is already running.
+         */
+        bool VerifyReleaseIntegrityAsync();
+
+        struct VerifyStatus
+        {
+            bool isVerifying{false};
+            bool hasFinished{false};
+            /** Populated only when hasFinished == true. */
+            std::optional<std::expected<void, std::string>> result;
+        };
+
+        /**
+         * \brief Polls the background verification task without blocking.
+         * \return nullopt if no task has been started; otherwise a VerifyStatus snapshot.
+         */
+        [[nodiscard]] std::optional<VerifyStatus> GetVerifyStatus() const;
+
+        /**
+         * \brief Discards the completed or in-progress verification task.
+         */
+        void ResetVerifyState();
 
         /**
          * \brief Validates the Authenticode signature of a file and optionally pins the publisher.

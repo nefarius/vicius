@@ -731,6 +731,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     cfg.ResetReleaseDownloadState();
                     cfg.ResetSetupState();
+                    cfg.ResetVerifyState();
                 }
 
                 ImGui::Indent(leftBorderIndent);
@@ -828,21 +829,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                     case DownloadAndInstallStep::Verifying:
                     {
-                        ImGui::Text(ICON_FK_SHIELD " Verifying download integrity...");
+                        // Launch the verification task on first entry; subsequent frames just poll.
+                        cfg.VerifyReleaseIntegrityAsync();
 
-                        // Run synchronously (fast: checksum + WinVerifyTrust; no UI blocking concern)
-                        const auto verResult = cfg.VerifyReleaseIntegrity();
+                        const auto verStatus = cfg.GetVerifyStatus();
 
-                        if (verResult)
+                        if (!verStatus.has_value() || verStatus->isVerifying)
                         {
-                            spdlog::info("Verification passed, advancing to install");
-                            instStep = DownloadAndInstallStep::PrepareInstall;
+                            ImGui::Text(ICON_FK_SHIELD " Verifying download integrity...");
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(5));
+                            ui::IndeterminateProgressBar(ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
                         }
-                        else
+                        else if (verStatus->hasFinished && verStatus->result.has_value())
                         {
-                            spdlog::error("Verification failed: {}", verResult.error());
-                            cfg.SetLastDownloadError(verResult.error());
-                            instStep = DownloadAndInstallStep::VerificationFailed;
+                            const auto& verResult = *verStatus->result;
+                            cfg.ResetVerifyState();
+
+                            if (verResult)
+                            {
+                                spdlog::info("Verification passed, advancing to install");
+                                instStep = DownloadAndInstallStep::PrepareInstall;
+                            }
+                            else
+                            {
+                                spdlog::error("Verification failed: {}", verResult.error());
+                                cfg.SetLastDownloadError(verResult.error());
+                                instStep = DownloadAndInstallStep::VerificationFailed;
+                            }
                         }
 
                         break;
@@ -1271,6 +1284,10 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             // light and dark app mode in Windows Settings.
             if (lParam && lstrcmpW(reinterpret_cast<LPCWSTR>(lParam), L"ImmersiveColorSet") == 0)
             {
+                // The theme change affects both the fallback accent color (light/dark hue) and
+                // the ImGui style, so invalidate the cache before re-reading either.
+                winapi::InvalidateAccentColorCache();
+
                 const auto lightResult = winapi::IsLightThemeActive();
                 if (!lightResult)
                 {
@@ -1287,6 +1304,12 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
                     spdlog::debug("OS theme changed to {}", g_theme == ui::Theme::Dark ? "dark" : "light");
                 }
             }
+            break;
+        }
+        case WM_DWMCOLORIZATIONCOLORCHANGED:
+        {
+            // Sent when the user changes the accent / colorization color in Settings.
+            winapi::InvalidateAccentColorCache();
             break;
         }
 

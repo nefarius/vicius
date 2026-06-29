@@ -188,6 +188,38 @@ namespace
 } // namespace
 
 // ============================================================================
+// Async wrapper (mirrors InvokeSetupAsync / GetSetupStatus / ResetSetupState)
+// ============================================================================
+
+bool models::InstanceConfig::VerifyReleaseIntegrityAsync()
+{
+    if (verifyTask.has_value())
+        return false;
+
+    verifyTask = std::async(std::launch::async, &InstanceConfig::VerifyReleaseIntegrity, this);
+    return true;
+}
+
+std::optional<models::InstanceConfig::VerifyStatus> models::InstanceConfig::GetVerifyStatus() const
+{
+    if (!verifyTask.has_value())
+        return std::nullopt;
+
+    const std::future_status futureStatus = verifyTask->wait_for(std::chrono::milliseconds(1));
+
+    VerifyStatus status{};
+    status.isVerifying = futureStatus == std::future_status::timeout;
+    status.hasFinished = futureStatus == std::future_status::ready;
+
+    if (status.hasFinished)
+        status.result = verifyTask->get();
+
+    return status;
+}
+
+void models::InstanceConfig::ResetVerifyState() { verifyTask.reset(); }
+
+// ============================================================================
 // Layer 1: Setup Checksum Verification
 // ============================================================================
 

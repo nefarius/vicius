@@ -97,17 +97,27 @@ namespace winapi
      * \brief Reads the system accent color via DwmGetColorizationColor and converts it to
      *        a linear ImVec4 suitable for ImGui style colors. Falls back to the Win11
      *        Fluent default blue (#60CDFF dark / #0078D4 light) if DWM cannot supply a value.
+     *        The result is cached until InvalidateAccentColorCache() is called.
      * \return Accent color as ImVec4 (R, G, B, A) with full opacity.
      */
     ImVec4 GetAccentColor();
 
     /**
      * \brief Returns a lighter/desaturated variant of the accent color for hover states.
+     *        Derived from the cached accent color; no extra I/O.
      */
     ImVec4 GetAccentColorHovered();
 
     /**
      * \brief Returns a darker/more-opaque variant of the accent color for pressed states.
+     *        Derived from the cached accent color; no extra I/O.
      */
     ImVec4 GetAccentColorActive();
+
+    /**
+     * \brief Invalidates the cached accent color so the next call to GetAccentColor (and its
+     *        variants) will re-read the registry and DWM. Call this from WndProc on
+     *        WM_SETTINGCHANGE (ImmersiveColorSet) and WM_DWMCOLORIZATIONCOLORCHANGED.
+     */
+    void InvalidateAccentColorCache();
 }
