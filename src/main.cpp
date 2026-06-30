@@ -592,7 +592,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
 
         ImGui::BeginDisabled(isBackDisabled);
-        if (ImGui::SmallButton(ICON_FK_ARROW_LEFT))
+        if (ImGui::Button(ICON_FK_ARROW_LEFT))
         {
             --currentPage;
 
