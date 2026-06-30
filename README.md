@@ -64,15 +64,73 @@ Stable releases are published [on the repository releases page](../../releases/)
 
 ## Screenshots
 
-![nefarius_HidHide_Updater_z4YFTJStbr.png](assets/nefarius_HidHide_Updater_z4YFTJStbr.png)
+All screenshots are taken from the included demo server (see [Run the demo locally](#run-the-demo-locally)).
 
-![nefarius_HidHide_Updater_GDFudys8mB.png](assets/nefarius_HidHide_Updater_GDFudys8mB.png)
+### Notification & changelog
 
-![nefarius_HidHide_Updater_T7lQFBKqRw.png](assets/nefarius_HidHide_Updater_T7lQFBKqRw.png)
+<table>
+<tr>
+<td width="50%">
+<img src="assets/screenshots/Updater_E2ETkBrJD1.png" width="100%" /><br/>
+<sub><b>Start page</b> — update notification with "Display update details now", "Remind me tomorrow", and "Open help web page" actions.</sub>
+</td>
+<td width="50%">
+<img src="assets/screenshots/Updater_4RNzmPWjID.png" width="100%" /><br/>
+<sub><b>Markdown changelog</b> — rich update summary with headings, bold text, and hyperlinks rendered inline.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="assets/screenshots/Updater_AJvIzVQx7m.png" width="100%" /><br/>
+<sub><b>Scrollable changelog</b> — long bullet lists trigger a vertical scrollbar; the "Download and install" button stays accessible.</sub>
+</td>
+<td></td>
+</tr>
+</table>
 
-![Updater_mc9y7o4qcL.png](assets/Updater_mc9y7o4qcL.png)
+### Inline media & details
 
-![Updater_EMJNlbXitT.png](assets/Updater_EMJNlbXitT.png)
+<table>
+<tr>
+<td width="50%">
+<img src="assets/screenshots/Updater_3jFJyQ2Acb.png" width="100%" /><br/>
+<sub><b>Inline sections</b> — changelog can contain multiple named blocks, including an image block ("Demo logo").</sub>
+</td>
+<td width="50%">
+<img src="assets/screenshots/Updater_3ABvEbeovz.png" width="100%" /><br/>
+<sub><b>Inline image</b> — server-supplied images (e.g. a product logo) are rendered directly inside the changelog.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="assets/screenshots/Updater_8MhfngR51u.png" width="100%" /><br/>
+<sub><b>More details</b> — additional release notes with clickable external hyperlinks.</sub>
+</td>
+<td></td>
+</tr>
+</table>
+
+### Install progress & error handling
+
+<table>
+<tr>
+<td width="50%">
+<img src="assets/screenshots/Updater_B3e9QlNUtd.png" width="100%" /><br/>
+<sub><b>Downloading</b> — determinate progress bar showing bytes transferred and percentage.</sub>
+</td>
+<td width="50%">
+<img src="assets/screenshots/Updater_O9veCeeDQV.png" width="100%" /><br/>
+<sub><b>Installing</b> — indeterminate/marquee progress bar while the setup process runs.</sub>
+</td>
+</tr>
+<tr>
+<td width="50%">
+<img src="assets/screenshots/Updater_yOUo0sswB1.png" width="100%" /><br/>
+<sub><b>Error handling</b> — failed installation with human-readable exit-code description and retry guidance.</sub>
+</td>
+<td></td>
+</tr>
+</table>
 
 ## Run the demo locally
 
