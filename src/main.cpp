@@ -684,22 +684,21 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::PopFont();
 
                 const auto& release = cfg.GetSelectedRelease();
-                ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
                 const float changelogRegionWidth = ImGui::GetContentRegionAvail().x - SCALED(20);
                 // Height: fill from the current cursor down to the footer separator,
                 // leaving a single ItemSpacing gap so the separator is not obscured.
                 const float changelogHeight = footerSepY - ImGui::GetCursorPosY()
                                               - ImGui::GetStyle().ItemSpacing.y;
-                // compensate vertical scrollbar space
-                ImGui::SetNextWindowContentSize(ImVec2(changelogRegionWidth - SCALED(15), 0.0f));
                 // border=true → ImGuiChildFlags_FrameStyle: draws the rounded frame border
                 // from the style and uses FramePadding as inner content inset, giving a
                 // clear, DPI-correct gap between the content and the visible frame edge.
+                // imgui_md wraps via GetContentRegionAvail().x which already reflects the
+                // frame-padded inner width, so no manual SetNextWindowContentSize needed.
                 ImGui::BeginChild(
                     "Summary",
                     ImVec2(changelogRegionWidth, changelogHeight),
                     true,
-                    windowFlags
+                    ImGuiWindowFlags_None
                 );
                 markdown::RenderChangelog(release.summary.empty() ? "This release contains no summary." : release.summary);
                 ImGui::EndChild();
