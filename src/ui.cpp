@@ -335,6 +335,13 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     io.FontDefault = G_Font_Default;
 }
 
+float ui::RightAlignButtonX(const char* label)
+{
+    const ImGuiStyle& s = ImGui::GetStyle();
+    const float buttonWidth = ImGui::CalcTextSize(label, nullptr, true).x + s.FramePadding.x * 2.0f;
+    return ImGui::GetWindowWidth() - s.WindowPadding.x - buttonWidth;
+}
+
 /**
  * \brief https://github.com/ocornut/imgui/issues/5370#issuecomment-1145917633
  */

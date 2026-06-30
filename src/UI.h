@@ -19,4 +19,11 @@ namespace ui
 
     void LoadFonts(HINSTANCE hInstance, float sizePixels = 16.0f, float scale = 1.0f);
     void IndeterminateProgressBar(const ImVec2& size_arg);
+
+    /**
+     * \brief Returns the cursor X position that right-aligns a regular ImGui::Button
+     *        with the given label inside the current window's right padding edge.
+     *        Accounts for FramePadding so the result is safe at any DPI scale.
+     */
+    float RightAlignButtonX(const char* label);
 }
