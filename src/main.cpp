@@ -692,10 +692,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                                               - ImGui::GetStyle().ItemSpacing.y;
                 // compensate vertical scrollbar space
                 ImGui::SetNextWindowContentSize(ImVec2(changelogRegionWidth - SCALED(15), 0.0f));
+                // border=true → ImGuiChildFlags_FrameStyle: draws the rounded frame border
+                // from the style and uses FramePadding as inner content inset, giving a
+                // clear, DPI-correct gap between the content and the visible frame edge.
                 ImGui::BeginChild(
                     "Summary",
                     ImVec2(changelogRegionWidth, changelogHeight),
-                    false,
+                    true,
                     windowFlags
                 );
                 markdown::RenderChangelog(release.summary.empty() ? "This release contains no summary." : release.summary);
