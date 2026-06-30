@@ -158,6 +158,14 @@ void ui::ApplyImGuiStyle(Theme theme, float scale)
     c[ImGuiCol_PlotHistogram]        = accent;
     c[ImGuiCol_PlotHistogramHovered] = accentHovered;
 
+    // Repurpose ImGuiCol_NavHighlight (keyboard-nav, unused in this app) as a
+    // theme-aware hyperlink colour.  Values match the Windows 11 Fluent spec:
+    //   Dark  → #60CDFF  (light sky-blue — legible on all dark surfaces)
+    //   Light → #0067C0  (deep azure    — legible on all light surfaces)
+    c[ImGuiCol_NavHighlight] = (theme == Theme::Dark)
+        ? ImVec4{0.376f, 0.804f, 1.000f, 1.0f}   // #60CDFF
+        : ImVec4{0.000f, 0.404f, 0.753f, 1.0f};  // #0067C0
+
     // Fluent Win11 shape metrics — identical for both themes
     style.WindowRounding    = 8.0f;
     style.ChildRounding     = 8.0f;
@@ -333,6 +341,13 @@ void ui::LoadFonts(HINSTANCE hInstance, const float sizePixels, float scale)
     G_Font_H1 = addFontSlot(boldFont, ruda_bold_data, ruda_bold_size, 1.5f, false);
 
     io.FontDefault = G_Font_Default;
+}
+
+float ui::RightAlignButtonX(const char* label)
+{
+    const ImGuiStyle& s = ImGui::GetStyle();
+    const float buttonWidth = ImGui::CalcTextSize(label, nullptr, true).x + s.FramePadding.x * 2.0f;
+    return ImGui::GetWindowWidth() - s.WindowPadding.x - buttonWidth;
 }
 
 /**

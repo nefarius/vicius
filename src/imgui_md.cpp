@@ -126,7 +126,11 @@ void imgui_md::BLOCK_H(const MD_BLOCK_H_DETAIL* d, bool e)
 {
 	if (e) {
 		m_hlevel = d->level;
-		ImGui::NewLine();
+		// Only insert a blank line before headings that are not the very first
+		// element in the window — avoids excess top padding when the changelog
+		// opens with a heading.
+		if (ImGui::GetCursorPosY() > ImGui::GetCursorStartPos().y)
+			ImGui::NewLine();
 	} else {
 		m_hlevel = 0;
 	}

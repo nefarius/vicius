@@ -577,11 +577,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #pragma region Main ImGui content building
 
         ImGuiWindowFlags flags =
-            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar;
+            ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+            ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
         const ImGuiViewport* mainViewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(ImVec2(mainViewport->WorkPos.x - 1, mainViewport->WorkPos.y - 1));
-        ImGui::SetNextWindowSize(ImVec2(g_scaledWidth, g_scaledHeight));
+        ImGui::SetNextWindowPos(mainViewport->WorkPos);
+        ImGui::SetNextWindowSize(mainViewport->WorkSize);
 
         ImGui::Begin("MainWindow", nullptr, flags);
 
@@ -591,7 +592,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
 
         ImGui::BeginDisabled(isBackDisabled);
-        if (ImGui::SmallButton(ICON_FK_ARROW_LEFT))
+        if (ImGui::Button(ICON_FK_ARROW_LEFT))
         {
             --currentPage;
 
@@ -605,8 +606,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         ImGui::SameLine();
         ImGui::Text("Found Updates for %s", cfg.GetProductName().c_str());
 
-        float navigateButtonOffsetY = mainViewport->WorkSize.y - SCALED(42);
-        float leftBorderIndent = 40.0;
+        const float leftBorderIndent = SCALED(40.0f);
+
+        // Footer geometry — computed once per frame in window-local coordinates so it
+        // is correct at any DPI scale without relying on viewport WorkSize magic numbers.
+        const float footerButtonY = ImGui::GetWindowHeight()
+                                    - ImGui::GetStyle().WindowPadding.y
+                                    - ImGui::GetFrameHeight();
+        const float footerSepY    = footerButtonY - ImGui::GetStyle().ItemSpacing.y;
 
         switch (currentPage)
         {
@@ -615,7 +622,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::Indent(leftBorderIndent);
                 ImGui::PushFont(G_Font_H1);
                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(30));
-                ImGui::PushTextWrapPos(g_scaledWidth - (10.0f + leftBorderIndent));
+                ImGui::PushTextWrapPos(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - SCALED(10.0f));
                 ImGui::TextWrapped("Updates for %s are available", cfg.GetProductName().c_str());
                 ImGui::PopTextWrapPos();
                 ImGui::PopFont();
@@ -677,20 +684,34 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::PopFont();
 
                 const auto& release = cfg.GetSelectedRelease();
-                ImGuiWindowFlags windowFlags = ImGuiWindowFlags_HorizontalScrollbar;
                 const float changelogRegionWidth = ImGui::GetContentRegionAvail().x - SCALED(20);
-                // compensate vertical scrollbar space
-                ImGui::SetNextWindowContentSize(ImVec2(changelogRegionWidth - SCALED(15),0.0f));
+                // Height: fill from the current cursor down to the footer separator,
+                // leaving a single ItemSpacing gap so the separator is not obscured.
+                const float changelogHeight = footerSepY - ImGui::GetCursorPosY()
+                                              - ImGui::GetStyle().ItemSpacing.y;
+                // border=true → ImGuiChildFlags_FrameStyle: draws the rounded frame border
+                // from the style and uses FramePadding as inner content inset, giving a
+                // clear, DPI-correct gap between the content and the visible frame edge.
+                // imgui_md wraps via GetContentRegionAvail().x which already reflects the
+                // frame-padded inner width, so no manual SetNextWindowContentSize needed.
                 ImGui::BeginChild(
                     "Summary",
-                    ImVec2(changelogRegionWidth, ImGui::GetContentRegionAvail().y - SCALED(100)),
-                    false,
-                    windowFlags
-                    );
+                    ImVec2(changelogRegionWidth, changelogHeight),
+                    true,
+                    ImGuiWindowFlags_None
+                );
                 markdown::RenderChangelog(release.summary.empty() ? "This release contains no summary." : release.summary);
                 ImGui::EndChild();
 
-                ImGui::SetCursorPos(ImVec2(mainViewport->WorkSize.x - SCALED(215), navigateButtonOffsetY));
+                // Place "Download and install" to the left of the always-present Cancel button.
+                // Measure both buttons so there is a consistent ItemSpacing gap between them.
+                {
+                    const ImGuiStyle& st = ImGui::GetStyle();
+                    const float cancelW  = ImGui::CalcTextSize("Cancel", nullptr, true).x + st.FramePadding.x * 2.0f;
+                    const float dlW      = ImGui::CalcTextSize("Download and install", nullptr, true).x + st.FramePadding.x * 2.0f;
+                    const float dlX      = ImGui::GetWindowWidth() - st.WindowPadding.x - cancelW - st.ItemSpacing.x - dlW;
+                    ImGui::SetCursorPos(ImVec2(dlX, footerButtonY));
+                }
                 ImGui::PushStyleColor(ImGuiCol_Button,        winapi::GetAccentColor());
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, winapi::GetAccentColorHovered());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  winapi::GetAccentColorActive());
@@ -1081,12 +1102,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             }
         }
 
-        ImGui::SetCursorPosY(mainViewport->WorkSize.y - SCALED(52));
+        ImGui::SetCursorPosY(footerSepY);
         ImGui::Separator();
 
-        ImGui::SetCursorPos(ImVec2(mainViewport->WorkSize.x - SCALED(70), navigateButtonOffsetY));
+        const char* cancelLabel = currentPage == WizardPage::Finish ? "Finish" : "Cancel";
+        ImGui::SetCursorPos(ImVec2(ui::RightAlignButtonX(cancelLabel), footerButtonY));
         ImGui::BeginDisabled(isCancelDisabled);
-        if (ImGui::Button(currentPage == WizardPage::Finish ? "Finish" : "Cancel"))
+        if (ImGui::Button(cancelLabel))
         {
             PostQuitMessage(status);
         }

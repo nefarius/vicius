@@ -155,11 +155,13 @@ struct changelog : imgui_md
     {
         if (!m_href.empty())
         {
-            // improve hyperlink visibility
-            return ImGui::GetStyle().Colors[ ImGuiCol_CheckMark ];
+            // ImGuiCol_NavHighlight is repurposed as a theme-aware hyperlink colour
+            // (see ApplyImGuiStyle).  It is always legible on both dark and light
+            // backgrounds regardless of the user's accent colour choice.
+            return ImGui::GetStyle().Colors[ImGuiCol_NavHighlight];
         }
 
-        return ImGui::GetStyle().Colors[ ImGuiCol_Text ];
+        return ImGui::GetStyle().Colors[ImGuiCol_Text];
     }
 
     void open_url() const override
