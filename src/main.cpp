@@ -701,7 +701,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 markdown::RenderChangelog(release.summary.empty() ? "This release contains no summary." : release.summary);
                 ImGui::EndChild();
 
-                ImGui::SetCursorPos(ImVec2(ui::RightAlignButtonX("Download and install"), footerButtonY));
+                // Place "Download and install" to the left of the always-present Cancel button.
+                // Measure both buttons so there is a consistent ItemSpacing gap between them.
+                {
+                    const ImGuiStyle& st = ImGui::GetStyle();
+                    const float cancelW  = ImGui::CalcTextSize("Cancel", nullptr, true).x + st.FramePadding.x * 2.0f;
+                    const float dlW      = ImGui::CalcTextSize("Download and install", nullptr, true).x + st.FramePadding.x * 2.0f;
+                    const float dlX      = ImGui::GetWindowWidth() - st.WindowPadding.x - cancelW - st.ItemSpacing.x - dlW;
+                    ImGui::SetCursorPos(ImVec2(dlX, footerButtonY));
+                }
                 ImGui::PushStyleColor(ImGuiCol_Button,        winapi::GetAccentColor());
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, winapi::GetAccentColorHovered());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  winapi::GetAccentColorActive());
