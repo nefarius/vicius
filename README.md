@@ -74,6 +74,20 @@ Stable releases are published [on the repository releases page](../../releases/)
 
 ![Updater_EMJNlbXitT.png](assets/Updater_EMJNlbXitT.png)
 
+## Run the demo locally
+
+The fastest way to see the updater in action after a fresh clone:
+
+1. **Start the example server** — open `examples.sln` in Visual Studio, press F5
+   (or `dotnet run` inside `examples/server/`).  It listens on `http://localhost:5200`.
+2. **Start the updater** — open `vīcĭus.sln`, select **Debug | x64**, press F5.
+   The committed `src/vīcĭus.vcxproj.user` passes `--server-url`,
+   `--log-level debug`, and `--log-to-file` automatically, so no manual
+   configuration is needed.
+
+See the [example server README](examples/server/README.md) for a full walkthrough of
+what the demo exercises.
+
 ## How to build
 
 Set up Visual Studio 2022 or newer with the C++ Desktop Development workload.
