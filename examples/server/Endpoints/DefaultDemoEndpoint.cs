@@ -30,9 +30,16 @@ internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
             return string.Empty;
 
         var png = new byte[stream.Length];
-        _ = stream.Read(png, 0, png.Length);
+        stream.ReadExactly(png, 0, png.Length);
 
-        return IconConverter.PngToIcoBase64(png);
+        try
+        {
+            return IconConverter.PngToIcoBase64(png);
+        }
+        catch (ArgumentException)
+        {
+            return string.Empty;
+        }
     }
 
     public override void Configure()

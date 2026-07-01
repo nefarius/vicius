@@ -109,7 +109,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
         this->channel = cmdl(NV_CLI_PARAM_CHANNEL).str();
     }
 
-    spdlog::debug("channel = {}", channel);
+    spdlog::debug("channel = `{}`", channel);
 
     this->appPath = util::GetImageBasePathW();
     spdlog::debug("appPath = {}", appPath);
@@ -589,24 +589,27 @@ void models::InstanceConfig::ApplyCustomWindowIcon(HWND hWnd)
 
     spdlog::debug("Custom icon: requesting big {}x{}, small {}x{}", bigCx, bigCy, smCx, smCy);
 
-    const auto bigIcon = winapi::CreateIconFromIcoBuffer(*decoded, bigCx, bigCy);
-    if (!bigIcon)
+    // Helper: create one icon size, log the outcome, and return the result.
+    const auto makeIcon = [&](int cx, int cy, std::string_view label) -> std::expected<HICON, std::string>
     {
-        spdlog::warn("Custom icon: failed to create big icon ({}x{}): {}", bigCx, bigCy, bigIcon.error());
-        return;
-    }
+        auto result = winapi::CreateIconFromIcoBuffer(*decoded, cx, cy);
+        if (!result)
+            spdlog::warn("Custom icon: failed to create {} icon ({}x{}): {}", label, cx, cy, result.error());
+        else
+            spdlog::debug("Custom icon: {} HICON={} created", label, static_cast<void*>(*result));
+        return result;
+    };
 
-    spdlog::debug("Custom icon: big HICON={} created", static_cast<void*>(*bigIcon));
+    const auto bigIcon = makeIcon(bigCx, bigCy, "big");
+    if (!bigIcon) return;
 
-    const auto smIcon = winapi::CreateIconFromIcoBuffer(*decoded, smCx, smCy);
-    if (!smIcon)
-    {
-        spdlog::warn("Custom icon: failed to create small icon ({}x{}): {}", smCx, smCy, smIcon.error());
-        DestroyIcon(*bigIcon);
-        return;
-    }
+    const auto smIcon = makeIcon(smCx, smCy, "small");
+    if (!smIcon) { DestroyIcon(*bigIcon); return; }
 
-    spdlog::debug("Custom icon: small HICON={} created", static_cast<void*>(*smIcon));
+    // Release any previously stored handles before overwriting, so re-invocation
+    // does not leak GDI/USER resources.
+    if (customIconBig)   { DestroyIcon(customIconBig);   customIconBig   = nullptr; }
+    if (customIconSmall) { DestroyIcon(customIconSmall); customIconSmall = nullptr; }
 
     // Store handles so we can DestroyIcon them in the destructor.
     customIconBig   = *bigIcon;

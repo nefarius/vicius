@@ -30,6 +30,12 @@ internal static class IconConverter
 
         var (width, height) = ReadPngDimensions(png);
 
+        // ICONDIRENTRY bWidth/bHeight are single bytes where 0 encodes exactly 256.
+        // Values above 256 cannot be represented without truncation, so reject them explicitly.
+        if (width > 256 || height > 256)
+            throw new ArgumentException(
+                $"PNG dimensions {width}x{height} exceed the maximum ICO entry size of 256x256.", nameof(png));
+
         // ICO file layout
         // ───────────────
         // ICONDIR      (6 bytes):  reserved(2), type(2)=1, count(2)=1

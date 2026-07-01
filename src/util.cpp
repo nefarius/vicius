@@ -770,19 +770,20 @@ namespace winapi
         if (ico.size() < kIconDirSize)
             return std::unexpected("ICO buffer too small for ICONDIR header");
 
-        const auto* dir = reinterpret_cast<const ICONDIR*>(ico.data());
+        // Use memcpy into local structs to avoid unaligned pointer-cast UB; the
+        // #pragma pack(1) structs have the right field layout and sizeof() values.
+        ICONDIR dir{};
+        std::memcpy(&dir, ico.data(), kIconDirSize);
 
-        if (dir->idReserved != 0 || dir->idType != 1)
+        if (dir.idReserved != 0 || dir.idType != 1)
             return std::unexpected("ICO buffer has invalid ICONDIR signature");
 
-        if (dir->idCount == 0)
+        if (dir.idCount == 0)
             return std::unexpected("ICO buffer contains no entries");
 
-        const size_t entriesEnd = kIconDirSize + static_cast<size_t>(dir->idCount) * kEntrySize;
+        const size_t entriesEnd = kIconDirSize + static_cast<size_t>(dir.idCount) * kEntrySize;
         if (ico.size() < entriesEnd)
             return std::unexpected("ICO buffer too small for ICONDIRENTRY table");
-
-        const auto* entries = reinterpret_cast<const ICONDIRENTRY*>(ico.data() + kIconDirSize);
 
         // Pick the entry whose dimensions are closest to the requested size.
         // For entries with bWidth/bHeight == 0, the actual size is 256.
@@ -791,9 +792,10 @@ namespace winapi
         int bestDelta = INT_MAX;
         WORD bestBitCount = 0;
 
-        for (int i = 0; i < static_cast<int>(dir->idCount); ++i)
+        for (int i = 0; i < static_cast<int>(dir.idCount); ++i)
         {
-            const ICONDIRENTRY& e = entries[i];
+            ICONDIRENTRY e{};
+            std::memcpy(&e, ico.data() + kIconDirSize + static_cast<size_t>(i) * kEntrySize, kEntrySize);
 
             // Validate this entry's data range fits inside the buffer.
             const size_t entryEnd = static_cast<size_t>(e.dwImageOffset) + e.dwBytesInRes;
@@ -815,7 +817,8 @@ namespace winapi
         if (bestIdx < 0)
             return std::unexpected("ICO buffer has no valid entries");
 
-        const ICONDIRENTRY& best = entries[bestIdx];
+        ICONDIRENTRY best{};
+        std::memcpy(&best, ico.data() + kIconDirSize + static_cast<size_t>(bestIdx) * kEntrySize, kEntrySize);
         const BYTE* imgData = ico.data() + best.dwImageOffset;
 
         HICON hIcon = CreateIconFromResourceEx(
