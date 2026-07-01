@@ -104,4 +104,14 @@ public sealed class MergedConfig
     /// </summary>
     [Required]
     public bool HideRemindButton { get; set; } = false;
+
+    /// <summary>
+    ///     Base64-encoded Windows .ico data used as the window and taskbar icon at runtime.
+    /// </summary>
+    /// <remarks>
+    ///     When set, the client decodes the .ico in memory and applies it via WM_SETICON.
+    ///     Absent or invalid values are silently ignored; the compiled-in icon resource is used
+    ///     as fallback.
+    /// </remarks>
+    public string? IconBase64 { get; set; }
 }

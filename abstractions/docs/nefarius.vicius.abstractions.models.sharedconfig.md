@@ -69,6 +69,22 @@ public Nullable<Boolean> HideRemindButton { get; set; }
 
 [Nullable](https://learn.microsoft.com/dotnet/api/system.nullable-1)<[Boolean](https://learn.microsoft.com/dotnet/api/system.boolean)><br>
 
+### <a id="properties-iconbase64"/>**IconBase64**
+
+Base64-encoded Windows .ico data used as the window and taskbar icon at runtime.
+
+```csharp
+public string IconBase64 { get; set; }
+```
+
+#### Property Value
+
+[String](https://learn.microsoft.com/dotnet/api/system.string)<br>
+
+**Remarks:**
+
+The server should encode a valid .ico file (which may contain a PNG-compressed entry for Vista+ compatibility) as standard Base64 and supply it here. The client decodes it in memory and applies it via WM_SETICON; the compiled-in icon is kept as fallback if the field is absent or the data cannot be decoded.
+
 ### <a id="properties-installationerrorurl"/>**InstallationErrorUrl**
 
 URL pointing to a help article opening when an update error occurred.

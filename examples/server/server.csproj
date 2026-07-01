@@ -21,6 +21,13 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Demo icon: NSS-128x128.png wrapped server-side into a PNG-in-ICO for IconBase64 -->
+        <EmbeddedResource Include="..\..\assets\NSS-128x128.png">
+            <LogicalName>demo-icon.png</LogicalName>
+        </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
         <TrimmerRootAssembly Include="System.IO.FileSystem" />
         <TrimmerRootAssembly Include="System.Xml.XPath.XDocument" />
         <TrimmerRootAssembly Include="System.Xml.Linq" />
