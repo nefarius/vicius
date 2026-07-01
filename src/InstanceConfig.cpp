@@ -109,7 +109,7 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
         this->channel = cmdl(NV_CLI_PARAM_CHANNEL).str();
     }
 
-    spdlog::debug("channel = {}", channel);
+    spdlog::debug("channel = `{}`", channel);
 
     this->appPath = util::GetImageBasePathW();
     spdlog::debug("appPath = {}", appPath);
@@ -559,8 +559,74 @@ models::InstanceConfig::~InstanceConfig()
         }
     }
 
+    if (customIconBig)   { DestroyIcon(customIconBig);   customIconBig   = nullptr; }
+    if (customIconSmall) { DestroyIcon(customIconSmall); customIconSmall = nullptr; }
+
     // make sure everything ends up on file before shutting down
     spdlog::default_logger()->flush();
+}
+
+void models::InstanceConfig::ApplyCustomWindowIcon(HWND hWnd)
+{
+    if (!merged.iconBase64.has_value() || merged.iconBase64->empty())
+        return;
+
+    spdlog::debug("Custom icon: decoding {} base64 characters", merged.iconBase64->size());
+
+    const auto decoded = winapi::DecodeBase64(*merged.iconBase64);
+    if (!decoded)
+    {
+        spdlog::warn("Custom icon: base64 decode failed: {}", decoded.error());
+        return;
+    }
+
+    spdlog::debug("Custom icon: decoded {} bytes of ICO data", decoded->size());
+
+    const int bigCx  = GetSystemMetrics(SM_CXICON);
+    const int bigCy  = GetSystemMetrics(SM_CYICON);
+    const int smCx   = GetSystemMetrics(SM_CXSMICON);
+    const int smCy   = GetSystemMetrics(SM_CYSMICON);
+
+    spdlog::debug("Custom icon: requesting big {}x{}, small {}x{}", bigCx, bigCy, smCx, smCy);
+
+    // Helper: create one icon size, log the outcome, and return the result.
+    const auto makeIcon = [&](int cx, int cy, std::string_view label) -> std::expected<HICON, std::string>
+    {
+        auto result = winapi::CreateIconFromIcoBuffer(*decoded, cx, cy);
+        if (!result)
+            spdlog::warn("Custom icon: failed to create {} icon ({}x{}): {}", label, cx, cy, result.error());
+        else
+            spdlog::debug("Custom icon: {} HICON={} created", label, static_cast<void*>(*result));
+        return result;
+    };
+
+    const auto bigIcon = makeIcon(bigCx, bigCy, "big");
+    if (!bigIcon) return;
+
+    const auto smIcon = makeIcon(smCx, smCy, "small");
+    if (!smIcon) { DestroyIcon(*bigIcon); return; }
+
+    // Release any previously stored handles before overwriting, so re-invocation
+    // does not leak GDI/USER resources.
+    if (customIconBig)   { DestroyIcon(customIconBig);   customIconBig   = nullptr; }
+    if (customIconSmall) { DestroyIcon(customIconSmall); customIconSmall = nullptr; }
+
+    // Store handles so we can DestroyIcon them in the destructor.
+    customIconBig   = *bigIcon;
+    customIconSmall = *smIcon;
+
+    // Apply to the window (title bar) and the window class (taskbar/Alt+Tab).
+    SendMessageW(hWnd, WM_SETICON, ICON_BIG,   reinterpret_cast<LPARAM>(customIconBig));
+    spdlog::debug("Custom icon: WM_SETICON ICON_BIG sent");
+
+    SendMessageW(hWnd, WM_SETICON, ICON_SMALL,  reinterpret_cast<LPARAM>(customIconSmall));
+    spdlog::debug("Custom icon: WM_SETICON ICON_SMALL sent");
+
+    SetClassLongPtrW(hWnd, GCLP_HICON,   reinterpret_cast<LONG_PTR>(customIconBig));
+    SetClassLongPtrW(hWnd, GCLP_HICONSM, reinterpret_cast<LONG_PTR>(customIconSmall));
+    spdlog::debug("Custom icon: class icons updated (GCLP_HICON + GCLP_HICONSM)");
+
+    spdlog::debug("Custom icon: successfully applied (big {}x{}, small {}x{})", bigCx, bigCy, smCx, smCy);
 }
 
 std::expected<bool, std::string> models::InstanceConfig::IsInstalledVersionOutdated()

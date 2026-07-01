@@ -71,6 +71,22 @@ public bool HideRemindButton { get; set; }
 
 [Boolean](https://learn.microsoft.com/dotnet/api/system.boolean)<br>
 
+### <a id="properties-iconbase64"/>**IconBase64**
+
+Base64-encoded Windows .ico data used as the window and taskbar icon at runtime.
+
+```csharp
+public string IconBase64 { get; set; }
+```
+
+#### Property Value
+
+[String](https://learn.microsoft.com/dotnet/api/system.string)<br>
+
+**Remarks:**
+
+When set, the client decodes the .ico in memory and applies it via WM_SETICON. Absent or invalid values are silently ignored; the compiled-in icon resource is used as fallback.
+
 ### <a id="properties-installationerrorurl"/>**InstallationErrorUrl**
 
 URL pointing to a help article opening when an update error occurred.

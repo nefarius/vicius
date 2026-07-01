@@ -1,6 +1,7 @@
 using FastEndpoints;
 
 using Nefarius.Vicius.Abstractions.Models;
+using Nefarius.Vicius.Example.Server.Shared;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints;
 
@@ -14,6 +15,33 @@ namespace Nefarius.Vicius.Example.Server.Endpoints;
 /// </summary>
 internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
 {
+    // The server converts the PNG to a single-entry ICO (PNG-compressed, Vista+ compatible)
+    // and base64-encodes it once at startup.  The client receives a standard .ico buffer and
+    // does not need to know anything about PNG – it simply calls CreateIconFromResourceEx.
+    private static readonly string DemoIconBase64 = LoadDemoIconBase64();
+
+    private static string LoadDemoIconBase64()
+    {
+        // The PNG is embedded as a resource in server.csproj so no file-system path is needed.
+        using var stream = typeof(DefaultDemoEndpoint).Assembly
+            .GetManifestResourceStream("demo-icon.png");
+
+        if (stream is null)
+            return string.Empty;
+
+        var png = new byte[stream.Length];
+        stream.ReadExactly(png, 0, png.Length);
+
+        try
+        {
+            return IconConverter.PngToIcoBase64(png);
+        }
+        catch (ArgumentException)
+        {
+            return string.Empty;
+        }
+    }
+
     public override void Configure()
     {
         // Pointed at by the committed vcxproj.user --server-url arg.
@@ -51,6 +79,13 @@ internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
                     Version = "0.0.1"
                 },
                 // HideRemindButton intentionally left unset → "Remind me tomorrow" button is visible.
+
+                // Custom taskbar / title-bar icon.
+                // The server wraps the PNG asset in a one-entry ICO container (PNG-compressed,
+                // Windows Vista+ compatible) and base64-encodes it.  The client only ever sees a
+                // standard .ico buffer, so it stays simple.  An absent or invalid value is a
+                // silent no-op: the compiled-in icon resource is used as fallback.
+                IconBase64 = DemoIconBase64.Length > 0 ? DemoIconBase64 : null,
 
                 // Demonstrate full strict publisher-pin verification using the Microsoft-signed download.
                 // Required  → unsigned setups are rejected (chain validation is mandatory).

@@ -708,4 +708,130 @@ namespace winapi
     {
         g_accentCache.valid = false;
     }
+
+    std::expected<std::vector<uint8_t>, std::string> DecodeBase64(const std::string& b64)
+    {
+        constexpr size_t maxInputBytes = 1u * 1024u * 1024u; // 1 MiB guard
+        if (b64.size() > maxInputBytes)
+            return std::unexpected("Base64 input exceeds 1 MiB limit");
+
+        if (b64.empty())
+            return std::unexpected("Base64 input is empty");
+
+        DWORD decodedLen = 0;
+        if (!CryptStringToBinaryA(b64.c_str(), static_cast<DWORD>(b64.size()),
+                                  CRYPT_STRING_BASE64, nullptr, &decodedLen, nullptr, nullptr))
+        {
+            return std::unexpected(std::format("CryptStringToBinaryA (size query) failed: {:#x}", GetLastError()));
+        }
+
+        std::vector<uint8_t> out(decodedLen);
+        if (!CryptStringToBinaryA(b64.c_str(), static_cast<DWORD>(b64.size()),
+                                  CRYPT_STRING_BASE64, out.data(), &decodedLen, nullptr, nullptr))
+        {
+            return std::unexpected(std::format("CryptStringToBinaryA (decode) failed: {:#x}", GetLastError()));
+        }
+
+        out.resize(decodedLen);
+        return out;
+    }
+
+    std::expected<HICON, std::string> CreateIconFromIcoBuffer(const std::vector<uint8_t>& ico, int cx, int cy)
+    {
+        // ICO file layout:
+        //   ICONDIR  (6 bytes): reserved(2), type(2)=1, count(2)
+        //   ICONDIRENTRY[count] (16 bytes each):
+        //     bWidth(1), bHeight(1), bColorCount(1), bReserved(1),
+        //     wPlanes(2), wBitCount(2), dwBytesInRes(4), dwImageOffset(4)
+
+#pragma pack(push, 1)
+        struct ICONDIR
+        {
+            WORD idReserved;
+            WORD idType;
+            WORD idCount;
+        };
+        struct ICONDIRENTRY
+        {
+            BYTE  bWidth;
+            BYTE  bHeight;
+            BYTE  bColorCount;
+            BYTE  bReserved;
+            WORD  wPlanes;
+            WORD  wBitCount;
+            DWORD dwBytesInRes;
+            DWORD dwImageOffset;
+        };
+#pragma pack(pop)
+
+        constexpr size_t kIconDirSize  = sizeof(ICONDIR);
+        constexpr size_t kEntrySize    = sizeof(ICONDIRENTRY);
+
+        if (ico.size() < kIconDirSize)
+            return std::unexpected("ICO buffer too small for ICONDIR header");
+
+        // Use memcpy into local structs to avoid unaligned pointer-cast UB; the
+        // #pragma pack(1) structs have the right field layout and sizeof() values.
+        ICONDIR dir{};
+        std::memcpy(&dir, ico.data(), kIconDirSize);
+
+        if (dir.idReserved != 0 || dir.idType != 1)
+            return std::unexpected("ICO buffer has invalid ICONDIR signature");
+
+        if (dir.idCount == 0)
+            return std::unexpected("ICO buffer contains no entries");
+
+        const size_t entriesEnd = kIconDirSize + static_cast<size_t>(dir.idCount) * kEntrySize;
+        if (ico.size() < entriesEnd)
+            return std::unexpected("ICO buffer too small for ICONDIRENTRY table");
+
+        // Pick the entry whose dimensions are closest to the requested size.
+        // For entries with bWidth/bHeight == 0, the actual size is 256.
+        // Break ties by preferring higher bit depth.
+        int bestIdx = -1;
+        int bestDelta = INT_MAX;
+        WORD bestBitCount = 0;
+
+        for (int i = 0; i < static_cast<int>(dir.idCount); ++i)
+        {
+            ICONDIRENTRY e{};
+            std::memcpy(&e, ico.data() + kIconDirSize + static_cast<size_t>(i) * kEntrySize, kEntrySize);
+
+            // Validate this entry's data range fits inside the buffer.
+            const size_t entryEnd = static_cast<size_t>(e.dwImageOffset) + e.dwBytesInRes;
+            if (e.dwBytesInRes == 0 || entryEnd > ico.size())
+                continue;
+
+            const int w = e.bWidth  == 0 ? 256 : e.bWidth;
+            const int h = e.bHeight == 0 ? 256 : e.bHeight;
+            const int delta = std::abs(w - cx) + std::abs(h - cy);
+
+            if (delta < bestDelta || (delta == bestDelta && e.wBitCount > bestBitCount))
+            {
+                bestIdx      = i;
+                bestDelta    = delta;
+                bestBitCount = e.wBitCount;
+            }
+        }
+
+        if (bestIdx < 0)
+            return std::unexpected("ICO buffer has no valid entries");
+
+        ICONDIRENTRY best{};
+        std::memcpy(&best, ico.data() + kIconDirSize + static_cast<size_t>(bestIdx) * kEntrySize, kEntrySize);
+        const BYTE* imgData = ico.data() + best.dwImageOffset;
+
+        HICON hIcon = CreateIconFromResourceEx(
+            const_cast<PBYTE>(imgData),
+            best.dwBytesInRes,
+            TRUE,
+            0x00030000, // ICO version 3.0
+            cx, cy,
+            LR_DEFAULTCOLOR);
+
+        if (!hIcon)
+            return std::unexpected(std::format("CreateIconFromResourceEx failed: {:#x}", GetLastError()));
+
+        return hIcon;
+    }
 }

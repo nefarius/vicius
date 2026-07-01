@@ -447,6 +447,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     }
 
     cfg.SetWindowHandle(hwnd);
+    cfg.ApplyCustomWindowIcon(hwnd);
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();

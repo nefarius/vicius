@@ -112,6 +112,11 @@ namespace models
         /** True if the updater exe itself carries a valid Authenticode signature */
         bool isUpdaterSigned{false};
 
+        /** Custom window/taskbar icon (big), created from merged.iconBase64; freed in dtor */
+        HICON customIconBig{};
+        /** Custom window/taskbar icon (small), created from merged.iconBase64; freed in dtor */
+        HICON customIconSmall{};
+
         std::expected<int, std::string> DownloadRelease(curl_progress_callback progressFn, int releaseIndex);
 
         [[nodiscard]] std::list<std::string> BuildCommonHeaders() const;
@@ -143,6 +148,16 @@ namespace models
         ~InstanceConfig();
 
         void SetWindowHandle(_In_ const HWND hWnd) { windowHandle = hWnd; }
+
+        /**
+         * \brief Decodes merged.iconBase64 and sets it as the window and taskbar icon.
+         *
+         * No-op when iconBase64 is absent or empty. On any decode or Win32 failure the
+         * warning is logged and the compiled-in icon resource remains in effect.
+         *
+         * \param hWnd The main application window handle.
+         */
+        void ApplyCustomWindowIcon(HWND hWnd);
 
         std::filesystem::path GetAppPath() const { return appPath; }
         semver::version GetAppVersion() const { return appVersion; }

@@ -985,6 +985,8 @@ namespace
                         merged.signatureConfig = shared.signatureConfig.value();
 
                     if (shared.hideRemindButton.has_value()) merged.hideRemindButton = shared.hideRemindButton.value();
+
+                    if (shared.iconBase64.has_value()) merged.iconBase64 = shared.iconBase64.value();
                 }
 
                 return {};

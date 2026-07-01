@@ -39,6 +39,8 @@ namespace models
         std::optional<SignatureConfig> signatureConfig;
         /** True to hide the "Remind me tomorrow" button in the UI */
         std::optional<bool> hideRemindButton;
+        /** Base64-encoded Windows .ico data for the window and taskbar icon */
+        std::optional<std::string> iconBase64;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SharedConfig,
@@ -53,5 +55,6 @@ namespace models
                                                     signaturePolicy,
                                                     signatureStrategy,
                                                     signatureConfig,
-                                                    hideRemindButton)
+                                                    hideRemindButton,
+                                                    iconBase64)
 }

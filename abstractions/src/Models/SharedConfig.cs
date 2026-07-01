@@ -98,4 +98,15 @@ public sealed class SharedConfig
     ///     When true, the "Remind me tomorrow" button is hidden in the update UI.
     /// </summary>
     public bool? HideRemindButton { get; set; }
+
+    /// <summary>
+    ///     Base64-encoded Windows .ico data used as the window and taskbar icon at runtime.
+    /// </summary>
+    /// <remarks>
+    ///     The server should encode a valid .ico file (which may contain a PNG-compressed entry
+    ///     for Vista+ compatibility) as standard Base64 and supply it here.  The client decodes
+    ///     it in memory and applies it via WM_SETICON; the compiled-in icon is kept as fallback
+    ///     if the field is absent or the data cannot be decoded.
+    /// </remarks>
+    public string? IconBase64 { get; set; }
 }

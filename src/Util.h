@@ -120,4 +120,27 @@ namespace winapi
      *        WM_SETTINGCHANGE (ImmersiveColorSet) and WM_DWMCOLORIZATIONCOLORCHANGED.
      */
     void InvalidateAccentColorCache();
+
+    /**
+     * \brief Decodes a standard Base64 string into raw bytes using CryptStringToBinaryA.
+     * \param b64 The Base64-encoded input string.
+     * \return Decoded bytes on success; unexpected error string on failure.
+     * \remarks Rejects inputs larger than 1 MiB as a safety guard against server-supplied data.
+     */
+    [[nodiscard]] std::expected<std::vector<uint8_t>, std::string> DecodeBase64(const std::string& b64);
+
+    /**
+     * \brief Creates an HICON from an in-memory Windows .ico buffer.
+     *
+     * Validates the ICONDIR/ICONDIRENTRY structure, picks the best-matching entry for
+     * the requested dimensions and delegates to CreateIconFromResourceEx so both
+     * legacy BMP-compressed and Vista+ PNG-compressed icon entries are supported.
+     *
+     * \param ico  Raw bytes of a valid .ico file.
+     * \param cx   Desired icon width  (e.g. GetSystemMetrics(SM_CXICON)).
+     * \param cy   Desired icon height (e.g. GetSystemMetrics(SM_CYICON)).
+     * \return A valid HICON on success; unexpected error string on failure.
+     * \remarks The caller is responsible for calling DestroyIcon on the returned handle.
+     */
+    [[nodiscard]] std::expected<HICON, std::string> CreateIconFromIcoBuffer(const std::vector<uint8_t>& ico, int cx, int cy);
 }

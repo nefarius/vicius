@@ -39,6 +39,8 @@ namespace models
         std::optional<SignatureConfig> signatureConfig;
         /** True to hide the "Remind me tomorrow" button in the UI */
         bool hideRemindButton{false};
+        /** Base64-encoded Windows .ico data for the window and taskbar icon */
+        std::optional<std::string> iconBase64;
 
         MergedConfig() : windowTitle(NV_WINDOW_TITLE), productName(NV_PRODUCT_NAME) { }
 
@@ -67,5 +69,6 @@ namespace models
                                                     signaturePolicy,
                                                     signatureStrategy,
                                                     signatureConfig,
-                                                    hideRemindButton)
+                                                    hideRemindButton,
+                                                    iconBase64)
 }
