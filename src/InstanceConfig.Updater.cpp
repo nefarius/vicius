@@ -4,6 +4,51 @@
 #include "Util.h"
 #include "InstanceConfig.hpp"
 
+namespace
+{
+    /**
+     * \brief Quotes and escapes a single argument value for safe inclusion in a
+     * CreateProcess / ShellExecuteEx command string that will be parsed by
+     * CommandLineToArgvW.
+     *
+     * Algorithm: wrap in double-quotes, doubling any backslashes that immediately
+     * precede a double-quote or end the string, and escaping every embedded
+     * double-quote as \".
+     * See https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-commandlinetoargvw
+     */
+    std::string QuoteArg(const std::string& arg)
+    {
+        std::string out;
+        out.reserve(arg.size() + 4);
+        out += '"';
+        size_t backslashes = 0;
+        for (const char c : arg)
+        {
+            if (c == '\\')
+            {
+                ++backslashes;
+            }
+            else if (c == '"')
+            {
+                // Double any preceding backslashes, then escape the quote.
+                out.append(backslashes * 2, '\\');
+                out += "\\\"";
+                backslashes = 0;
+            }
+            else
+            {
+                out.append(backslashes, '\\');
+                out += c;
+                backslashes = 0;
+            }
+        }
+        // Double trailing backslashes (they precede the closing quote).
+        out.append(backslashes * 2, '\\');
+        out += '"';
+        return out;
+    }
+}
+
 
 std::expected<void, std::string> models::InstanceConfig::ExtractSelfUpdater() const
 {
@@ -109,17 +154,22 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
     if (inst.latestMirrorUrls.has_value())
     {
         for (const auto& m : inst.latestMirrorUrls.value())
-            mirrorArgs += std::format(" --mirror-url \"{}\"", m);
+            mirrorArgs += " --mirror-url " + QuoteArg(m);
     }
 
     // Build network args (proxy, DoH) from the sidecar NetworkConfig.
     std::string networkArgs;
     {
         const web::HttpGetOptions netOpts = BuildBaseHttpOptions(latestUrl);
-        if (netOpts.proxy.has_value() && !netOpts.proxy->empty())
-            networkArgs += std::format(" --proxy \"{}\"", *netOpts.proxy);
+        if (netOpts.proxy.has_value())
+        {
+            if (!netOpts.proxy->empty())
+                networkArgs += " --proxy " + QuoteArg(*netOpts.proxy);
+            else
+                networkArgs += " --no-proxy"; // ProxyMode::None — force direct in the DLL
+        }
         if (!netOpts.dohUrl.empty())
-            networkArgs += std::format(" --doh-url \"{}\"", netOpts.dohUrl);
+            networkArgs += " --doh-url " + QuoteArg(netOpts.dohUrl);
     }
 
     // if we can write to our directory, spawn under current user
@@ -138,8 +188,8 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
                    << " --silent"
                    << " --log-level " << magic_enum::enum_name(spdlog::get_level())
                    << " --pid " << GetCurrentProcessId()
-                   << " --path \"" << appPath.string() << "\""
-                   << " --url \"" << latestUrl << "\""
+                   << " --path " << QuoteArg(appPath.string())
+                   << " --url "  << QuoteArg(latestUrl)
                    << checksumArgs
                    << mirrorArgs
                    << networkArgs;
@@ -180,8 +230,8 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
                    << " --silent"
                    << " --log-level " << magic_enum::enum_name(spdlog::get_level())
                    << " --pid " << GetCurrentProcessId()
-                   << " --path \"" << appPath.string() << "\""
-                   << " --url \"" << latestUrl << "\""
+                   << " --path " << QuoteArg(appPath.string())
+                   << " --url "  << QuoteArg(latestUrl)
                    << checksumArgs
                    << mirrorArgs
                    << networkArgs;

@@ -310,6 +310,8 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
     // Optional network resilience params forwarded by RunSelfUpdater.
     const std::string proxyUrl  = cmdl({"--proxy"}).str();
     const std::string dohUrl    = cmdl({"--doh-url"}).str();
+    // --no-proxy signals ProxyMode::None: forces direct connection, overrides any env-var proxy.
+    const bool noProxy = cmdl[{"--no-proxy"}];
 
     int pid;
     if (!(cmdl({"--pid"}) >> pid))
@@ -480,9 +482,6 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
                     break;
                 }
 
-                // CURLOPT_RESOLVE slist (must outlive perform()).
-                curl_slist* resolveList = nullptr;
-
                 try
                 {
                     curlpp::Easy req;
@@ -494,6 +493,8 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 
                     if (!proxyUrl.empty())
                         req.setOpt(curlpp::options::Proxy(proxyUrl));
+                    else if (noProxy)
+                        req.setOpt(curlpp::options::Proxy(std::string{})); // force direct, suppress env-var proxy
 
                     if (!dohUrl.empty())
                         curl_easy_setopt(req.getHandle(), CURLOPT_DOH_URL, dohUrl.c_str());
@@ -510,15 +511,29 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 
                     req.perform();
 
-                    if (resolveList) { curl_slist_free_all(resolveList); resolveList = nullptr; }
-                    outStream.close();
-                    downloadOk = true;
-                    spdlog::info("Download finished from {}", candidateUrl);
-                    break; // success — exit attempt loop
+                    // libcurl does not throw on HTTP error codes — check explicitly.
+                    long httpCode = 0;
+                    curl_easy_getinfo(req.getHandle(), CURLINFO_RESPONSE_CODE, &httpCode);
+
+                    try { outStream.close(); } catch (...) {}
+
+                    if (httpCode >= 400)
+                    {
+                        spdlog::error("Download attempt {}/{} from {} returned HTTP {}",
+                                      attempt + 1, kMaxRetries, candidateUrl, httpCode);
+                        if (attempt + 1 < kMaxRetries)
+                            Sleep(2000);
+                        // downloadOk stays false; attempt loop continues
+                    }
+                    else
+                    {
+                        downloadOk = true;
+                        spdlog::info("Download finished from {}", candidateUrl);
+                        break; // success — exit attempt loop
+                    }
                 }
                 catch (const curlpp::RuntimeError& e)
                 {
-                    if (resolveList) { curl_slist_free_all(resolveList); resolveList = nullptr; }
                     try { outStream.close(); } catch (...) {}
                     spdlog::error("Download attempt {}/{} from {} failed: {}", attempt + 1, kMaxRetries, candidateUrl, e.what());
                     if (attempt + 1 < kMaxRetries)
@@ -526,7 +541,6 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
                 }
                 catch (...)
                 {
-                    if (resolveList) { curl_slist_free_all(resolveList); resolveList = nullptr; }
                     try { outStream.close(); } catch (...) {}
                     spdlog::error("Download attempt {}/{} from {} failed with unknown error", attempt + 1, kMaxRetries, candidateUrl);
                     if (attempt + 1 < kMaxRetries)

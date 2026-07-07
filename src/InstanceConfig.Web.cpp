@@ -939,15 +939,16 @@ namespace
                     continue;
                 }
 
-                // Connection refused / TLS errors rarely self-heal — exhaust at most 2
-                // retries and then fail over to the next mirror quickly.
+                // Connection refused / TLS errors rarely self-heal — cap the remaining
+                // retry budget to at most 2 so we fail over to the next mirror quickly.
                 const bool isFastFailover =
                     (kind == web::FailureKind::ConnectionRefused ||
                      kind == web::FailureKind::TlsError);
 
-                const int effectiveRetries = isFastFailover ? std::min(retryCount, 2) : retryCount;
+                if (isFastFailover && retryCount > 2)
+                    retryCount = 2;
 
-                if (effectiveRetries > 0 && --retryCount > 0)
+                if (--retryCount > 0)
                 {
                     spdlog::debug("Web request failed ({}), retrying {} more time(s)", transportError, retryCount);
 
