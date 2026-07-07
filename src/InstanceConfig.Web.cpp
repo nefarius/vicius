@@ -777,7 +777,7 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
             }
             if ((urlIdx + 1) < candidateDownloadUrls.size())
             {
-                spdlog::warn("Exhausted retries for {}, will try next mirror", currentDownloadUrl);
+                spdlog::warn("{} returned HTTP 404; trying next mirror", currentDownloadUrl);
                 break; // exits the while(true), outer for loop advances to next mirror
             }
             return std::unexpected("HTTP 404: Not Found");
