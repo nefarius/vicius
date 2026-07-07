@@ -137,8 +137,10 @@ function Invoke-Scenario {
         [bool]        $NeedsInstall    = $false,
         [bool]        $UseLocalVersion = $true,     # false = omit --force-local-version (server-driven detection)
         [hashtable]   $Sidecar         = $null,    # optional: @{ name = "..."; content = "..." }
-        [scriptblock] $PreScenario     = $null,    # runs before the binary is invoked
-        [scriptblock] $PostScenario    = $null     # runs in finally, even on failure
+        [scriptblock] $PreScenario        = $null,    # runs before the binary is invoked
+        [scriptblock] $PostScenario       = $null,   # runs in finally, even on failure
+        [string[]]    $ExpectLogContains    = @(),   # each substring must appear in the log file
+        [string[]]    $ExpectLogNotContains = @()    # none of these substrings may appear in the log file
     )
 
     Write-Header "Scenario: $Name (expect exit $ExpectedExit)"
@@ -175,7 +177,7 @@ function Invoke-Scenario {
             if ($installCode -ne 200) {
                 Write-Warning "  Install step returned $installCode (expected 200); skipping test."
                 return @{ Name = $Name; Passed = $false; Expected = $ExpectedExit; Got = $installCode;
-                          Note = "install step failed" }
+                          LogFailures = @(); Note = "install step failed" }
             }
         }
 
@@ -213,7 +215,28 @@ function Invoke-Scenario {
             }
         }
 
-        $passed = ($got -eq $ExpectedExit)
+        # ── Log assertions ────────────────────────────────────────────────────
+        $logPassed   = $true
+        $logFailures = @()
+        if ($ExpectLogContains.Count -gt 0 -or $ExpectLogNotContains.Count -gt 0) {
+            $logContent = if (Test-Path $logFile) {
+                Get-Content $logFile -Raw -ErrorAction SilentlyContinue
+            } else { '' }
+            foreach ($substr in $ExpectLogContains) {
+                if ($logContent -notlike "*$substr*") {
+                    $logPassed = $false
+                    $logFailures += "Expected in log: '$substr'"
+                }
+            }
+            foreach ($substr in $ExpectLogNotContains) {
+                if ($logContent -like "*$substr*") {
+                    $logPassed = $false
+                    $logFailures += "NOT expected in log: '$substr'"
+                }
+            }
+        }
+
+        $passed = ($got -eq $ExpectedExit) -and $logPassed
         $status = if ($passed) { 'PASS' } else { 'FAIL' }
         Write-Host "  $status  exit=$got  expected=$ExpectedExit"
 
@@ -222,9 +245,12 @@ function Invoke-Scenario {
             if (Test-Path $logFile) {
                 Get-Content $logFile -Tail 30 | ForEach-Object { Write-Host "    $_" }
             }
+            foreach ($msg in $logFailures) {
+                Write-Host "  LOG ASSERTION FAILED: $msg"
+            }
         }
 
-        return @{ Name = $Name; Passed = $passed; Expected = $ExpectedExit; Got = $got }
+        return @{ Name = $Name; Passed = $passed; Expected = $ExpectedExit; Got = $got; LogFailures = $logFailures }
     }
     finally {
         Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -424,6 +450,97 @@ try {
             ExpectedExit    = 105
             SkipSelfUpdate  = $true
             UseLocalVersion = $false
+        },
+
+        # ── Network-resilience scenarios ─────────────────────────────────────
+
+        @{
+            # Primary manifest URL has no matching endpoint (404).
+            # Sidecar provides a fallback URL pointing to the working HappyZip endpoint.
+            # The updater must detect the HTTP error and retry the fallback => 203.
+            Name              = 'ManifestFallback'
+            SourceBin         = $MainBin
+            ExeName           = 'e2e_ManifestFallback_Updater.exe'
+            LocalVersion      = '0.0.1'
+            ExpectedExit      = 203
+            SkipSelfUpdate    = $true
+            Sidecar           = @{
+                Name    = 'e2e_ManifestFallback_Updater.json'
+                Content = '{"instance":{"fallbackServerUrlTemplates":["http://localhost:5200/api/e2e/HappyZip/updates.json"]}}'
+            }
+            ExpectLogContains = @('attempting fallback')
+        },
+        @{
+            # Primary manifest URL returns text/html 200 (captive-portal / block-page response).
+            # Sidecar provides a fallback URL. The updater must detect the non-JSON body
+            # and try the fallback URL => 203.
+            Name              = 'BlockPageFallback'
+            SourceBin         = $MainBin
+            ExeName           = 'e2e_BlockPage_Updater.exe'
+            LocalVersion      = '0.0.1'
+            ExpectedExit      = 203
+            SkipSelfUpdate    = $true
+            Sidecar           = @{
+                Name    = 'e2e_BlockPage_Updater.json'
+                Content = '{"instance":{"fallbackServerUrlTemplates":["http://localhost:5200/api/e2e/HappyZip/updates.json"]}}'
+            }
+            ExpectLogContains = @('Non-JSON response received, attempting fallback')
+        },
+        @{
+            # Manifest advertises a broken primary download URL (404) plus a working mirror.
+            # The updater must exhaust the primary, switch to the mirror, and complete => 203.
+            Name              = 'DownloadMirrorFailover'
+            SourceBin         = $MainBin
+            ExeName           = 'e2e_MirrorFailover_Updater.exe'
+            LocalVersion      = '0.0.1'
+            ExpectedExit      = 203
+            SkipSelfUpdate    = $true
+            ExpectLogContains = @('Switching to mirror URL')
+        },
+        @{
+            # Manifest URL uses hostname 'localhostpinned' which does not resolve in system DNS.
+            # Sidecar pins localhostpinned:5200 -> 127.0.0.1 via network.pinnedHosts (CURLOPT_RESOLVE).
+            # Without the pin this would be a DNS failure (104); success (203) proves the pin fired.
+            Name              = 'PinnedHostResolve'
+            SourceBin         = $MainBin
+            ExeName           = 'e2e_PinnedHostResolve_Updater.exe'
+            LocalVersion      = '0.0.1'
+            ExpectedExit      = 203
+            SkipSelfUpdate    = $true
+            Sidecar           = @{
+                Name    = 'e2e_PinnedHostResolve_Updater.json'
+                Content = '{"instance":{"serverUrlTemplate":"http://localhostpinned:5200/api/e2e/HappyZip/updates.json","network":{"pinnedHosts":[{"host":"localhostpinned","port":5200,"address":"127.0.0.1"}]}}}'
+            }
+            ExpectLogContains = @('Network config loaded:')
+        },
+        @{
+            # Negative control for PinnedHostResolve: same unresolvable URL but no pin in sidecar.
+            # Must fail with NV_E_SERVER_RESPONSE (104) because DNS cannot resolve localhostpinned.
+            Name            = 'PinnedHostResolveNegative'
+            SourceBin       = $MainBin
+            ExeName         = 'e2e_PinnedHostNeg_Updater.exe'
+            LocalVersion    = '0.0.1'
+            ExpectedExit    = 104
+            SkipSelfUpdate  = $true
+            Sidecar         = @{
+                Name    = 'e2e_PinnedHostNeg_Updater.json'
+                Content = '{"instance":{"serverUrlTemplate":"http://localhostpinned:5200/api/e2e/HappyZip/updates.json"}}'
+            }
+        },
+        @{
+            # Sidecar sets network.proxyMode = "None" (direct connection, disables any inherited proxy).
+            # The update must still succeed against the local test server => 203.
+            Name              = 'DirectNoProxy'
+            SourceBin         = $MainBin
+            ExeName           = 'e2e_NoProxy_Updater.exe'
+            LocalVersion      = '0.0.1'
+            ExpectedExit      = 203
+            SkipSelfUpdate    = $true
+            Sidecar           = @{
+                Name    = 'e2e_NoProxy_Updater.json'
+                Content = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/HappyZip/updates.json","network":{"proxyMode":"None"}}}'
+            }
+            ExpectLogContains = @('Network config loaded:')
         }
     )
 
@@ -437,9 +554,11 @@ try {
             SkipSelfUpdate  = $s.ContainsKey('SkipSelfUpdate')  ? [bool]$s.SkipSelfUpdate             : $true
             NeedsInstall    = $s.ContainsKey('NeedsInstall')    ? [bool]$s.NeedsInstall               : $false
             UseLocalVersion = $s.ContainsKey('UseLocalVersion') ? [bool]$s.UseLocalVersion            : $true
-            Sidecar         = $s.ContainsKey('Sidecar')         ? $s.Sidecar                          : $null
-            PreScenario     = $s.ContainsKey('PreScenario')     ? $s.PreScenario                      : $null
-            PostScenario    = $s.ContainsKey('PostScenario')    ? $s.PostScenario                     : $null
+            Sidecar              = $s.ContainsKey('Sidecar')              ? $s.Sidecar              : $null
+            PreScenario          = $s.ContainsKey('PreScenario')          ? $s.PreScenario          : $null
+            PostScenario         = $s.ContainsKey('PostScenario')         ? $s.PostScenario         : $null
+            ExpectLogContains    = $s.ContainsKey('ExpectLogContains')    ? $s.ExpectLogContains    : @()
+            ExpectLogNotContains = $s.ContainsKey('ExpectLogNotContains') ? $s.ExpectLogNotContains : @()
         }
         $results.Add((Invoke-Scenario @invokeParams))
     }
@@ -464,6 +583,9 @@ $failed = 0
 foreach ($r in $results) {
     $icon   = if ($r.Passed) { '✔' } else { '✘' }
     $detail = if ($r.Passed) { '' } else { " (got $($r.Got), expected $($r.Expected))" }
+    if (-not $r.Passed -and $r.LogFailures.Count -gt 0) {
+        $detail += " [$($r.LogFailures -join '; ')]"
+    }
     Write-Host "  $icon  $($r.Name)$detail"
     if ($r.Passed) { $passed++ } else { $failed++ }
 }
