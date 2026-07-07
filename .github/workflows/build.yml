@@ -291,31 +291,40 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
-      - name: Install minisign
+      # ── Build .NET components ──────────────────────────────────────────────
+      # The example server is built first because its binary is used as the
+      # signing tool (e2e-keygen / e2e-sign modes) before the C++ updater is compiled.
+
+      - name: Publish setup stub (framework-dependent, win-x64)
         shell: pwsh
         run: |
-          # Chocolatey ships a pre-0.9 binary that lacks the -W (passwordless) flag.
-          # Download 0.12 directly from the upstream GitHub release instead.
-          $zip = Join-Path $env:RUNNER_TEMP 'minisign.zip'
-          Invoke-WebRequest `
-            -Uri 'https://github.com/jedisct1/minisign/releases/download/0.12/minisign-0.12-win64.zip' `
-            -OutFile $zip
-          Expand-Archive -Path $zip `
-            -DestinationPath (Join-Path $env:RUNNER_TEMP 'minisign') -Force
-          $exe = Join-Path $env:RUNNER_TEMP 'minisign' 'minisign-win64' 'x86_64' 'minisign.exe'
-          Add-Content -Path $env:GITHUB_PATH -Value (Split-Path $exe)
+          dotnet publish examples\e2e-setup-stub\e2e-setup-stub.csproj `
+            -c Release -r win-x64 --no-self-contained `
+            -o stub-publish
+
+      - name: Build example server
+        shell: pwsh
+        run: dotnet build examples\server\server.csproj -c Release --nologo
 
       # ── Ephemeral signing key (generated fresh every run, never committed) ──
+      # The server binary's e2e-keygen mode (backed by minisign-net) generates the
+      # key pair, writes e2e.key / e2e.pub to RUNNER_TEMP, and prints the base64
+      # public key string to stdout so it can be compiled into the updater.
 
-      - name: Generate ephemeral minisign keypair
+      - name: Generate ephemeral minisign keypair via server binary
         shell: pwsh
         run: |
-          minisign -G -W `
-            -p "$env:RUNNER_TEMP\e2e.pub" `
-            -s "$env:RUNNER_TEMP\e2e.key"
-          # Second line of the .pub file is the raw base64 key string (RWS...)
-          $pubKey = (Get-Content "$env:RUNNER_TEMP\e2e.pub")[1]
-          "E2E_MINISIGN_PUBKEY=$pubKey" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $serverDll = "examples\server\bin\Release\net10.0\server.dll"
+          # Use a fixed ephemeral password; never committed — only lives in this runner.
+          $password = 'vicius-e2e-ephemeral'
+          $env:E2E_MINISIGN_PASSWORD = $password
+          # e2e-keygen writes e2e.key / e2e.pub to the output dir and prints the
+          # base64 public key (RW... token) to stdout.
+          $pubKey = dotnet $serverDll e2e-keygen $env:RUNNER_TEMP
+          $secKey = Join-Path $env:RUNNER_TEMP 'e2e.key'
+          "E2E_MINISIGN_PUBKEY=$pubKey"   | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "E2E_MINISIGN_SECKEY=$secKey"   | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "E2E_MINISIGN_PASSWORD=$password" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Write signed-manifest variant customize header
         shell: pwsh
@@ -351,19 +360,6 @@ jobs:
             /p:UpdaterName="e2eSig_Sig_Updater" `
             /p:CustomIncludes="$env:GITHUB_WORKSPACE\tests\e2e\include\sig\" `
             /p:CI=true
-
-      # ── Build .NET components ──────────────────────────────────────────────
-
-      - name: Publish setup stub (framework-dependent, win-x64)
-        shell: pwsh
-        run: |
-          dotnet publish examples\e2e-setup-stub\e2e-setup-stub.csproj `
-            -c Release -r win-x64 --no-self-contained `
-            -o stub-publish
-
-      - name: Build example server (for --no-build run in driver)
-        shell: pwsh
-        run: dotnet build examples\server\server.csproj -c Release --nologo
 
       # ── Negative-control artifact ──────────────────────────────────────────
 
@@ -443,12 +439,14 @@ jobs:
           $manifest = $manifestObj | ConvertTo-Json -Depth 10
 
           $manifestPath = Join-Path $dir 'SignedManifest\updates.json'
-          # Write with LF line endings so minisign signs exactly the bytes the
+          # Write with LF line endings so the signing tool signs exactly the bytes the
           # server will serve (the endpoint uses File.OpenRead, not text mode).
           [System.IO.File]::WriteAllText($manifestPath, $manifest.Replace("`r`n", "`n"))
 
-          # Sign with the ephemeral key (produces updates.json.minisig next to the file)
-          minisign -S -s "$env:RUNNER_TEMP\e2e.key" -m $manifestPath
+          # Sign with the server binary's e2e-sign mode (backed by minisign-net).
+          # Produces updates.json.minisig next to the file.
+          $serverDll = "$env:GITHUB_WORKSPACE\examples\server\bin\Release\net10.0\server.dll"
+          dotnet $serverDll e2e-sign $manifestPath
 
           # Tampered copy: mutate one field so the original signature no longer
           # covers the body — the client should return NV_E_SERVER_RESPONSE=104.
@@ -465,12 +463,14 @@ jobs:
         shell: pwsh
         run: |
           pwsh tests\e2e\run-e2e.ps1 `
-            -MainBin      "bin\x64\e2e_Main_Updater.exe" `
-            -SigBin       "bin\x64\e2eSig_Sig_Updater.exe" `
-            -ProdBin      "prod-artifact\x64\example_Demo_Updater.exe" `
-            -ArtifactsDir "$env:E2E_ARTIFACTS_DIR" `
-            -ServerDir    "examples\server" `
-            -LogDir       "e2e-logs"
+            -MainBin           "bin\x64\e2e_Main_Updater.exe" `
+            -SigBin            "bin\x64\e2eSig_Sig_Updater.exe" `
+            -ProdBin           "prod-artifact\x64\example_Demo_Updater.exe" `
+            -ArtifactsDir      "$env:E2E_ARTIFACTS_DIR" `
+            -ServerDir         "examples\server" `
+            -LogDir            "e2e-logs" `
+            -MinisignSecKey    "$env:E2E_MINISIGN_SECKEY" `
+            -MinisignPassword  "$env:E2E_MINISIGN_PASSWORD"
 
       - name: Upload E2E logs
         if: always()
