@@ -20,6 +20,11 @@ namespace models
         /** URL of the latest updater binary */
         std::optional<std::string> latestUrl;
         /**
+         * \brief Optional mirror/fallback URLs for the self-updater binary.
+         * Tried in order when \c latestUrl is unreachable.  All URLs must use HTTPS.
+         */
+        std::optional<std::vector<std::string>> latestMirrorUrls;
+        /**
          * \brief Optional checksum of the self-updater binary at latestUrl.
          * Passed to the self-updater DLL so it can verify the download before swapping.
          */
@@ -68,5 +73,5 @@ namespace models
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(
-      UpdateConfig, updatesDisabled, latestVersion, latestUrl, latestChecksum, emergencyUrl, exitCode, helpUrl, errorFallbackUrl, runAsAdmin)
+      UpdateConfig, updatesDisabled, latestVersion, latestUrl, latestMirrorUrls, latestChecksum, emergencyUrl, exitCode, helpUrl, errorFallbackUrl, runAsAdmin)
 }

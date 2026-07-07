@@ -68,6 +68,12 @@ namespace models
         std::string publishedAt;
         /** URL of the new setup/release download */
         std::string downloadUrl;
+        /**
+         * \brief Optional list of mirror/alternative download URLs tried in order
+         * when \c downloadUrl is unreachable.  All URLs must use HTTPS.
+         * Useful when the primary CDN host is blocked by a firewall or censorship.
+         */
+        std::optional<std::vector<std::string>> mirrorUrls;
         /** Size of the remote file in bytes */
         std::optional<size_t> downloadSize;
         /** The launch arguments (CLI arguments) if any */
@@ -125,6 +131,7 @@ namespace models
                                                     summary,
                                                     publishedAt,
                                                     downloadUrl,
+                                                    mirrorUrls,
                                                     downloadSize,
                                                     launchArguments,
                                                     exitCode,

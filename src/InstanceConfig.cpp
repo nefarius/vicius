@@ -409,6 +409,23 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
                 channel = data.value("/instance/channel"_json_pointer, channel);
             }
 
+            // Network resilience settings
+            if (data.contains("/instance/network"_json_pointer))
+            {
+                try
+                {
+                    network = data.at("/instance/network"_json_pointer).get<NetworkConfig>();
+                    spdlog::info("Network config loaded: proxyMode={}, dohUrl={}, pinnedHosts={}",
+                                 magic_enum::enum_name(network->proxyMode),
+                                 network->dohUrl.empty() ? "(none)" : network->dohUrl,
+                                 network->pinnedHosts.size());
+                }
+                catch (const std::exception& e)
+                {
+                    spdlog::error("Failed to parse instance.network: {}", e.what());
+                }
+            }
+
             // populate shared config first either from JSON file or with built-in defaults
             if (data.contains("shared"))
             {

@@ -43,6 +43,7 @@ add_executable(
   models/DownloadLocationConfig.h
   models/InstanceConfig.hpp
   models/MergedConfig.hpp
+  models/NetworkConfig.hpp
   models/ProductDetection.hpp
   models/SharedConfig.hpp
   models/SignatureValidation.hpp
@@ -80,6 +81,7 @@ target_link_libraries(
   taskschd
   Version
   runtimeobject
+  winhttp
   wintrust
 )
 

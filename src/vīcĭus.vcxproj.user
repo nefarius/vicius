@@ -13,6 +13,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
     <LocalDebuggerCommandArguments>--server-url http://localhost:5200/api/demo/Showcase/updates.json --log-level debug --log-to-file "$(TargetDir)debug.log"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArgumentsHistory>--server-url http://localhost:5200/api/demo/Showcase/updates.json --log-level debug --log-to-file "D:\FOSS\vicius\x64\Debug\debug.log"|</LocalDebuggerCommandArgumentsHistory>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>

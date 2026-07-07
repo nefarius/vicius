@@ -29,6 +29,12 @@ public sealed class UpdateConfig
     public string? LatestUrl { get; set; }
 
     /// <summary>
+    ///     Optional list of mirror/fallback URLs for the self-updater binary, tried in order when
+    ///     <see cref="LatestUrl" /> is unreachable. All URLs must use HTTPS.
+    /// </summary>
+    public List<string>? LatestMirrorUrls { get; set; }
+
+    /// <summary>
     ///     Optional checksum of the self-updater binary at <see cref="LatestUrl" />.
     ///     Passed to the self-updater DLL so it can verify the download before swapping.
     /// </summary>

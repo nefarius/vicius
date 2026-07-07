@@ -91,6 +91,12 @@ public sealed class UpdateRelease
     public required string DownloadUrl { get; set; } = null!;
 
     /// <summary>
+    ///     Optional list of mirror/alternative download URLs tried in order when <see cref="DownloadUrl" /> is
+    ///     unreachable (e.g. blocked by a firewall or censorship). All URLs must use HTTPS.
+    /// </summary>
+    public List<string>? MirrorUrls { get; set; }
+
+    /// <summary>
     ///     Optional size (in bytes) of the download target. If this is not set, the UI will display "N/A" until download
     ///     starts.
     /// </summary>

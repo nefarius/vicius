@@ -246,8 +246,14 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
         "--path",          // the target file path
         "--checksum",      // expected SHA256 hex digest of downloaded file
         "--checksum-alg",  // checksum algorithm: sha256 (default), sha1
-        "--log-level"
+        "--log-level",
+        "--proxy",         // explicit proxy URL, e.g. "http://proxy.corp:8080"
+        "--doh-url",       // DNS-over-HTTPS resolver URL
     });
+
+    // --mirror-url is multi-value; collect all occurrences after parsing
+    // (argh does not natively support repeated params, so we scan argv manually)
+    cmdl.add_params({"--mirror-url"});
 
     // we now have the same format as a classic main argv to parse
     cmdl.parse(nArgs, argv.data());
@@ -291,6 +297,21 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
         spdlog::critical("--url parameter missing");
         return;
     }
+
+    // Collect all --mirror-url values by scanning argv manually (argh returns only
+    // the last occurrence for repeated params).
+    std::vector<std::string> mirrorUrls;
+    for (int i = 0; i < nArgs - 1; ++i)
+    {
+        if (narrow[i] == "--mirror-url")
+            mirrorUrls.push_back(narrow[i + 1]);
+    }
+
+    // Optional network resilience params forwarded by RunSelfUpdater.
+    const std::string proxyUrl  = cmdl({"--proxy"}).str();
+    const std::string dohUrl    = cmdl({"--doh-url"}).str();
+    // --no-proxy signals ProxyMode::None: forces direct connection, overrides any env-var proxy.
+    const bool noProxy = cmdl[{"--no-proxy"}];
 
     int pid;
     if (!(cmdl({"--pid"}) >> pid))
@@ -383,7 +404,13 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
     }
     while (hProcess);
 
-    spdlog::debug("Preparing download to temp file");
+    // Build ordered download candidate list: primary URL first, then mirrors.
+    std::vector<std::string> candidateUrls;
+    candidateUrls.push_back(url);
+    for (const auto& m : mirrorUrls)
+        candidateUrls.push_back(m);
+
+    spdlog::debug("Self-updater has {} download candidate(s)", candidateUrls.size());
 
     std::ofstream outStream;
     const std::ios_base::iostate exceptionMask = outStream.exceptions() | std::ios::failbit;
@@ -432,11 +459,111 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
         SetFileAttributesA(backupFile.c_str(), FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_SYSTEM);
         spdlog::debug("Moved original {} to backup {}", original.string(), backupFile);
 
-        // Download to the separate temp file (NOT the original location yet)
-        spdlog::info("Downloading {} to {}", url, downloadFile);
-        outStream.open(downloadPath, std::ios::binary | std::ofstream::ate);
-        outStream << curlpp::options::Url(url);
-        outStream.close();
+        // Download to the separate temp file, trying each candidate URL in turn.
+        bool downloadOk = false;
+        for (size_t urlIdx = 0; urlIdx < candidateUrls.size(); ++urlIdx)
+        {
+            const auto& candidateUrl = candidateUrls[urlIdx];
+            spdlog::info("Downloading {} to {} (candidate {}/{})",
+                         candidateUrl, downloadFile, urlIdx + 1, candidateUrls.size());
+
+            constexpr int kMaxRetries = 3;
+            for (int attempt = 0; attempt < kMaxRetries; ++attempt)
+            {
+                // Truncate the temp file before each attempt.
+                try
+                {
+                    if (outStream.is_open()) outStream.close();
+                    outStream.open(downloadPath, std::ios::binary | std::ios::trunc);
+                }
+                catch (...)
+                {
+                    spdlog::error("Failed to open temp file for writing");
+                    break;
+                }
+
+                try
+                {
+                    curlpp::Easy req;
+                    req.setOpt(curlpp::options::Url(candidateUrl));
+                    req.setOpt(curlpp::options::FollowLocation(true));
+                    req.setOpt(curlpp::options::ConnectTimeout(60L));
+                    req.setOpt(curlpp::options::LowSpeedLimit(1L));
+                    req.setOpt(curlpp::options::LowSpeedTime(300L)); // 5 min stall timeout
+
+                    if (!proxyUrl.empty())
+                        req.setOpt(curlpp::options::Proxy(proxyUrl));
+                    else if (noProxy)
+                        req.setOpt(curlpp::options::Proxy(std::string{})); // force direct, suppress env-var proxy
+
+                    if (!dohUrl.empty())
+                        curl_easy_setopt(req.getHandle(), CURLOPT_DOH_URL, dohUrl.c_str());
+
+                    // Stream body directly to file
+                    auto writeCallback = [&](char* ptr, size_t size, size_t nmemb) -> size_t
+                    {
+                        const size_t bytes = size * nmemb;
+                        if (ptr == nullptr || bytes == 0) return bytes;
+                        try { outStream.write(ptr, static_cast<std::streamsize>(bytes)); return bytes; }
+                        catch (...) { return 0; }
+                    };
+                    req.setOpt(curlpp::options::WriteFunction(writeCallback));
+
+                    req.perform();
+
+                    // libcurl does not throw on HTTP error codes — check explicitly.
+                    long httpCode = 0;
+                    curl_easy_getinfo(req.getHandle(), CURLINFO_RESPONSE_CODE, &httpCode);
+
+                    try { outStream.close(); } catch (...) {}
+
+                    if (httpCode >= 400)
+                    {
+                        spdlog::error("Download attempt {}/{} from {} returned HTTP {}",
+                                      attempt + 1, kMaxRetries, candidateUrl, httpCode);
+                        if (attempt + 1 < kMaxRetries)
+                            Sleep(2000);
+                        // downloadOk stays false; attempt loop continues
+                    }
+                    else
+                    {
+                        downloadOk = true;
+                        spdlog::info("Download finished from {}", candidateUrl);
+                        break; // success — exit attempt loop
+                    }
+                }
+                catch (const curlpp::RuntimeError& e)
+                {
+                    try { outStream.close(); } catch (...) {}
+                    spdlog::error("Download attempt {}/{} from {} failed: {}", attempt + 1, kMaxRetries, candidateUrl, e.what());
+                    if (attempt + 1 < kMaxRetries)
+                        Sleep(2000);
+                }
+                catch (...)
+                {
+                    try { outStream.close(); } catch (...) {}
+                    spdlog::error("Download attempt {}/{} from {} failed with unknown error", attempt + 1, kMaxRetries, candidateUrl);
+                    if (attempt + 1 < kMaxRetries)
+                        Sleep(2000);
+                }
+            }
+
+            if (downloadOk)
+                break; // exit mirror loop
+
+            spdlog::warn("All attempts failed for candidate {}, trying next mirror if available", candidateUrl);
+        }
+
+        if (!downloadOk)
+        {
+            spdlog::error("All download candidates exhausted");
+            RestoreBackup();
+            if (!silent)
+                MessageBoxA(hwnd, "Failed to download the updater binary from all mirrors.",
+                            "Self-update failed", MB_ICONERROR | MB_OK);
+            return;
+        }
+
         spdlog::info("Download finished");
 
         // ----------------------------------------------------------------
