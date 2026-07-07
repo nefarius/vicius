@@ -85,7 +85,9 @@ public string IconBase64 { get; set; }
 
 **Remarks:**
 
-When set, the client decodes the .ico in memory and applies it via WM_SETICON. Absent or invalid values are silently ignored; the compiled-in icon resource is used as fallback.
+When set, the client decodes the .ico in memory and applies it via WM_SETICON.
+ Absent or invalid values are silently ignored; the compiled-in icon resource is used
+ as fallback.
 
 ### <a id="properties-installationerrorurl"/>**InstallationErrorUrl**
 

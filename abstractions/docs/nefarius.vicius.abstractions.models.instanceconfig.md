@@ -13,7 +13,7 @@ Attributes [NullableContextAttribute](./system.runtime.compilerservices.nullable
 
 **Remarks:**
 
-Only the four fields present in the C++ `NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT` macro are
+Only the fields present in the C++ `NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT` macro are
  included here. Runtime-only members of `InstanceConfig` are not serialized and are therefore excluded.
 
 ## Properties
@@ -53,6 +53,19 @@ public string FilenameRegex { get; set; }
 #### Property Value
 
 [String](https://learn.microsoft.com/dotnet/api/system.string)<br>
+
+### <a id="properties-network"/>**Network**
+
+Optional network resilience settings. When absent, the updater uses sensible defaults:
+ system proxy auto-detect, standard DNS, no pinned hosts.
+
+```csharp
+public NetworkConfig Network { get; set; }
+```
+
+#### Property Value
+
+[NetworkConfig](./nefarius.vicius.abstractions.models.networkconfig.md)<br>
 
 ### <a id="properties-serverurltemplate"/>**ServerUrlTemplate**
 

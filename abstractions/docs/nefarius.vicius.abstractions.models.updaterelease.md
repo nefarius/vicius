@@ -132,6 +132,19 @@ public string LaunchArguments { get; set; }
 
 [String](https://learn.microsoft.com/dotnet/api/system.string)<br>
 
+### <a id="properties-mirrorurls"/>**MirrorUrls**
+
+Optional list of mirror/alternative download URLs tried in order when [UpdateRelease.DownloadUrl](./nefarius.vicius.abstractions.models.updaterelease.md#downloadurl) is
+ unreachable (e.g. blocked by a firewall or censorship). All URLs must use HTTPS.
+
+```csharp
+public List<String> MirrorUrls { get; set; }
+```
+
+#### Property Value
+
+[List](https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1)<[String](https://learn.microsoft.com/dotnet/api/system.string)><br>
+
 ### <a id="properties-name"/>**Name**
 
 Simple display name of the release.

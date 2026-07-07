@@ -28,11 +28,19 @@
 
 - [InstanceConfig](./nefarius.vicius.abstractions.models.instanceconfig.md)
 
+- [IpFamily](./nefarius.vicius.abstractions.models.ipfamily.md)
+
 - [MergedConfig](./nefarius.vicius.abstractions.models.mergedconfig.md)
+
+- [NetworkConfig](./nefarius.vicius.abstractions.models.networkconfig.md)
+
+- [PinnedHost](./nefarius.vicius.abstractions.models.pinnedhost.md)
 
 - [ProductVersionDetectionImplementation](./nefarius.vicius.abstractions.models.productversiondetectionimplementation.md)
 
 - [ProductVersionDetectionMethod](./nefarius.vicius.abstractions.models.productversiondetectionmethod.md)
+
+- [ProxyMode](./nefarius.vicius.abstractions.models.proxymode.md)
 
 - [RegistryHive](./nefarius.vicius.abstractions.models.registryhive.md)
 

@@ -74,6 +74,19 @@ public ChecksumParameters LatestChecksum { get; set; }
 
 [ChecksumParameters](./nefarius.vicius.abstractions.models.checksumparameters.md)<br>
 
+### <a id="properties-latestmirrorurls"/>**LatestMirrorUrls**
+
+Optional list of mirror/fallback URLs for the self-updater binary, tried in order when
+ [UpdateConfig.LatestUrl](./nefarius.vicius.abstractions.models.updateconfig.md#latesturl) is unreachable. All URLs must use HTTPS.
+
+```csharp
+public List<String> LatestMirrorUrls { get; set; }
+```
+
+#### Property Value
+
+[List](https://learn.microsoft.com/dotnet/api/system.collections.generic.list-1)<[String](https://learn.microsoft.com/dotnet/api/system.string)><br>
+
 ### <a id="properties-latesturl"/>**LatestUrl**
 
 The URL to the latest updater binary. Redirects are supported.
