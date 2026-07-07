@@ -56,7 +56,15 @@ param(
     [Parameter(Mandatory)]
     [string] $ServerDir,
 
-    [string] $LogDir = (Join-Path $PSScriptRoot 'e2e-logs')
+    [string] $LogDir = (Join-Path $PSScriptRoot 'e2e-logs'),
+
+    # Optional: path to the minisign .key file used by the server for dynamic manifest signing.
+    # When supplied together with -MinisignPassword the DynamicSignedManifest / DynamicTamperedManifest
+    # scenarios are enabled.
+    [string] $MinisignSecKey = '',
+
+    # Optional: password for the minisign secret key supplied via -MinisignSecKey.
+    [string] $MinisignPassword = ''
 )
 
 Set-StrictMode -Version Latest
@@ -79,6 +87,8 @@ function Start-E2EServer {
     $env:E2E_ARTIFACTS_DIR = $ArtifactsDir
     $env:ASPNETCORE_URLS   = 'http://localhost:5200'
     $env:ASPNETCORE_ENVIRONMENT = 'Development'
+    if ($MinisignSecKey)    { $env:E2E_MINISIGN_SECKEY   = $MinisignSecKey }
+    if ($MinisignPassword)  { $env:E2E_MINISIGN_PASSWORD = $MinisignPassword }
 
     # Run the pre-built server DLL directly; avoids 'dotnet run' profile
     # ambiguity and works reliably with -RedirectStandard* on PS 7.
@@ -368,6 +378,32 @@ try {
             SkipSelfUpdate = $true
         },
 
+        # ── Dynamic server-side signing (minisign-net) scenarios ─────────────
+        # Reuse $SigBin (same compiled NV_MANIFEST_PUBLIC_KEY); the server signs
+        # the manifest at request time via MinisignManifestSigner.
+        # These scenarios are skipped when -MinisignSecKey / -MinisignPassword are absent.
+
+        @{
+            Name           = 'DynamicSignedManifest'
+            SourceBin      = $SigBin
+            ExeName        = 'e2eSigDyn_DynamicSignedManifest_Updater.exe'
+            LocalVersion   = '0.0.1'
+            ExpectedExit   = 203
+            SkipSelfUpdate = $true
+            SkipWhen       = (-not $MinisignSecKey -or -not $MinisignPassword)
+        },
+        @{
+            # Server returns a tampered manifest body but signs the canonical body,
+            # so the client's Ed25519 verification fails → NV_E_SERVER_RESPONSE (104).
+            Name           = 'DynamicTamperedManifest'
+            SourceBin      = $SigBin
+            ExeName        = 'e2eSigDyn_DynamicTamperedManifest_Updater.exe'
+            LocalVersion   = '0.0.1'
+            ExpectedExit   = 104
+            SkipSelfUpdate = $true
+            SkipWhen       = (-not $MinisignSecKey -or -not $MinisignPassword)
+        },
+
         # ── Version parsing / 4-segment revision scenarios ───────────────────
         # Reuse HappyZip (serves 2.0.0) by varying --force-local-version only.
 
@@ -545,6 +581,12 @@ try {
     )
 
     foreach ($s in $scenarios) {
+        if ($s.ContainsKey('SkipWhen') -and $s.SkipWhen) {
+            Write-Host "  SKIP  $($s.Name) (prerequisites not available)"
+            $results.Add(@{ Name = $s.Name; Passed = $true; Expected = $s.ExpectedExit; Got = $null; LogFailures = @(); Skipped = $true })
+            continue
+        }
+
         $invokeParams = @{
             Name            = $s.Name
             SourceBin       = $s.SourceBin
@@ -567,9 +609,11 @@ try {
     Stop-E2EServer $serverJob
 
     # Restore env vars cleared on finish
-    Remove-Item Env:\VICIUS_E2E        -ErrorAction SilentlyContinue
-    Remove-Item Env:\E2E_ARTIFACTS_DIR -ErrorAction SilentlyContinue
-    Remove-Item Env:\ASPNETCORE_URLS   -ErrorAction SilentlyContinue
+    Remove-Item Env:\VICIUS_E2E              -ErrorAction SilentlyContinue
+    Remove-Item Env:\E2E_ARTIFACTS_DIR       -ErrorAction SilentlyContinue
+    Remove-Item Env:\ASPNETCORE_URLS         -ErrorAction SilentlyContinue
+    Remove-Item Env:\E2E_MINISIGN_SECKEY     -ErrorAction SilentlyContinue
+    Remove-Item Env:\E2E_MINISIGN_PASSWORD   -ErrorAction SilentlyContinue
 }
 
 # ---------------------------------------------------------------------------
@@ -578,9 +622,15 @@ try {
 
 Write-Header 'E2E Test Summary'
 
-$passed = 0
-$failed = 0
+$passed  = 0
+$failed  = 0
+$skipped = 0
 foreach ($r in $results) {
+    if ($r.ContainsKey('Skipped') -and $r.Skipped) {
+        Write-Host "  -  $($r.Name) (skipped)"
+        $skipped++
+        continue
+    }
     $icon   = if ($r.Passed) { '✔' } else { '✘' }
     $detail = if ($r.Passed) { '' } else { " (got $($r.Got), expected $($r.Expected))" }
     if (-not $r.Passed -and $r.LogFailures.Count -gt 0) {
@@ -591,7 +641,7 @@ foreach ($r in $results) {
 }
 
 Write-Host ''
-Write-Host "  Passed: $passed   Failed: $failed"
+Write-Host "  Passed: $passed   Failed: $failed   Skipped: $skipped"
 Write-Host ''
 
 if ($failed -gt 0) {
