@@ -768,11 +768,17 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
 
         if (code == httplib::NotFound_404)
         {
-            spdlog::error("GET request failed with 404, deleting temporary file {}", release.localTempFilePath);
+            spdlog::error("GET request failed with 404 from {}", currentDownloadUrl);
+            if (outStream.is_open()) outStream.close();
             if (DeleteFileA(release.localTempFilePath.string().c_str()) == FALSE)
             {
                 spdlog::warn("Failed to delete temporary file {}, error {:#x}, message {}", release.localTempFilePath,
                              GetLastError(), winapi::GetLastErrorStdStr());
+            }
+            if ((urlIdx + 1) < candidateDownloadUrls.size())
+            {
+                spdlog::warn("Exhausted retries for {}, will try next mirror", currentDownloadUrl);
+                break; // exits the while(true), outer for loop advances to next mirror
             }
             return std::unexpected("HTTP 404: Not Found");
         }
