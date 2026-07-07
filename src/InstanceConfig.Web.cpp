@@ -44,6 +44,68 @@ std::list<std::string> models::InstanceConfig::BuildCommonHeaders() const
     return lines;
 }
 
+web::HttpGetOptions models::InstanceConfig::BuildBaseHttpOptions(const std::string& targetUrl) const
+{
+    web::HttpGetOptions opts;
+
+    // --- Proxy ---
+    const ProxyMode mode = network.has_value() ? network->proxyMode : ProxyMode::System;
+
+    switch (mode)
+    {
+        case ProxyMode::None:
+            // Force direct; an explicit empty string tells libcurl to disable proxy,
+            // including any env-var proxy that might otherwise be picked up.
+            opts.proxy = std::string{};
+            break;
+
+        case ProxyMode::Manual:
+            if (network.has_value() && !network->proxyUrl.empty())
+                opts.proxy = network->proxyUrl;
+            break;
+
+        case ProxyMode::System:
+        default:
+        {
+            auto detected = web::DetectSystemProxy(targetUrl);
+            if (detected.has_value())
+            {
+                spdlog::debug("System proxy detected for {}: {}", targetUrl, *detected);
+                opts.proxy = std::move(detected);
+            }
+            // else: no proxy configured in OS — leave opts.proxy empty (direct)
+            break;
+        }
+    }
+
+    // --- DoH ---
+    if (network.has_value() && !network->dohUrl.empty())
+        opts.dohUrl = network->dohUrl;
+
+    // --- IP family ---
+    if (network.has_value())
+    {
+        switch (network->ipFamily)
+        {
+            case IpFamily::V4: opts.ipResolve = CURL_IPRESOLVE_V4; break;
+            case IpFamily::V6: opts.ipResolve = CURL_IPRESOLVE_V6; break;
+            default:           opts.ipResolve = CURL_IPRESOLVE_WHATEVER; break;
+        }
+    }
+
+    // --- Pinned hosts ---
+    if (network.has_value())
+    {
+        for (const auto& pin : network->pinnedHosts)
+        {
+            if (!pin.host.empty() && !pin.address.empty())
+                opts.resolveHosts.push_back(pin.ToCurlResolveEntry());
+        }
+    }
+
+    return opts;
+}
+
 std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_progress_callback progressFn, const int releaseIndex)
 {
     UNREFERENCED_PARAMETER(releaseIndex);
@@ -104,6 +166,15 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
 
     auto& release = GetSelectedRelease();
 
+    // Build the ordered list of download URLs: primary first, then mirrors.
+    std::vector<std::string> candidateDownloadUrls;
+    candidateDownloadUrls.push_back(release.downloadUrl);
+    if (release.mirrorUrls.has_value())
+    {
+        for (const auto& m : release.mirrorUrls.value())
+            candidateDownloadUrls.push_back(m);
+    }
+
     // Reuse existing temp file if present (allows resuming across user retries)
     if (release.localTempFilePath.empty())
     {
@@ -132,6 +203,37 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
     constexpr long kMaxTimeoutSecs = MAX_TIMEOUT_SECS_TOTAL;
     std::string lastFailureDetails{};
     std::optional<std::filesystem::path> cachedAttachmentName{};
+
+    // Mirror-failover outer loop — iterates when all retries on a URL are exhausted.
+    for (size_t urlIdx = 0; urlIdx < candidateDownloadUrls.size(); ++urlIdx)
+    {
+    const std::string& currentDownloadUrl = candidateDownloadUrls[urlIdx];
+
+    if (urlIdx > 0)
+    {
+        spdlog::warn("Switching to mirror URL ({}/{}): {}", urlIdx + 1, candidateDownloadUrls.size(), currentDownloadUrl);
+
+        // Reset retry state for the new mirror.
+        retryCount = MAX_RETRY_COUNT;
+        currentTimeoutSecs = MAX_TIMEOUT_SECS;
+        lastFailureDetails.clear();
+        cachedAttachmentName.reset();
+
+        // Discard the partial temp file — mirror may serve different content/layout.
+        if (!release.localTempFilePath.empty())
+        {
+            try
+            {
+                if (outStream.is_open()) outStream.close();
+                outStream.open(release.localTempFilePath.string(), std::ios::binary | std::ios::trunc);
+                outStream.close();
+            }
+            catch (...) {}
+        }
+    }
+
+    // Resolve network options for this URL (proxy, DoH, pins, IP family).
+    const web::HttpGetOptions baseNetOpts = BuildBaseHttpOptions(currentDownloadUrl);
 
     auto tryGetHeader = [](const auto& headers, const std::string& key) -> std::string
     {
@@ -253,7 +355,8 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
             return std::unexpected(std::format("Failed to open temporary file '{}': {}", release.localTempFilePath.string(), e.what()));
         }
 
-        spdlog::debug("Starting release download from {} (timeout {}s)", release.downloadUrl, currentTimeoutSecs);
+        spdlog::debug("Starting release download from {} (timeout {}s, mirror {}/{})",
+                      currentDownloadUrl, currentTimeoutSecs, urlIdx + 1, candidateDownloadUrls.size());
         if (wantsResume)
         {
             const auto rangeHeader = std::format("bytes={}-", localSize);
@@ -361,8 +464,11 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
         // Build common vendor + additional headers via the shared helper
         std::list<std::string> headerLines = BuildCommonHeaders();
 
+        // CURLOPT_RESOLVE list must outlive perform().
+        curl_slist* downloadResolveList = nullptr;
+
         curlpp::Easy req;
-        req.setOpt(curlpp::options::Url(release.downloadUrl));
+        req.setOpt(curlpp::options::Url(currentDownloadUrl));
         req.setOpt(curlpp::options::UserAgent(ua));
         req.setOpt(curlpp::options::FollowLocation(true));
         req.setOpt(curlpp::options::MaxRedirs(MAX_REDIRECTS));
@@ -372,6 +478,20 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
         req.setOpt(curlpp::options::ConnectTimeout(60));
         req.setOpt(curlpp::options::LowSpeedLimit(1));
         req.setOpt(curlpp::options::LowSpeedTime(currentTimeoutSecs));
+
+        // Network resilience options from sidecar NetworkConfig
+        if (baseNetOpts.proxy.has_value())
+            req.setOpt(curlpp::options::Proxy(baseNetOpts.proxy.value()));
+        if (baseNetOpts.ipResolve != CURL_IPRESOLVE_WHATEVER)
+            req.setOpt(curlpp::options::IpResolve(baseNetOpts.ipResolve));
+        if (!baseNetOpts.dohUrl.empty())
+            curl_easy_setopt(req.getHandle(), CURLOPT_DOH_URL, baseNetOpts.dohUrl.c_str());
+        if (!baseNetOpts.resolveHosts.empty())
+        {
+            for (const auto& entry : baseNetOpts.resolveHosts)
+                downloadResolveList = curl_slist_append(downloadResolveList, entry.c_str());
+            curl_easy_setopt(req.getHandle(), CURLOPT_RESOLVE, downloadResolveList);
+        }
 
         // Streaming write + header collection
         req.setOpt(curlpp::options::WriteFunction(writeCallback));
@@ -410,11 +530,15 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
         {
             req.perform();
 
+            if (downloadResolveList) { curl_slist_free_all(downloadResolveList); downloadResolveList = nullptr; }
+
             // If we didn't parse an HTTP status line, treat as OK (best-effort).
             code = headerCollector.lastHttpCode != 0 ? static_cast<int>(headerCollector.lastHttpCode) : httplib::OK_200;
         }
         catch (const curlpp::RuntimeError& e)
         {
+            if (downloadResolveList) { curl_slist_free_all(downloadResolveList); downloadResolveList = nullptr; }
+
             if (abortDownloadRequested.load(std::memory_order_relaxed))
             {
                 spdlog::info("Download aborted");
@@ -472,6 +596,7 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
         }
         catch (const curlpp::LogicError& e)
         {
+            if (downloadResolveList) { curl_slist_free_all(downloadResolveList); downloadResolveList = nullptr; }
             spdlog::error("cURLpp logic error: {}", e.what());
             lastFailureDetails = e.what();
             code = static_cast<int>(CURLE_FAILED_INIT);
@@ -672,11 +797,22 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
         const std::string finalErrorMsg = !lastFailureDetails.empty()
                                               ? lastFailureDetails
                                               : (errorMessage.empty() ? httplib::status_message(code) : std::string(errorMessage));
-        spdlog::error("GET request failed with code {}, message {}", code, finalErrorMsg);
+        spdlog::error("Download failed from {} with code {}, message {}", currentDownloadUrl, code, finalErrorMsg);
+
+        if ((urlIdx + 1) < candidateDownloadUrls.size())
+        {
+            spdlog::warn("Exhausted retries for {}, will try next mirror", currentDownloadUrl);
+            break; // exits the while(true), outer for loop advances to next mirror
+        }
 
         // Keep partial file to allow resuming on next user retry (only remove on 404 above)
         return std::unexpected(finalErrorMsg);
-    }
+    } // while(true) retry loop
+
+    } // for (urlIdx) mirror loop
+
+    // All mirrors exhausted — return the last failure
+    return std::unexpected(!lastFailureDetails.empty() ? lastFailureDetails : "All download mirrors failed");
 }
 
 // ============================================================================
@@ -753,35 +889,76 @@ namespace
         int retryCount = 5;
         currentTimeoutSecs = MAX_TIMEOUT_SECS;
 
+        // Whether we've already tried a DNS-fallback (DoH/pinned-IP) on this candidate URL.
+        bool dnsRecoveryAttempted = false;
+
+        // Base options (proxy, DoH, pinned hosts, IP family) resolved from NetworkConfig.
+        web::HttpGetOptions baseOpts = BuildBaseHttpOptions(requestUrl);
+
         while (true)
         {
-            auto getResult = web::HttpGet(requestUrl, {
-                .userAgent          = ua,
-                .headers            = buildManifestHeaders(),
-                .timeoutSecs        = currentTimeoutSecs,
-                .connectTimeoutSecs = 60,
-                .maxRedirects       = MAX_REDIRECTS,
-            });
+            web::HttpGetOptions reqOpts  = baseOpts;
+            reqOpts.userAgent            = ua;
+            reqOpts.headers              = buildManifestHeaders();
+            reqOpts.timeoutSecs          = currentTimeoutSecs;
+            reqOpts.connectTimeoutSecs   = 60;
+            reqOpts.maxRedirects         = MAX_REDIRECTS;
+
+            auto getResult = web::HttpGet(requestUrl, reqOpts);
 
             // Transport failure (connection error, TLS failure, stall timeout, …)
             if (!getResult)
             {
                 const std::string& transportError = getResult.error();
-                const bool isTimeout =
-                    transportError.find("timeout") != std::string::npos ||
-                    transportError.find("Timeout") != std::string::npos ||
-                    transportError.find("timed out") != std::string::npos ||
-                    transportError.find("Timed out") != std::string::npos;
+                const web::FailureKind kind = web::ClassifyTransportError(transportError);
 
-                if (--retryCount > 0)
+                spdlog::debug("Transport error (kind={}): {}",
+                              static_cast<int>(kind), transportError);
+
+                // DNS failure: if we have DoH or a matching pinned-host entry and haven't
+                // tried DNS recovery on this URL yet, do one immediate retry with DoH
+                // explicitly forced (even when it was already set, re-applying is harmless).
+                const bool hasDnsRecovery =
+                    (network.has_value() && (
+                        !network->dohUrl.empty() ||
+                        std::any_of(network->pinnedHosts.begin(), network->pinnedHosts.end(),
+                            [&](const PinnedHost& p)
+                            {
+                                return requestUrl.find(p.host) != std::string::npos;
+                            })));
+
+                if (kind == web::FailureKind::DnsFailure && hasDnsRecovery && !dnsRecoveryAttempted)
+                {
+                    dnsRecoveryAttempted = true;
+                    spdlog::warn("DNS resolution failed for {}; retrying with DoH/pinned-IP recovery", requestUrl);
+                    // Force DoH on the next iteration via baseOpts (already set if dohUrl
+                    // was configured; if not, set it to Cloudflare as a last resort so the
+                    // recovery attempt actually bypasses the broken resolver).
+                    if (baseOpts.dohUrl.empty())
+                        baseOpts.dohUrl = "https://cloudflare-dns.com/dns-query";
+                    continue;
+                }
+
+                // Connection refused / TLS errors rarely self-heal — exhaust at most 2
+                // retries and then fail over to the next mirror quickly.
+                const bool isFastFailover =
+                    (kind == web::FailureKind::ConnectionRefused ||
+                     kind == web::FailureKind::TlsError);
+
+                const int effectiveRetries = isFastFailover ? std::min(retryCount, 2) : retryCount;
+
+                if (effectiveRetries > 0 && --retryCount > 0)
                 {
                     spdlog::debug("Web request failed ({}), retrying {} more time(s)", transportError, retryCount);
 
-                    std::mt19937_64 eng{std::random_device{}()};
-                    std::uniform_int_distribution<> dist{1000, 5000};
-                    std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
+                    if (!isFastFailover)
+                    {
+                        std::mt19937_64 eng{std::random_device{}()};
+                        std::uniform_int_distribution<> dist{1000, 5000};
+                        std::this_thread::sleep_for(std::chrono::milliseconds{dist(eng)});
+                    }
 
-                    if (isTimeout)
+                    if (kind == web::FailureKind::Timeout)
                     {
                         long nxt = std::lround(currentTimeoutSecs * 1.5);
                         currentTimeoutSecs = std::min(nxt, 900L);
@@ -795,7 +972,7 @@ namespace
 
                 if ((i + 1) < candidateUrls.size())
                 {
-                    spdlog::warn("Primary URL not accessible ({}), attempting fallback", transportError);
+                    spdlog::warn("URL {} not accessible ({}), attempting fallback", requestUrl, transportError);
                     break; // try next candidate URL
                 }
 
@@ -843,13 +1020,14 @@ namespace
                     const std::string minisigUrl = requestUrl + ".minisig";
                     spdlog::debug("Fetching manifest signature from {}", minisigUrl);
 
-                    auto sigGetResult = web::HttpGet(minisigUrl, {
-                        .userAgent          = ua,
-                        .headers            = BuildCommonHeaders(),
-                        .timeoutSecs        = MAX_TIMEOUT_SECS,
-                        .connectTimeoutSecs = 60,
-                        .maxRedirects       = MAX_REDIRECTS,
-                    });
+                    web::HttpGetOptions sigOpts  = baseOpts;
+                    sigOpts.userAgent            = ua;
+                    sigOpts.headers              = BuildCommonHeaders();
+                    sigOpts.timeoutSecs          = MAX_TIMEOUT_SECS;
+                    sigOpts.connectTimeoutSecs   = 60;
+                    sigOpts.maxRedirects         = MAX_REDIRECTS;
+
+                    auto sigGetResult = web::HttpGet(minisigUrl, sigOpts);
 
                     const bool sigOk = sigGetResult.has_value()
                         && sigGetResult->httpCode == httplib::OK_200
@@ -925,6 +1103,21 @@ namespace
                             std::format("Release '{}' uses a non-HTTPS downloadUrl which is not allowed for security reasons.",
                                         release.name));
                     }
+
+                    if (release.mirrorUrls.has_value())
+                    {
+                        for (const auto& mirror : release.mirrorUrls.value())
+                        {
+                            if (!IsAllowedDownloadUrl(mirror))
+                            {
+                                spdlog::error("Release '{}' has a disallowed mirrorUrl scheme: {}",
+                                              release.name, mirror);
+                                return std::unexpected(
+                                    std::format("Release '{}' has a mirrorUrl with a non-HTTPS scheme which is not allowed.",
+                                                release.name));
+                            }
+                        }
+                    }
                 }
 
                 if (remote.instance.has_value())
@@ -935,6 +1128,19 @@ namespace
                         spdlog::error("instance.latestUrl has a disallowed scheme: {}", inst.latestUrl.value());
                         return std::unexpected(
                             "The self-updater URL (instance.latestUrl) uses a non-HTTPS scheme which is not allowed.");
+                    }
+
+                    if (inst.latestMirrorUrls.has_value())
+                    {
+                        for (const auto& mirror : inst.latestMirrorUrls.value())
+                        {
+                            if (!IsAllowedDownloadUrl(mirror))
+                            {
+                                spdlog::error("instance.latestMirrorUrls contains a disallowed scheme: {}", mirror);
+                                return std::unexpected(
+                                    "An instance.latestMirrorUrl uses a non-HTTPS scheme which is not allowed.");
+                            }
+                        }
                     }
                 }
 

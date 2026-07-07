@@ -31,7 +31,7 @@ public enum Authority
 ///     Local configuration file model (the fields written to the embedded JSON resource of each updater binary).
 /// </summary>
 /// <remarks>
-///     Only the four fields present in the C++ <c>NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT</c> macro are
+///     Only the fields present in the C++ <c>NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT</c> macro are
 ///     included here. Runtime-only members of <c>InstanceConfig</c> are not serialized and are therefore excluded.
 /// </remarks>
 [SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
@@ -61,4 +61,10 @@ public sealed class InstanceConfig
     /// </summary>
     [Required]
     public Authority Authority { get; set; } = Authority.Remote;
+
+    /// <summary>
+    ///     Optional network resilience settings. When absent, the updater uses sensible defaults:
+    ///     system proxy auto-detect, standard DNS, no pinned hosts.
+    /// </summary>
+    public NetworkConfig? Network { get; set; }
 }

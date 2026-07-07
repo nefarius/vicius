@@ -4,10 +4,12 @@
 #include <list>
 #include <string>
 
+#include "NetworkConfig.hpp"
 #include "UpdateResponse.hpp"
 #include "MergedConfig.hpp"
 #include "NAuthenticode.h"
 #include "../Util.h"
+#include "../Http.h"
 
 using json = nlohmann::json;
 
@@ -121,6 +123,19 @@ namespace models
 
         [[nodiscard]] std::list<std::string> BuildCommonHeaders() const;
 
+        /**
+         * \brief Builds an HttpGetOptions struct pre-populated from the NetworkConfig.
+         *
+         * Proxy is resolved according to proxyMode:
+         *   System  → DetectSystemProxy() for targetUrl
+         *   Manual  → network.proxyUrl
+         *   None    → explicit empty proxy (disables even env-var proxies)
+         * DoH, pinned hosts, and IP family are forwarded unchanged.
+         *
+         * \param targetUrl URL that will be fetched (used for PAC/WPAD evaluation).
+         */
+        [[nodiscard]] web::HttpGetOptions BuildBaseHttpOptions(const std::string& targetUrl) const;
+
         std::expected<SetupResult, std::string> ExecuteSetup(const std::stop_token&);
 
     public:
@@ -135,6 +150,13 @@ namespace models
         Authority authority;
         std::string channel;
         std::map<std::string, std::string> additionalHeaders;
+
+        /**
+         * \brief Optional network resilience settings loaded from the sidecar JSON
+         * under \c instance.network.  When absent, sensible defaults apply (system
+         * proxy auto-detect, direct DNS, no pinned hosts).
+         */
+        std::optional<NetworkConfig> network;
 
         InstanceConfig() : authority(Authority::Remote) { }
 
@@ -581,5 +603,5 @@ namespace models
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InstanceConfig, serverUrlTemplate, fallbackServerUrlTemplates, filenameRegex,
-                                                    authority)
+                                                    authority, network)
 }

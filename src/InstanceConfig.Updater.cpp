@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Common.h"
+#include "Http.h"
 #include "Util.h"
 #include "InstanceConfig.hpp"
 
@@ -103,6 +104,24 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
         spdlog::warn("No checksum available for self-updater binary; verification will be Authenticode-only");
     }
 
+    // Build mirror URL args (passed as repeated --mirror-url).
+    std::string mirrorArgs;
+    if (inst.latestMirrorUrls.has_value())
+    {
+        for (const auto& m : inst.latestMirrorUrls.value())
+            mirrorArgs += std::format(" --mirror-url \"{}\"", m);
+    }
+
+    // Build network args (proxy, DoH) from the sidecar NetworkConfig.
+    std::string networkArgs;
+    {
+        const web::HttpGetOptions netOpts = BuildBaseHttpOptions(latestUrl);
+        if (netOpts.proxy.has_value() && !netOpts.proxy->empty())
+            networkArgs += std::format(" --proxy \"{}\"", *netOpts.proxy);
+        if (!netOpts.dohUrl.empty())
+            networkArgs += std::format(" --doh-url \"{}\"", netOpts.dohUrl);
+    }
+
     // if we can write to our directory, spawn under current user
     if (HasWritePermissions())
     {
@@ -121,7 +140,9 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
                    << " --pid " << GetCurrentProcessId()
                    << " --path \"" << appPath.string() << "\""
                    << " --url \"" << latestUrl << "\""
-                   << checksumArgs;
+                   << checksumArgs
+                   << mirrorArgs
+                   << networkArgs;
         const auto args = argsStream.str();
         spdlog::debug("args = {}", args);
 
@@ -161,7 +182,9 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
                    << " --pid " << GetCurrentProcessId()
                    << " --path \"" << appPath.string() << "\""
                    << " --url \"" << latestUrl << "\""
-                   << checksumArgs;
+                   << checksumArgs
+                   << mirrorArgs
+                   << networkArgs;
         const auto args = argsStream.str();
         spdlog::debug("args = {}", args);
 
