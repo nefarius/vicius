@@ -109,4 +109,12 @@ public sealed class SharedConfig
     ///     if the field is absent or the data cannot be decoded.
     /// </remarks>
     public string? IconBase64 { get; set; }
+
+    /// <summary>
+    ///     When set, the update notification dialog is deferred until none of the configured
+    ///     processes are running. The agent waits in a message-pumping loop (gracefully
+    ///     responsive to logoff/shutdown) and retries on the next scheduled run if the
+    ///     maximum wait duration elapses.
+    /// </summary>
+    public ProductBusyDetectionConfig? ProductBusyDetection { get; set; }
 }

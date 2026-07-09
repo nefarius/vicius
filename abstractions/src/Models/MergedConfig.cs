@@ -114,4 +114,11 @@ public sealed class MergedConfig
     ///     as fallback.
     /// </remarks>
     public string? IconBase64 { get; set; }
+
+    /// <summary>
+    ///     When set, the update notification dialog is deferred until none of the configured
+    ///     processes are running. Optional — when absent the feature is disabled and existing
+    ///     behavior is preserved.
+    /// </summary>
+    public ProductBusyDetectionConfig? ProductBusyDetection { get; set; }
 }

@@ -327,6 +327,35 @@ namespace models
          */
         [[nodiscard]] std::expected<bool, std::string> IsInstalledVersionOutdated();
 
+        /**
+         * \brief Returns true when a productBusyDetection configuration is present.
+         */
+        [[nodiscard]] bool HasProductBusyDetection() const;
+
+        /**
+         * \brief Checks whether any of the configured processes are currently running.
+         * \return True if the product is in use, false if it is not; unexpected error string on
+         *         hard enumeration failure (callers should treat this as "not in use" and proceed).
+         */
+        [[nodiscard]] std::expected<bool, std::string> IsProductInUse() const;
+
+        /**
+         * \brief Returns the configured poll interval (seconds), clamped to a sane minimum of 5s.
+         *        Default: 60s.
+         */
+        [[nodiscard]] int GetProductBusyPollSeconds() const;
+
+        /**
+         * \brief Returns the configured maximum wait (minutes), clamped to [0, NV_PRODUCT_IN_USE_MAX_WAIT_MINUTES].
+         *        Default: NV_PRODUCT_IN_USE_MAX_WAIT_MINUTES (3 hours).
+         */
+        [[nodiscard]] int GetProductBusyMaxWaitMinutes() const;
+
+        /**
+         * \brief Returns true when a process handle to terminate before update has been configured.
+         */
+        [[nodiscard]] bool HasTerminateProcessBeforeUpdate() const { return terminateProcessBeforeUpdate.has_value(); }
+
         [[nodiscard]] std::expected<void, std::string> CreateScheduledTask(const std::string& launchArgs = NV_CLI_BACKGROUND) const;
 
         [[nodiscard]] std::expected<void, std::string> RemoveScheduledTask() const;

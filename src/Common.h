@@ -26,6 +26,7 @@
 #define NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE "--terminate-process-before-update"
 #define NV_CLI_IGNORE_POSTPONE                       "--ignore-postpone"
 #define NV_CLI_PURGE_POSTPONE                        "--purge-postpone"
+#define NV_CLI_IGNORE_PRODUCT_IN_USE                 "--ignore-product-in-use"
 #define NV_CLI_PARAM_LOCAL_VERSION                   "--local-version"
 #define NV_CLI_PARAM_FORCE_LOCAL_VERSION             "--force-local-version"
 // internal
@@ -73,3 +74,8 @@
 #define NV_S_POSTPONE_PURGE                          206
 #define NV_S_LAUNCHED_TEMPORARY                      207
 #define NV_S_CLOSED_WHILE_UPDATER_RUNNING            208
+/** The watched product was still running after the maximum wait period; nothing shown or installed, retry on next run. */
+#define NV_S_PRODUCT_IN_USE_TIMEOUT                  209
+
+/** Hard ceiling on the product-busy wait loop, in minutes. Configured values above this are clamped. */
+#define NV_PRODUCT_IN_USE_MAX_WAIT_MINUTES           180
