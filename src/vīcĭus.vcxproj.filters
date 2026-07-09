@@ -102,6 +102,9 @@
     <ClCompile Include="MimeTypes.cpp">
       <Filter>Source Files\3rd</Filter>
     </ClCompile>
+    <ClCompile Include="InstanceConfig.ProductInUse.cpp">
+      <Filter>Source Files\Models</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ADL.hpp">
