@@ -115,12 +115,13 @@ std::expected<bool, std::string> models::InstanceConfig::IsProductInUse() const
             const auto fullPath = nefarius::winapi::GetProcessFullPath<std::string>(entry.th32ProcessID);
             if (fullPath)
             {
+                const std::string& pathStr = std::get<std::string>(fullPath.value());
                 for (const auto& renderedPath : renderedPaths)
                 {
-                    if (_stricmp(fullPath->c_str(), renderedPath.c_str()) == 0)
+                    if (_stricmp(pathStr.c_str(), renderedPath.c_str()) == 0)
                     {
                         spdlog::debug("IsProductInUse: matched process path '{}' (PID {})",
-                                      *fullPath, entry.th32ProcessID);
+                                      pathStr, entry.th32ProcessID);
                         return true;
                     }
                 }
@@ -132,12 +133,13 @@ std::expected<bool, std::string> models::InstanceConfig::IsProductInUse() const
             const auto fullPath = nefarius::winapi::GetProcessFullPath<std::string>(entry.th32ProcessID);
             if (fullPath)
             {
+                const std::string& pathStr = std::get<std::string>(fullPath.value());
                 for (const auto& renderedPath : renderedPaths)
                 {
-                    if (_stricmp(fullPath->c_str(), renderedPath.c_str()) == 0)
+                    if (_stricmp(pathStr.c_str(), renderedPath.c_str()) == 0)
                     {
                         spdlog::debug("IsProductInUse: matched process path '{}' (PID {})",
-                                      *fullPath, entry.th32ProcessID);
+                                      pathStr, entry.th32ProcessID);
                         return true;
                     }
                 }
