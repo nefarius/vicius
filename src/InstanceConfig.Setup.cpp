@@ -488,7 +488,7 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
 
         if (!success && check.messages.has_value())
         {
-            if (const auto it = check.messages->find(std::to_string(exitCode));
+            if (const auto it = check.messages->find(std::to_string(static_cast<int>(exitCode)));
                 it != check.messages->end() && it->second.isSuccess.value_or(false))
             {
                 spdlog::debug("Exit code {} promoted to success via message map", exitCode);

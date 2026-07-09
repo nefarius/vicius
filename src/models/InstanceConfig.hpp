@@ -532,7 +532,7 @@ namespace models
             }
 
             const auto& map = check->messages.value();
-            const auto it = map.find(std::to_string(exitCode));
+            const auto it = map.find(std::to_string(static_cast<int>(exitCode)));
             if (it == map.end())
             {
                 return std::nullopt;
