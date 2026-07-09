@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ProductDetection.hpp"
+#include "ProductBusyDetection.hpp"
 #include "DownloadLocationConfig.h"
 #include "SignatureValidation.hpp"
 
@@ -41,6 +42,8 @@ namespace models
         std::optional<bool> hideRemindButton;
         /** Base64-encoded Windows .ico data for the window and taskbar icon */
         std::optional<std::string> iconBase64;
+        /** Configuration for deferring the update dialog while the product is running */
+        std::optional<ProductBusyDetectionConfig> productBusyDetection;
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(SharedConfig,
@@ -56,5 +59,6 @@ namespace models
                                                     signatureStrategy,
                                                     signatureConfig,
                                                     hideRemindButton,
-                                                    iconBase64)
+                                                    iconBase64,
+                                                    productBusyDetection)
 }

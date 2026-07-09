@@ -38,6 +38,95 @@ void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+//
+// Product-in-use gate helpers
+//
+
+enum class WaitResult
+{
+    Timeout,
+    SessionEnd,
+};
+
+// Atomic flag set by GateWndProc when WM_ENDSESSION arrives
+static std::atomic_bool g_sessionEnding{false};
+
+static LRESULT CALLBACK GateWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+    switch (msg)
+    {
+        case WM_QUERYENDSESSION:
+            return TRUE; // never veto logoff/shutdown
+        case WM_ENDSESSION:
+            if (wParam)
+                g_sessionEnding.store(true, std::memory_order_release);
+            return 0;
+        case WM_CLOSE:
+        case WM_QUIT:
+            g_sessionEnding.store(true, std::memory_order_release);
+            return 0;
+        default:
+            return DefWindowProcW(hWnd, msg, wParam, lParam);
+    }
+}
+
+/** Creates a message-only window used during the product-in-use wait loop. */
+static HWND CreateGateMessageWindow(HINSTANCE hInstance)
+{
+    static constexpr auto kGateClassName = L"NV_GateMessageWindow";
+
+    WNDCLASSEXW wc = {};
+    wc.cbSize = sizeof(wc);
+    wc.lpfnWndProc = GateWndProc;
+    wc.hInstance = hInstance;
+    wc.lpszClassName = kGateClassName;
+    RegisterClassExW(&wc); // idempotent; failure is harmless if already registered
+
+    return CreateWindowExW(0, kGateClassName, nullptr, 0,
+                           0, 0, 0, 0,
+                           HWND_MESSAGE, nullptr, hInstance, nullptr);
+}
+
+/**
+ * \brief Waits for up to \p seconds, pumping messages so session-end can be handled gracefully.
+ * \return WaitResult::Timeout when the interval elapsed, WaitResult::SessionEnd when a
+ *         logoff/shutdown signal was received.
+ */
+static WaitResult WakeableWait(HWND msgWnd, int seconds)
+{
+    const DWORD deadlineMs = seconds * 1000u;
+    DWORD elapsed = 0;
+    DWORD waitStart = GetTickCount();
+
+    while (elapsed < deadlineMs)
+    {
+        const DWORD remaining = deadlineMs - elapsed;
+        const DWORD result = MsgWaitForMultipleObjectsEx(0, nullptr, remaining, QS_ALLINPUT, MWMO_INPUTAVAILABLE);
+
+        if (result == WAIT_TIMEOUT)
+        {
+            break;
+        }
+
+        // Messages are available — drain the queue
+        MSG msg = {};
+        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
+
+        if (g_sessionEnding.load(std::memory_order_acquire))
+        {
+            return WaitResult::SessionEnd;
+        }
+
+        elapsed = GetTickCount() - waitStart;
+    }
+
+    return WaitResult::Timeout;
+}
+
 // DPI resizing
 float g_scaleFactor = 1.0;
 float g_scaledWidth;
@@ -281,6 +370,60 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         spdlog::info("Postpone period active, exiting");
         return cfg.GetSuccessExitCode(NV_S_POSTPONE_PERIOD);
     }
+
+#pragma region Product-in-use gate
+
+    // If the watched product is currently running, defer the update notification until it closes
+    // rather than popping a dialog on top of it. The wait is bounded to NV_PRODUCT_IN_USE_MAX_WAIT_MINUTES
+    // so the process can never run indefinitely. MsgWaitForMultipleObjectsEx keeps the process
+    // responsive to logoff/shutdown throughout the wait.
+    if (!cmdl[ {NV_CLI_IGNORE_PRODUCT_IN_USE} ] && !cfg.HasTerminateProcessBeforeUpdate()
+        && cfg.HasProductBusyDetection())
+    {
+        const int pollSeconds = cfg.GetProductBusyPollSeconds();
+        const int maxSeconds  = cfg.GetProductBusyMaxWaitMinutes() * 60;
+        int waitedSeconds = 0;
+
+        const HWND gateWnd = CreateGateMessageWindow(hInstance);
+        auto gateGuard = sg::make_scope_guard([&] { if (gateWnd) DestroyWindow(gateWnd); });
+
+        while (true)
+        {
+            const auto inUse = cfg.IsProductInUse();
+            if (!inUse)
+            {
+                spdlog::warn("Product-in-use detection failed: {}; proceeding with update", inUse.error());
+                break;
+            }
+            if (!*inUse)
+            {
+                spdlog::debug("Product is no longer in use; proceeding with update notification");
+                break;
+            }
+
+            // Hard safety cap: never wait longer than the configured ceiling in a single run
+            if (waitedSeconds >= maxSeconds)
+            {
+                spdlog::info("Product still in use after {} min; aborting wait, will retry next run",
+                             maxSeconds / 60);
+                return cfg.GetSuccessExitCode(NV_S_PRODUCT_IN_USE_TIMEOUT);
+            }
+
+            // Clamp the final wait so we exit right at the boundary rather than overshooting
+            const int waitSeconds = (std::min)(pollSeconds, maxSeconds - waitedSeconds);
+            spdlog::debug("Product in use; re-checking in {}s ({}/{}s waited)", waitSeconds, waitedSeconds, maxSeconds);
+
+            if (WakeableWait(gateWnd, waitSeconds) == WaitResult::SessionEnd)
+            {
+                spdlog::info("Session ending (logoff/shutdown) while waiting for product; exiting gracefully");
+                return cfg.GetSuccessExitCode(NV_S_PRODUCT_IN_USE_TIMEOUT);
+            }
+
+            waitedSeconds += waitSeconds;
+        }
+    }
+
+#pragma endregion
 
 #pragma region Busy state check
 
