@@ -13,6 +13,20 @@ Attributes [NullableContextAttribute](./system.runtime.compilerservices.nullable
 
 ## Properties
 
+### <a id="properties-messages"/>**Messages**
+
+Optional per-exit-code UI messages, keyed by decimal exit code string (e.g. `"3010"`).
+ An entry with [ExitCodeMessage.IsSuccess](./nefarius.vicius.abstractions.models.exitcodemessage.md#issuccess) set to `true` also promotes that
+ code to a success condition without requiring it to appear in [ExitCodeCheck.SuccessCodes](./nefarius.vicius.abstractions.models.exitcodecheck.md#successcodes).
+
+```csharp
+public Dictionary<String, ExitCodeMessage> Messages { get; set; }
+```
+
+#### Property Value
+
+[Dictionary](https://learn.microsoft.com/dotnet/api/system.collections.generic.dictionary-2)<[String](https://learn.microsoft.com/dotnet/api/system.string), [ExitCodeMessage](./nefarius.vicius.abstractions.models.exitcodemessage.md)><br>
+
 ### <a id="properties-skipcheck"/>**SkipCheck**
 
 Ignore whatever exit code we got if true.

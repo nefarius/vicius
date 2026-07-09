@@ -18,6 +18,8 @@
 
 - [ExitCodeCheck](./nefarius.vicius.abstractions.models.exitcodecheck.md)
 
+- [ExitCodeMessage](./nefarius.vicius.abstractions.models.exitcodemessage.md)
+
 - [FileChecksumConfig](./nefarius.vicius.abstractions.models.filechecksumconfig.md)
 
 - [FileSizeConfig](./nefarius.vicius.abstractions.models.filesizeconfig.md)
