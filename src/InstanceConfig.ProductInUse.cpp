@@ -99,37 +99,22 @@ std::expected<bool, std::string> models::InstanceConfig::IsProductInUse() const
         std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(),
                        [](const unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
-        // Check against image name list first (cheap)
-        const bool nameMatches = std::find(lowerImageNames.begin(), lowerImageNames.end(), lowerName)
-                                 != lowerImageNames.end();
-
-        if (!lowerImageNames.empty() && nameMatches)
+        // Selector 1: image base name (cheap, case-insensitive)
+        if (!lowerImageNames.empty())
         {
-            spdlog::debug("IsProductInUse: matched process '{}' (PID {})", narrowName, entry.th32ProcessID);
-            return true;
-        }
-
-        // Check against rendered full paths (more expensive: open each matching-name process)
-        if (!renderedPaths.empty() && nameMatches)
-        {
-            const auto fullPath = nefarius::winapi::GetProcessFullPath<std::string>(entry.th32ProcessID);
-            if (fullPath)
+            const bool nameMatches = std::find(lowerImageNames.begin(), lowerImageNames.end(), lowerName)
+                                     != lowerImageNames.end();
+            if (nameMatches)
             {
-                const std::string& pathStr = std::get<std::string>(fullPath.value());
-                for (const auto& renderedPath : renderedPaths)
-                {
-                    if (_stricmp(pathStr.c_str(), renderedPath.c_str()) == 0)
-                    {
-                        spdlog::debug("IsProductInUse: matched process path '{}' (PID {})",
-                                      pathStr, entry.th32ProcessID);
-                        return true;
-                    }
-                }
+                spdlog::debug("IsProductInUse: matched process by name '{}' (PID {})", narrowName, entry.th32ProcessID);
+                return true;
             }
         }
-        else if (!renderedPaths.empty() && lowerImageNames.empty())
+
+        // Selector 2: full executable path (independent of selector 1 — evaluated for every process
+        // whenever executablePaths is configured, regardless of whether imageNames matched)
+        if (!renderedPaths.empty())
         {
-            // No image name filter specified; check every process against full paths
             const auto fullPath = nefarius::winapi::GetProcessFullPath<std::string>(entry.th32ProcessID);
             if (fullPath)
             {
@@ -138,7 +123,7 @@ std::expected<bool, std::string> models::InstanceConfig::IsProductInUse() const
                 {
                     if (_stricmp(pathStr.c_str(), renderedPath.c_str()) == 0)
                     {
-                        spdlog::debug("IsProductInUse: matched process path '{}' (PID {})",
+                        spdlog::debug("IsProductInUse: matched process by path '{}' (PID {})",
                                       pathStr, entry.th32ProcessID);
                         return true;
                     }
