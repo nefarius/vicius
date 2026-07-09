@@ -36,6 +36,8 @@
 
 - [PinnedHost](./nefarius.vicius.abstractions.models.pinnedhost.md)
 
+- [ProductBusyDetectionConfig](./nefarius.vicius.abstractions.models.productbusydetectionconfig.md)
+
 - [ProductVersionDetectionImplementation](./nefarius.vicius.abstractions.models.productversiondetectionimplementation.md)
 
 - [ProductVersionDetectionMethod](./nefarius.vicius.abstractions.models.productversiondetectionmethod.md)

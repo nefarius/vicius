@@ -100,6 +100,21 @@ public string InstallationErrorUrl { get; set; }
 
 [String](https://learn.microsoft.com/dotnet/api/system.string)<br>
 
+### <a id="properties-productbusydetection"/>**ProductBusyDetection**
+
+When set, the update notification dialog is deferred until none of the configured
+ processes are running. The agent waits in a message-pumping loop (gracefully
+ responsive to logoff/shutdown) and retries on the next scheduled run if the
+ maximum wait duration elapses.
+
+```csharp
+public ProductBusyDetectionConfig ProductBusyDetection { get; set; }
+```
+
+#### Property Value
+
+[ProductBusyDetectionConfig](./nefarius.vicius.abstractions.models.productbusydetectionconfig.md)<br>
+
 ### <a id="properties-productname"/>**ProductName**
 
 The product name displayed in the UI and dialogs.
