@@ -7,6 +7,24 @@
 namespace models
 {
     /**
+     * \brief Per-exit-code UI message entry.
+     */
+    class ExitCodeMessage
+    {
+    public:
+        /** The message displayed in the UI for this exit code */
+        std::string message;
+        /** When true, this exit code is treated as a success condition even if absent from successCodes */
+        std::optional<bool> isSuccess;
+        /** Optional URL opened by the help/more-info button shown alongside the message */
+        std::optional<std::string> helpUrl;
+        /** Optional custom label for the help/more-info button (defaults to "Open help page" if omitted) */
+        std::optional<std::string> buttonText;
+    };
+
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ExitCodeMessage, message, isSuccess, helpUrl, buttonText)
+
+    /**
      * \brief Setup exit code parameters.
      */
     class ExitCodeCheck
@@ -16,9 +34,11 @@ namespace models
         bool skipCheck{false};
         /** The setup exit codes treated as success */
         std::vector<int> successCodes{0};
+        /** Optional per-exit-code UI messages, keyed by decimal exit code string (e.g. "3010") */
+        std::optional<std::unordered_map<std::string, ExitCodeMessage>> messages;
     };
 
-    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ExitCodeCheck, skipCheck, successCodes)
+    NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(ExitCodeCheck, skipCheck, successCodes, messages)
 
     /**
      * \brief Details about checksum/hash calculation.

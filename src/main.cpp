@@ -1132,6 +1132,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                                 {
                                     spdlog::info("Setup finished successfully; exitCode: {}, win32Error: {}",
                                                  sr.exitCode, sr.win32Error);
+                                    lastExitCode = sr.exitCode;
                                     instStep = DownloadAndInstallStep::InstallSucceeded;
                                 }
                                 else
@@ -1173,19 +1174,43 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                         if (lastWin32Error == ERROR_SUCCESS && lastExitCode != 0)
                         {
-                            // Process ran but returned a non-success exit code.
-                            ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE
-                                        " Error! Installation failed with an unexpected exit code (%lu).",
-                                        lastExitCode);
-
-                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(15));
-                            if (winapi::IsMsiExecErrorCode(lastExitCode))
+                            // Check for a distributor-configured message for this specific exit code.
+                            const auto mappedMsg = cfg.GetExitCodeMessage(lastExitCode);
+                            if (mappedMsg.has_value() && !mappedMsg->message.empty())
                             {
-                                ImGui::TextWrapped("Setup engine error: %s", winapi::GetLastErrorStdStr(lastExitCode).c_str());
+                                ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE " Installation failed (exit code %lu).",
+                                            lastExitCode);
+                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(15));
+                                ImGui::TextWrapped("%s", mappedMsg->message.c_str());
+
+                                if (mappedMsg->helpUrl.has_value())
+                                {
+                                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(15));
+                                    const std::string btnLabel = std::string(ICON_FK_EXTERNAL_LINK " ") +
+                                        mappedMsg->buttonText.value_or("Open help page");
+                                    if (ImGui::Button(btnLabel.c_str()))
+                                    {
+                                        ShellExecuteA(nullptr, "open", mappedMsg->helpUrl->c_str(),
+                                                      nullptr, nullptr, SW_SHOWNORMAL);
+                                    }
+                                }
                             }
                             else
                             {
-                                ImGui::Text("Setup exit code: %lu", lastExitCode);
+                                // Process ran but returned a non-success exit code.
+                                ImGui::Text(ICON_FK_EXCLAMATION_TRIANGLE
+                                            " Error! Installation failed with an unexpected exit code (%lu).",
+                                            lastExitCode);
+
+                                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(15));
+                                if (winapi::IsMsiExecErrorCode(lastExitCode))
+                                {
+                                    ImGui::TextWrapped("Setup engine error: %s", winapi::GetLastErrorStdStr(lastExitCode).c_str());
+                                }
+                                else
+                                {
+                                    ImGui::Text("Setup exit code: %lu", lastExitCode);
+                                }
                             }
                         }
                         else if (const auto details = cfg.GetLastDownloadError(); !details.empty())
@@ -1223,15 +1248,45 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
                         break;
                     case DownloadAndInstallStep::InstallSucceeded:
-
-                        //ImGui::Text("Done!");
-
-                        // TODO: implement me, right now it simply exits
-
+                    {
                         status = cfg.GetSuccessExitCode(NV_S_UPDATE_FINISHED);
-                        ++currentPage;
+
+                        const auto successMsg = cfg.GetExitCodeMessage(lastExitCode);
+                        if (!successMsg.has_value() || successMsg->message.empty())
+                        {
+                            // No custom message — close immediately (original behaviour).
+                            ++currentPage;
+                            break;
+                        }
+
+                        // A custom message is configured for this exit code: show a success
+                        // screen and let the user dismiss it explicitly.
+                        isCancelDisabled = false;
+
+                        ImGui::Text(ICON_FK_CHECK_CIRCLE " Installation complete.");
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(15));
+                        ImGui::TextWrapped("%s", successMsg->message.c_str());
+
+                        if (successMsg->helpUrl.has_value())
+                        {
+                            ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(20));
+                            const std::string btnLabel = std::string(ICON_FK_EXTERNAL_LINK " ") +
+                                successMsg->buttonText.value_or("Open help page");
+                            if (ImGui::Button(btnLabel.c_str()))
+                            {
+                                ShellExecuteA(nullptr, "open", successMsg->helpUrl->c_str(),
+                                              nullptr, nullptr, SW_SHOWNORMAL);
+                            }
+                        }
+
+                        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(20));
+                        if (ImGui::Button("Finish"))
+                        {
+                            ++currentPage;
+                        }
 
                         break;
+                    }
                 }
 
                 ImGui::Unindent(leftBorderIndent);

@@ -470,20 +470,31 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
     //
     if (const auto exitCodeCheck = this->ExitCodeCheck(); exitCodeCheck.has_value())
     {
-        const auto [ skipCheck, successCodes ] = exitCodeCheck.value();
+        const auto& check = exitCodeCheck.value();
 
-        if (skipCheck)
+        if (check.skipCheck)
         {
             spdlog::debug("Skipping error code check as per configuration");
 
             success = true;
         }
 
-        if (std::ranges::find(successCodes, exitCode) != successCodes.end())
+        if (std::ranges::find(check.successCodes, static_cast<int>(exitCode)) != check.successCodes.end())
         {
             spdlog::debug("Exit code {} marked as success-condition", exitCode);
 
             success = true;
+        }
+
+        if (!success && check.messages.has_value())
+        {
+            if (const auto it = check.messages->find(std::to_string(exitCode));
+                it != check.messages->end() && it->second.isSuccess.value_or(false))
+            {
+                spdlog::debug("Exit code {} promoted to success via message map", exitCode);
+
+                success = true;
+            }
         }
     }
 
