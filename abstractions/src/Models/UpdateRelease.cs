@@ -6,6 +6,38 @@ using NJsonSchema.Annotations;
 namespace Nefarius.Vicius.Abstractions.Models;
 
 /// <summary>
+///     Per-exit-code UI message entry used in <see cref="ExitCodeCheck.Messages" />.
+/// </summary>
+[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+[SuppressMessage("ReSharper", "UnusedAutoPropertyAccessor.Global")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
+public sealed class ExitCodeMessage
+{
+    /// <summary>
+    ///     The message displayed in the updater UI when this exit code is encountered.
+    /// </summary>
+    [Required]
+    public string Message { get; set; } = null!;
+
+    /// <summary>
+    ///     When <c>true</c>, this exit code is treated as a success condition even if it is
+    ///     absent from <see cref="ExitCodeCheck.SuccessCodes" />.
+    /// </summary>
+    public bool? IsSuccess { get; set; }
+
+    /// <summary>
+    ///     Optional URL opened by the help/more-info button shown alongside the message.
+    /// </summary>
+    public string? HelpUrl { get; set; }
+
+    /// <summary>
+    ///     Optional custom label for the help/more-info button.
+    ///     Defaults to <c>"Open help page"</c> when omitted.
+    /// </summary>
+    public string? ButtonText { get; set; }
+}
+
+/// <summary>
 ///     Setup exit code parameters.
 /// </summary>
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
@@ -25,6 +57,13 @@ public sealed class ExitCodeCheck
     /// </summary>
     [Required]
     public List<int> SuccessCodes { get; } = new();
+
+    /// <summary>
+    ///     Optional per-exit-code UI messages, keyed by decimal exit code string (e.g. <c>"3010"</c>).
+    ///     An entry with <see cref="ExitCodeMessage.IsSuccess" /> set to <c>true</c> also promotes that
+    ///     code to a success condition without requiring it to appear in <see cref="SuccessCodes" />.
+    /// </summary>
+    public Dictionary<string, ExitCodeMessage>? Messages { get; set; }
 }
 
 /// <summary>

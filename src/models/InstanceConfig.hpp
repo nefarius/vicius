@@ -516,6 +516,32 @@ namespace models
         }
 
         /**
+         * \brief Looks up a per-exit-code UI message entry for the given setup exit code.
+         *
+         * Uses the same release-over-instance precedence as ExitCodeCheck().
+         *
+         * \param exitCode The exit code returned by the setup process.
+         * \return The matching ExitCodeMessage, or std::nullopt if none is configured.
+         */
+        std::optional<models::ExitCodeMessage> GetExitCodeMessage(DWORD exitCode)
+        {
+            const auto check = ExitCodeCheck();
+            if (!check.has_value() || !check->messages.has_value())
+            {
+                return std::nullopt;
+            }
+
+            const auto& map = check->messages.value();
+            const auto it = map.find(std::to_string(static_cast<int>(exitCode)));
+            if (it == map.end())
+            {
+                return std::nullopt;
+            }
+
+            return it->second;
+        }
+
+        /**
          * \brief Stores the current timestamp in a volatile registry key.
          */
         void SetPostponeData();

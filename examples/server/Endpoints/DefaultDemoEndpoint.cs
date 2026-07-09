@@ -133,6 +133,8 @@ internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
                               - Remind me tomorrow button (start page)
                               - Back / Cancel navigation
                               - Successful exit-code mapping (0 and 3010 both count as success)
+                              - Custom exit-code message for 3010: reboot-required notice with help button
+                              - Custom exit-code message for 1602: user-cancelled notice
 
                               ## Scrollbar test
 
@@ -169,7 +171,34 @@ internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
                         SuccessCodes =
                         {
                             0,    // regular success
-                            3010  // success, reboot required
+                            3010  // success, reboot required (also covered by the message map below)
+                        },
+                        // Demonstrates the exit-code message map: when the installer exits with
+                        // 3010 (ERROR_SUCCESS_REBOOT_REQUIRED) the updater shows this notice
+                        // instead of closing silently, and offers a help button.
+                        Messages = new Dictionary<string, ExitCodeMessage>
+                        {
+                            // 3010 = ERROR_SUCCESS_REBOOT_REQUIRED
+                            ["3010"] = new ExitCodeMessage
+                            {
+                                IsSuccess = true,
+                                Message =
+                                    "The update was installed successfully, but a system reboot is required " +
+                                    "before the new version becomes fully active.\n\n" +
+                                    "Please save your work and restart Windows at your earliest convenience.",
+                                HelpUrl = "https://docs.nefarius.at/projects/Vicius/Setup-Exit-Codes/",
+                                ButtonText = "Learn more about the reboot requirement"
+                            },
+                            // 1602 = ERROR_INSTALL_USEREXIT — user cancelled the installer
+                            ["1602"] = new ExitCodeMessage
+                            {
+                                Message =
+                                    "The installation was cancelled before it could complete. " +
+                                    "No changes have been made to your system.\n\n" +
+                                    "You can retry the update at any time by running the updater again.",
+                                HelpUrl = "https://docs.nefarius.at/projects/Vicius/Setup-Exit-Codes/",
+                                ButtonText = "More information"
+                            }
                         }
                     }
                 }
