@@ -1,0 +1,51 @@
+---
+description: Reminds to update the external docs (nefarius/docs.nefarius.at, docs/projects/Vicius/) whenever user-facing behavior, config schema, CLI flags, or exit codes change. Auto-attaches on user-facing source files.
+globs: src/Common.h,src/main.cpp,src/CustomizeMe.h,src/models/**,src/InstanceConfig*.cpp,src/ui.cpp,src/UI.h,src/markdown.cpp,abstractions/src/Models/**
+alwaysApply: false
+---
+
+# Vicius Docs Sync
+
+The external docs live at **`nefarius/docs.nefarius.at`** → `docs/projects/Vicius/*.md`, published at <https://docs.nefarius.at/projects/Vicius/>.
+
+## When to update
+
+Propose a doc update whenever a change is **user-facing**:
+
+- New/removed/renamed CLI flag (`NV_CLI_*`)
+- New/changed/removed app exit code (`NV_E_*`)
+- New/changed field in the remote or local JSON config schema
+- New/changed default behavior visible to the operator or end user
+- New feature area (emergency, ZIP, signature, busy detection, templates, …)
+- UI-visible behavioral change
+
+Pure internal refactors, code-style changes, or build-system tweaks do **not** require a doc update.
+
+## Delivery (guidance-only)
+
+Do **not** clone or push to the docs repo. Instead:
+
+1. Identify which page(s) are affected (see mapping below).
+2. Fetch the current content from `https://raw.githubusercontent.com/nefarius/docs.nefarius.at/master/docs/projects/Vicius/<Page>.md` if you need context.
+3. Output a concrete proposed markdown snippet or diff the maintainer can paste into that file.
+
+## Source → docs-page mapping
+
+| Source area | Files | Docs page |
+|---|---|---|
+| CLI flags & server URL default | `src/Common.h` (`NV_CLI_*`), `src/main.cpp`, `src/CustomizeMe.h` | `Command-Line-Arguments.md`, `Server-Discovery.md` |
+| App exit codes | `src/Common.h` (`NV_E_*`) | `Exit-Codes.md` |
+| Setup/installer exit-code handling | `src/models/` (`ExitCodeCheck`), `src/InstanceConfig.Setup.cpp` | `Setup-Exit-Codes.md` |
+| Remote config schema | `src/models/SharedConfig.hpp`, `MergedConfig.hpp`, `UpdateResponse.hpp`, `UpdateRelease.hpp`, `UpdateConfig.hpp` | `Remote-Configuration.md` |
+| Local config / INI | `src/models/InstanceConfig.hpp`, `src/InstanceConfig.cpp` | `Local-Configuration.md` |
+| Product detection | `src/models/ProductDetection.hpp` | `Product-Detection.md` |
+| Signature verification | `src/models/SignatureValidation.hpp`, `src/NAuthenticode.cpp`, `src/InstanceConfig.Security.cpp` | `Signature-Verification.md` |
+| Download integrity / checksums | `src/Crypto.cpp`, `src/InstanceConfig.Download.cpp` | `Download-Integrity.md` |
+| Terminate-before-update / busy detection | `src/models/ProductBusyDetection.hpp`, `src/InstanceConfig.ProductInUse.cpp` | `Terminate-Process-before-Update.md` |
+| ZIP extraction | `src/models/DownloadLocationConfig.h` | `ZIP-Archives.md` |
+| Inja templating | `src/InstanceConfig.Template.cpp` | `Inja-Templates.md` |
+| Logging (log-level flag) | `src/main.cpp` | `Logging.md` |
+| Emergency feature | `src/InstanceConfig.Web.cpp` | `Emergency-Feature.md` |
+| UI / markdown changelog rendering | `src/ui.cpp`, `src/markdown.cpp`, `src/UI.h` | `index.md`, `Common-Errors.md` |
+
+> **Cross-reference:** The remote/local config schema is also dual-maintained with `abstractions/src/Models/**` (covered by `model-parity.mdc`). When schema fields change, update both the C# mirror **and** `Remote-Configuration.md` / `Local-Configuration.md`.
