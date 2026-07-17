@@ -39,8 +39,8 @@ namespace single_instance
         ~Guard();
 
         /**
-         * \brief Consumes a pending activation request from a duplicate instance.
-         * \return True if a request was pending (and is now cleared).
+         * \brief Consumes one pending activation request from a duplicate instance.
+         * \return True if a request was pending (auto-reset event consumes it).
          */
         [[nodiscard]] bool ConsumeActivationRequest() const;
 

@@ -86,11 +86,9 @@ namespace single_instance
         if (!activateEvent_)
             return false;
 
-        if (WaitForSingleObject(activateEvent_, 0) != WAIT_OBJECT_0)
-            return false;
-
-        ResetEvent(activateEvent_);
-        return true;
+        // Auto-reset event: a successful wait consumes exactly one signal, so a
+        // request that arrives between observation and the next poll stays pending.
+        return WaitForSingleObject(activateEvent_, 0) == WAIT_OBJECT_0;
     }
 
     void Guard::ActivateWindow(HWND hwnd)
@@ -127,7 +125,7 @@ namespace single_instance
         const std::wstring mutexName = MakeObjectName(L"Local\\Nefarius.Vicius.SingleInstance.", hashHex);
         const std::wstring eventName = MakeObjectName(L"Local\\Nefarius.Vicius.Activate.", hashHex);
 
-        HANDLE activateEvent = CreateEventW(nullptr, TRUE /* manual-reset */, FALSE, eventName.c_str());
+        HANDLE activateEvent = CreateEventW(nullptr, FALSE /* auto-reset */, FALSE, eventName.c_str());
         if (!activateEvent)
         {
             return std::unexpected(
@@ -158,6 +156,16 @@ namespace single_instance
             result.status = AcquireStatus::Primary;
             result.guard = Guard(mutex, activateEvent, true);
             return std::move(result);
+        }
+
+        if (waitResult != WAIT_TIMEOUT)
+        {
+            const DWORD err = GetLastError();
+            CloseHandle(mutex);
+            CloseHandle(activateEvent);
+            return std::unexpected(
+                std::format("WaitForSingleObject failed (result={}): {}",
+                            waitResult, winapi::GetLastErrorStdStr(err)));
         }
 
         // Another instance still holds the lock — ask it to focus its UI, then bail.

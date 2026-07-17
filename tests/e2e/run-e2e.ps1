@@ -288,11 +288,42 @@ function Invoke-DuplicateInstanceScenario {
     $exePath = Join-Path $workDir $ExeName
     Copy-Item -Path $SourceBin -Destination $exePath
 
+    # Fresh logs each run — stale content must not signal readiness or satisfy assertions.
     $ownerLog = Join-Path $LogDir "$Name-owner.log"
     $dupLog   = Join-Path $LogDir "$Name-duplicate.log"
+    Remove-Item -Path $ownerLog, $dupLog -Force -ErrorAction SilentlyContinue
+
+    # Hold process keeps the owner in the product-in-use wait after lock acquisition
+    # until we release it (after the duplicate has finished).
+    $holdImageName = 'vicius-e2e-hold.exe'
+    $holdExe = Join-Path $workDir $holdImageName
+    Copy-Item -Path (Join-Path $env:SystemRoot 'System32\ping.exe') -Destination $holdExe
+
+    $sidecarPath = Join-Path $workDir ([System.IO.Path]::GetFileNameWithoutExtension($ExeName) + '.json')
+    $sidecar = @{
+        instance = @{
+            authority = 'Local'
+        }
+        shared = @{
+            productBusyDetection = @{
+                imageNames          = @($holdImageName)
+                pollIntervalSeconds = 5
+                maxWaitMinutes      = 5
+            }
+        }
+    } | ConvertTo-Json -Depth 6
+    Set-Content -Path $sidecarPath -Value $sidecar -Encoding utf8
+
     $ownerProc = $null
+    $holdProc  = $null
 
     try {
+        Write-Host "  Starting hold process ($holdImageName)..."
+        $holdProc = Start-Process `
+            -FilePath $holdExe `
+            -ArgumentList '-t', '127.0.0.1' `
+            -PassThru -WindowStyle Hidden
+
         $ownerArgs = @(
             '--force-local-version', '0.0.1',
             '--silent-update',
@@ -329,6 +360,26 @@ function Invoke-DuplicateInstanceScenario {
             throw 'Owner did not acquire the single-instance lock within 30 seconds.'
         }
 
+        # Confirm the owner entered the product-in-use hold (still alive + hold active).
+        $holdDeadline = (Get-Date).AddSeconds(60)
+        $inUseHold = $false
+        while ((Get-Date) -lt $holdDeadline) {
+            if ($ownerProc.HasExited) {
+                throw "Owner exited with code $($ownerProc.ExitCode) before the product-in-use hold."
+            }
+            if (Test-Path $ownerLog) {
+                $ownerLogText = Get-Content $ownerLog -Raw -ErrorAction SilentlyContinue
+                if ($ownerLogText -like '*Product in use*' -or $ownerLogText -like '*matched process by name*') {
+                    $inUseHold = $true
+                    break
+                }
+            }
+            Start-Sleep -Milliseconds 200
+        }
+        if (-not $inUseHold) {
+            throw 'Owner did not enter the product-in-use hold before duplicate launch.'
+        }
+
         Write-Host "  Owner holds the lock (PID $($ownerProc.Id)); launching duplicate..."
         $dupArgs = @(
             '--force-local-version', '0.0.1',
@@ -344,6 +395,18 @@ function Invoke-DuplicateInstanceScenario {
             -ArgumentList $dupArgs `
             -Wait -PassThru -NoNewWindow
         $got = $dupProc.ExitCode
+
+        # Owner must still be holding the lock through the entire duplicate run.
+        if ($ownerProc.HasExited) {
+            throw "Owner exited with code $($ownerProc.ExitCode) before the duplicate finished."
+        }
+
+        # Release the hold only after the duplicate has completed.
+        if ($null -ne $holdProc -and -not $holdProc.HasExited) {
+            Write-Host "  Releasing hold process (PID $($holdProc.Id))..."
+            Stop-Process -Id $holdProc.Id -Force -ErrorAction SilentlyContinue
+            $holdProc.WaitForExit(5000) | Out-Null
+        }
 
         $logFailures = @()
         $dupLogText = if (Test-Path $dupLog) {
@@ -381,6 +444,10 @@ function Invoke-DuplicateInstanceScenario {
                   LogFailures = @($_.Exception.Message) }
     }
     finally {
+        if ($null -ne $holdProc -and -not $holdProc.HasExited) {
+            Stop-Process -Id $holdProc.Id -Force -ErrorAction SilentlyContinue
+            $holdProc.WaitForExit(5000) | Out-Null
+        }
         if ($null -ne $ownerProc -and -not $ownerProc.HasExited) {
             Write-Host "  Stopping owner (PID $($ownerProc.Id))..."
             Stop-Process -Id $ownerProc.Id -Force -ErrorAction SilentlyContinue
