@@ -76,6 +76,8 @@
 #define NV_S_CLOSED_WHILE_UPDATER_RUNNING            208
 /** The watched product was still running after the maximum wait period; nothing shown or installed, retry on next run. */
 #define NV_S_PRODUCT_IN_USE_TIMEOUT                  209
+/** Another updater process for the same executable path is already running; activation was signaled and this process exited. */
+#define NV_S_INSTANCE_ALREADY_RUNNING                210
 
 /** Hard ceiling on the product-busy wait loop, in minutes. Configured values above this are clamped. */
 #define NV_PRODUCT_IN_USE_MAX_WAIT_MINUTES           180

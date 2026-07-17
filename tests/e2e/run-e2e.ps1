@@ -14,6 +14,7 @@
         NV_S_UPDATE_FINISHED = 203
         NV_S_UP_TO_DATE      = 202
         NV_S_SELF_UPDATER    = 201
+        NV_S_INSTANCE_ALREADY_RUNNING = 210
         NV_E_SERVER_RESPONSE = 104
         NV_E_SIGNATURE_INVALID = 116
 
@@ -268,6 +269,124 @@ function Invoke-Scenario {
             Write-Host "  Running post-scenario hook..."
             & $PostScenario
         }
+    }
+}
+
+function Invoke-DuplicateInstanceScenario {
+    param(
+        [string] $SourceBin,
+        [string] $ExeName = 'e2e_HappyZip_Updater.exe'
+    )
+
+    $Name = 'DuplicateInstance'
+    $ExpectedExit = 210  # NV_S_INSTANCE_ALREADY_RUNNING
+    Write-Header "Scenario: $Name (expect exit $ExpectedExit)"
+
+    $workDir = Join-Path $env:TEMP "vicius-e2e-$Name-$(New-Guid)"
+    New-Item -ItemType Directory -Path $workDir | Out-Null
+
+    $exePath = Join-Path $workDir $ExeName
+    Copy-Item -Path $SourceBin -Destination $exePath
+
+    $ownerLog = Join-Path $LogDir "$Name-owner.log"
+    $dupLog   = Join-Path $LogDir "$Name-duplicate.log"
+    $ownerProc = $null
+
+    try {
+        $ownerArgs = @(
+            '--force-local-version', '0.0.1',
+            '--silent-update',
+            '--ignore-busy-state',
+            '--skip-self-update',
+            '--log-to-file', $ownerLog,
+            '--log-level', 'debug'
+        )
+
+        Write-Host "  Starting owner: $ExeName $ownerArgs"
+        $ownerProc = Start-Process `
+            -FilePath $exePath `
+            -ArgumentList $ownerArgs `
+            -PassThru -NoNewWindow
+
+        # Wait until the owner holds the single-instance lock (or exits unexpectedly).
+        $deadline = (Get-Date).AddSeconds(30)
+        $lockAcquired = $false
+        while ((Get-Date) -lt $deadline) {
+            if ($ownerProc.HasExited) {
+                throw "Owner exited early with code $($ownerProc.ExitCode) before acquiring the lock."
+            }
+            if (Test-Path $ownerLog) {
+                $ownerLogText = Get-Content $ownerLog -Raw -ErrorAction SilentlyContinue
+                if ($ownerLogText -like '*Acquired single-instance lock for*') {
+                    $lockAcquired = $true
+                    break
+                }
+            }
+            Start-Sleep -Milliseconds 100
+        }
+
+        if (-not $lockAcquired) {
+            throw 'Owner did not acquire the single-instance lock within 30 seconds.'
+        }
+
+        Write-Host "  Owner holds the lock (PID $($ownerProc.Id)); launching duplicate..."
+        $dupArgs = @(
+            '--force-local-version', '0.0.1',
+            '--silent-update',
+            '--ignore-busy-state',
+            '--skip-self-update',
+            '--log-to-file', $dupLog,
+            '--log-level', 'debug'
+        )
+
+        $dupProc = Start-Process `
+            -FilePath $exePath `
+            -ArgumentList $dupArgs `
+            -Wait -PassThru -NoNewWindow
+        $got = $dupProc.ExitCode
+
+        $logFailures = @()
+        $dupLogText = if (Test-Path $dupLog) {
+            Get-Content $dupLog -Raw -ErrorAction SilentlyContinue
+        } else { '' }
+
+        $expectedLog = 'Another updater instance is already running for'
+        if ($dupLogText -notlike "*$expectedLog*") {
+            $logFailures += "Expected in duplicate log: '$expectedLog'"
+        }
+
+        $passed = ($got -eq $ExpectedExit) -and ($logFailures.Count -eq 0)
+        $status = if ($passed) { 'PASS' } else { 'FAIL' }
+        Write-Host "  $status  exit=$got  expected=$ExpectedExit"
+
+        if (-not $passed) {
+            Write-Host "  Duplicate log tail:"
+            if (Test-Path $dupLog) {
+                Get-Content $dupLog -Tail 30 | ForEach-Object { Write-Host "    $_" }
+            }
+            foreach ($msg in $logFailures) {
+                Write-Host "  LOG ASSERTION FAILED: $msg"
+            }
+        }
+
+        return @{ Name = $Name; Passed = $passed; Expected = $ExpectedExit; Got = $got; LogFailures = $logFailures }
+    }
+    catch {
+        Write-Host "  FAIL  $($_.Exception.Message)"
+        if (Test-Path $ownerLog) {
+            Write-Host "  Owner log tail:"
+            Get-Content $ownerLog -Tail 30 | ForEach-Object { Write-Host "    $_" }
+        }
+        return @{ Name = $Name; Passed = $false; Expected = $ExpectedExit; Got = $null;
+                  LogFailures = @($_.Exception.Message) }
+    }
+    finally {
+        if ($null -ne $ownerProc -and -not $ownerProc.HasExited) {
+            Write-Host "  Stopping owner (PID $($ownerProc.Id))..."
+            Stop-Process -Id $ownerProc.Id -Force -ErrorAction SilentlyContinue
+            $ownerProc.WaitForExit(5000) | Out-Null
+        }
+        Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -604,6 +723,10 @@ try {
         }
         $results.Add((Invoke-Scenario @invokeParams))
     }
+
+    # Concurrency regression: second launch of the same executable must exit with
+    # NV_S_INSTANCE_ALREADY_RUNNING (210) after signaling the owner.
+    $results.Add((Invoke-DuplicateInstanceScenario -SourceBin $MainBin))
 
 } finally {
     Stop-E2EServer $serverJob

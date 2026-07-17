@@ -185,6 +185,21 @@ namespace models
         semver::version GetAppVersion() const { return appVersion; }
         std::string GetAppFilename() const { return appFilename; }
 
+        /**
+         * \brief Path used as the single-instance concurrency key.
+         *
+         * Temporary copies inherit the parent updater path so the original-to-temporary
+         * handoff stays under one lock instead of opening a parallel run.
+         */
+        [[nodiscard]] std::filesystem::path GetSingleInstanceIdentityPath() const
+        {
+            if (isTemporaryCopy && parentAppPath.has_value())
+                return parentAppPath.value();
+            return appPath;
+        }
+
+        [[nodiscard]] bool IsTemporaryCopy() const { return isTemporaryCopy; }
+
         std::string GetWindowTitle() const { return merged.windowTitle; }
         std::string GetProductName() const { return merged.productName; }
         bool IsRemindButtonHidden() const { return merged.hideRemindButton; }

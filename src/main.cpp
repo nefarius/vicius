@@ -4,6 +4,7 @@
 #include "WizardPage.h"
 #include "InstanceConfig.hpp"
 #include "DownloadAndInstall.hpp"
+#include "SingleInstance.h"
 
 #include <curlpp/cURLpp.hpp>
 
@@ -203,6 +204,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             );
         return (int)earlyAbortCode;
     }
+
+#pragma region Single-instance guard
+
+    // Serialize concurrent invocations for the same updater executable path.
+    // Temporary copies wait briefly so the parent can hand off ownership cleanly.
+    std::optional<single_instance::Guard> instanceGuard;
+    {
+        auto acquire = single_instance::AcquireResult::TryAcquire(
+            cfg.GetSingleInstanceIdentityPath(),
+            cfg.IsTemporaryCopy());
+
+        if (!acquire)
+        {
+            spdlog::critical("Failed to acquire single-instance lock: {}", acquire.error());
+            cfg.TryDisplayErrorDialog("Failed to acquire single-instance lock", acquire.error());
+            return NV_E_INVALID_PARAMETERS;
+        }
+
+        if (acquire->status == single_instance::AcquireStatus::Duplicate)
+        {
+            return cfg.GetSuccessExitCode(NV_S_INSTANCE_ALREADY_RUNNING);
+        }
+
+        instanceGuard = std::move(acquire->guard);
+    }
+
+#pragma endregion
 
 #pragma region Install command
 
@@ -665,6 +693,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     ::ShowWindow(hwnd, iCmdShow);
     ::UpdateWindow(hwnd);
 
+    // Honour any activation request that arrived before the window existed.
+    if (instanceGuard && instanceGuard->ConsumeActivationRequest())
+    {
+        single_instance::Guard::ActivateWindow(hwnd);
+    }
+
     ImVec4 clear_color = ImGui::GetStyle().Colors[ImGuiCol_WindowBg];
 
     auto currentPage = WizardPage::Start;
@@ -694,6 +728,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             cfg.RequestAbortDownload();
             cfg.WaitForDownloadToFinish();
             break;
+        }
+
+        // A second launch of this updater asked us to come to the foreground.
+        if (instanceGuard && instanceGuard->ConsumeActivationRequest())
+        {
+            single_instance::Guard::ActivateWindow(hwnd);
         }
 
         // Handle window being minimized or screen locked
