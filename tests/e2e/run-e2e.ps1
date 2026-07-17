@@ -151,7 +151,8 @@ function Invoke-Scenario {
         [scriptblock] $PreScenario        = $null,    # runs before the binary is invoked
         [scriptblock] $PostScenario       = $null,   # runs in finally, even on failure
         [string[]]    $ExpectLogContains    = @(),   # each substring must appear in the log file
-        [string[]]    $ExpectLogNotContains = @()    # none of these substrings may appear in the log file
+        [string[]]    $ExpectLogNotContains = @(),   # none of these substrings may appear in the log file
+        [string[]]    $ExtraArgs            = @()    # additional CLI args appended verbatim (e.g. --strict-verification)
     )
 
     Write-Header "Scenario: $Name (expect exit $ExpectedExit)"
@@ -206,6 +207,7 @@ function Invoke-Scenario {
             $args = @('--force-local-version', $LocalVersion) + $args
         }
         if ($SkipSelfUpdate) { $args += '--skip-self-update' }
+        if ($ExtraArgs.Count -gt 0) { $args += $ExtraArgs }
 
         Write-Host "  Running: $ExeName $args"
         $proc = Start-Process `
@@ -560,12 +562,20 @@ try {
             NeedsInstall   = $true
         },
         @{
-            Name           = 'SignedManifest'
-            SourceBin      = $SigBin
-            ExeName        = 'e2eSig_SignedManifest_Updater.exe'
-            LocalVersion   = '0.0.1'
-            ExpectedExit   = 203
-            SkipSelfUpdate = $true
+            # SignedManifest's fixture (tests/e2e's SignedManifest/updates.json) sets
+            # shared.signatureVerificationMode = "Disabled" and is served with a valid
+            # minisig signature against $SigBin's compiled-in NV_MANIFEST_PUBLIC_KEY, so the
+            # override must be applied (not rejected) — proving a verified manifest CAN apply
+            # an allowed policy override. Absence of the "Ignoring remote ... override" log
+            # lines (added by the verification-policy trust-boundary hardening) is the
+            # positive-control signal for this.
+            Name              = 'SignedManifest'
+            SourceBin         = $SigBin
+            ExeName           = 'e2eSig_SignedManifest_Updater.exe'
+            LocalVersion      = '0.0.1'
+            ExpectedExit      = 203
+            SkipSelfUpdate    = $true
+            ExpectLogNotContains = @('Ignoring remote signatureVerificationMode override')
         },
         @{
             Name           = 'TamperedManifest'
@@ -574,6 +584,47 @@ try {
             LocalVersion   = '0.0.1'
             ExpectedExit   = 104
             SkipSelfUpdate = $true
+        },
+        @{
+            # Negative control for SignedManifest: same signed manifest/override, but
+            # --strict-verification is passed locally on the CLI. A local operator flag must
+            # remain dominant over even a *verified* remote override: the override is
+            # rejected (log line present) even though the manifest signature itself is valid,
+            # AND --strict-verification additionally escalates the local default policy from
+            # WhenPresent/Relaxed to Required/Strict (see InstanceConfig::InstanceConfig).
+            # Since the test payload.zip is unsigned, Required mode then hard-fails it with
+            # NV_E_SIGNATURE_INVALID (116) instead of the 203 every other happy-path scenario
+            # gets — the strongest possible proof that the remote "Disabled" override never
+            # took effect. Reuses the SignedManifest fixture/endpoint (same tenant path via
+            # ExeName) so the manifest and its signature are identical to that scenario —
+            # only the local --strict-verification flag differs.
+            Name                 = 'StrictVerificationDominant'
+            SourceBin            = $SigBin
+            ExeName              = 'e2eSig_SignedManifest_Updater.exe'
+            LocalVersion         = '0.0.1'
+            ExpectedExit         = 116
+            SkipSelfUpdate       = $true
+            ExtraArgs            = @('--strict-verification')
+            ExpectLogContains    = @('Ignoring remote signatureVerificationMode override')
+        },
+        @{
+            # Unsigned manifest (no NV_MANIFEST_PUBLIC_KEY / .minisig involved, served over
+            # $MainBin's plain HTTP loopback) attempts to weaken all four signature-policy
+            # fields. The update still succeeds (local default WhenPresent already accepts
+            # the unsigned test payload) but every override must be logged as rejected,
+            # proving an unsigned manifest cannot disable verification.
+            Name              = 'UnsignedOverrideRejected'
+            SourceBin         = $MainBin
+            ExeName           = 'e2e_UnsignedOverrideRejected_Updater.exe'
+            LocalVersion      = '0.0.1'
+            ExpectedExit      = 203
+            SkipSelfUpdate    = $true
+            ExpectLogContains = @(
+                'Ignoring remote signatureVerificationMode override',
+                'Ignoring remote signaturePolicy override',
+                'Ignoring remote signatureStrategy override',
+                'Ignoring remote signatureConfig (certificate pin) override'
+            )
         },
 
         # ── Dynamic server-side signing (minisign-net) scenarios ─────────────
@@ -799,6 +850,7 @@ try {
             PostScenario         = $s.ContainsKey('PostScenario')         ? $s.PostScenario         : $null
             ExpectLogContains    = $s.ContainsKey('ExpectLogContains')    ? $s.ExpectLogContains    : @()
             ExpectLogNotContains = $s.ContainsKey('ExpectLogNotContains') ? $s.ExpectLogNotContains : @()
+            ExtraArgs            = $s.ContainsKey('ExtraArgs')            ? $s.ExtraArgs            : @()
         }
         $results.Add((Invoke-Scenario @invokeParams))
     }
