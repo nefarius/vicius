@@ -11,8 +11,9 @@ namespace
 {
     /**
      * \brief Hash a file with MD5 and return the hex digest.
+     * \return Hex digest on success; empty string on I/O failure or if stopToken is signalled.
      */
-    std::string HashFileMD5(const std::string& filePath)
+    std::string HashFileMD5(const std::string& filePath, const std::stop_token& stopToken)
     {
         MD5 alg;
         std::ifstream file(filePath, std::ios::binary);
@@ -22,6 +23,7 @@ namespace
         std::vector<char> buf(chunkSize);
         while (!file.eof())
         {
+            if (stopToken.stop_requested()) return {};
             file.read(buf.data(), buf.size());
             const std::streamsize n = file.gcount();
             if (n > 0) alg.add(buf.data(), n);
@@ -29,7 +31,7 @@ namespace
         return alg.getHash();
     }
 
-    std::string HashFileSHA1(const std::string& filePath)
+    std::string HashFileSHA1(const std::string& filePath, const std::stop_token& stopToken)
     {
         SHA1 alg;
         std::ifstream file(filePath, std::ios::binary);
@@ -39,6 +41,7 @@ namespace
         std::vector<char> buf(chunkSize);
         while (!file.eof())
         {
+            if (stopToken.stop_requested()) return {};
             file.read(buf.data(), buf.size());
             const std::streamsize n = file.gcount();
             if (n > 0) alg.add(buf.data(), n);
@@ -46,7 +49,7 @@ namespace
         return alg.getHash();
     }
 
-    std::string HashFileSHA256(const std::string& filePath)
+    std::string HashFileSHA256(const std::string& filePath, const std::stop_token& stopToken)
     {
         SHA256 alg;
         std::ifstream file(filePath, std::ios::binary);
@@ -56,6 +59,7 @@ namespace
         std::vector<char> buf(chunkSize);
         while (!file.eof())
         {
+            if (stopToken.stop_requested()) return {};
             file.read(buf.data(), buf.size());
             const std::streamsize n = file.gcount();
             if (n > 0) alg.add(buf.data(), n);
@@ -198,10 +202,14 @@ std::expected<void, std::string> models::InstanceConfig::VerifyReleaseIntegrityA
 
     try
     {
-        verifyTask = std::async(std::launch::async, &InstanceConfig::VerifyReleaseIntegrity, this);
+        // Fresh stop_source per launch so a prior shutdown cancel cannot poison a retry.
+        verifyStopSource.emplace();
+        verifyTask = std::async(std::launch::async, &InstanceConfig::VerifyReleaseIntegrity, this,
+                                std::stop_token{verifyStopSource->get_token()});
     }
     catch (const std::system_error& e)
     {
+        verifyStopSource.reset();
         return std::unexpected(std::format("Failed to start verification thread: {}", e.what()));
     }
 
@@ -251,7 +259,10 @@ void models::InstanceConfig::ResetVerifyState()
     // not-yet-ready shared_future that was created via std::async will block the
     // calling thread (the render thread) until the background work finishes.
     if (verifyTask->wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+    {
         verifyTask.reset();
+        verifyStopSource.reset();
+    }
     // Still running: leave it.  VerifyReleaseIntegrityAsync guards against re-launch,
     // and GetVerifyStatus will eventually report completion on a later frame.
 }
@@ -261,6 +272,11 @@ void models::InstanceConfig::WaitForVerifyToFinish()
     if (!verifyTask.has_value())
         return;
 
+    // Request cancel before waiting so a long hash does not pin shutdown; the task
+    // observes verifyStopSource at safe points between chunks.
+    if (verifyStopSource.has_value())
+        verifyStopSource->request_stop();
+
     verifyTask->wait();
 }
 
@@ -268,7 +284,7 @@ void models::InstanceConfig::WaitForVerifyToFinish()
 // Layer 1: Setup Checksum Verification
 // ============================================================================
 
-std::expected<void, std::string> models::InstanceConfig::VerifyReleaseIntegrity()
+std::expected<void, std::string> models::InstanceConfig::VerifyReleaseIntegrity(std::stop_token stopToken)
 {
     const auto& release = GetSelectedRelease();
     const auto tempFile = GetLocalReleaseTempFilePath(GetSelectedReleaseId());
@@ -288,20 +304,23 @@ std::expected<void, std::string> models::InstanceConfig::VerifyReleaseIntegrity(
             return std::unexpected("Downloaded file not found for checksum verification");
         }
 
+        if (stopToken.stop_requested())
+            return std::unexpected("Verification cancelled");
+
         std::string computed;
         switch (hashCfg.checksumAlg)
         {
             case ChecksumAlgorithm::MD5:
                 spdlog::debug("Checksum verification: hashing with MD5");
-                computed = HashFileMD5(tempFile.string());
+                computed = HashFileMD5(tempFile.string(), stopToken);
                 break;
             case ChecksumAlgorithm::SHA1:
                 spdlog::debug("Checksum verification: hashing with SHA1");
-                computed = HashFileSHA1(tempFile.string());
+                computed = HashFileSHA1(tempFile.string(), stopToken);
                 break;
             case ChecksumAlgorithm::SHA256:
                 spdlog::debug("Checksum verification: hashing with SHA256");
-                computed = HashFileSHA256(tempFile.string());
+                computed = HashFileSHA256(tempFile.string(), stopToken);
                 break;
             case ChecksumAlgorithm::Invalid:
                 spdlog::error("Checksum verification: invalid algorithm specified in manifest");
@@ -310,6 +329,11 @@ std::expected<void, std::string> models::InstanceConfig::VerifyReleaseIntegrity(
 
         if (computed.empty())
         {
+            if (stopToken.stop_requested())
+            {
+                spdlog::info("Checksum verification cancelled");
+                return std::unexpected("Verification cancelled");
+            }
             spdlog::error("Checksum verification: failed to hash file {}", tempFile.string());
             return std::unexpected("Failed to compute file checksum");
         }
@@ -334,6 +358,9 @@ std::expected<void, std::string> models::InstanceConfig::VerifyReleaseIntegrity(
         }
         spdlog::warn("Checksum verification: no checksum provided, skipping (relaxed mode)");
     }
+
+    if (stopToken.stop_requested())
+        return std::unexpected("Verification cancelled");
 
     //
     // --- Authenticode / publisher pin layer ---

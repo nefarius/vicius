@@ -92,6 +92,8 @@ namespace models
         std::optional<std::shared_future<std::expected<SetupResult, std::string>>> setupTask;
         /** The integrity-verification task */
         std::optional<std::shared_future<std::expected<void, std::string>>> verifyTask;
+        /** Cooperative cancel for verifyTask; fresh source per VerifyReleaseIntegrityAsync launch */
+        std::optional<std::stop_source> verifyStopSource;
         /** The selected release numeric ID */
         int selectedRelease{0};
         /** Human-readable download failure reason from last attempt (if any) */
@@ -634,15 +636,17 @@ namespace models
 
         /**
          * \brief Verifies the downloaded setup file integrity (checksum + Authenticode publisher pin).
-         * \return Empty on success; unexpected error string on failure.
+         * \param stopToken Cooperative cancel observed between hash chunks (and before Authenticode).
+         *                  Default (empty) token never stops — used by the synchronous silent-update path.
+         * \return Empty on success; unexpected error string on failure or cancellation.
          * \remarks Called between DownloadSucceeded and PrepareInstall in the UI state machine.
          *          Checksum: if present in the release it MUST match; absent = allowed in Relaxed, rejected in strict mode.
          *          Signature: governed by merged.signatureVerificationMode (WhenPresent / Required).
          */
-        [[nodiscard]] std::expected<void, std::string> VerifyReleaseIntegrity();
+        [[nodiscard]] std::expected<void, std::string> VerifyReleaseIntegrity(std::stop_token stopToken = {});
 
         /**
-         * \brief Launches VerifyReleaseIntegrity on a background thread.
+         * \brief Launches VerifyReleaseIntegrity on a background thread with a fresh stop_source.
          * \return Empty on success; unexpected error string if one is already running or
          *         if the system cannot start the background thread (std::system_error).
          */
@@ -671,7 +675,9 @@ namespace models
         void ResetVerifyState();
 
         /**
-         * \brief Blocks until the running verification task (if any) finishes.
+         * \brief Requests stop on the verify task's stop_source (if any), then blocks until it finishes.
+         * \remarks Mirrors the download abort-then-wait pattern so shutdown never destroys
+         *          InstanceConfig while hashing/Authenticode is still touching `this`.
          */
         void WaitForVerifyToFinish();
 

@@ -561,6 +561,8 @@ models::InstanceConfig::~InstanceConfig()
     // never be destroyed while one is still running. The normal shutdown path (main.cpp)
     // already requests a stop and waits before destroying `cfg`, so these are typically
     // no-ops by the time we get here; they remain a backstop for any other exit path.
+    // WaitForVerifyToFinish requests stop on verifyStopSource before waiting so a long
+    // checksum hash can bail between chunks rather than pinning destruction.
     WaitForSetupToFinish();
     WaitForVerifyToFinish();
 
