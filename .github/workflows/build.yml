@@ -505,6 +505,29 @@ jobs:
           path: e2e-logs/**
           if-no-files-found: ignore
 
+      # ── Async-shutdown lifecycle tests ──────────────────────────────────────
+      # Unlike run-e2e.ps1 (headless --silent-update only), this drives the interactive
+      # window via NV_E2E_AUTO_ADVANCE and posts WM_CLOSE while a background task is
+      # genuinely in flight, exercising the WM_QUIT stop_source wiring and
+      # markdown::Shutdown() added for async task lifecycle safety.
+
+      - name: Run async-shutdown lifecycle E2E tests
+        shell: pwsh
+        run: |
+          pwsh tests\e2e\run-lifecycle-e2e.ps1 `
+            -MainBin      "bin\x64\e2e_Main_Updater.exe" `
+            -ArtifactsDir "$env:E2E_ARTIFACTS_DIR" `
+            -ServerDir    "examples\server" `
+            -LogDir       "e2e-lifecycle-logs"
+
+      - name: Upload lifecycle E2E logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: e2e-lifecycle-logs
+          path: e2e-lifecycle-logs/**
+          if-no-files-found: ignore
+
   # ─── Release ───────────────────────────────────────────────────────────────
   release:
     name: Publish GitHub Release

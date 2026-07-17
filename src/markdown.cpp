@@ -50,6 +50,9 @@ struct changelog : imgui_md
     std::string m_img_href;
     std::regex m_regex_link_target;
     std::map<std::string /* URL */, OptionalSharedFutureD3DResource /* Texture downloader */> imageDownloadTasks;
+    // Set once by Shutdown(); checked before starting any new download so no task is ever
+    // launched after the caller has started tearing down libcurl/D3D.
+    std::atomic_bool shuttingDown{false};
 
     explicit changelog(const D3DResourceMap& images)
         : _images(images)
@@ -217,6 +220,11 @@ struct changelog : imgui_md
         // this gets called on every frame so we only download it once and cache it
         if (!_images.contains(url))
         {
+            if (shuttingDown.load(std::memory_order_acquire))
+            {
+                return std::nullopt;
+            }
+
             // no download task is assigned to the given url, initiate
             if (!imageDownloadTasks.contains(url) || !imageDownloadTasks[ url ].has_value())
             {
@@ -290,6 +298,27 @@ struct changelog : imgui_md
     }
 
     /**
+     * \brief Stops accepting new downloads and blocks until any in-flight ones finish.
+     *        Safe to call multiple times; safe to call even if nothing was ever downloaded.
+     */
+    void Shutdown()
+    {
+        shuttingDown.store(true, std::memory_order_release);
+
+        // wait() never rethrows a stored exception (only get() does), so this is safe even
+        // if DownloadImageTexture's WIC/curl call chain ever starts throwing.
+        for (auto& entry : imageDownloadTasks)
+        {
+            if (entry.second.has_value())
+            {
+                entry.second->wait();
+            }
+        }
+
+        imageDownloadTasks.clear();
+    }
+
+    /**
      * \brief Pulls the texture for the requested image to render.
      * \param nfo Image info to fill out.
      * \return True on success, false otherwise.
@@ -314,13 +343,27 @@ struct changelog : imgui_md
     }
 };
 
+namespace
+{
+    // Function-local static: outlives main(), which is exactly why its image-download
+    // tasks need an explicit Shutdown() call before curlpp/D3D teardown (see markdown::Shutdown).
+    changelog& GetChangelogInstance()
+    {
+        static changelog cl_render(G_ImageTextures);
+        return cl_render;
+    }
+}
+
 /**
  * \brief Parses a provided Markdown body string and renders it onto an ImGui widget.
  * \param markdown The Markdown document body.
  */
 void markdown::RenderChangelog(const std::string& markdown)
 {
-    static changelog cl_render(G_ImageTextures);
+    GetChangelogInstance().print(markdown.c_str(), markdown.c_str() + markdown.length());
+}
 
-    cl_render.print(markdown.c_str(), markdown.c_str() + markdown.length());
+void markdown::Shutdown()
+{
+    GetChangelogInstance().Shutdown();
 }

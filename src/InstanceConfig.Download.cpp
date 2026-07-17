@@ -31,7 +31,21 @@ bool models::InstanceConfig::DownloadReleaseAsync(int releaseIndex, curl_progres
 
     if (status.hasFinished)
     {
-        status.result = downloadTask->get();
+        // DownloadRelease reports failures via std::expected; guard against any exception
+        // that escaped it anyway so a polling call on the render thread can never propagate
+        // one out (that would unwind through the ImGui/DirectX frame and crash the app).
+        try
+        {
+            status.result = downloadTask->get();
+        }
+        catch (const std::exception& e)
+        {
+            status.result = std::unexpected(std::format("Download task failed with an exception: {}", e.what()));
+        }
+        catch (...)
+        {
+            status.result = std::unexpected("Download task failed with an unknown exception");
+        }
     }
 
     return status;

@@ -220,7 +220,24 @@ std::optional<models::InstanceConfig::VerifyStatus> models::InstanceConfig::GetV
     status.hasFinished = futureStatus == std::future_status::ready;
 
     if (status.hasFinished)
-        status.result = verifyTask->get();
+    {
+        // VerifyReleaseIntegrity reports failures via std::expected; guard against any
+        // exception that escaped it anyway so a polling call on the render thread can never
+        // propagate one out (that would unwind through the ImGui/DirectX frame and crash
+        // the app).
+        try
+        {
+            status.result = verifyTask->get();
+        }
+        catch (const std::exception& e)
+        {
+            status.result = std::unexpected(std::format("Verification task failed with an exception: {}", e.what()));
+        }
+        catch (...)
+        {
+            status.result = std::unexpected("Verification task failed with an unknown exception");
+        }
+    }
 
     return status;
 }
@@ -237,6 +254,14 @@ void models::InstanceConfig::ResetVerifyState()
         verifyTask.reset();
     // Still running: leave it.  VerifyReleaseIntegrityAsync guards against re-launch,
     // and GetVerifyStatus will eventually report completion on a later frame.
+}
+
+void models::InstanceConfig::WaitForVerifyToFinish()
+{
+    if (!verifyTask.has_value())
+        return;
+
+    verifyTask->wait();
 }
 
 // ============================================================================

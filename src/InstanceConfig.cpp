@@ -557,6 +557,13 @@ models::InstanceConfig::~InstanceConfig()
     RequestAbortDownload();
     WaitForDownloadToFinish();
 
+    // Defense in depth: member tasks capture `this` via std::async, so this object must
+    // never be destroyed while one is still running. The normal shutdown path (main.cpp)
+    // already requests a stop and waits before destroying `cfg`, so these are typically
+    // no-ops by the time we get here; they remain a backstop for any other exit path.
+    WaitForSetupToFinish();
+    WaitForVerifyToFinish();
+
     // clean up release resources
     for (const auto& release : remote.releases)
     {

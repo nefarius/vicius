@@ -8,6 +8,8 @@
 
 #include <curlpp/cURLpp.hpp>
 
+#include <cstdlib>
+
 
 //
 // Enable visual styles
@@ -709,6 +711,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     std::once_flag errorUrlTriggered;
     std::stop_source stopSource;
 
+#if defined(NV_FLAGS_ALLOW_HTTP_DOWNLOAD)
+    // E2E-only: lets the lifecycle test harness (tests/e2e) drive the wizard to the
+    // download/verify/install steps without simulating mouse clicks against an ImGui
+    // window (which has no OS accessibility tree), so it can send WM_CLOSE while a
+    // download/verify/setup/image-fetch task is genuinely in flight. Compiled only into
+    // E2E test binaries -- NV_FLAGS_ALLOW_HTTP_DOWNLOAD is never defined for production
+    // builds -- and still requires an explicit opt-in env var so no existing E2E scenario
+    // changes behavior.
+    const bool e2eAutoAdvanceWizard = [] {
+        char* value = nullptr;
+        size_t len = 0;
+        const bool isSet = _dupenv_s(&value, &len, "NV_E2E_AUTO_ADVANCE") == 0 && value != nullptr;
+        free(value);
+        return isSet;
+    }();
+#endif
+
     // Main loop
     bool done = false;
     while (!done)
@@ -725,8 +744,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
         if (done)
         {
+            // Cooperatively cancel any in-progress setup (ExecuteSetup observes this token,
+            // e.g. via CancellableWait on the launched installer process) before waiting for
+            // it, so closing the window can never hang on an installer that would otherwise
+            // run to completion on its own schedule.
+            stopSource.request_stop();
+
             cfg.RequestAbortDownload();
             cfg.WaitForDownloadToFinish();
+            cfg.WaitForSetupToFinish();
+            cfg.WaitForVerifyToFinish();
             break;
         }
 
@@ -818,7 +845,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::PushStyleColor(ImGuiCol_Button,        winapi::GetAccentColor());
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, winapi::GetAccentColorHovered());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  winapi::GetAccentColorActive());
-                if (ImGui::Button(ICON_FK_DOWNLOAD " Display update details now"))
+                bool displayDetailsClicked = ImGui::Button(ICON_FK_DOWNLOAD " Display update details now");
+#if defined(NV_FLAGS_ALLOW_HTTP_DOWNLOAD)
+                displayDetailsClicked = displayDetailsClicked || e2eAutoAdvanceWizard;
+#endif
+                if (displayDetailsClicked)
                 {
                     currentPage = cfg.HasSingleRelease()
                                       ? WizardPage::SingleVersionSummary
@@ -899,7 +930,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                 ImGui::PushStyleColor(ImGuiCol_Button,        winapi::GetAccentColor());
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, winapi::GetAccentColorHovered());
                 ImGui::PushStyleColor(ImGuiCol_ButtonActive,  winapi::GetAccentColorActive());
-                if (ImGui::Button("Download and install"))
+                bool downloadClicked = ImGui::Button("Download and install");
+#if defined(NV_FLAGS_ALLOW_HTTP_DOWNLOAD)
+                downloadClicked = downloadClicked || e2eAutoAdvanceWizard;
+#endif
+                if (downloadClicked)
                 {
                     instStep = DownloadAndInstallStep::Begin;
                     currentPage = WizardPage::DownloadAndInstall;
@@ -1375,6 +1410,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         //HRESULT hr = g_pSwapChain->Present(0, 0); // Present without vsync
         g_SwapChainOccluded = (hr == DXGI_STATUS_OCCLUDED);
     }
+
+    // Stop accepting new changelog image downloads and wait for any in-flight one to
+    // finish; it captures g_pd3dDevice and runs curl calls on a background task (see
+    // markdown::Shutdown), so this must happen before the D3D/curlpp teardown below.
+    markdown::Shutdown();
 
     // Cleanup
     ImGui_ImplDX11_Shutdown();
