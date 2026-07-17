@@ -385,6 +385,31 @@ jobs:
           Compress-Archive -Path "$zipSrc\*" `
             -DestinationPath (Join-Path $dir "payload.zip") -Force
 
+          # payload_edge.zip — archive-extraction edge cases: an explicit empty directory
+          # entry plus a normal file, paired with a DeleteIfPresent override (in the
+          # ZipEdgeCases manifest) for a file absent at the destination.
+          # Compress-Archive silently drops empty directories, so the archive is built
+          # directly via ZipArchive to guarantee the "emptydir/" entry is present.
+          Add-Type -AssemblyName System.IO.Compression
+          $edgeZipPath = Join-Path $dir "payload_edge.zip"
+          Remove-Item -Path $edgeZipPath -Force -ErrorAction SilentlyContinue
+          $edgeZip = [System.IO.Compression.ZipFile]::Open($edgeZipPath, [System.IO.Compression.ZipArchiveMode]::Create)
+          try {
+              $edgeZip.CreateEntry("emptydir/") | Out-Null
+              $keepEntry = $edgeZip.CreateEntry("keep.txt")
+              $writer = New-Object System.IO.StreamWriter($keepEntry.Open())
+              try { $writer.Write("E2E zip edge-case payload - normal create/replace entry") }
+              finally { $writer.Dispose() }
+              # Overridden to DeleteIfPresent and absent at the destination (fresh install):
+              # the deployment walk must visit this entry without copying or stamping it.
+              $missingEntry = $edgeZip.CreateEntry("missing-file.txt")
+              $writer2 = New-Object System.IO.StreamWriter($missingEntry.Open())
+              try { $writer2.Write("This file must never be copied to the destination.") }
+              finally { $writer2.Dispose() }
+          } finally {
+              $edgeZip.Dispose()
+          }
+
           # setup.exe — the stub installer (must be a real PE; the apphost qualifies)
           Copy-Item -Path "stub-publish\e2e-setup-stub.exe" `
             -Destination (Join-Path $dir "setup.exe")

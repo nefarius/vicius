@@ -31,8 +31,8 @@
     NV_FLAGS_ALLOW_HTTP_DOWNLOAD, used for the HttpRejected negative-control test.
 
 .PARAMETER ArtifactsDir
-    E2E_ARTIFACTS_DIR: directory pre-populated by CI with payload.zip, setup.exe,
-    updater_selfupdate.exe, SignedManifest/, and TamperedManifest/ subdirectories.
+    E2E_ARTIFACTS_DIR: directory pre-populated by CI with payload.zip, payload_edge.zip,
+    setup.exe, updater_selfupdate.exe, SignedManifest/, and TamperedManifest/ subdirectories.
 
 .PARAMETER ServerDir
     Path to the examples/server project directory (for 'dotnet run').
@@ -493,6 +493,18 @@ try {
             Name           = 'HappyZip'
             SourceBin      = $MainBin
             ExeName        = 'e2e_HappyZip_Updater.exe'
+            LocalVersion   = '0.0.1'
+            ExpectedExit   = 203
+            SkipSelfUpdate = $true
+        },
+        @{
+            # Archive-extraction edge cases: empty directory entry, a DeleteIfPresent
+            # override for a file absent at the destination, and a normal create entry.
+            # Regression coverage for crashes/uncaught exceptions previously thrown out
+            # of the setup task by malformed or edge-case ZIP payloads.
+            Name           = 'ZipEdgeCases'
+            SourceBin      = $MainBin
+            ExeName        = 'e2e_ZipEdgeCases_Updater.exe'
             LocalVersion   = '0.0.1'
             ExpectedExit   = 203
             SkipSelfUpdate = $true
