@@ -362,6 +362,7 @@
     <ClCompile Include="InstanceConfig.Web.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="markdown.cpp" />
+    <ClCompile Include="SingleInstance.cpp" />
     <ClCompile Include="ui.cpp" />
     <ClCompile Include="UpdateRelease.cpp" />
     <ClCompile Include="util.cpp" />
@@ -396,6 +397,7 @@
     <ClInclude Include="UniUtil.h" />
     <ClInclude Include="Common.h" />
     <ClInclude Include="models\UpdateResponse.hpp" />
+    <ClInclude Include="SingleInstance.h" />
     <ClInclude Include="Util.h" />
     <ClInclude Include="WizardPage.h" />
   </ItemGroup>
