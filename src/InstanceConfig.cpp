@@ -561,8 +561,19 @@ models::InstanceConfig::~InstanceConfig()
     // never be destroyed while one is still running. The normal shutdown path (main.cpp)
     // already requests a stop and waits before destroying `cfg`, so these are typically
     // no-ops by the time we get here; they remain a backstop for any other exit path.
+    // WaitForVerifyToFinish requests stop on verifyStopSource before waiting so a long
+    // checksum hash can bail between chunks rather than pinning destruction.
     WaitForSetupToFinish();
     WaitForVerifyToFinish();
+
+    // Backstop: ExecuteSetup() normally closes this handle itself right after its one
+    // use (TerminateProcess), but if setup never runs (e.g. no update was available, or
+    // the app exited first) it is still open and we own it, so close it here.
+    if (terminateProcessBeforeUpdate.has_value())
+    {
+        CloseHandle(terminateProcessBeforeUpdate.value());
+        terminateProcessBeforeUpdate.reset();
+    }
 
     // clean up release resources
     for (const auto& release : remote.releases)

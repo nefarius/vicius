@@ -866,6 +866,35 @@ try {
     # NV_S_INSTANCE_ALREADY_RUNNING (210) after signaling the owner.
     $results.Add((Invoke-DuplicateInstanceScenario -SourceBin $MainBin))
 
+    # ── Win32 process-launch argument round trip ─────────────────────────────
+    # The manifest's launchArguments for ProcessArgsRoundTrip is a raw command-line
+    # fragment with a quoted space, an embedded escaped quote, and a trailing escaped
+    # backslash (see E2EProcessArgsRoundTripEndpoint). ExecuteSetup appends it verbatim
+    # after the quoted setup.exe path and launches it via a writable CreateProcessA
+    # command-line buffer with an explicit lpApplicationName. The setup stub echoes its
+    # received argv (post CreateProcess-splitting) to E2E_ARGS_LOG_FILE, which the
+    # updater process propagates to it by simple environment inheritance. Regression
+    # coverage for the const_cast<LPSTR> removal / quoting changes in
+    # src/InstanceConfig.Setup.cpp: a broken writable buffer or bad quoting would
+    # corrupt or drop these tokens even though the exit code alone would still be 0/203.
+    $processArgsLogFile = Join-Path $LogDir 'ProcessArgsRoundTrip.args.log'
+    Remove-Item -Path $processArgsLogFile -ErrorAction SilentlyContinue
+
+    $processArgsResult = Invoke-Scenario -Name 'ProcessArgsRoundTrip' `
+        -SourceBin $MainBin -ExeName 'e2e_ProcessArgsRoundTrip_Updater.exe' `
+        -LocalVersion '0.0.1' -ExpectedExit 203 -SkipSelfUpdate $true `
+        -PreScenario  { $env:E2E_ARGS_LOG_FILE = $processArgsLogFile } `
+        -PostScenario { Remove-Item Env:\E2E_ARGS_LOG_FILE -ErrorAction SilentlyContinue }
+
+    $expectedArgs = @('arg with spaces', 'quote"inside', 'trailingback\')
+    $actualArgs   = if (Test-Path $processArgsLogFile) { @(Get-Content $processArgsLogFile) } else { @() }
+    if (@(Compare-Object $expectedArgs $actualArgs -SyncWindow 0).Count -ne 0) {
+        $processArgsResult.Passed = $false
+        $processArgsResult.LogFailures += "argv round-trip mismatch: expected [$($expectedArgs -join '|')], got [$($actualArgs -join '|')]"
+        Write-Host "  FAIL  ProcessArgsRoundTrip argv mismatch: expected [$($expectedArgs -join '|')], got [$($actualArgs -join '|')]"
+    }
+    $results.Add($processArgsResult)
+
 } finally {
     Stop-E2EServer $serverJob
 

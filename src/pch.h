@@ -62,6 +62,7 @@
 #include <locale>
 #include <regex>
 #include <future>
+#include <stop_token>
 #include <optional>
 #include <string>
 #include <vector>

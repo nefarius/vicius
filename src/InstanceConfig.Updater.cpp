@@ -4,50 +4,7 @@
 #include "Util.h"
 #include "InstanceConfig.hpp"
 
-namespace
-{
-    /**
-     * \brief Quotes and escapes a single argument value for safe inclusion in a
-     * CreateProcess / ShellExecuteEx command string that will be parsed by
-     * CommandLineToArgvW.
-     *
-     * Algorithm: wrap in double-quotes, doubling any backslashes that immediately
-     * precede a double-quote or end the string, and escaping every embedded
-     * double-quote as \".
-     * See https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-commandlinetoargvw
-     */
-    std::string QuoteArg(const std::string& arg)
-    {
-        std::string out;
-        out.reserve(arg.size() + 4);
-        out += '"';
-        size_t backslashes = 0;
-        for (const char c : arg)
-        {
-            if (c == '\\')
-            {
-                ++backslashes;
-            }
-            else if (c == '"')
-            {
-                // Double any preceding backslashes, then escape the quote.
-                out.append(backslashes * 2, '\\');
-                out += "\\\"";
-                backslashes = 0;
-            }
-            else
-            {
-                out.append(backslashes, '\\');
-                out += c;
-                backslashes = 0;
-            }
-        }
-        // Double trailing backslashes (they precede the closing quote).
-        out.append(backslashes * 2, '\\');
-        out += '"';
-        return out;
-    }
-}
+using winapi::QuoteArg;
 
 
 std::expected<void, std::string> models::InstanceConfig::ExtractSelfUpdater() const
@@ -106,17 +63,32 @@ std::expected<void, std::string> models::InstanceConfig::ExtractSelfUpdater() co
 
 bool models::InstanceConfig::HasWritePermissions() const
 {
-    const HANDLE self =
-      CreateFileA(appPath.string().c_str(), GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    // Explicit, non-destructive probe: try to create-and-immediately-delete a uniquely
+    // named empty file in our own directory. This directly tests what actually matters
+    // (can we write new files there, e.g. the self-updater ADS and, post-swap, the main
+    // binary) instead of inferring it from a sharing violation on the running exe itself,
+    // which only proves the exe is locked, not that the directory is writable, and would
+    // report false for a perfectly writable, currently-unlocked location.
+    const std::string dir = appPath.parent_path().string();
 
-    const DWORD error = GetLastError();
+    char probePath[MAX_PATH]{};
+    if (GetTempFileNameA(dir.c_str(), "NVW", 0, probePath) == 0)
+    {
+        spdlog::debug("HasWritePermissions: GetTempFileNameA in '{}' failed, error {:#x}", dir, GetLastError());
+        return false;
+    }
 
-    if (self != INVALID_HANDLE_VALUE) CloseHandle(self);
+    // GetTempFileNameA(..., uUnique=0, ...) already created the (empty) file as a side
+    // effect of generating a unique name; remove it immediately so the probe leaves no trace.
+    // Treat a failed delete as non-writable: create-without-delete would leave debris and
+    // is not a reliable signal that we can replace files here (e.g. delete-denied ACLs).
+    if (DeleteFileA(probePath) == FALSE)
+    {
+        spdlog::debug("HasWritePermissions: DeleteFileA('{}') failed, error {:#x}", probePath, GetLastError());
+        return false;
+    }
 
-    // error is ERROR_SHARING_VIOLATION when we can write
-    // and ERROR_ACCESS_DENIED if missing permissions
-
-    return error == ERROR_SHARING_VIOLATION;
+    return true;
 }
 
 std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
@@ -127,7 +99,16 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
     const auto ads = dllPath.str();
     spdlog::debug("ads = {}", ads);
 
-    const auto runDll = "rundll32.exe";
+    // Resolve rundll32.exe to its fully-qualified %SystemRoot%\System32 path and pass it
+    // as an explicit application name (lpApplicationName / SHELLEXECUTEINFO::lpFile) rather
+    // than letting CreateProcess/ShellExecuteEx resolve a bare "rundll32" through the
+    // default DLL/EXE search order (which can include the current directory).
+    const auto rundll32Path = winapi::GetSystemExecutablePath("rundll32.exe");
+    if (!rundll32Path)
+    {
+        return std::unexpected(std::format("Failed to resolve rundll32.exe: {}", rundll32Path.error()));
+    }
+    const auto& runDll = *rundll32Path;
 
     const auto& inst = remote.instance.value();
     const std::string latestUrl = inst.latestUrl.value();
@@ -184,7 +165,7 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
         si.wShowWindow = SW_HIDE;
 
         std::stringstream argsStream;
-        argsStream << "rundll32 \"" << ads << "\",PerformUpdate"
+        argsStream << QuoteArg(runDll) << " \"" << ads << "\",PerformUpdate"
                    << " --silent"
                    << " --log-level " << magic_enum::enum_name(spdlog::get_level())
                    << " --pid " << GetCurrentProcessId()
@@ -196,8 +177,15 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
         const auto args = argsStream.str();
         spdlog::debug("args = {}", args);
 
-        if (!CreateProcessA(nullptr,
-                            const_cast<LPSTR>(args.c_str()),
+        // lpApplicationName pins the executable to the resolved system path so it can
+        // never be resolved ambiguously via PATH/CWD search order; the command line's
+        // argv[0] is kept consistent with it for well-behaved child argument parsing.
+        // CreateProcessA may write into lpCommandLine while parsing/expanding arguments,
+        // so it must be a writable buffer, never a std::string's internal storage.
+        auto cmdLine = winapi::MakeWritableCommandLine(args);
+
+        if (!CreateProcessA(runDll.c_str(),
+                            cmdLine.data(),
                             nullptr,
                             nullptr,
                             TRUE,
@@ -243,7 +231,7 @@ std::expected<void, std::string> models::InstanceConfig::RunSelfUpdater() const
         shExInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
         shExInfo.hwnd = nullptr;
         shExInfo.lpVerb = "runas";
-        shExInfo.lpFile = runDll;
+        shExInfo.lpFile = runDll.c_str();
         shExInfo.lpParameters = args.c_str();
         shExInfo.lpDirectory = workDir.string().c_str();
         shExInfo.nShow = SW_HIDE;
