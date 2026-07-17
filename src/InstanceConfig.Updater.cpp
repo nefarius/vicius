@@ -80,7 +80,13 @@ bool models::InstanceConfig::HasWritePermissions() const
 
     // GetTempFileNameA(..., uUnique=0, ...) already created the (empty) file as a side
     // effect of generating a unique name; remove it immediately so the probe leaves no trace.
-    DeleteFileA(probePath);
+    // Treat a failed delete as non-writable: create-without-delete would leave debris and
+    // is not a reliable signal that we can replace files here (e.g. delete-denied ACLs).
+    if (DeleteFileA(probePath) == FALSE)
+    {
+        spdlog::debug("HasWritePermissions: DeleteFileA('{}') failed, error {:#x}", probePath, GetLastError());
+        return false;
+    }
 
     return true;
 }
