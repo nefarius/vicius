@@ -94,6 +94,16 @@ internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
                 // actual values on the .NET Desktop Runtime installer cert (confirmed from logs).
                 // SubjectName is stable across renewals; IssuerName is semi-stable but provides
                 // an extra layer to demonstrate multi-field pinning in the demo.
+                //
+                // NOTE: as of the verification-policy trust-boundary hardening, the client only
+                // honors this remote override when the manifest itself passed Ed25519/minisign
+                // verification against a compiled-in NV_MANIFEST_PUBLIC_KEY (see the SignedManifest
+                // E2E scenario / tests/e2e/include/sig). This demo server does not sign its
+                // manifests, so on a plain client build (no compiled-in public key, e.g.
+                // example_Demo_Updater) this override is logged and ignored, and the client keeps
+                // its local/default signature policy instead. To actually enforce a remote
+                // signature policy like this one, either sign your manifests, or set the policy
+                // locally on the client (compiled default or --strict-verification).
                 SignatureVerificationMode = SignatureVerificationMode.Required,
                 SignaturePolicy = SignatureComparisonPolicy.Strict,
                 SignatureConfig = new SignatureConfig

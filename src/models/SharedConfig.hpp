@@ -30,7 +30,16 @@ namespace models
         std::optional<DownloadLocationConfig> downloadLocation;
         /** True to run as temporary copy */
         std::optional<bool> runAsTemporaryCopy;
-        /** Global Authenticode verification mode (default: WhenPresent) */
+        /**
+         * Global Authenticode verification mode (default: WhenPresent), signaturePolicy,
+         * signatureStrategy and signatureConfig below are all subject to the same trust
+         * boundary: InstanceConfig::RequestUpdateInfo() (src/InstanceConfig.Web.cpp) only
+         * applies a remote override for these four fields when the manifest itself passed
+         * Ed25519/minisign verification against a compiled-in NV_MANIFEST_PUBLIC_KEY.
+         * Builds without that key can never satisfy this, so an unsigned manifest can never
+         * weaken (or change) local signature-verification policy; --strict-verification
+         * remains dominant either way.
+         */
         std::optional<SignatureVerificationMode> signatureVerificationMode;
         /** Global Authenticode comparison policy (default: Relaxed) */
         std::optional<SignatureComparisonPolicy> signaturePolicy;

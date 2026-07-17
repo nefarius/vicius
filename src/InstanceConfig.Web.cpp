@@ -1104,6 +1104,14 @@ namespace
                 // Layer 3: Manifest signature verification (Ed25519 / minisign)
                 // Must happen BEFORE json::parse so a tampered body is never trusted.
                 //
+                // Gates the remote security-policy override merge below (see
+                // "Trust boundary" comment further down): only a manifest that has
+                // actually passed this check may weaken/change local signature
+                // verification settings. Builds without NV_MANIFEST_PUBLIC_KEY have no
+                // way to verify a manifest at all, so this stays false unconditionally
+                // for them, which is exactly the "unsigned remote can never weaken
+                // local policy" behavior we want.
+                bool manifestSignatureVerified = false;
 #if defined(NV_MANIFEST_PUBLIC_KEY)
                 {
                     // Derive the .minisig sidecar URL by appending ".minisig" to the manifest URL
@@ -1149,6 +1157,7 @@ namespace
                     }
 
                     spdlog::info("Manifest signature verified successfully");
+                    manifestSignatureVerified = true;
                 }
 #endif
 
@@ -1267,18 +1276,57 @@ namespace
 
                     if (shared.runAsTemporaryCopy.has_value()) merged.runAsTemporaryCopy = shared.runAsTemporaryCopy.value();
 
-                    // Signature verification settings from server (do not override strict mode set by CLI)
-                    if (shared.signatureVerificationMode.has_value() && !strictVerification)
-                        merged.signatureVerificationMode = shared.signatureVerificationMode.value();
+                    // ── Trust boundary: signature verification settings from the server ──
+                    // These four fields gate whether a downloaded release binary's
+                    // Authenticode signature is checked at all (signatureVerificationMode),
+                    // how strictly (signaturePolicy), and against which identity
+                    // (signatureStrategy / signatureConfig — the certificate pin). Letting
+                    // an unverifiable manifest change them would let anyone who can answer
+                    // the manifest URL (a compromised/MITM'd server, or a captive portal)
+                    // silently turn off release-binary verification for a build that has no
+                    // way to check the manifest itself. So a remote override is only ever
+                    // honored when manifestSignatureVerified is true, i.e. the manifest
+                    // itself passed Ed25519/minisign verification against the compiled-in
+                    // NV_MANIFEST_PUBLIC_KEY above; builds without that key can never
+                    // satisfy this and always keep the local/default policy. A local
+                    // --strict-verification flag remains dominant either way.
+                    const bool allowSignaturePolicyOverride = manifestSignatureVerified && !strictVerification;
 
-                    if (shared.signaturePolicy.has_value() && !strictVerification)
-                        merged.signaturePolicy = shared.signaturePolicy.value();
+                    if (shared.signatureVerificationMode.has_value())
+                    {
+                        if (allowSignaturePolicyOverride)
+                            merged.signatureVerificationMode = shared.signatureVerificationMode.value();
+                        else
+                            spdlog::warn("Ignoring remote signatureVerificationMode override: manifest was not "
+                                         "verified against a compiled-in public key, or --strict-verification is active");
+                    }
 
-                    if (shared.signatureStrategy.has_value() && !strictVerification)
-                        merged.signatureStrategy = shared.signatureStrategy.value();
+                    if (shared.signaturePolicy.has_value())
+                    {
+                        if (allowSignaturePolicyOverride)
+                            merged.signaturePolicy = shared.signaturePolicy.value();
+                        else
+                            spdlog::warn("Ignoring remote signaturePolicy override: manifest was not verified "
+                                         "against a compiled-in public key, or --strict-verification is active");
+                    }
 
-                    if (shared.signatureConfig.has_value() && !strictVerification)
-                        merged.signatureConfig = shared.signatureConfig.value();
+                    if (shared.signatureStrategy.has_value())
+                    {
+                        if (allowSignaturePolicyOverride)
+                            merged.signatureStrategy = shared.signatureStrategy.value();
+                        else
+                            spdlog::warn("Ignoring remote signatureStrategy override: manifest was not verified "
+                                         "against a compiled-in public key, or --strict-verification is active");
+                    }
+
+                    if (shared.signatureConfig.has_value())
+                    {
+                        if (allowSignaturePolicyOverride)
+                            merged.signatureConfig = shared.signatureConfig.value();
+                        else
+                            spdlog::warn("Ignoring remote signatureConfig (certificate pin) override: manifest was "
+                                         "not verified against a compiled-in public key, or --strict-verification is active");
+                    }
 
                     if (shared.hideRemindButton.has_value()) merged.hideRemindButton = shared.hideRemindButton.value();
 

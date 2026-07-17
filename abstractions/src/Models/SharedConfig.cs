@@ -77,21 +77,35 @@ public sealed class SharedConfig
     /// <summary>
     ///     Global Authenticode verification mode for downloaded setups.
     /// </summary>
+    /// <remarks>
+    ///     <b>Trust boundary:</b> the client only honors this remote override when the manifest
+    ///     itself was verified against a compiled-in <c>NV_MANIFEST_PUBLIC_KEY</c> (i.e. the
+    ///     client build supports manifest signing and the response's Ed25519/minisign signature
+    ///     checked out). On a client build without a compiled-in public key — the common case
+    ///     when the server does not sign its manifests — this field is silently ignored and the
+    ///     client's local/default value is kept, because an unauthenticated response must never
+    ///     be able to change how strictly downloaded binaries are verified. Set this locally
+    ///     (compiled default, or <c>--strict-verification</c>) instead if manifest signing is not
+    ///     in use.
+    /// </remarks>
     public SignatureVerificationMode? SignatureVerificationMode { get; set; }
 
     /// <summary>
     ///     Global Authenticode comparison policy.
     /// </summary>
+    /// <remarks>See the trust-boundary remarks on <see cref="SignatureVerificationMode" />; the same rule applies here.</remarks>
     public SignatureComparisonPolicy? SignaturePolicy { get; set; }
 
     /// <summary>
     ///     Global Authenticode pin strategy.
     /// </summary>
+    /// <remarks>See the trust-boundary remarks on <see cref="SignatureVerificationMode" />; the same rule applies here.</remarks>
     public SignatureVerificationStrategy? SignatureStrategy { get; set; }
 
     /// <summary>
     ///     Explicit certificate pin (used with <see cref="SignatureVerificationStrategy.FromConfiguration" />).
     /// </summary>
+    /// <remarks>See the trust-boundary remarks on <see cref="SignatureVerificationMode" />; the same rule applies here.</remarks>
     public SignatureConfig? SignatureConfig { get; set; }
 
     /// <summary>
