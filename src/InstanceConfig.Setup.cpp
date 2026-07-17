@@ -81,7 +81,31 @@ bool models::InstanceConfig::InvokeSetupAsync(const std::stop_token& stopToken)
     return true;
 }
 
-void models::InstanceConfig::ResetSetupState() { setupTask.reset(); }
+void models::InstanceConfig::ResetSetupState()
+{
+    if (!setupTask.has_value())
+    {
+        return;
+    }
+
+    // Only drop the shared_future if the task has already completed; dropping a not-yet-ready
+    // shared_future created via std::async blocks the calling thread (the render thread) until
+    // the background setup finishes (mirrors ResetVerifyState). Still running: leave it in
+    // place. GetSetupStatus will report completion on a later frame; WaitForSetupToFinish
+    // provides a bounded, explicit blocking wait for callers that actually need to end it now.
+    if (setupTask->wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+        setupTask.reset();
+}
+
+void models::InstanceConfig::WaitForSetupToFinish()
+{
+    if (!setupTask.has_value())
+    {
+        return;
+    }
+
+    setupTask->wait();
+}
 
 std::optional<models::InstanceConfig::SetupStatus> models::InstanceConfig::GetSetupStatus() const
 {
@@ -98,7 +122,21 @@ std::optional<models::InstanceConfig::SetupStatus> models::InstanceConfig::GetSe
 
     if (status.hasFinished)
     {
-        status.result = (*setupTask).get();
+        // ExecuteSetup reports failures via std::expected; guard against any exception that
+        // escaped it anyway so a polling call on the render thread can never propagate one
+        // out (that would unwind through the ImGui/DirectX frame and crash the app).
+        try
+        {
+            status.result = (*setupTask).get();
+        }
+        catch (const std::exception& e)
+        {
+            status.result = std::unexpected(std::format("Setup task failed with an exception: {}", e.what()));
+        }
+        catch (...)
+        {
+            status.result = std::unexpected("Setup task failed with an unknown exception");
+        }
     }
 
     return status;

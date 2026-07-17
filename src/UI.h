@@ -4,6 +4,18 @@
 namespace markdown
 {
     void RenderChangelog(const std::string& markdown);
+
+    /**
+     * \brief Stops accepting new changelog image downloads and blocks until any in-flight
+     *        download finishes.
+     *
+     * Must be called before curlpp::terminate() and D3D device teardown: the changelog
+     * renderer keeps its image-download tasks in a function-local static object that
+     * outlives main(), so without this, a background download could still be running
+     * DownloadImageTexture() (which calls into libcurl and CreateWICTextureFromMemory)
+     * after those globals are gone.
+     */
+    void Shutdown();
 }
 
 namespace ui

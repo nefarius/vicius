@@ -324,6 +324,9 @@ namespace models
         /**
          * \brief Checks the current download status.
          * \return nullopt if no download was invoked; otherwise a DownloadStatus snapshot.
+         * \remarks Any exception escaping DownloadRelease is caught and reported as a
+         *          human-readable failure in the returned result rather than propagating
+         *          out of this polling call.
          */
         [[nodiscard]] std::optional<DownloadStatus> GetReleaseDownloadStatus() const;
 
@@ -588,6 +591,15 @@ namespace models
 
         bool InvokeSetupAsync(const std::stop_token&);
 
+        /**
+         * \brief Discards the completed setup task.
+         *
+         * Nonblocking guard, matching ResetVerifyState(): dropping the last reference to a
+         * not-yet-ready shared_future created via std::async blocks the calling thread (the
+         * render thread) until the background setup finishes. If the task is still running,
+         * this is a no-op; call WaitForSetupToFinish() first (e.g. after requesting a stop)
+         * when the task truly needs to end.
+         */
         void ResetSetupState();
 
         /** Returned by GetSetupStatus when a setup task has been invoked. */
@@ -599,8 +611,19 @@ namespace models
         };
 
         /** \brief Polls the in-progress setup task.
-         *  \return nullopt if no task was started; otherwise a SetupStatus snapshot. */
+         *  \return nullopt if no task was started; otherwise a SetupStatus snapshot.
+         *  \remarks Any exception escaping ExecuteSetup is caught and reported as a
+         *           human-readable failure in the returned result rather than propagating
+         *           out of this polling call. */
         [[nodiscard]] std::optional<SetupStatus> GetSetupStatus() const;
+
+        /**
+         * \brief Blocks until the running setup task (if any) finishes.
+         * \remarks Call stop_source::request_stop() on the token passed to InvokeSetupAsync
+         *          first so the wait is bounded; ExecuteSetup observes it at safe points
+         *          (e.g. CancellableWait on the launched installer process).
+         */
+        void WaitForSetupToFinish();
 
         bool TryRunTemporaryProcess() const;
 
@@ -636,6 +659,9 @@ namespace models
         /**
          * \brief Polls the background verification task without blocking.
          * \return nullopt if no task has been started; otherwise a VerifyStatus snapshot.
+         * \remarks Any exception escaping VerifyReleaseIntegrity is caught and reported as
+         *          a human-readable failure in the returned result rather than propagating
+         *          out of this polling call.
          */
         [[nodiscard]] std::optional<VerifyStatus> GetVerifyStatus() const;
 
@@ -643,6 +669,11 @@ namespace models
          * \brief Discards the completed or in-progress verification task.
          */
         void ResetVerifyState();
+
+        /**
+         * \brief Blocks until the running verification task (if any) finishes.
+         */
+        void WaitForVerifyToFinish();
 
         /**
          * \brief Validates the Authenticode signature of a file and optionally pins the publisher.

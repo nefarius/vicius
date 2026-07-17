@@ -52,6 +52,13 @@ internal sealed class E2EArtifactEndpoint : Endpoint<E2EArtifactRequest>
 
         HttpContext.Response.ContentType = contentType;
         HttpContext.Response.StatusCode = 200;
+
+        // Async-shutdown lifecycle tests: an optional artificial delay before any bytes
+        // are written keeps the updater's download task genuinely in flight, giving the
+        // harness a wide, deterministic window to close the app mid-download.
+        if (req.DelayMs > 0)
+            await Task.Delay(req.DelayMs, ct);
+
         await using FileStream fs = File.OpenRead(filePath);
         await fs.CopyToAsync(HttpContext.Response.Body, ct);
     }
@@ -60,4 +67,5 @@ internal sealed class E2EArtifactEndpoint : Endpoint<E2EArtifactRequest>
 internal sealed class E2EArtifactRequest
 {
     public string Name { get; set; } = string.Empty;
+    public int DelayMs { get; set; }
 }

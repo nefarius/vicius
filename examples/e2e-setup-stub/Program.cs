@@ -6,6 +6,15 @@
 //
 // The exit code can be overridden for negative-test variants by setting the
 // E2E_EXIT_CODE environment variable before launching the updater.
+//
+// E2E_EXIT_DELAY_MS optionally sleeps before exiting, used by the async-shutdown
+// lifecycle tests to keep "setup is running" true long enough for the harness to
+// close the updater window mid-install (CreateProcess inherits the parent's
+// environment by default, so setting this on the updater process before launch
+// propagates to this child).
+int delayMs = int.TryParse(Environment.GetEnvironmentVariable("E2E_EXIT_DELAY_MS"), out int d) ? d : 0;
+if (delayMs > 0)
+    Thread.Sleep(delayMs);
 
 // Process-argument round-trip lifecycle test: when E2E_ARGS_LOG_FILE is set (CreateProcess
 // inherits the parent's environment by default, so setting this on the updater process

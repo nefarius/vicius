@@ -17,6 +17,7 @@
         NV_S_INSTANCE_ALREADY_RUNNING = 210
         NV_E_SERVER_RESPONSE = 104
         NV_E_SIGNATURE_INVALID = 116
+        NV_E_DOWNLOAD_FAILED = 107
 
 .PARAMETER MainBin
     Path to the main E2E updater binary (e2e_Main_Updater.exe), built with
@@ -775,6 +776,64 @@ try {
                 Content = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/HappyZip/updates.json","network":{"proxyMode":"None"}}}'
             }
             ExpectLogContains = @('Network config loaded:')
+        },
+
+        # ── Download/URL boundary hardening scenarios ────────────────────────
+
+        @{
+            # The download URL 302-redirects to the real artifact. CURLOPT_REDIR_PROTOCOLS_STR
+            # is restricted to https-only (RestrictRedirectProtocols), so libcurl must refuse
+            # to follow this plain-HTTP redirect target and the download must fail.
+            Name              = 'RedirectDowngradeRejected'
+            SourceBin         = $MainBin
+            ExeName           = 'e2e_RedirectDowngrade_Updater.exe'
+            LocalVersion      = '0.0.1'
+            ExpectedExit      = 107  # NV_E_DOWNLOAD_FAILED
+            SkipSelfUpdate    = $true
+            Sidecar           = @{
+                Name    = 'e2e_RedirectDowngrade_Updater.json'
+                Content = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/RedirectDowngrade/updates.json"}}'
+            }
+        },
+        @{
+            # Server sends a quoted, path-traversal Content-Disposition filename
+            # ("..\..\evil.exe"). The sanitizer must reject it outright (log warning),
+            # keep the original temp file name, and the update must still complete.
+            Name              = 'MaliciousContentDispositionRejected'
+            SourceBin         = $MainBin
+            ExeName           = 'e2e_MaliciousCD_Updater.exe'
+            LocalVersion      = '0.0.1'
+            ExpectedExit      = 203
+            SkipSelfUpdate    = $true
+            Sidecar           = @{
+                Name    = 'e2e_MaliciousCD_Updater.json'
+                Content = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/MaliciousContentDisposition/updates.json"}}'
+            }
+            ExpectLogContains = @('Rejecting Content-Disposition filename')
+        },
+        @{
+            # Regression for exact (not substring) pinned-host matching: the manifest host
+            # merely *contains* the pinned host name as a substring
+            # ("localhostpinnedx.invalid" starts with the pinned "localhostpinned"). The old
+            # requestUrl.find(p.host) check would incorrectly treat this as a pin match and
+            # attempt a DoH/pinned-IP recovery retry; the fix requires an exact
+            # case-insensitive hostname match, so no recovery is attempted and the DNS
+            # failure surfaces immediately without a spurious external DoH lookup.
+            # Hostname uses the reserved .invalid TLD so it is guaranteed not to resolve
+            # via system DNS (RFC 6761), while still starting with "localhost..." so the
+            # debug-build loopback allowance in IsAllowedDownloadUrl lets the request
+            # through to the pin-matching code.
+            Name                 = 'PinnedHostSubstringNotMatched'
+            SourceBin            = $MainBin
+            ExeName              = 'e2e_PinnedHostSubstring_Updater.exe'
+            LocalVersion         = '0.0.1'
+            ExpectedExit         = 104  # NV_E_SERVER_RESPONSE
+            SkipSelfUpdate       = $true
+            Sidecar              = @{
+                Name    = 'e2e_PinnedHostSubstring_Updater.json'
+                Content = '{"instance":{"serverUrlTemplate":"http://localhostpinnedx.invalid:5200/api/e2e/HappyZip/updates.json","network":{"proxyMode":"None","pinnedHosts":[{"host":"localhostpinned","port":5200,"address":"127.0.0.1"}]}}}'
+            }
+            ExpectLogNotContains = @('retrying with DoH/pinned-IP recovery')
         }
     )
 

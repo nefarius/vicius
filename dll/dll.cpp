@@ -499,6 +499,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
 
         // Download to the separate temp file, trying each candidate URL in turn.
         bool downloadOk = false;
+        bool redirectPolicyFailed = false;
         for (size_t urlIdx = 0; urlIdx < candidateUrls.size(); ++urlIdx)
         {
             const auto& candidateUrl = candidateUrls[urlIdx];
@@ -525,6 +526,19 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
                     curlpp::Easy req;
                     req.setOpt(curlpp::options::Url(candidateUrl));
                     req.setOpt(curlpp::options::FollowLocation(true));
+                    // An https:// self-update URL that redirects to plain http:// is a TLS-downgrade
+                    // vector; Authenticode + checksum verification below still gate the swap, but
+                    // there is no reason to ever let the transport itself downgrade.
+                    // Abort (do not retry/failover) if the option cannot be applied — without it
+                    // the handle would follow redirects under libcurl's default protocol allow-list.
+                    if (const CURLcode redirRc = curl_easy_setopt(req.getHandle(), CURLOPT_REDIR_PROTOCOLS_STR, "https");
+                        redirRc != CURLE_OK)
+                    {
+                        try { outStream.close(); } catch (...) {}
+                        spdlog::error("CURLOPT_REDIR_PROTOCOLS_STR failed: {}", curl_easy_strerror(redirRc));
+                        redirectPolicyFailed = true;
+                        break;
+                    }
                     req.setOpt(curlpp::options::ConnectTimeout(60L));
                     req.setOpt(curlpp::options::LowSpeedLimit(1L));
                     req.setOpt(curlpp::options::LowSpeedTime(300L)); // 5 min stall timeout
@@ -586,7 +600,7 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
                 }
             }
 
-            if (downloadOk)
+            if (downloadOk || redirectPolicyFailed)
                 break; // exit mirror loop
 
             spdlog::warn("All attempts failed for candidate {}, trying next mirror if available", candidateUrl);
