@@ -487,6 +487,10 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
                     curlpp::Easy req;
                     req.setOpt(curlpp::options::Url(candidateUrl));
                     req.setOpt(curlpp::options::FollowLocation(true));
+                    // An https:// self-update URL that redirects to plain http:// is a TLS-downgrade
+                    // vector; Authenticode + checksum verification below still gate the swap, but
+                    // there is no reason to ever let the transport itself downgrade.
+                    curl_easy_setopt(req.getHandle(), CURLOPT_REDIR_PROTOCOLS_STR, "https");
                     req.setOpt(curlpp::options::ConnectTimeout(60L));
                     req.setOpt(curlpp::options::LowSpeedLimit(1L));
                     req.setOpt(curlpp::options::LowSpeedTime(300L)); // 5 min stall timeout

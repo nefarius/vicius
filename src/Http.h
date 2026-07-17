@@ -89,6 +89,21 @@ namespace web
     FailureKind ClassifyTransportError(const std::string& curlMessage);
 
     /**
+     * \brief Restricts libcurl to only ever follow https:// Location redirects.
+     *
+     * A request that gets redirected to plain http:// is a classic TLS-downgrade vector: the
+     * initial-URL scheme check (see IsAllowedDownloadUrl) does nothing to stop it, because it
+     * only ever inspects the URL the caller asked for, not where a redirect chain ends up.
+     * Call this on every curl handle that has FollowLocation enabled.
+     *
+     * This applies unconditionally, including in debug/E2E builds: the existing loopback HTTP
+     * allowance in IsAllowedDownloadUrl only ever covers the URL a caller explicitly requests,
+     * never an automatic redirect target, so there is no legitimate case where following a
+     * redirect to a non-https scheme is required.
+     */
+    void RestrictRedirectProtocols(CURL* handle);
+
+    /**
      * \brief Detects the Windows system/WinINET proxy for the given target URL.
      *
      * Reads the per-user IE/WinINET proxy settings and, when a PAC script or

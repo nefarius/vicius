@@ -179,6 +179,11 @@ namespace web
         return FailureKind::Other;
     }
 
+    void RestrictRedirectProtocols(CURL* handle)
+    {
+        curl_easy_setopt(handle, CURLOPT_REDIR_PROTOCOLS_STR, "https");
+    }
+
     std::expected<HttpResult, std::string> HttpGet(const std::string& url, const HttpGetOptions& opts)
     {
         HttpResult result{};
@@ -252,6 +257,7 @@ namespace web
                 req.setOpt(curlpp::options::UserAgent(opts.userAgent));
             req.setOpt(curlpp::options::FollowLocation(true));
             req.setOpt(curlpp::options::MaxRedirs(opts.maxRedirects));
+            RestrictRedirectProtocols(req.getHandle());
             if (!opts.headers.empty())
                 req.setOpt(curlpp::options::HttpHeader(opts.headers));
             req.setOpt(curlpp::options::ConnectTimeout(opts.connectTimeoutSecs));
