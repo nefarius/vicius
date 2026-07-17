@@ -151,6 +151,10 @@ public SignatureConfig SignatureConfig { get; set; }
 
 [SignatureConfig](./nefarius.vicius.abstractions.models.signatureconfig.md)<br>
 
+**Remarks:**
+
+See the trust-boundary remarks on [SharedConfig.SignatureVerificationMode](./nefarius.vicius.abstractions.models.sharedconfig.md#signatureverificationmode); the same rule applies here.
+
 ### <a id="properties-signaturepolicy"/>**SignaturePolicy**
 
 Global Authenticode comparison policy.
@@ -162,6 +166,10 @@ public Nullable<SignatureComparisonPolicy> SignaturePolicy { get; set; }
 #### Property Value
 
 [Nullable](https://learn.microsoft.com/dotnet/api/system.nullable-1)<[SignatureComparisonPolicy](./nefarius.vicius.abstractions.models.signaturecomparisonpolicy.md)><br>
+
+**Remarks:**
+
+See the trust-boundary remarks on [SharedConfig.SignatureVerificationMode](./nefarius.vicius.abstractions.models.sharedconfig.md#signatureverificationmode); the same rule applies here.
 
 ### <a id="properties-signaturestrategy"/>**SignatureStrategy**
 
@@ -175,6 +183,10 @@ public Nullable<SignatureVerificationStrategy> SignatureStrategy { get; set; }
 
 [Nullable](https://learn.microsoft.com/dotnet/api/system.nullable-1)<[SignatureVerificationStrategy](./nefarius.vicius.abstractions.models.signatureverificationstrategy.md)><br>
 
+**Remarks:**
+
+See the trust-boundary remarks on [SharedConfig.SignatureVerificationMode](./nefarius.vicius.abstractions.models.sharedconfig.md#signatureverificationmode); the same rule applies here.
+
 ### <a id="properties-signatureverificationmode"/>**SignatureVerificationMode**
 
 Global Authenticode verification mode for downloaded setups.
@@ -186,6 +198,18 @@ public Nullable<SignatureVerificationMode> SignatureVerificationMode { get; set;
 #### Property Value
 
 [Nullable](https://learn.microsoft.com/dotnet/api/system.nullable-1)<[SignatureVerificationMode](./nefarius.vicius.abstractions.models.signatureverificationmode.md)><br>
+
+**Remarks:**
+
+Trust boundary: the client only honors this remote override when the manifest
+ itself was verified against a compiled-in `NV_MANIFEST_PUBLIC_KEY` (i.e. the
+ client build supports manifest signing and the response's Ed25519/minisign signature
+ checked out). On a client build without a compiled-in public key — the common case
+ when the server does not sign its manifests — this field is silently ignored and the
+ client's local/default value is kept, because an unauthenticated response must never
+ be able to change how strictly downloaded binaries are verified. Set this locally
+ (compiled default, or `--strict-verification`) instead if manifest signing is not
+ in use.
 
 ### <a id="properties-windowtitle"/>**WindowTitle**
 
