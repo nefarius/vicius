@@ -801,14 +801,16 @@ try {
         },
         @{
             # Regression for exact (not substring) pinned-host matching: the manifest host
-            # merely *contains* the pinned host name as a substring ("localhostpinnedx"
-            # starts with the pinned "localhostpinned"). The old requestUrl.find(p.host)
-            # check would incorrectly treat this as a pin match and attempt a DoH/pinned-IP
-            # recovery retry; the fix requires an exact case-insensitive hostname match, so
-            # no recovery is attempted and the DNS failure surfaces immediately without a
-            # spurious external DoH lookup. Uses the "localhost..." prefix (like the
-            # existing PinnedHostResolve* scenarios) so the debug-build loopback allowance
-            # in IsAllowedDownloadUrl lets the request through to the pin-matching code.
+            # merely *contains* the pinned host name as a substring
+            # ("localhostpinnedx.invalid" starts with the pinned "localhostpinned"). The old
+            # requestUrl.find(p.host) check would incorrectly treat this as a pin match and
+            # attempt a DoH/pinned-IP recovery retry; the fix requires an exact
+            # case-insensitive hostname match, so no recovery is attempted and the DNS
+            # failure surfaces immediately without a spurious external DoH lookup.
+            # Hostname uses the reserved .invalid TLD so it is guaranteed not to resolve
+            # via system DNS (RFC 6761), while still starting with "localhost..." so the
+            # debug-build loopback allowance in IsAllowedDownloadUrl lets the request
+            # through to the pin-matching code.
             Name                 = 'PinnedHostSubstringNotMatched'
             SourceBin            = $MainBin
             ExeName              = 'e2e_PinnedHostSubstring_Updater.exe'
@@ -817,7 +819,7 @@ try {
             SkipSelfUpdate       = $true
             Sidecar              = @{
                 Name    = 'e2e_PinnedHostSubstring_Updater.json'
-                Content = '{"instance":{"serverUrlTemplate":"http://localhostpinnedx:5200/api/e2e/HappyZip/updates.json","network":{"pinnedHosts":[{"host":"localhostpinned","port":5200,"address":"127.0.0.1"}]}}}'
+                Content = '{"instance":{"serverUrlTemplate":"http://localhostpinnedx.invalid:5200/api/e2e/HappyZip/updates.json","network":{"pinnedHosts":[{"host":"localhostpinned","port":5200,"address":"127.0.0.1"}]}}}'
             }
             ExpectLogNotContains = @('retrying with DoH/pinned-IP recovery')
         }

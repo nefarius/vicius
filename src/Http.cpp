@@ -179,9 +179,14 @@ namespace web
         return FailureKind::Other;
     }
 
-    void RestrictRedirectProtocols(CURL* handle)
+    std::expected<void, std::string> RestrictRedirectProtocols(CURL* handle)
     {
-        curl_easy_setopt(handle, CURLOPT_REDIR_PROTOCOLS_STR, "https");
+        const CURLcode rc = curl_easy_setopt(handle, CURLOPT_REDIR_PROTOCOLS_STR, "https");
+        if (rc != CURLE_OK)
+        {
+            return std::unexpected(std::format("CURLOPT_REDIR_PROTOCOLS_STR failed: {}", curl_easy_strerror(rc)));
+        }
+        return {};
     }
 
     std::expected<HttpResult, std::string> HttpGet(const std::string& url, const HttpGetOptions& opts)
@@ -257,7 +262,11 @@ namespace web
                 req.setOpt(curlpp::options::UserAgent(opts.userAgent));
             req.setOpt(curlpp::options::FollowLocation(true));
             req.setOpt(curlpp::options::MaxRedirs(opts.maxRedirects));
-            RestrictRedirectProtocols(req.getHandle());
+            if (auto redir = RestrictRedirectProtocols(req.getHandle()); !redir)
+            {
+                if (resolveList) curl_slist_free_all(resolveList);
+                return std::unexpected(redir.error());
+            }
             if (!opts.headers.empty())
                 req.setOpt(curlpp::options::HttpHeader(opts.headers));
             req.setOpt(curlpp::options::ConnectTimeout(opts.connectTimeoutSecs));

@@ -100,8 +100,13 @@ namespace web
      * allowance in IsAllowedDownloadUrl only ever covers the URL a caller explicitly requests,
      * never an automatic redirect target, so there is no legitimate case where following a
      * redirect to a non-https scheme is required.
+     *
+     * \return Empty on success; unexpected with a human-readable reason if
+     *         CURLOPT_REDIR_PROTOCOLS_STR could not be applied (callers must not start the
+     *         transfer in that case — the handle would otherwise follow redirects with the
+     *         libcurl default protocol allow-list).
      */
-    void RestrictRedirectProtocols(CURL* handle);
+    [[nodiscard]] std::expected<void, std::string> RestrictRedirectProtocols(CURL* handle);
 
     /**
      * \brief Detects the Windows system/WinINET proxy for the given target URL.

@@ -472,7 +472,13 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
         req.setOpt(curlpp::options::UserAgent(ua));
         req.setOpt(curlpp::options::FollowLocation(true));
         req.setOpt(curlpp::options::MaxRedirs(MAX_REDIRECTS));
-        web::RestrictRedirectProtocols(req.getHandle());
+        if (auto redir = web::RestrictRedirectProtocols(req.getHandle()); !redir)
+        {
+            if (downloadResolveList) { curl_slist_free_all(downloadResolveList); downloadResolveList = nullptr; }
+            try { outStream.close(); } catch (...) {}
+            spdlog::error("{}", redir.error());
+            return std::unexpected(redir.error());
+        }
         req.setOpt(curlpp::options::HttpHeader(headerLines));
 
         // Prefer "stall" timeouts: don't abort if bytes still trickle in.
