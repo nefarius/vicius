@@ -143,4 +143,37 @@ namespace winapi
      * \remarks The caller is responsible for calling DestroyIcon on the returned handle.
      */
     [[nodiscard]] std::expected<HICON, std::string> CreateIconFromIcoBuffer(const std::vector<uint8_t>& ico, int cx, int cy);
+
+    /**
+     * \brief Builds a writable, NUL-terminated command-line buffer suitable for
+     *        CreateProcessA's lpCommandLine parameter, which the API may modify in place
+     *        while parsing/expanding arguments.
+     * \param commandLine The command line to copy.
+     * \return A NUL-terminated buffer of commandLine.size()+1 bytes that CreateProcessA
+     *         may safely mutate; passing std::string::c_str()/data() there directly (even
+     *         via const_cast) is undefined behavior.
+     */
+    [[nodiscard]] std::vector<char> MakeWritableCommandLine(const std::string& commandLine);
+
+    /**
+     * \brief Resolves the fully-qualified path to a well-known executable inside
+     *        %SystemRoot%\System32 (e.g. "rundll32.exe"), for use as CreateProcess's/
+     *        ShellExecuteEx's explicit application name so the executable is never
+     *        resolved via an ambiguous PATH/CWD search order.
+     * \param exeName Base file name of the system executable, e.g. "rundll32.exe".
+     * \return The fully-qualified path on success; unexpected error string on failure.
+     */
+    [[nodiscard]] std::expected<std::string, std::string> GetSystemExecutablePath(const std::string& exeName);
+
+    /**
+     * \brief Quotes and escapes a single argument value for safe inclusion in a
+     * CreateProcess / ShellExecuteEx command string that will be parsed by
+     * CommandLineToArgvW-style rules.
+     *
+     * Algorithm: wrap in double-quotes, doubling any backslashes that immediately
+     * precede a double-quote or end the string, and escaping every embedded
+     * double-quote as \".
+     * See https://learn.microsoft.com/en-us/windows/win32/api/shellapi/nf-shellapi-commandlinetoargvw
+     */
+    [[nodiscard]] std::string QuoteArg(const std::string& arg);
 }

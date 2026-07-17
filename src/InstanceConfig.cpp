@@ -557,6 +557,15 @@ models::InstanceConfig::~InstanceConfig()
     RequestAbortDownload();
     WaitForDownloadToFinish();
 
+    // Backstop: ExecuteSetup() normally closes this handle itself right after its one
+    // use (TerminateProcess), but if setup never runs (e.g. no update was available, or
+    // the app exited first) it is still open and we own it, so close it here.
+    if (terminateProcessBeforeUpdate.has_value())
+    {
+        CloseHandle(terminateProcessBeforeUpdate.value());
+        terminateProcessBeforeUpdate.reset();
+    }
+
     // clean up release resources
     for (const auto& release : remote.releases)
     {

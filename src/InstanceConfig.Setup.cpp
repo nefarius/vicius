@@ -222,12 +222,22 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
 {
     if (this->terminateProcessBeforeUpdate.has_value())
     {
-        const auto terminatePID = GetProcessId(this->terminateProcessBeforeUpdate.value());
-        if (!TerminateProcess(this->terminateProcessBeforeUpdate.value(), 0))
+        const HANDLE handle = this->terminateProcessBeforeUpdate.value();
+        const auto terminatePID = GetProcessId(handle);
+        const BOOL terminated = TerminateProcess(handle, 0);
+        const DWORD terminateError = GetLastError();
+
+        // This is the handle's last use regardless of outcome; take ownership back here
+        // instead of leaving it for the destructor so it does not sit open for the
+        // duration of the (potentially lengthy) rest of setup.
+        CloseHandle(handle);
+        this->terminateProcessBeforeUpdate.reset();
+
+        if (!terminated)
         {
             // TODO: better user feedback; task dialog? Or explicit message in main UI page?
             return std::unexpected(std::format("Failed to terminate process before update: {}",
-                                               winapi::GetLastErrorStdStr()));
+                                               winapi::GetLastErrorStdStr(terminateError)));
         }
         spdlog::debug("Terminated PID {} due to {}", terminatePID, NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE);
     }
@@ -452,8 +462,17 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
         PROCESS_INFORMATION updateProcessInfo = {};
 
         std::stringstream launchArgs;
-        launchArgs << tempFile;
+        // Quote consistently via QuoteArg rather than std::filesystem::path's ostream
+        // inserter (which escapes backslashes/quotes differently) so argv[0] matches
+        // what lpApplicationName below resolves to.
+        launchArgs << winapi::QuoteArg(tempFile.string());
 
+        // launchArguments is a manifest-supplied, already-tokenized raw Windows
+        // command-line fragment (e.g. "/S /D=C:\Program Files\App"), appended verbatim
+        // for compatibility with existing manifests. It is intentionally not re-parsed
+        // or re-quoted here: doing so would require a versioned manifest contract change,
+        // and installers' own argument grammars (MSI, InstallShield, NSIS, etc.) already
+        // expect this raw-fragment form.
         if (release.launchArguments.has_value())
         {
             launchArgs << " " << release.launchArguments.value();
@@ -464,7 +483,9 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
         std::vector<char> cmdLine(args.begin(), args.end());
         cmdLine.push_back('\0');
 
-        if (!CreateProcessA(nullptr, cmdLine.data(), nullptr, nullptr, TRUE, 0, nullptr, nullptr, &info,
+        // tempFile is our own fully-resolved download path; pass it as an explicit
+        // application name so it is never subject to ambiguous PATH/CWD resolution.
+        if (!CreateProcessA(tempFile.string().c_str(), cmdLine.data(), nullptr, nullptr, TRUE, 0, nullptr, nullptr, &info,
                             &updateProcessInfo))
         {
             win32Error = GetLastError();

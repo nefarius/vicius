@@ -834,4 +834,57 @@ namespace winapi
 
         return hIcon;
     }
+
+    std::vector<char> MakeWritableCommandLine(const std::string& commandLine)
+    {
+        std::vector<char> buffer(commandLine.begin(), commandLine.end());
+        buffer.push_back('\0');
+        return buffer;
+    }
+
+    std::expected<std::string, std::string> GetSystemExecutablePath(const std::string& exeName)
+    {
+        char systemDir[MAX_PATH]{};
+        const UINT len = GetSystemDirectoryA(systemDir, static_cast<UINT>(std::size(systemDir)));
+        if (len == 0 || len >= static_cast<UINT>(std::size(systemDir)))
+        {
+            return std::unexpected(GetLastErrorStdStr());
+        }
+
+        std::filesystem::path path(systemDir);
+        path /= exeName;
+        return path.string();
+    }
+
+    std::string QuoteArg(const std::string& arg)
+    {
+        std::string out;
+        out.reserve(arg.size() + 4);
+        out += '"';
+        size_t backslashes = 0;
+        for (const char c : arg)
+        {
+            if (c == '\\')
+            {
+                ++backslashes;
+            }
+            else if (c == '"')
+            {
+                // Double any preceding backslashes, then escape the quote.
+                out.append(backslashes * 2, '\\');
+                out += "\\\"";
+                backslashes = 0;
+            }
+            else
+            {
+                out.append(backslashes, '\\');
+                out += c;
+                backslashes = 0;
+            }
+        }
+        // Double trailing backslashes (they precede the closing quote).
+        out.append(backslashes * 2, '\\');
+        out += '"';
+        return out;
+    }
 }

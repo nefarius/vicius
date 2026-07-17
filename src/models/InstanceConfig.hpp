@@ -72,7 +72,13 @@ namespace models
         std::vector<std::string> fallbackUpdateRequestUrls;
         /** Full pathname of the updater parent process file, if any */
         std::optional<std::filesystem::path> parentAppPath;
-        /** Process to terminate before update */
+        /**
+         * Process to terminate before update. This is a handle received from an external
+         * caller (--terminate-process-before-update), duplicated by them with
+         * bInheritHandle so we can act on it; we therefore own it and must close it.
+         * ExecuteSetup() closes it immediately after its one use (TerminateProcess);
+         * the destructor closes it as a backstop for any path where setup never runs.
+         */
         std::optional<HANDLE> terminateProcessBeforeUpdate;
 
         /** The local and remote shared configuration */

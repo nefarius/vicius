@@ -186,6 +186,44 @@ static std::expected<void, std::string> VerifyAuthenticode(const std::wstring& f
 // ============================================================================
 // Case-insensitive hex string comparison (for checksum matching)
 // ============================================================================
+/**
+ * \brief Quotes and escapes a single argument value for safe inclusion in a
+ * CreateProcess command string that will be parsed by CommandLineToArgvW-style rules.
+ * Duplicated from src/InstanceConfig.Updater.cpp's QuoteArg: this DLL is a separate
+ * project/compilation unit that does not link against src/, so shared helpers are
+ * intentionally kept as small local copies rather than introducing a cross-project
+ * dependency (see PR history for src/Http.h for the same rationale).
+ */
+static std::string QuoteArg(const std::string& arg)
+{
+    std::string out;
+    out.reserve(arg.size() + 4);
+    out += '"';
+    size_t backslashes = 0;
+    for (const char c : arg)
+    {
+        if (c == '\\')
+        {
+            ++backslashes;
+        }
+        else if (c == '"')
+        {
+            out.append(backslashes * 2, '\\');
+            out += "\\\"";
+            backslashes = 0;
+        }
+        else
+        {
+            out.append(backslashes, '\\');
+            out += c;
+            backslashes = 0;
+        }
+    }
+    out.append(backslashes * 2, '\\');
+    out += '"';
+    return out;
+}
+
 static bool IHexEqual(const std::string& a, const std::string& b)
 {
     if (a.size() != b.size()) return false;
@@ -666,18 +704,30 @@ EXTERN_C DLL_API void CALLBACK PerformUpdate(HWND hwnd, HINSTANCE hinst, LPSTR l
         si.dwFlags = STARTF_USESHOWWINDOW;
         si.wShowWindow = SW_HIDE;
 
+        const std::string originalStr = original.string();
+
         std::stringstream argsStream;
-        // build CLI args
+        // build CLI args; argv[0] is quoted consistently with lpApplicationName below
+        // instead of relying on std::filesystem::path's own (differently-escaping)
+        // ostream inserter.
         argsStream
-            << original // main executable
+            << QuoteArg(originalStr) // main executable
             << " --install" // install steps might have changed in new version
             << " --skip-self-update"; // extra protection to not end up in a loop
         const auto launchArgs = argsStream.str();
         spdlog::debug("launchArgs = {}", launchArgs);
 
+        // lpApplicationName is the already-resolved, absolute path to the just-swapped-in
+        // main executable, so it is passed explicitly rather than relying on lpCommandLine
+        // parsing/searching to find it. CreateProcessA may write into lpCommandLine while
+        // parsing/expanding arguments, so it must be a writable buffer, never a
+        // std::string's internal storage (even via const_cast).
+        std::vector<char> cmdLineBuf(launchArgs.begin(), launchArgs.end());
+        cmdLineBuf.push_back('\0');
+
         if (!CreateProcessA(
-            nullptr,
-            const_cast<LPSTR>(launchArgs.c_str()),
+            originalStr.c_str(),
+            cmdLineBuf.data(),
             nullptr,
             nullptr,
             FALSE,
