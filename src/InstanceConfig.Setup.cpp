@@ -160,13 +160,20 @@ std::expected<std::filesystem::path, std::string> models::InstanceConfig::Extrac
             }
         }
 
-        if (outPath.filename().string().back() == '/')
+        // Directory entries are identified by the archive's own entry name (conventionally
+        // trailing-slash), never by re-deriving it from outPath: once the entry name is
+        // "dir/", appending it and normalising can legally yield a path whose filename() is
+        // empty (e.g. "root/dir/"), and calling .back() on that empty string is UB.
+        const std::string_view entryName(stat.name);
+        const bool isDirectoryEntry = !entryName.empty() && entryName.back() == '/';
+
+        try
         {
-            std::filesystem::create_directories(outPath);
-        }
-        else
-        {
-            try
+            if (isDirectoryEntry)
+            {
+                std::filesystem::create_directories(outPath);
+            }
+            else
             {
                 std::filesystem::create_directories(outPath.parent_path());
 
@@ -190,17 +197,18 @@ std::expected<std::filesystem::path, std::string> models::InstanceConfig::Extrac
                     bytesRead += bytesReadThisChunk;
                 }
             }
-            catch (const std::exception& e)
+
+            if ((stat.valid & ZIP_STAT_MTIME) == ZIP_STAT_MTIME)
             {
-                spdlog::error("Failed to open output file `{}` when extracting zip: {}", outPath, e.what());
-                return std::unexpected(std::format("Failed to write zip entry to '{}': {}", outPath.string(), e.what()));
+                const auto sysTime = std::chrono::system_clock::from_time_t(stat.mtime);
+                const auto fileTime = std::chrono::clock_cast<std::chrono::file_clock>(sysTime);
+                std::filesystem::last_write_time(outPath, fileTime);
             }
         }
-        if ((stat.valid & ZIP_STAT_MTIME) == ZIP_STAT_MTIME)
+        catch (const std::exception& e)
         {
-            const auto sysTime = std::chrono::system_clock::from_time_t(stat.mtime);
-            const auto fileTime = std::chrono::clock_cast<std::chrono::file_clock>(sysTime);
-            std::filesystem::last_write_time(outPath, fileTime);
+            spdlog::error("Failed to materialize zip entry `{}` at `{}`: {}", stat.name, outPath, e.what());
+            return std::unexpected(std::format("Failed to write zip entry to '{}': {}", outPath.string(), e.what()));
         }
     }
     return extractedPath;
@@ -257,6 +265,7 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
             {
                 return std::unexpected(extractedPath.error());
             }
+            try
             {
                 using Disposition = ZipExtractFileDisposition;
                 const auto sourceRoot = std::filesystem::canonical(*extractedPath);
@@ -302,11 +311,18 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
                         continue;
                     }
 
+                    // DeleteIfPresent entries are not copied here (handled in the deletion walk
+                    // below), and must not fall through to last_write_time: the destination may
+                    // never have existed, and stamping a nonexistent path throws filesystem_error.
+                    if (disposition == Disposition::DeleteIfPresent)
+                    {
+                        continue;
+                    }
+
                     switch (disposition)
                     {
                         case Disposition::DeleteIfPresent:
-                            // Handled below when walking deletions
-                            break;
+                            break;  // unreachable, handled above
                         case Disposition::CreateIfAbsent:
                             std::filesystem::copy_file(sourceRoot / relative, destRoot / relative,
                                                        std::filesystem::copy_options::skip_existing);
@@ -344,6 +360,11 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
                 }
 
                 success = true;
+            }
+            catch (const std::exception& e)
+            {
+                spdlog::error("Failed to deploy extracted release contents: {}", e.what());
+                return std::unexpected(std::format("Failed to deploy extracted release: {}", e.what()));
             }
         }
         //
