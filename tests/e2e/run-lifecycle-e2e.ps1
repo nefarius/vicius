@@ -9,17 +9,19 @@
     the WM_QUIT close handling, the changelog image-download task, or the setup
     stop_source wiring in main.cpp. This script instead launches the interactive
     updater, drives it to the wizard's "download and install" step via the E2E-only
-    NV_E2E_AUTO_ADVANCE env var (main.cpp), waits until a background task (changelog
+    NV_E2E_AUTO_ADVANCE env var (main.cpp), polls until a background task (changelog
     image fetch, release download, or child setup process) is genuinely in flight
     against an artificially delayed server response, then posts WM_CLOSE to the main
     window -- exactly what a user clicking the titlebar X does -- and asserts the
-    process exits within a bounded time with a deterministic, non-crash exit code.
+    process exits within a bounded time with an explicitly allowlisted NV_*/clean
+    shutdown exit code.
 
     Without the async-lifecycle fix, closing while a task is in flight risks either an
     indefinite hang (dropping a not-yet-ready std::shared_future from std::async blocks
     the destructor until the task completes) or a use-after-free (the changelog's
     image-download task keeps calling into curl/D3D after curlpp::terminate() and
-    CleanupDeviceD3D() have already run). Bounded, crash-free exit is the pass criterion.
+    CleanupDeviceD3D() have already run). Bounded, crash-free exit with an expected
+    code is the pass criterion.
 
 .PARAMETER MainBin
     Path to the main E2E updater binary (e2e_Main_Updater.exe), built with
@@ -167,6 +169,53 @@ function Stop-E2EServer([System.Diagnostics.Process] $job) {
 }
 
 # ---------------------------------------------------------------------------
+# Readiness polling: wait for explicit evidence that the targeted background
+# task has started (log marker and/or child process), rather than a fixed sleep.
+# ---------------------------------------------------------------------------
+
+function Wait-LifecycleReady {
+    param(
+        [System.Diagnostics.Process] $Process,
+        [string] $LogFile,
+        [string] $ReadyLogContains = '',
+        [switch] $ReadyAnyChildProcess,  # setup is launched from a GetTempFileName path, not setup.exe
+        [int]    $TimeoutMs = 15000
+    )
+
+    if (-not $ReadyLogContains -and -not $ReadyAnyChildProcess) {
+        throw 'Wait-LifecycleReady requires ReadyLogContains and/or ReadyAnyChildProcess'
+    }
+
+    $deadline = (Get-Date).AddMilliseconds($TimeoutMs)
+    while ((Get-Date) -lt $deadline) {
+        if ($Process.HasExited) {
+            return @{ Ready = $false; Reason = "Process exited before readiness (exit code $($Process.ExitCode))" }
+        }
+
+        if ($ReadyLogContains -and (Test-Path -LiteralPath $LogFile)) {
+            if (Select-String -LiteralPath $LogFile -Pattern $ReadyLogContains -SimpleMatch -Quiet) {
+                return @{ Ready = $true; Reason = "log marker '$ReadyLogContains'" }
+            }
+        }
+
+        if ($ReadyAnyChildProcess) {
+            $children = @(Get-CimInstance Win32_Process -Filter "ParentProcessId=$($Process.Id)" -ErrorAction SilentlyContinue)
+            if ($children.Count -gt 0) {
+                return @{ Ready = $true; Reason = "child process '$($children[0].Name)' (PID $($children[0].ProcessId))" }
+            }
+        }
+
+        Start-Sleep -Milliseconds 100
+    }
+
+    $wanted = @(
+        $(if ($ReadyLogContains) { "log marker '$ReadyLogContains'" }),
+        $(if ($ReadyAnyChildProcess) { 'any child process' })
+    ) | Where-Object { $_ }
+    return @{ Ready = $false; Reason = "Timed out after ${TimeoutMs}ms waiting for $($wanted -join ' or ')" }
+}
+
+# ---------------------------------------------------------------------------
 # Scenario runner
 # ---------------------------------------------------------------------------
 
@@ -174,12 +223,15 @@ $results = [System.Collections.Generic.List[hashtable]]::new()
 
 function Invoke-LifecycleScenario {
     param(
-        [string]    $Name,
-        [string]    $ExeName,
-        [hashtable] $Sidecar,
-        [int]       $WaitBeforeCloseMs,     # how long to let the app run before sending WM_CLOSE
-        [int]       $BoundedExitTimeoutMs,  # process must exit within this long after WM_CLOSE
-        [hashtable] $ExtraEnv = @{}
+        [string]   $Name,
+        [string]   $ExeName,
+        [hashtable]$Sidecar,
+        [int[]]    $ExpectedExitCodes,      # allowlisted NV_*/clean shutdown codes for this scenario
+        [string]   $ReadyLogContains = '',  # log substring proving the target task started
+        [switch]   $ReadyAnyChildProcess,   # any child of the updater (setup is a temp-named PE)
+        [int]      $ReadyTimeoutMs = 15000, # fail if readiness evidence never appears
+        [int]      $BoundedExitTimeoutMs,   # process must exit within this long after WM_CLOSE
+        [hashtable]$ExtraEnv = @{}
     )
 
     Write-Host "`n──────────────────────────────────────────────────────────"
@@ -221,15 +273,28 @@ function Invoke-LifecycleScenario {
                 return $result
             }
 
-            Write-Host "  Window found; waiting ${WaitBeforeCloseMs}ms for background task(s) to start..."
-            Start-Sleep -Milliseconds $WaitBeforeCloseMs
+            Write-Host "  Window found; polling for background-task readiness..."
+            $readyParams = @{
+                Process             = $proc
+                LogFile             = $logFile
+                ReadyLogContains    = $ReadyLogContains
+                TimeoutMs           = $ReadyTimeoutMs
+            }
+            if ($ReadyAnyChildProcess) { $readyParams.ReadyAnyChildProcess = $true }
+            $ready = Wait-LifecycleReady @readyParams
+
+            if (-not $ready.Ready) {
+                $result.Note = $ready.Reason
+                return $result
+            }
+
+            Write-Host "  Ready ($($ready.Reason)); sending WM_CLOSE..."
 
             if ($proc.HasExited) {
                 $result.Note = "Process already exited before WM_CLOSE was sent (exit code $($proc.ExitCode))"
                 return $result
             }
 
-            Write-Host '  Sending WM_CLOSE...'
             $sw = [System.Diagnostics.Stopwatch]::StartNew()
             Send-WmClose -HWnd $hwnd
 
@@ -251,6 +316,14 @@ function Invoke-LifecycleScenario {
             # 0xC0000005 == -1073741819) rather than one of the small, well-known NV_* codes.
             if ($exitCode -lt 0 -or $exitCode -gt 255) {
                 $result.Note = "Crash-shaped exit code $exitCode (0x$('{0:X8}' -f $exitCode))"
+                return $result
+            }
+
+            # Ordinary non-crash codes that are not on this scenario's allowlist are rejects
+            # (e.g. NV_S_UPDATE_FINISHED=203 would mean we closed after the work finished).
+            if ($ExpectedExitCodes -notcontains $exitCode) {
+                $allowed = ($ExpectedExitCodes | ForEach-Object { $_ }) -join ', '
+                $result.Note = "Unexpected exit code $exitCode (allowed: $allowed)"
                 return $result
             }
 
@@ -281,12 +354,14 @@ function Invoke-LifecycleScenario {
 $serverJob = Start-E2EServer
 
 try {
-    # Server delays both the changelog image and the release download by 8s
-    # (E2ELifecycleEndpoint.cs), so closing ~2s after the window appears catches both
-    # tasks genuinely in flight. Bounded exit timeout is comfortably under the 8s delay:
-    # the release download aborts fast (curl progress callback observes
-    # abortDownloadRequested within ~1s) and the image fetch is capped by its own 5s
-    # HTTP timeout in DownloadImageTexture, so total teardown must complete well inside it.
+    # Server delays both the changelog image and the release artifact by 8s
+    # (E2ELifecycleEndpoint.cs). Poll until the updater log shows the release
+    # download has started — at that point the delayed HTTP transfer (and the
+    # in-flight image fetch started from the same summary) are genuinely running.
+    # Closing then must exit well under the remaining delay via cooperative abort.
+    # Expected exit: ERROR_SUCCESS (0) — WM_CLOSE -> WM_DESTROY -> PostQuitMessage(0)
+    # leaves main.cpp's status at its ERROR_SUCCESS default when no wizard status
+    # was posted first.
     $results.Add((Invoke-LifecycleScenario `
         -Name 'CloseDuringDownloadAndImageFetch' `
         -ExeName 'e2e_LifecycleDownload_Updater.exe' `
@@ -294,14 +369,17 @@ try {
             Name    = 'e2e_LifecycleDownload_Updater.json'
             Content = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/Lifecycle/updates.json"}}'
         } `
-        -WaitBeforeCloseMs 2000 `
+        -ExpectedExitCodes @(0) `
+        -ReadyLogContains 'Starting release download from' `
+        -ReadyTimeoutMs 15000 `
         -BoundedExitTimeoutMs 7000))
 
-    # setup.exe sleeps for E2E_EXIT_DELAY_MS (inherited from this process's environment)
-    # before exiting, so closing ~2.5s after the window appears (enough time for the fast
-    # local download+verify to finish and the child process to launch) lands squarely
-    # inside "setup is running". The cooperative stop_source (main.cpp WM_QUIT handling)
-    # must cut the wait short well before the 8s sleep elapses.
+    # setup.exe sleeps for E2E_EXIT_DELAY_MS (inherited) before exiting. Poll until
+    # the child setup process is actually running (or the launch log marker appears),
+    # then close — the cooperative stop_source must cut the wait short well before
+    # the 8s sleep elapses. Expected exit: ERROR_SUCCESS (0) for the same
+    # PostQuitMessage path; NV_S_CLOSED_WHILE_UPDATER_RUNNING (208) is also allowed
+    # if a frame races and posts the cancelled-setup status before quit.
     $results.Add((Invoke-LifecycleScenario `
         -Name 'CloseDuringSetup' `
         -ExeName 'e2e_LifecycleSetup_Updater.exe' `
@@ -309,7 +387,10 @@ try {
             Name    = 'e2e_LifecycleSetup_Updater.json'
             Content = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/LifecycleSetup/updates.json"}}'
         } `
-        -WaitBeforeCloseMs 2500 `
+        -ExpectedExitCodes @(0, 208) `
+        -ReadyLogContains 'Setup process launched successfully' `
+        -ReadyAnyChildProcess `
+        -ReadyTimeoutMs 20000 `
         -BoundedExitTimeoutMs 5000 `
         -ExtraEnv @{ E2E_EXIT_DELAY_MS = '8000' }))
 }
