@@ -819,7 +819,7 @@ try {
             SkipSelfUpdate       = $true
             Sidecar              = @{
                 Name    = 'e2e_PinnedHostSubstring_Updater.json'
-                Content = '{"instance":{"serverUrlTemplate":"http://localhostpinnedx.invalid:5200/api/e2e/HappyZip/updates.json","network":{"pinnedHosts":[{"host":"localhostpinned","port":5200,"address":"127.0.0.1"}]}}}'
+                Content = '{"instance":{"serverUrlTemplate":"http://localhostpinnedx.invalid:5200/api/e2e/HappyZip/updates.json","network":{"proxyMode":"None","pinnedHosts":[{"host":"localhostpinned","port":5200,"address":"127.0.0.1"}]}}}'
             }
             ExpectLogNotContains = @('retrying with DoH/pinned-IP recovery')
         }
