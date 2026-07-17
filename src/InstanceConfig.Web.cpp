@@ -472,6 +472,13 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
         req.setOpt(curlpp::options::UserAgent(ua));
         req.setOpt(curlpp::options::FollowLocation(true));
         req.setOpt(curlpp::options::MaxRedirs(MAX_REDIRECTS));
+        if (auto redir = web::RestrictRedirectProtocols(req.getHandle()); !redir)
+        {
+            if (downloadResolveList) { curl_slist_free_all(downloadResolveList); downloadResolveList = nullptr; }
+            try { outStream.close(); } catch (...) {}
+            spdlog::error("{}", redir.error());
+            return std::unexpected(redir.error());
+        }
         req.setOpt(curlpp::options::HttpHeader(headerLines));
 
         // Prefer "stall" timeouts: don't abort if bytes still trickle in.
@@ -632,7 +639,45 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
 
         const uint64_t finalSize = getLocalSize();
 
-        auto tryExtractFilenameFromContentDisposition = [](const std::string& cdHeader) -> std::optional<std::filesystem::path>
+        // Accepts only a bare basename: strips one matching pair of surrounding quotes,
+        // trims whitespace, then rejects anything that isn't a plain filename - empty
+        // names, ".", "..", path separators, drive prefixes, and absolute/rooted paths.
+        // A server (or a MITM on a downgraded connection) controls this header, so it
+        // must never be trusted to name an arbitrary filesystem location.
+        auto sanitizeContentDispositionFilename = [](std::string name) -> std::optional<std::filesystem::path>
+        {
+            if (name.size() >= 2 && name.front() == '"' && name.back() == '"')
+            {
+                name = name.substr(1, name.size() - 2);
+            }
+
+            auto isSpace = [](unsigned char c) { return std::isspace(c) != 0; };
+            while (!name.empty() && isSpace(static_cast<unsigned char>(name.front()))) name.erase(name.begin());
+            while (!name.empty() && isSpace(static_cast<unsigned char>(name.back())))  name.pop_back();
+
+            if (name.empty() || name == "." || name == "..")
+            {
+                return std::nullopt;
+            }
+
+            // A bare basename never contains a separator; reject outright rather than
+            // trying to interpret it as a (possibly traversal-laden) path.
+            if (name.find('/') != std::string::npos || name.find('\\') != std::string::npos)
+            {
+                return std::nullopt;
+            }
+
+            const std::filesystem::path candidate(name);
+            if (candidate.is_absolute() || candidate.has_root_name() || candidate.has_root_directory())
+            {
+                return std::nullopt;
+            }
+
+            return candidate;
+        };
+
+        auto tryExtractFilenameFromContentDisposition =
+          [&sanitizeContentDispositionFilename](const std::string& cdHeader) -> std::optional<std::filesystem::path>
         {
             if (cdHeader.empty())
             {
@@ -665,7 +710,13 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
             }
 
             const std::smatch& match = *matchesBegin;
-            return std::filesystem::path(match[ 1 ].str());
+
+            auto sanitized = sanitizeContentDispositionFilename(match[ 1 ].str());
+            if (!sanitized.has_value())
+            {
+                spdlog::warn("Rejecting Content-Disposition filename '{}': not a plain basename", match[ 1 ].str());
+            }
+            return sanitized;
         };
 
         // Treat 206 as success only if file size matches expected
@@ -734,9 +785,19 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
                 std::filesystem::path newLocation = release.localTempFilePath;
                 newLocation.replace_filename(attachmentName.value());
 
+                // Defense in depth: the sanitizer above already rejects separators and
+                // rooted paths, but re-confirm the rename target still resolves inside the
+                // download directory before touching the filesystem.
+                const auto expectedParent = release.localTempFilePath.parent_path().lexically_normal();
+                const auto resolvedParent = newLocation.parent_path().lexically_normal();
+                if (resolvedParent != expectedParent)
+                {
+                    spdlog::warn("Rejecting Content-Disposition filename '{}': resolves outside download directory {}",
+                                 attachmentName->string(), expectedParent);
+                }
                 // If the server-supplied filename already matches our current path, don't "rename".
                 // Otherwise we'd delete the file and then fail to move it (ERROR_FILE_NOT_FOUND).
-                if (newLocation == release.localTempFilePath)
+                else if (newLocation == release.localTempFilePath)
                 {
                     spdlog::debug("Skipping rename; already named {}", newLocation);
                 }
@@ -924,13 +985,35 @@ namespace
                 // DNS failure: if we have DoH or a matching pinned-host entry and haven't
                 // tried DNS recovery on this URL yet, do one immediate retry with DoH
                 // explicitly forced (even when it was already set, re-applying is harmless).
+                // Extract just the hostname from requestUrl (no scheme, port, path) so pin
+                // matching can't be fooled by a substring hit, e.g. host "example.com" must
+                // not match "evilexample.com" or "example.com.attacker.net".
+                const auto requestHost = [&]() -> std::string
+                {
+                    auto rest = requestUrl;
+                    if (const auto schemeSep = rest.find("://"); schemeSep != std::string::npos)
+                        rest.erase(0, schemeSep + 3);
+                    const auto pathSep = rest.find_first_of("/?#");
+                    if (pathSep != std::string::npos)
+                        rest.erase(pathSep);
+                    const auto portSep = rest.rfind(':');
+                    if (portSep != std::string::npos)
+                        rest.erase(portSep);
+                    std::ranges::transform(rest, rest.begin(),
+                        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                    return rest;
+                }();
+
                 const bool hasDnsRecovery =
                     (network.has_value() && (
                         !network->dohUrl.empty() ||
                         std::any_of(network->pinnedHosts.begin(), network->pinnedHosts.end(),
                             [&](const PinnedHost& p)
                             {
-                                return requestUrl.find(p.host) != std::string::npos;
+                                std::string pinHost = p.host;
+                                std::ranges::transform(pinHost, pinHost.begin(),
+                                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                                return requestHost == pinHost;
                             })));
 
                 if (kind == web::FailureKind::DnsFailure && hasDnsRecovery && !dnsRecoveryAttempted)
