@@ -12,7 +12,7 @@ namespace Nefarius.Vicius.Example.Server.Endpoints.Products;
 /// <summary>
 ///     Crafts update configuration for <a href="https://github.com/nefarius/HidHide">HidHide</a>.
 /// </summary>
-internal sealed partial class HidHideUpdatesEndpoint(GitHubApiService githubApiService) : EndpointWithoutRequest
+internal sealed partial class HidHideUpdatesEndpoint(IGitHubApiService githubApiService) : EndpointWithoutRequest
 {
     public override void Configure()
     {

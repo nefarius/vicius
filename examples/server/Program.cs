@@ -75,7 +75,7 @@ bld.Services.AddFastEndpoints().SwaggerDocument(o =>
 });
 
 bld.Services.AddMemoryCache();
-bld.Services.AddSingleton<GitHubApiService>();
+bld.Services.AddSingleton<IGitHubApiService, GitHubApiService>();
 bld.Services.AddSingleton<MinisignManifestSigner>();
 
 WebApplication app = bld.Build().Setup();

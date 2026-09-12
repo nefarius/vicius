@@ -165,6 +165,7 @@ jobs:
               - 'examples/**'
               - 'abstractions/**'
               - 'examples.sln'
+              - 'tests/dotnet/**'
               - '.github/workflows/build.yml'
             abstractions:
               - 'abstractions/**'
@@ -186,6 +187,8 @@ jobs:
           dotnet-version: '10.0.x'
       - name: Build examples.sln
         run: dotnet build "examples.sln" -c Release
+      - name: Test .NET projects
+        run: dotnet test "examples.sln" -c Release --no-build
 
   # ─── Generate abstractions API docs ────────────────────────────────────────
   generate-abstractions-docs:

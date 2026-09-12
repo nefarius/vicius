@@ -29,7 +29,7 @@ internal class BthPS3UpdatesEndpointRequest
 ///     Crafts update configuration for <a href="https://github.com/nefarius/BthPS3">BthPS3</a>.
 /// </summary>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-internal sealed partial class BthPS3UpdatesEndpoint(GitHubApiService githubApiService)
+internal sealed partial class BthPS3UpdatesEndpoint(IGitHubApiService githubApiService)
     : Endpoint<BthPS3UpdatesEndpointRequest>
 {
     public override void Configure()
