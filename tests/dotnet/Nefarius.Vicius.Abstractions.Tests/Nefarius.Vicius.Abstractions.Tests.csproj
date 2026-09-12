@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <!--
+      Abstractions marks NJsonSchema as PrivateAssets=All; STJ still inspects
+      [JsonSchemaType] at runtime, so the test host must load the assembly.
+    -->
+    <PackageReference Include="NJsonSchema.Annotations" Version="11.6.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\abstractions\src\Nefarius.Vicius.Abstractions.csproj" />
+  </ItemGroup>
+
+</Project>

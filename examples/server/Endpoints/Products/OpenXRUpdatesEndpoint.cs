@@ -16,7 +16,7 @@ namespace Nefarius.Vicius.Example.Server.Endpoints.Products;
 /// </summary>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 internal sealed partial class OpenXRUpdatesEndpoint(
-    GitHubApiService githubApiService,
+    IGitHubApiService githubApiService,
     ILogger<OpenXRUpdatesEndpoint> logger) : EndpointWithoutRequest
 {
     /// <summary>

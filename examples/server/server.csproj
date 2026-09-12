@@ -34,4 +34,8 @@
         <TrimmerRootAssembly Include="System.Xml.Linq" />
     </ItemGroup>
 
+    <ItemGroup>
+        <InternalsVisibleTo Include="Nefarius.Vicius.Example.Server.Tests" />
+    </ItemGroup>
+
 </Project>

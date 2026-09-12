@@ -5,9 +5,25 @@ using Octokit;
 namespace Nefarius.Vicius.Example.Server.Services;
 
 /// <summary>
+///     Abstracts calls to GitHub REST API so endpoints can be exercised without a live network.
+/// </summary>
+internal interface IGitHubApiService
+{
+    /// <summary>
+    ///     Gets the latest release of a given GitHub repository.
+    /// </summary>
+    Task<Release?> GetLatestRelease(string owner, string name);
+
+    /// <summary>
+    ///     Gets all releases of a given GitHub repository.
+    /// </summary>
+    Task<IEnumerable<Release>?> GetAllReleases(string owner, string name);
+}
+
+/// <summary>
 ///     Abstracts calls to GitHub REST API and caches them to avoid hitting rate limits.
 /// </summary>
-internal sealed class GitHubApiService
+internal sealed class GitHubApiService : IGitHubApiService
 {
     private readonly IHostEnvironment _environment;
     private readonly GitHubClient _gitHubClient;

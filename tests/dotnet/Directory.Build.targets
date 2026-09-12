@@ -1,0 +1,6 @@
+<Project>
+  <!--
+    Stop MSBuild walking up to the repo-root vcpkg targets. These are .NET
+    test projects and do not consume native vcpkg packages.
+  -->
+</Project>
