@@ -103,8 +103,9 @@ public sealed class BthPS3UpdatesEndpointTests : IClassFixture<ServerFactory>
         Assert.Equal("HKLM", root["shared"]?["detection"]?["hive"]?.GetValue<string>());
         Assert.Equal("2.17.0", root["releases"]?[0]?["version"]?.GetValue<string>());
         Assert.Equal("2024-06-01T12:00:00Z", root["releases"]?[0]?["publishedAt"]?.GetValue<string>());
-        Assert.Null(root["releases"]?[0]?["checksum"]);
-        Assert.Null(root["releases"]?[0]?["disabled"]);
+        JsonObject firstRelease = root["releases"]![0]!.AsObject();
+        Assert.False(firstRelease.ContainsKey("checksum"));
+        Assert.False(firstRelease.ContainsKey("disabled"));
     }
 
     private static Octokit.Release CreateArchitectureRelease() =>
