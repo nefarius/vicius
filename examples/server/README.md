@@ -1,4 +1,4 @@
-﻿# vīcĭus єאค๓קɭє รєгשєг
+# vīcĭus єאค๓קɭє รєгשєг
 
 You found the example backend implementation! 🎉
 
@@ -50,8 +50,10 @@ Demo endpoint source: [`Endpoints/DefaultDemoEndpoint.cs`](Endpoints/DefaultDemo
 
 Tag it with your own registry, of course 😉
 
+From the repository root:
+
 ```PowerShell
-docker build --push -t nefarius.azurecr.io/nefarius-vicius-server:latest .
+docker build --push -f examples/server/Dockerfile -t nefarius.azurecr.io/nefarius-vicius-server:latest .
 ```
 
 ---

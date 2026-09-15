@@ -1,0 +1,25 @@
+# Default-deny: the image only needs the example server, abstractions, and icon.
+*
+
+!examples/
+!examples/server/
+!examples/server/**
+
+!abstractions/
+!abstractions/**
+
+!assets/
+!assets/NSS-128x128.png
+
+**/.env
+**/.git
+**/.vs
+**/.vscode
+**/.idea
+**/*.*proj.user
+**/*.dbmdl
+**/*.jfm
+**/bin
+**/obj
+**/node_modules
+**/npm-debug.log
