@@ -2,7 +2,7 @@
 @setlocal
 
 set MYDIR=%~dp0
-pushd "%MYDIR%"
+pushd "%MYDIR%..\.."
 
 where podman > nul 2>&1 && (
     set ce=podman
@@ -10,7 +10,7 @@ where podman > nul 2>&1 && (
     set ce=docker
 )
 
-%ce% build -t nefarius.azurecr.io/nefarius-vicius-server:latest .
+%ce% build -f examples/server/Dockerfile -t nefarius.azurecr.io/nefarius-vicius-server:latest .
 if %ERRORLEVEL% == 0 (
 	%ce% push nefarius.azurecr.io/nefarius-vicius-server:latest
 )
