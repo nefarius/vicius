@@ -5,12 +5,12 @@ namespace Nefarius.Vicius.Example.Server.Services;
 
 /// <summary>
 ///     Singleton service that holds a loaded minisign private key and can sign manifest payloads
-///     in-memory at request time. Configured via environment variables:
-///     <list type="bullet">
-///         <item><c>E2E_MINISIGN_SECKEY</c> — path to the <c>.key</c> file.</item>
-///         <item><c>E2E_MINISIGN_PASSWORD</c> — password used to decrypt the key.</item>
+///     in-memory at request time. Configured via environment variables, in this order:
+///     <list type="number">
+///         <item><c>MINISIGN_SECKEY</c> / <c>MINISIGN_PASSWORD</c> (production).</item>
+///         <item><c>E2E_MINISIGN_SECKEY</c> / <c>E2E_MINISIGN_PASSWORD</c> (E2E / local fallback).</item>
 ///     </list>
-///     When either variable is absent the service is unconfigured and <see cref="IsConfigured" />
+///     When neither pair is complete the service is unconfigured and <see cref="IsConfigured" />
 ///     returns <c>false</c>.
 /// </summary>
 internal sealed class MinisignManifestSigner
@@ -20,13 +20,17 @@ internal sealed class MinisignManifestSigner
 
     public MinisignManifestSigner(ILogger<MinisignManifestSigner> logger)
     {
-        string? secKeyPath = Environment.GetEnvironmentVariable("E2E_MINISIGN_SECKEY");
-        string? password = Environment.GetEnvironmentVariable("E2E_MINISIGN_PASSWORD");
+        string? secKeyPath = FirstNonEmpty(
+            Environment.GetEnvironmentVariable("MINISIGN_SECKEY"),
+            Environment.GetEnvironmentVariable("E2E_MINISIGN_SECKEY"));
+        string? password = FirstNonEmpty(
+            Environment.GetEnvironmentVariable("MINISIGN_PASSWORD"),
+            Environment.GetEnvironmentVariable("E2E_MINISIGN_PASSWORD"));
 
         if (string.IsNullOrEmpty(secKeyPath) || string.IsNullOrEmpty(password))
         {
             logger.LogInformation(
-                "MinisignManifestSigner: E2E_MINISIGN_SECKEY or E2E_MINISIGN_PASSWORD not set; dynamic signing disabled.");
+                "MinisignManifestSigner: MINISIGN_SECKEY/PASSWORD (or E2E_ fallback) not set; dynamic signing disabled.");
             return;
         }
 
@@ -79,4 +83,7 @@ internal sealed class MinisignManifestSigner
             if (File.Exists(sigFile)) File.Delete(sigFile);
         }
     }
+
+    private static string? FirstNonEmpty(string? preferred, string? fallback) =>
+        !string.IsNullOrEmpty(preferred) ? preferred : fallback;
 }

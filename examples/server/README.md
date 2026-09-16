@@ -58,11 +58,30 @@ docker build --push -f examples/server/Dockerfile -t nefarius.azurecr.io/nefariu
 
 ---
 
-## Dynamic manifest signing (E2E / minisign-net)
+## Dynamic manifest signing (minisign-net)
 
-The server binary doubles as a one-shot signing tool for E2E workflows.
-No external `minisign` CLI is needed — all signing is done via
+The server signs manifests via
 [minisign-net](https://github.com/bitbeans/minisign-net) (NuGet package).
+No external `minisign` CLI is required.
+
+`MinisignManifestSigner` loads a private key at startup from, in order:
+
+1. `MINISIGN_SECKEY` / `MINISIGN_PASSWORD` (production)
+2. `E2E_MINISIGN_SECKEY` / `E2E_MINISIGN_PASSWORD` (E2E / local fallback)
+
+When neither pair is set, signing is disabled. Existing unsigned clients keep
+working: they only fetch `updates.json` and never look at the sidecar.
+
+### Production: BthPS3
+
+| Route | Description |
+|---|---|
+| `GET api/nefarius/BthPS3/updates.json` | Latest BthPS3 manifest (same JSON schema as before) |
+| `GET api/nefarius/BthPS3/updates.json.minisig` | Ed25519 sidecar over those exact bytes; **404** if the signer is not configured |
+
+Both routes honor `X-Vicius-OS-Architecture` (default `x64`) so each arch gets
+a matching json+minisig pair. Old BthPS3 clients that know nothing about
+signatures continue to consume `updates.json` unchanged.
 
 ### One-off CLI modes
 
@@ -84,9 +103,8 @@ dotnet examples/server/bin/Release/net10.0/server.dll e2e-sign <manifestPath>
 
 ### Runtime dynamic signing endpoint
 
-When the web server starts with `E2E_MINISIGN_SECKEY` and `E2E_MINISIGN_PASSWORD`
-set, `MinisignManifestSigner` loads the private key and enables two additional E2E
-routes under the `e2eSigDyn` manufacturer prefix:
+When the signer is configured (production `MINISIGN_*` or `E2E_MINISIGN_*` fallback),
+two additional E2E routes are available under the `e2eSigDyn` manufacturer prefix:
 
 | Route | Description |
 |---|---|

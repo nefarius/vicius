@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 using FastEndpoints;
@@ -23,18 +24,24 @@ internal class BthPS3UpdatesEndpointRequest
     /// <example>x64</example>
     [FromHeader("X-Vicius-OS-Architecture", isRequired: false)]
     public string OsArchitecture { get; set; } = "x64";
+
+    public string Filename { get; set; } = string.Empty;
 }
 
 /// <summary>
 ///     Crafts update configuration for <a href="https://github.com/nefarius/BthPS3">BthPS3</a>.
+///     Serves both <c>updates.json</c> and the optional detached <c>updates.json.minisig</c>
+///     sidecar (same serialized bytes) when <see cref="MinisignManifestSigner" /> is configured.
 /// </summary>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-internal sealed partial class BthPS3UpdatesEndpoint(IGitHubApiService githubApiService)
+internal sealed partial class BthPS3UpdatesEndpoint(
+    IGitHubApiService githubApiService,
+    MinisignManifestSigner signer)
     : Endpoint<BthPS3UpdatesEndpointRequest>
 {
     public override void Configure()
     {
-        Get("api/nefarius/BthPS3/updates.json");
+        Get("api/nefarius/BthPS3/{Filename}");
         AllowAnonymous();
         Options(x => x.WithTags("Production"));
     }
@@ -48,6 +55,21 @@ internal sealed partial class BthPS3UpdatesEndpoint(IGitHubApiService githubApiS
 
     public override async Task HandleAsync(BthPS3UpdatesEndpointRequest req, CancellationToken ct)
     {
+        bool isManifest = req.Filename == "updates.json";
+        bool isMinisig = req.Filename == "updates.json.minisig";
+
+        if (!isManifest && !isMinisig)
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+
+        if (isMinisig && !signer.IsConfigured)
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+
         Release? release = await githubApiService.GetLatestRelease("nefarius", "BthPS3");
 
         if (release is null)
@@ -66,10 +88,29 @@ internal sealed partial class BthPS3UpdatesEndpoint(IGitHubApiService githubApiS
             return;
         }
 
+        UpdateResponse response = BuildResponse(release, asset);
+        byte[] body = JsonSerializer.SerializeToUtf8Bytes(response, ManifestJson.SerializerOptions);
+
+        if (isMinisig)
+        {
+            byte[] sig = signer.SignDetached(body);
+            HttpContext.Response.ContentType = "application/octet-stream";
+            HttpContext.Response.StatusCode = 200;
+            await HttpContext.Response.Body.WriteAsync(sig, ct);
+            return;
+        }
+
+        HttpContext.Response.ContentType = "application/json";
+        HttpContext.Response.StatusCode = 200;
+        await HttpContext.Response.Body.WriteAsync(body, ct);
+    }
+
+    private UpdateResponse BuildResponse(Release release, ReleaseAsset asset)
+    {
         // strips out comment blocks and redundant newlines
         string summary = CommentRegex().Replace(release.Body, string.Empty).Trim('\r', '\n');
 
-        UpdateResponse response = new()
+        return new UpdateResponse
         {
             Shared = new SharedConfig
             {
@@ -107,7 +148,5 @@ internal sealed partial class BthPS3UpdatesEndpoint(IGitHubApiService githubApiS
                 }
             }
         };
-
-        await Send.OkAsync(response, ct);
     }
 }
