@@ -87,6 +87,9 @@
  * Rotate on cert renewal: sign a new manifest with the SAME Ed25519 key; no redeploy needed.
  */
 // #define NV_MANIFEST_PUBLIC_KEY  "RWSxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+#if defined(NDEBUG)
+#define NV_MANIFEST_PUBLIC_KEY  "RWTZDJM+Ify8UukJiWfvLcLvjvrVlHcXY/A9cgbOIStr+c19FIlY8x4B"
+#endif
 
 /*
  * Compiler switches turning optional features on or off

@@ -4,6 +4,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
+
 using Nefarius.Vicius.Abstractions.Converters;
 using Nefarius.Vicius.Abstractions.Models;
 
@@ -34,6 +37,8 @@ public sealed class BthPS3UpdatesEndpointTests : IClassFixture<ServerFactory>
         UpdateResponse manifest = await ReadManifest(response);
 
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.True(response.Headers.CacheControl?.Public);
+        Assert.Equal(TimeSpan.FromHours(1), response.Headers.CacheControl?.MaxAge);
         Assert.Null(request.Content);
         Assert.Equal(string.Empty, request.RequestUri?.Query);
         Assert.Equal("https://example.test/BthPS3_x64.msi", Assert.Single(manifest.Releases).DownloadUrl);
@@ -78,14 +83,43 @@ public sealed class BthPS3UpdatesEndpointTests : IClassFixture<ServerFactory>
     }
 
     [Fact]
-    public async Task Missing_github_release_returns_404()
+    public async Task Minisig_without_signer_returns_404()
     {
-        _factory.GitHub.LatestRelease = null;
         HttpClient client = _factory.CreateClient();
 
-        HttpResponseMessage response = await client.GetAsync(Path);
+        HttpResponseMessage response = await client.GetAsync("/api/nefarius/BthPS3/updates.json.minisig");
 
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Unknown_filename_returns_404()
+    {
+        HttpClient client = _factory.CreateClient();
+
+        HttpResponseMessage response = await client.GetAsync("/api/nefarius/BthPS3/notes.txt");
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Missing_github_release_returns_404()
+    {
+        HttpClient client = _factory.CreateClient();
+        if (_factory.Services.GetRequiredService<IMemoryCache>() is MemoryCache memoryCache)
+            memoryCache.Clear();
+
+        _factory.GitHub.LatestRelease = null;
+        try
+        {
+            HttpResponseMessage response = await client.GetAsync(Path);
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+        finally
+        {
+            _factory.GitHub.LatestRelease = CreateArchitectureRelease();
+        }
     }
 
     [Fact]

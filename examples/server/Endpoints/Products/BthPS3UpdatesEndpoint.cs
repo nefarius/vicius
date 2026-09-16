@@ -1,7 +1,10 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 
 using FastEndpoints;
+
+using Microsoft.Extensions.Caching.Memory;
 
 using Nefarius.Vicius.Abstractions.Models;
 using Nefarius.Vicius.Example.Server.Services;
@@ -23,18 +26,27 @@ internal class BthPS3UpdatesEndpointRequest
     /// <example>x64</example>
     [FromHeader("X-Vicius-OS-Architecture", isRequired: false)]
     public string OsArchitecture { get; set; } = "x64";
+
+    public string Filename { get; set; } = string.Empty;
 }
 
 /// <summary>
 ///     Crafts update configuration for <a href="https://github.com/nefarius/BthPS3">BthPS3</a>.
+///     Serves both <c>updates.json</c> and the optional detached <c>updates.json.minisig</c>
+///     sidecar (same serialized bytes) when <see cref="MinisignManifestSigner" /> is configured.
 /// </summary>
 [SuppressMessage("ReSharper", "InconsistentNaming")]
-internal sealed partial class BthPS3UpdatesEndpoint(IGitHubApiService githubApiService)
+internal sealed partial class BthPS3UpdatesEndpoint(
+    IGitHubApiService githubApiService,
+    MinisignManifestSigner signer,
+    IMemoryCache cache)
     : Endpoint<BthPS3UpdatesEndpointRequest>
 {
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
+
     public override void Configure()
     {
-        Get("api/nefarius/BthPS3/updates.json");
+        Get("api/nefarius/BthPS3/{Filename}");
         AllowAnonymous();
         Options(x => x.WithTags("Production"));
     }
@@ -48,28 +60,90 @@ internal sealed partial class BthPS3UpdatesEndpoint(IGitHubApiService githubApiS
 
     public override async Task HandleAsync(BthPS3UpdatesEndpointRequest req, CancellationToken ct)
     {
-        Release? release = await githubApiService.GetLatestRelease("nefarius", "BthPS3");
+        bool isManifest = req.Filename == "updates.json";
+        bool isMinisig = req.Filename == "updates.json.minisig";
 
-        if (release is null)
+        if (!isManifest && !isMinisig)
         {
             await Send.NotFoundAsync(ct);
             return;
         }
+
+        if (isMinisig && !signer.IsConfigured)
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+
+        string arch = string.IsNullOrWhiteSpace(req.OsArchitecture)
+            ? "x64"
+            : req.OsArchitecture.Trim().ToLowerInvariant();
+
+        // One snapshot per architecture (JSON + sidecar) so both routes serve the same
+        // bytes, including in Development and across a GitHub cache refresh.
+        string cacheKey = $"BthPS3Updates:{arch}";
+        if (!cache.TryGetValue(cacheKey, out CachedManifest? cached) || cached is null)
+        {
+            cached = await TryBuildSnapshotAsync(arch);
+            if (cached is null)
+            {
+                await Send.NotFoundAsync(ct);
+                return;
+            }
+
+            cache.Set(cacheKey, cached, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheDuration
+            });
+        }
+
+        HttpContext.Response.Headers.CacheControl = "public, max-age=3600";
+
+        if (isMinisig)
+        {
+            if (cached.Minisig is null)
+            {
+                await Send.NotFoundAsync(ct);
+                return;
+            }
+
+            HttpContext.Response.ContentType = "application/octet-stream";
+            HttpContext.Response.StatusCode = 200;
+            await HttpContext.Response.Body.WriteAsync(cached.Minisig, ct);
+            return;
+        }
+
+        HttpContext.Response.ContentType = "application/json";
+        HttpContext.Response.StatusCode = 200;
+        await HttpContext.Response.Body.WriteAsync(cached.Json, ct);
+    }
+
+    private sealed record CachedManifest(byte[] Json, byte[]? Minisig);
+
+    private async Task<CachedManifest?> TryBuildSnapshotAsync(string arch)
+    {
+        Release? release = await githubApiService.GetLatestRelease("nefarius", "BthPS3");
+        if (release is null)
+            return null;
 
         ReleaseAsset? asset =
             release.Assets.FirstOrDefault(a =>
-                a.Name.Contains(req.OsArchitecture, StringComparison.InvariantCultureIgnoreCase));
-
+                a.Name.Contains(arch, StringComparison.InvariantCultureIgnoreCase));
         if (asset is null)
-        {
-            await Send.NotFoundAsync(ct);
-            return;
-        }
+            return null;
 
+        byte[] json = JsonSerializer.SerializeToUtf8Bytes(
+            BuildResponse(release, asset), ManifestJson.SerializerOptions);
+        byte[]? minisig = signer.IsConfigured ? signer.SignDetached(json) : null;
+        return new CachedManifest(json, minisig);
+    }
+
+    private UpdateResponse BuildResponse(Release release, ReleaseAsset asset)
+    {
         // strips out comment blocks and redundant newlines
         string summary = CommentRegex().Replace(release.Body, string.Empty).Trim('\r', '\n');
 
-        UpdateResponse response = new()
+        return new UpdateResponse
         {
             Shared = new SharedConfig
             {
@@ -107,7 +181,5 @@ internal sealed partial class BthPS3UpdatesEndpoint(IGitHubApiService githubApiS
                 }
             }
         };
-
-        await Send.OkAsync(response, ct);
     }
 }

@@ -14,3 +14,6 @@
 // post-header is included, so we must undef first.
 #undef  NV_API_URL_TEMPLATE
 #define NV_API_URL_TEMPLATE "http://localhost:5200/api/{}/updates.json"
+
+// CustomizeMe.h pins a production public key in Release; this binary must stay unsigned.
+#undef NV_MANIFEST_PUBLIC_KEY

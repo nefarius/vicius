@@ -16,4 +16,5 @@
 #undef  NV_API_URL_TEMPLATE
 #define NV_API_URL_TEMPLATE "http://localhost:5200/api/{}/updates.json"
 
+#undef NV_MANIFEST_PUBLIC_KEY
 #define NV_MANIFEST_PUBLIC_KEY "%%PUBLIC_KEY%%"

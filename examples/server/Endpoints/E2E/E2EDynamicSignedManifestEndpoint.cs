@@ -1,10 +1,8 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 using FastEndpoints;
 
-using Nefarius.Vicius.Abstractions.Converters;
 using Nefarius.Vicius.Abstractions.Models;
 using Nefarius.Vicius.Example.Server.Services;
 
@@ -33,24 +31,6 @@ namespace Nefarius.Vicius.Example.Server.Endpoints.E2E;
 /// </summary>
 internal sealed class E2EDynamicSignedManifestEndpoint : Endpoint<E2EDynamicSignedManifestRequest>
 {
-    // Serializer options that produce the same bytes the FastEndpoints pipeline uses globally:
-    //   - camelCase property names
-    //   - null values omitted
-    //   - DateTimeOffset as ISO 8601 UTC string
-    //   - enums as their string names
-    // These options must be used for both serving the manifest and computing the signature so that
-    // the bytes that are signed == the bytes that are served.
-    internal static readonly JsonSerializerOptions SerializerOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        Converters =
-        {
-            new DateTimeOffsetConverter(),
-            new JsonStringEnumConverter()
-        }
-    };
-
     private readonly MinisignManifestSigner _signer;
 
     public E2EDynamicSignedManifestEndpoint(MinisignManifestSigner signer)
@@ -73,7 +53,7 @@ internal sealed class E2EDynamicSignedManifestEndpoint : Endpoint<E2EDynamicSign
             return;
         }
 
-        if (!_signer.IsConfigured)
+        if (!_signer.IsE2EConfigured)
         {
             await Send.ErrorsAsync(503, ct);
             return;
@@ -137,14 +117,14 @@ internal sealed class E2EDynamicSignedManifestEndpoint : Endpoint<E2EDynamicSign
 
         // Serialize once; all requests (manifest + minisig for either product) use these bytes
         // to compute or verify the signature.
-        byte[] canonicalBytes = JsonSerializer.SerializeToUtf8Bytes(canonical, SerializerOptions);
+        byte[] canonicalBytes = JsonSerializer.SerializeToUtf8Bytes(canonical, ManifestJson.SerializerOptions);
 
         // The .minisig sidecar always covers the canonical (untampered) bytes.
         // For DynamicTamperedManifest the client receives a mutated body but the original signature
         // → verification fails exactly as intended.
         if (isMinisig)
         {
-            byte[] sig = _signer.SignDetached(canonicalBytes);
+            byte[] sig = _signer.SignE2EDetached(canonicalBytes);
             HttpContext.Response.ContentType = "application/octet-stream";
             HttpContext.Response.StatusCode = 200;
             await HttpContext.Response.Body.WriteAsync(sig, ct);
