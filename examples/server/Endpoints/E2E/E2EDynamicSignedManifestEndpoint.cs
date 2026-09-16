@@ -53,7 +53,7 @@ internal sealed class E2EDynamicSignedManifestEndpoint : Endpoint<E2EDynamicSign
             return;
         }
 
-        if (!_signer.IsConfigured)
+        if (!_signer.IsE2EConfigured)
         {
             await Send.ErrorsAsync(503, ct);
             return;
@@ -124,7 +124,7 @@ internal sealed class E2EDynamicSignedManifestEndpoint : Endpoint<E2EDynamicSign
         // → verification fails exactly as intended.
         if (isMinisig)
         {
-            byte[] sig = _signer.SignDetached(canonicalBytes);
+            byte[] sig = _signer.SignE2EDetached(canonicalBytes);
             HttpContext.Response.ContentType = "application/octet-stream";
             HttpContext.Response.StatusCode = 200;
             await HttpContext.Response.Body.WriteAsync(sig, ct);

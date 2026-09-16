@@ -64,13 +64,14 @@ The server signs manifests via
 [minisign-net](https://github.com/bitbeans/minisign-net) (NuGet package).
 No external `minisign` CLI is required.
 
-`MinisignManifestSigner` loads a private key at startup from, in order:
+`MinisignManifestSigner` loads two independent key pairs at startup:
 
-1. `MINISIGN_SECKEY` / `MINISIGN_PASSWORD` (production)
-2. `E2E_MINISIGN_SECKEY` / `E2E_MINISIGN_PASSWORD` (E2E / local fallback)
+1. `MINISIGN_SECKEY` / `MINISIGN_PASSWORD` — production product routes (BthPS3)
+2. `E2E_MINISIGN_SECKEY` / `E2E_MINISIGN_PASSWORD` — E2E routes only
 
-When neither pair is set, signing is disabled. Existing unsigned clients keep
-working: they only fetch `updates.json` and never look at the sidecar.
+The E2E pair is never used to sign BthPS3. A missing pair disables only that
+scope. Existing unsigned clients keep working: they only fetch `updates.json`
+and never look at the sidecar.
 
 ### Production: BthPS3
 
@@ -108,8 +109,8 @@ dotnet examples/server/bin/Release/net10.0/server.dll e2e-sign <manifestPath>
 
 ### Runtime dynamic signing endpoint
 
-When the signer is configured (production `MINISIGN_*` or `E2E_MINISIGN_*` fallback),
-two additional E2E routes are available under the `e2eSigDyn` manufacturer prefix:
+When `E2E_MINISIGN_SECKEY` and `E2E_MINISIGN_PASSWORD` are set, two additional
+E2E routes are available under the `e2eSigDyn` manufacturer prefix:
 
 | Route | Description |
 |---|---|
