@@ -580,6 +580,7 @@ jobs:
         with:
           server: ${{ env.SIGN_RELAY_SERVER }}
           token: ${{ env.SIGN_RELAY_CI_TOKEN }}
+          tool-version: 1.3.0
           in-place: true
           files: |
             artifacts/**/*.exe
