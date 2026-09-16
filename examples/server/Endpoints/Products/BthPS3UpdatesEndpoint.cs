@@ -4,6 +4,8 @@ using System.Text.RegularExpressions;
 
 using FastEndpoints;
 
+using Microsoft.Extensions.Caching.Memory;
+
 using Nefarius.Vicius.Abstractions.Models;
 using Nefarius.Vicius.Example.Server.Services;
 
@@ -36,9 +38,12 @@ internal class BthPS3UpdatesEndpointRequest
 [SuppressMessage("ReSharper", "InconsistentNaming")]
 internal sealed partial class BthPS3UpdatesEndpoint(
     IGitHubApiService githubApiService,
-    MinisignManifestSigner signer)
+    MinisignManifestSigner signer,
+    IMemoryCache cache)
     : Endpoint<BthPS3UpdatesEndpointRequest>
 {
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
+
     public override void Configure()
     {
         Get("api/nefarius/BthPS3/{Filename}");
@@ -70,39 +75,67 @@ internal sealed partial class BthPS3UpdatesEndpoint(
             return;
         }
 
-        Release? release = await githubApiService.GetLatestRelease("nefarius", "BthPS3");
+        string arch = string.IsNullOrWhiteSpace(req.OsArchitecture)
+            ? "x64"
+            : req.OsArchitecture.Trim().ToLowerInvariant();
 
-        if (release is null)
+        // One snapshot per architecture (JSON + sidecar) so both routes serve the same
+        // bytes, including in Development and across a GitHub cache refresh.
+        string cacheKey = $"BthPS3Updates:{arch}";
+        if (!cache.TryGetValue(cacheKey, out CachedManifest? cached) || cached is null)
         {
-            await Send.NotFoundAsync(ct);
-            return;
+            cached = await TryBuildSnapshotAsync(arch);
+            if (cached is null)
+            {
+                await Send.NotFoundAsync(ct);
+                return;
+            }
+
+            cache.Set(cacheKey, cached, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheDuration
+            });
         }
 
-        ReleaseAsset? asset =
-            release.Assets.FirstOrDefault(a =>
-                a.Name.Contains(req.OsArchitecture, StringComparison.InvariantCultureIgnoreCase));
-
-        if (asset is null)
-        {
-            await Send.NotFoundAsync(ct);
-            return;
-        }
-
-        UpdateResponse response = BuildResponse(release, asset);
-        byte[] body = JsonSerializer.SerializeToUtf8Bytes(response, ManifestJson.SerializerOptions);
+        HttpContext.Response.Headers.CacheControl = "public, max-age=3600";
 
         if (isMinisig)
         {
-            byte[] sig = signer.SignDetached(body);
+            if (cached.Minisig is null)
+            {
+                await Send.NotFoundAsync(ct);
+                return;
+            }
+
             HttpContext.Response.ContentType = "application/octet-stream";
             HttpContext.Response.StatusCode = 200;
-            await HttpContext.Response.Body.WriteAsync(sig, ct);
+            await HttpContext.Response.Body.WriteAsync(cached.Minisig, ct);
             return;
         }
 
         HttpContext.Response.ContentType = "application/json";
         HttpContext.Response.StatusCode = 200;
-        await HttpContext.Response.Body.WriteAsync(body, ct);
+        await HttpContext.Response.Body.WriteAsync(cached.Json, ct);
+    }
+
+    private sealed record CachedManifest(byte[] Json, byte[]? Minisig);
+
+    private async Task<CachedManifest?> TryBuildSnapshotAsync(string arch)
+    {
+        Release? release = await githubApiService.GetLatestRelease("nefarius", "BthPS3");
+        if (release is null)
+            return null;
+
+        ReleaseAsset? asset =
+            release.Assets.FirstOrDefault(a =>
+                a.Name.Contains(arch, StringComparison.InvariantCultureIgnoreCase));
+        if (asset is null)
+            return null;
+
+        byte[] json = JsonSerializer.SerializeToUtf8Bytes(
+            BuildResponse(release, asset), ManifestJson.SerializerOptions);
+        byte[]? minisig = signer.IsConfigured ? signer.SignDetached(json) : null;
+        return new CachedManifest(json, minisig);
     }
 
     private UpdateResponse BuildResponse(Release release, ReleaseAsset asset)

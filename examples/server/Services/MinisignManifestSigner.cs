@@ -20,14 +20,8 @@ internal sealed class MinisignManifestSigner
 
     public MinisignManifestSigner(ILogger<MinisignManifestSigner> logger)
     {
-        string? secKeyPath = FirstNonEmpty(
-            Environment.GetEnvironmentVariable("MINISIGN_SECKEY"),
-            Environment.GetEnvironmentVariable("E2E_MINISIGN_SECKEY"));
-        string? password = FirstNonEmpty(
-            Environment.GetEnvironmentVariable("MINISIGN_PASSWORD"),
-            Environment.GetEnvironmentVariable("E2E_MINISIGN_PASSWORD"));
-
-        if (string.IsNullOrEmpty(secKeyPath) || string.IsNullOrEmpty(password))
+        if (!TryReadCredentialPair("MINISIGN_SECKEY", "MINISIGN_PASSWORD", out string? secKeyPath, out string? password)
+            && !TryReadCredentialPair("E2E_MINISIGN_SECKEY", "E2E_MINISIGN_PASSWORD", out secKeyPath, out password))
         {
             logger.LogInformation(
                 "MinisignManifestSigner: MINISIGN_SECKEY/PASSWORD (or E2E_ fallback) not set; dynamic signing disabled.");
@@ -84,6 +78,15 @@ internal sealed class MinisignManifestSigner
         }
     }
 
-    private static string? FirstNonEmpty(string? preferred, string? fallback) =>
-        !string.IsNullOrEmpty(preferred) ? preferred : fallback;
+    /// <summary>
+    ///     Returns <c>true</c> only when both values of a pair are non-empty, so a production key
+    ///     is never combined with an E2E password (or the reverse).
+    /// </summary>
+    private static bool TryReadCredentialPair(
+        string keyName, string passwordName, out string? secKeyPath, out string? password)
+    {
+        secKeyPath = Environment.GetEnvironmentVariable(keyName);
+        password = Environment.GetEnvironmentVariable(passwordName);
+        return !string.IsNullOrEmpty(secKeyPath) && !string.IsNullOrEmpty(password);
+    }
 }

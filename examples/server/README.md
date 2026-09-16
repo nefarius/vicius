@@ -83,6 +83,11 @@ Both routes honor `X-Vicius-OS-Architecture` (default `x64`) so each arch gets
 a matching json+minisig pair. Old BthPS3 clients that know nothing about
 signatures continue to consume `updates.json` unchanged.
 
+Serialized JSON and the sidecar are built once per architecture snapshot and
+cached in memory for one hour (including Development), so both routes always
+serve the same bytes. Successful responses also send
+`Cache-Control: public, max-age=3600` for any reverse proxy.
+
 ### One-off CLI modes
 
 Both modes exit immediately without starting the web server.
