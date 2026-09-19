@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 
 using Microsoft.Extensions.Caching.Memory;
 
@@ -9,6 +10,8 @@ namespace Nefarius.Vicius.Example.Server.Services;
 ///     Concurrent cache misses for the same key share one in-progress factory invocation
 ///     and receive the same completed value. Only a successful snapshot is stored; a
 ///     <c>null</c> or faulted factory is forgotten so a later request can retry.
+///     In-flight work is scoped to the cache instance so concurrent hosts cannot share
+///     each other's <see cref="Lazy{T}" />.
 /// </summary>
 internal static class ManifestSnapshotCache
 {
@@ -20,9 +23,23 @@ internal static class ManifestSnapshotCache
         where T : class =>
         Gate<T>.GetOrCreateAsync(cache, key, duration, factory);
 
+    private readonly record struct InflightKey(IMemoryCache Cache, string Key);
+
+    private sealed class InflightKeyComparer : IEqualityComparer<InflightKey>
+    {
+        internal static readonly InflightKeyComparer Instance = new();
+
+        public bool Equals(InflightKey x, InflightKey y) =>
+            ReferenceEquals(x.Cache, y.Cache) &&
+            string.Equals(x.Key, y.Key, StringComparison.Ordinal);
+
+        public int GetHashCode(InflightKey obj) =>
+            HashCode.Combine(RuntimeHelpers.GetHashCode(obj.Cache), obj.Key);
+    }
+
     private static class Gate<T> where T : class
     {
-        private static readonly ConcurrentDictionary<string, Lazy<Task<T?>>> Inflight = new();
+        private static readonly ConcurrentDictionary<InflightKey, Lazy<Task<T?>>> Inflight = new(InflightKeyComparer.Instance);
 
         public static async Task<T?> GetOrCreateAsync(
             IMemoryCache cache,
@@ -33,8 +50,9 @@ internal static class ManifestSnapshotCache
             if (cache.TryGetValue(key, out T? cached) && cached is not null)
                 return cached;
 
+            InflightKey inflightKey = new(cache, key);
             Lazy<Task<T?>> lazy = Inflight.GetOrAdd(
-                key,
+                inflightKey,
                 _ => new Lazy<Task<T?>>(
                     () => CreateAsync(cache, key, duration, factory),
                     LazyThreadSafetyMode.ExecutionAndPublication));
@@ -47,7 +65,7 @@ internal static class ManifestSnapshotCache
             {
                 // Drop this in-flight slot so a later miss (or a failed attempt) can retry.
                 // Compare-remove so a newer Lazy for the same key is not discarded.
-                Inflight.TryRemove(new KeyValuePair<string, Lazy<Task<T?>>>(key, lazy));
+                Inflight.TryRemove(new KeyValuePair<InflightKey, Lazy<Task<T?>>>(inflightKey, lazy));
             }
         }
 
