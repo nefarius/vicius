@@ -17,11 +17,13 @@
 
 Set-StrictMode -Version Latest
 
-# Architecture folder name -> required IMAGE_FILE_HEADER.Machine value.
+# Architecture folder name -> required IMAGE_FILE_HEADER.Machine value plus
+# whether that architecture also ships a UPX-packed variant (build.yml skips
+# UPX for ARM64, so only x64 does).
 # Adding an entry here is the only supported way to release a new architecture.
 $script:ReleaseArchitectures = [ordered]@{
-    'x64'   = 0x8664  # IMAGE_FILE_MACHINE_AMD64
-    'ARM64' = 0xAA64  # IMAGE_FILE_MACHINE_ARM64
+    'x64'   = @{ Machine = 0x8664; Packed = $true }   # IMAGE_FILE_MACHINE_AMD64
+    'ARM64' = @{ Machine = 0xAA64; Packed = $false }  # IMAGE_FILE_MACHINE_ARM64
 }
 
 # Reported instead of a bare number so a failure names the offending architecture.
@@ -123,14 +125,24 @@ function Assert-ReleaseArchitecture
 
     foreach ($arch in $expected)
     {
+        $spec = $script:ReleaseArchitectures[$arch]
         $archRoot = Join-Path $Root $arch
         $files = @(Get-ChildItem -LiteralPath $archRoot -File -Recurse)
 
-        $strays = @($files | Where-Object { $_.Extension -ne '.exe' })
-        if ($strays.Count -gt 0)
+        # Exhaustive allowlist rather than a name prefix: a stray file, a
+        # leftover from another build or an unexpected variant must not ride
+        # along just because it happens to start with the updater name.
+        $allowed = @("$UpdaterName.exe")
+        if ($spec.Packed)
         {
-            $names = ($strays | Select-Object -ExpandProperty Name) -join ', '
-            throw "Unexpected non-executable files in ${arch}: $names."
+            $allowed += "${UpdaterName}_packed.exe"
+        }
+
+        $disallowed = @($files | Where-Object { $_.Name -notin $allowed })
+        if ($disallowed.Count -gt 0)
+        {
+            $names = ($disallowed | Select-Object -ExpandProperty Name) -join ', '
+            throw "Unexpected files in ${arch}: $names. Allowed: $($allowed -join ', ')."
         }
 
         # The unsuffixed executable is what consumers rename and ship, so its
@@ -142,13 +154,8 @@ function Assert-ReleaseArchitecture
 
         foreach ($file in $files)
         {
-            if (-not $file.BaseName.StartsWith($UpdaterName, [StringComparison]::Ordinal))
-            {
-                throw "Executable $($file.Name) in $arch is not named after the updater ($UpdaterName)."
-            }
-
             $machine = Get-PeMachineType -Path $file.FullName
-            if ($machine -ne $script:ReleaseArchitectures[$arch])
+            if ($machine -ne $spec.Machine)
             {
                 $actual = if ($script:MachineNames.ContainsKey($machine)) { $script:MachineNames[$machine] } else { '0x{0:X4}' -f $machine }
                 throw "$($file.FullName) is a $actual image but sits in the $arch payload."
