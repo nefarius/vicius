@@ -535,7 +535,9 @@ jobs:
   sign:
     name: Sign release binaries
     runs-on: windows-2022
-    needs: build
+    # e2e gates the release: nothing gets signed or published unless the suite
+    # passed against the same commit.
+    needs: [build, e2e]
     if: startsWith(github.ref, 'refs/tags/')
     permissions:
       contents: read
@@ -550,11 +552,38 @@ jobs:
           if (-not $env:SIGN_RELAY_SERVER) { throw 'Repository variable SIGN_RELAY_SERVER is not set.' }
           if (-not $env:SIGN_RELAY_CI_TOKEN) { throw 'Repository secret SIGN_RELAY_CI_TOKEN is not set.' }
 
-      - name: Download platform artifacts
+      # Only needed for .github/scripts/Assert-ReleaseArchitecture.ps1.
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5  # v4
+        with:
+          submodules: false
+          persist-credentials: false
+
+      # Artifacts are named explicitly instead of globbed with `pattern:`.
+      # x86 is deliberately absent: it is still built (and available as a
+      # workflow artifact) but must never end up in a published release.
+      - name: Download x64 artifact
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
-          pattern: vicius-*
+          name: vicius-x64
           path: artifacts
+
+      - name: Download ARM64 artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          name: vicius-ARM64
+          path: artifacts
+
+      # Guards against the v1.16.0 incident, where five identically named
+      # executables from all three matrix legs were uploaded as loose release
+      # assets and collapsed onto two asset names — the x86 build won the race
+      # and the release served 32-bit binaries.
+      - name: Assert release payload architectures
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . .\.github\scripts\Assert-ReleaseArchitecture.ps1
+          Assert-ReleaseArchitecture -Root artifacts -UpdaterName $env:UPDATER_NAME
 
       - name: Assert binaries are unsigned
         shell: pwsh
@@ -599,11 +628,43 @@ jobs:
             Write-Output "Signed: $($file.FullName) (Subject=$($sig.SignerCertificate.Subject))"
           }
 
-      - name: Upload signed artifacts
+      # One archive per architecture. The executable name inside the archive
+      # stays untouched because NV_FILENAME_REGEX derives the manufacturer and
+      # product (and therefore the update server URL) from the file name, so the
+      # architecture can only be encoded in the asset name, never in the binary.
+      - name: Package per-architecture archives
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path release -Force | Out-Null
+          foreach ($dir in Get-ChildItem -Path artifacts -Directory) {
+            $zip = "release\vicius-$($dir.Name).zip"
+            Compress-Archive -Path "$($dir.FullName)\*.exe" -DestinationPath $zip -Force
+            Write-Output "Packaged $zip"
+          }
+
+      - name: Verify archive contents
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          . .\.github\scripts\Assert-ReleaseArchitecture.ps1
+          $staging = Join-Path $env:RUNNER_TEMP 'release-verify'
+          foreach ($zip in Get-ChildItem -Path release -Filter '*.zip' -File) {
+            if ($zip.BaseName -match '^vicius-(?<arch>.+)$') {
+              Expand-Archive -LiteralPath $zip.FullName `
+                -DestinationPath (Join-Path $staging $Matches['arch']) -Force
+            }
+            else {
+              throw "Archive $($zip.Name) does not follow the vicius-<architecture>.zip naming scheme."
+            }
+          }
+          Assert-ReleaseArchitecture -Root $staging -UpdaterName $env:UPDATER_NAME -RequireSigned
+
+      - name: Upload release archives
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
-          name: vicius-signed
-          path: artifacts/**/*.exe
+          name: vicius-release-assets
+          path: release/*.zip
           if-no-files-found: error
 
   # ─── Release ───────────────────────────────────────────────────────────────
@@ -616,14 +677,19 @@ jobs:
       contents: write
 
     steps:
-      - name: Download signed artifacts
+      - name: Download release archives
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:
-          name: vicius-signed
-          path: artifacts
+          name: vicius-release-assets
+          path: release
 
+      # Every asset is named explicitly rather than globbed, so a stray or
+      # missing file fails the release instead of silently changing what ships.
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
         with:
-          files: artifacts/**/*.exe
+          files: |
+            release/vicius-x64.zip
+            release/vicius-ARM64.zip
+          fail_on_unmatched_files: true
           generate_release_notes: true
