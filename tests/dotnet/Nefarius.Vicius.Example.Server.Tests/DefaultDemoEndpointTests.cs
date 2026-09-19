@@ -3,6 +3,9 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
+
 using Nefarius.Vicius.Abstractions.Converters;
 using Nefarius.Vicius.Abstractions.Models;
 
@@ -12,10 +15,12 @@ public sealed class DefaultDemoEndpointTests : IClassFixture<ServerFactory>
 {
     private static readonly JsonSerializerOptions SerializerOptions = CreateSerializerOptions();
 
+    private readonly ServerFactory _factory;
     private readonly HttpClient _client;
 
     public DefaultDemoEndpointTests(ServerFactory factory)
     {
+        _factory = factory;
         _client = factory.CreateClient();
     }
 
@@ -47,6 +52,24 @@ public sealed class DefaultDemoEndpointTests : IClassFixture<ServerFactory>
         Assert.Equal(HttpStatusCode.OK, showcase.StatusCode);
         Assert.Equal(HttpStatusCode.OK, updater.StatusCode);
         Assert.Equal(showcaseBytes, updaterBytes);
+    }
+
+    [Fact]
+    public async Task Concurrent_cache_misses_share_one_snapshot()
+    {
+        if (_factory.Services.GetRequiredService<IMemoryCache>() is MemoryCache memoryCache)
+            memoryCache.Clear();
+
+        Task<HttpResponseMessage> firstTask = _client.GetAsync("/api/demo/Showcase/updates.json");
+        Task<HttpResponseMessage> secondTask = _client.GetAsync("/api/Updater/updates.json");
+        HttpResponseMessage[] responses = await Task.WhenAll(firstTask, secondTask);
+
+        byte[] firstBytes = await responses[0].Content.ReadAsByteArrayAsync();
+        byte[] secondBytes = await responses[1].Content.ReadAsByteArrayAsync();
+
+        Assert.Equal(HttpStatusCode.OK, responses[0].StatusCode);
+        Assert.Equal(HttpStatusCode.OK, responses[1].StatusCode);
+        Assert.Equal(firstBytes, secondBytes);
     }
 
     [Theory]

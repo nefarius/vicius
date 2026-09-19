@@ -81,20 +81,17 @@ internal sealed partial class DsHidMiniUpdatesEndpoint(
 
         // One snapshot per architecture (JSON + sidecar) so both routes serve the same
         // bytes, including in Development and across a GitHub cache refresh.
+        // Concurrent misses share one GitHub lookup and one signed snapshot.
         string cacheKey = $"DsHidMiniUpdates:{arch}";
-        if (!cache.TryGetValue(cacheKey, out CachedManifest? cached) || cached is null)
+        CachedManifest? cached = await ManifestSnapshotCache.GetOrCreateAsync(
+            cache,
+            cacheKey,
+            CacheDuration,
+            () => TryBuildSnapshotAsync(arch));
+        if (cached is null)
         {
-            cached = await TryBuildSnapshotAsync(arch);
-            if (cached is null)
-            {
-                await Send.NotFoundAsync(ct);
-                return;
-            }
-
-            cache.Set(cacheKey, cached, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = CacheDuration
-            });
+            await Send.NotFoundAsync(ct);
+            return;
         }
 
         HttpContext.Response.Headers.CacheControl = "public, max-age=3600";

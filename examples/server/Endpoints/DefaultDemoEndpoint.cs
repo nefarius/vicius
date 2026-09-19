@@ -89,15 +89,17 @@ internal sealed class DefaultDemoEndpoint(
 
         // One snapshot (JSON + sidecar) so both aliases and both filenames serve the
         // same bytes. PublishedAt is time-dependent, so caching is required for the
-        // sidecar to cover the exact served JSON.
+        // sidecar to cover the exact served JSON. Concurrent misses share one build.
         const string cacheKey = "DefaultDemoUpdates";
-        if (!cache.TryGetValue(cacheKey, out CachedManifest? cached) || cached is null)
+        CachedManifest? cached = await ManifestSnapshotCache.GetOrCreateAsync(
+            cache,
+            cacheKey,
+            CacheDuration,
+            () => Task.FromResult<CachedManifest?>(BuildSnapshot()));
+        if (cached is null)
         {
-            cached = BuildSnapshot();
-            cache.Set(cacheKey, cached, new MemoryCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = CacheDuration
-            });
+            await Send.NotFoundAsync(ct);
+            return;
         }
 
         HttpContext.Response.Headers.CacheControl = "public, max-age=3600";
