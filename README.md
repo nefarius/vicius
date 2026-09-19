@@ -58,9 +58,11 @@ Head over to the [extended documentation](https://docs.nefarius.at/projects/Vici
 
 ## Downloads
 
-Build artifacts for every push to `master` are available as [workflow run artifacts](../../actions/workflows/build.yml). Consider these nightly snapshots.
+Build artifacts for every push to `master` are available as [workflow run artifacts](../../actions/workflows/build.yml), for `x86`, `x64` and `ARM64`. Consider these nightly snapshots.
 
-Stable releases are published [on the repository releases page](../../releases/). Keep in mind that those releases are built to use my own update infrastructure, so in 99% of the cases you probably don't want to use them, at least not without a configuration file!
+Stable releases are published [on the repository releases page](../../releases/) as one signed archive per architecture, `vicius-x64.zip` and `vicius-ARM64.zip`. The architecture lives in the archive name only; the executable inside keeps its plain `manufacturer_product_Updater.exe` name because that name is what the updater parses to build its server URL. 32-bit releases are not published — build `Win32` yourself if you need it.
+
+Keep in mind that those releases are built to use my own update infrastructure, so in 99% of the cases you probably don't want to use them, at least not without a configuration file!
 
 ## Screenshots
 
