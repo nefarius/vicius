@@ -66,12 +66,12 @@ No external `minisign` CLI is required.
 
 `MinisignManifestSigner` loads two independent key pairs at startup:
 
-1. `MINISIGN_SECKEY` / `MINISIGN_PASSWORD` — production product routes (BthPS3)
+1. `MINISIGN_SECKEY` / `MINISIGN_PASSWORD` — production product routes (BthPS3, DsHidMini) and the demo/Updater aliases
 2. `E2E_MINISIGN_SECKEY` / `E2E_MINISIGN_PASSWORD` — E2E routes only
 
-The E2E pair is never used to sign BthPS3. A missing pair disables only that
-scope. Existing unsigned clients keep working: they only fetch `updates.json`
-and never look at the sidecar.
+The E2E pair is never used to sign production or demo routes. A missing pair
+disables only that scope. Existing unsigned clients keep working: they only
+fetch `updates.json` and never look at the sidecar.
 
 ### Production: BthPS3
 
@@ -84,10 +84,31 @@ Both routes honor `X-Vicius-OS-Architecture` (default `x64`) so each arch gets
 a matching json+minisig pair. Old BthPS3 clients that know nothing about
 signatures continue to consume `updates.json` unchanged.
 
-Serialized JSON and the sidecar are built once per architecture snapshot and
-cached in memory for one hour (including Development), so both routes always
-serve the same bytes. Successful responses also send
-`Cache-Control: public, max-age=3600` for any reverse proxy.
+### Production: DsHidMini
+
+| Route | Description |
+|---|---|
+| `GET api/nefarius/DsHidMini/updates.json` | Latest DsHidMini manifest |
+| `GET api/nefarius/DsHidMini/updates.json.minisig` | Ed25519 sidecar over those exact bytes; **404** if the signer is not configured |
+
+DsHidMini ships a combined x64/ARM64 MSI. `X-Vicius-OS-Architecture` of `x64`
+or `arm64` (default `x64`) selects that asset. `x86` and any other value
+return **404**.
+
+### Examples: demo / Updater
+
+| Route | Description |
+|---|---|
+| `GET api/demo/Showcase/updates.json` | Default demo manifest (also used by local Debug runs) |
+| `GET api/demo/Showcase/updates.json.minisig` | Ed25519 sidecar over those exact bytes; **404** if the signer is not configured |
+| `GET api/Updater/updates.json` | Same snapshot as Showcase (plain Debug tenant path) |
+| `GET api/Updater/updates.json.minisig` | Same sidecar as Showcase |
+
+Serialized JSON and the sidecar are built once per snapshot (per architecture
+for BthPS3 and DsHidMini; once for the demo aliases) and cached in memory for
+one hour (including Development), so both routes always serve the same bytes.
+Successful responses also send `Cache-Control: public, max-age=3600` for any
+reverse proxy.
 
 ### One-off CLI modes
 
