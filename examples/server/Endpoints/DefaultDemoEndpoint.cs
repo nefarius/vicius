@@ -1,9 +1,21 @@
+using System.Diagnostics.CodeAnalysis;
+using System.Text.Json;
+
 using FastEndpoints;
 
+using Microsoft.Extensions.Caching.Memory;
+
 using Nefarius.Vicius.Abstractions.Models;
+using Nefarius.Vicius.Example.Server.Services;
 using Nefarius.Vicius.Example.Server.Shared;
 
 namespace Nefarius.Vicius.Example.Server.Endpoints;
+
+[SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
+internal sealed class DefaultDemoEndpointRequest
+{
+    public string Filename { get; set; } = string.Empty;
+}
 
 /// <summary>
 ///     Default happy-path showcase endpoint used for local debug runs.
@@ -12,9 +24,16 @@ namespace Nefarius.Vicius.Example.Server.Endpoints;
 ///     button, large download with progress bar, strict Authenticode publisher-pin
 ///     verification (Required + Strict, pinned to "Microsoft Corporation"),
 ///     and a successful install+exit-code flow.
+///     Serves both <c>updates.json</c> and the optional detached <c>updates.json.minisig</c>
+///     sidecar (same serialized bytes) when <see cref="MinisignManifestSigner" /> is configured.
 /// </summary>
-internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
+internal sealed class DefaultDemoEndpoint(
+    MinisignManifestSigner signer,
+    IMemoryCache cache)
+    : Endpoint<DefaultDemoEndpointRequest>
 {
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
+
     // The server converts the PNG to a single-entry ICO (PNG-compressed, Vista+ compatible)
     // and base64-encodes it once at startup.  The client receives a standard .ico buffer and
     // does not need to know anything about PNG – it simply calls CreateIconFromResourceEx.
@@ -46,14 +65,75 @@ internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
     {
         // Pointed at by the committed vcxproj.user --server-url arg.
         // The second route covers a plain Debug build whose tenant path resolves to "Updater".
-        Get("api/demo/Showcase/updates.json", "api/Updater/updates.json");
+        Get("api/demo/Showcase/{Filename}", "api/Updater/{Filename}");
         AllowAnonymous();
         Options(x => x.WithTags("Examples"));
     }
 
-    public override async Task HandleAsync(CancellationToken ct)
+    public override async Task HandleAsync(DefaultDemoEndpointRequest req, CancellationToken ct)
     {
-        UpdateResponse response = new()
+        bool isManifest = req.Filename == "updates.json";
+        bool isMinisig = req.Filename == "updates.json.minisig";
+
+        if (!isManifest && !isMinisig)
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+
+        if (isMinisig && !signer.IsConfigured)
+        {
+            await Send.NotFoundAsync(ct);
+            return;
+        }
+
+        // One snapshot (JSON + sidecar) so both aliases and both filenames serve the
+        // same bytes. PublishedAt is time-dependent, so caching is required for the
+        // sidecar to cover the exact served JSON.
+        const string cacheKey = "DefaultDemoUpdates";
+        if (!cache.TryGetValue(cacheKey, out CachedManifest? cached) || cached is null)
+        {
+            cached = BuildSnapshot();
+            cache.Set(cacheKey, cached, new MemoryCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = CacheDuration
+            });
+        }
+
+        HttpContext.Response.Headers.CacheControl = "public, max-age=3600";
+
+        if (isMinisig)
+        {
+            if (cached.Minisig is null)
+            {
+                await Send.NotFoundAsync(ct);
+                return;
+            }
+
+            HttpContext.Response.ContentType = "application/octet-stream";
+            HttpContext.Response.StatusCode = 200;
+            await HttpContext.Response.Body.WriteAsync(cached.Minisig, ct);
+            return;
+        }
+
+        HttpContext.Response.ContentType = "application/json";
+        HttpContext.Response.StatusCode = 200;
+        await HttpContext.Response.Body.WriteAsync(cached.Json, ct);
+    }
+
+    private sealed record CachedManifest(byte[] Json, byte[]? Minisig);
+
+    private CachedManifest BuildSnapshot()
+    {
+        byte[] json = JsonSerializer.SerializeToUtf8Bytes(
+            BuildResponse(), ManifestJson.SerializerOptions);
+        byte[]? minisig = signer.IsConfigured ? signer.SignDetached(json) : null;
+        return new CachedManifest(json, minisig);
+    }
+
+    private UpdateResponse BuildResponse()
+    {
+        return new UpdateResponse
         {
             Instance = new UpdateConfig
             {
@@ -98,11 +178,11 @@ internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
                 // NOTE: as of the verification-policy trust-boundary hardening, the client only
                 // honors this remote override when the manifest itself passed Ed25519/minisign
                 // verification against a compiled-in NV_MANIFEST_PUBLIC_KEY (see the SignedManifest
-                // E2E scenario / tests/e2e/include/sig). This demo server does not sign its
-                // manifests, so on a plain client build (no compiled-in public key, e.g.
-                // example_Demo_Updater) this override is logged and ignored, and the client keeps
-                // its local/default signature policy instead. To actually enforce a remote
-                // signature policy like this one, either sign your manifests, or set the policy
+                // E2E scenario / tests/e2e/include/sig). When MINISIGN_* is configured this
+                // endpoint signs the snapshot; a plain client build (no compiled-in public key,
+                // e.g. example_Demo_Updater) still logs and ignores the override and keeps its
+                // local/default signature policy. To actually enforce a remote signature policy
+                // like this one, either compile in the matching public key, or set the policy
                 // locally on the client (compiled default or --strict-verification).
                 SignatureVerificationMode = SignatureVerificationMode.Required,
                 SignaturePolicy = SignatureComparisonPolicy.Strict,
@@ -214,7 +294,5 @@ internal sealed class DefaultDemoEndpoint : EndpointWithoutRequest
                 }
             }
         };
-
-        await Send.OkAsync(response, ct);
     }
 }

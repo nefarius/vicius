@@ -8,7 +8,7 @@ namespace Nefarius.Vicius.Example.Server.Services;
 ///     <list type="bullet">
 ///         <item>
 ///             Production (<c>MINISIGN_SECKEY</c> / <c>MINISIGN_PASSWORD</c>) — used by release
-///             product routes such as BthPS3.
+///             product routes such as BthPS3 and DsHidMini, and by the demo/Updater aliases.
 ///         </item>
 ///         <item>
 ///             E2E (<c>E2E_MINISIGN_SECKEY</c> / <c>E2E_MINISIGN_PASSWORD</c>) — used only by the
