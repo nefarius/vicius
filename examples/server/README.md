@@ -48,12 +48,19 @@ Demo endpoint source: [`Endpoints/DefaultDemoEndpoint.cs`](Endpoints/DefaultDemo
 
 ## How to build
 
-Tag it with your own registry, of course 😉
-
-From the repository root:
+Pushing a tag of the form `server-vX.X.X` (for example `server-v1.2.3`)
+publishes the image to Docker Hub as `containinger/vicius-server:X.X.X` and
+`containinger/vicius-server:latest`. The workflow logs in as `containinger`
+using the `DOCKERHUB_TOKEN` repository secret (a Docker Hub access token).
 
 ```PowerShell
-docker build --push -f examples/server/Dockerfile -t nefarius.azurecr.io/nefarius-vicius-server:latest .
+docker pull containinger/vicius-server:latest
+```
+
+To build locally from the repository root:
+
+```PowerShell
+docker build -f examples/server/Dockerfile -t containinger/vicius-server:latest .
 ```
 
 ---
