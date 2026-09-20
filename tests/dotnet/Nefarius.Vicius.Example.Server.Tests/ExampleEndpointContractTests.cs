@@ -23,6 +23,7 @@ public sealed class ExampleEndpointContractTests : IClassFixture<ServerFactory>
     [InlineData("/api/contoso/Minimal/updates.json", ".NET Runtime")]
     [InlineData("/api/demo/Showcase/updates.json", "Vicius Demo Product")]
     [InlineData("/api/Updater/updates.json", "Vicius Demo Product")]
+    [InlineData("/api/example/Demo/updates.json", "Vicius Demo Product")]
     public async Task Example_update_endpoints_return_deserializable_manifests(
         string path,
         string expectedProduct)

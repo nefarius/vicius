@@ -27,6 +27,7 @@ public sealed class DefaultDemoEndpointTests : IClassFixture<ServerFactory>
     [Theory]
     [InlineData("/api/demo/Showcase/updates.json")]
     [InlineData("/api/Updater/updates.json")]
+    [InlineData("/api/example/Demo/updates.json")]
     public async Task Manifest_aliases_return_the_demo_product_and_cache_headers(string path)
     {
         HttpResponseMessage response = await _client.GetAsync(path);
@@ -41,17 +42,21 @@ public sealed class DefaultDemoEndpointTests : IClassFixture<ServerFactory>
     }
 
     [Fact]
-    public async Task Showcase_and_updater_aliases_serve_identical_cached_bytes()
+    public async Task Showcase_updater_and_example_aliases_serve_identical_cached_bytes()
     {
         HttpResponseMessage showcase = await _client.GetAsync("/api/demo/Showcase/updates.json");
         HttpResponseMessage updater = await _client.GetAsync("/api/Updater/updates.json");
+        HttpResponseMessage example = await _client.GetAsync("/api/example/Demo/updates.json");
 
         byte[] showcaseBytes = await showcase.Content.ReadAsByteArrayAsync();
         byte[] updaterBytes = await updater.Content.ReadAsByteArrayAsync();
+        byte[] exampleBytes = await example.Content.ReadAsByteArrayAsync();
 
         Assert.Equal(HttpStatusCode.OK, showcase.StatusCode);
         Assert.Equal(HttpStatusCode.OK, updater.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, example.StatusCode);
         Assert.Equal(showcaseBytes, updaterBytes);
+        Assert.Equal(showcaseBytes, exampleBytes);
     }
 
     [Fact]
@@ -75,6 +80,7 @@ public sealed class DefaultDemoEndpointTests : IClassFixture<ServerFactory>
     [Theory]
     [InlineData("/api/demo/Showcase/updates.json.minisig")]
     [InlineData("/api/Updater/updates.json.minisig")]
+    [InlineData("/api/example/Demo/updates.json.minisig")]
     public async Task Minisig_without_signer_returns_404(string path)
     {
         HttpResponseMessage response = await _client.GetAsync(path);
@@ -85,6 +91,7 @@ public sealed class DefaultDemoEndpointTests : IClassFixture<ServerFactory>
     [Theory]
     [InlineData("/api/demo/Showcase/notes.txt")]
     [InlineData("/api/Updater/notes.txt")]
+    [InlineData("/api/example/Demo/notes.txt")]
     public async Task Unknown_filename_returns_404(string path)
     {
         HttpResponseMessage response = await _client.GetAsync(path);
