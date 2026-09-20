@@ -65,7 +65,8 @@ internal sealed class DefaultDemoEndpoint(
     {
         // Pointed at by the committed vcxproj.user --server-url arg.
         // The second route covers a plain Debug build whose tenant path resolves to "Updater".
-        Get("api/demo/Showcase/{Filename}", "api/Updater/{Filename}");
+        // The third route is the downloadable example_Demo_Updater tenant path from CustomizeMe.h.
+        Get("api/demo/Showcase/{Filename}", "api/Updater/{Filename}", "api/example/Demo/{Filename}");
         AllowAnonymous();
         Options(x => x.WithTags("Examples"));
     }
@@ -87,7 +88,7 @@ internal sealed class DefaultDemoEndpoint(
             return;
         }
 
-        // One snapshot (JSON + sidecar) so both aliases and both filenames serve the
+        // One snapshot (JSON + sidecar) so all aliases and both filenames serve the
         // same bytes. PublishedAt is time-dependent, so caching is required for the
         // sidecar to cover the exact served JSON. Concurrent misses share one build.
         const string cacheKey = "DefaultDemoUpdates";

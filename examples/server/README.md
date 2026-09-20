@@ -110,6 +110,8 @@ return **404**.
 | `GET api/demo/Showcase/updates.json.minisig` | Ed25519 sidecar over those exact bytes; **404** if the signer is not configured |
 | `GET api/Updater/updates.json` | Same snapshot as Showcase (plain Debug tenant path) |
 | `GET api/Updater/updates.json.minisig` | Same sidecar as Showcase |
+| `GET api/example/Demo/updates.json` | Same snapshot as Showcase (downloadable `example_Demo_Updater` tenant path) |
+| `GET api/example/Demo/updates.json.minisig` | Same sidecar as Showcase |
 
 Serialized JSON and the sidecar are built once per snapshot (per architecture
 for BthPS3 and DsHidMini; once for the demo aliases) and cached in memory for
