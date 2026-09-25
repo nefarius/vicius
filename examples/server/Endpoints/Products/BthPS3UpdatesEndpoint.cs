@@ -39,7 +39,8 @@ internal class BthPS3UpdatesEndpointRequest
 internal sealed partial class BthPS3UpdatesEndpoint(
     IGitHubApiService githubApiService,
     MinisignManifestSigner signer,
-    IMemoryCache cache)
+    IMemoryCache cache,
+    ILogger<BthPS3UpdatesEndpoint> logger)
     : Endpoint<BthPS3UpdatesEndpointRequest>
 {
     private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
@@ -132,13 +133,45 @@ internal sealed partial class BthPS3UpdatesEndpoint(
         if (asset is null)
             return null;
 
+        if (!TryParseReleaseVersion(release.TagName, out System.Version? version))
+        {
+            logger.LogWarning(
+                "Failed to parse version from tag {Tag} for release {Release}, skipping",
+                release.TagName,
+                release.Name);
+            return null;
+        }
+
         byte[] json = JsonSerializer.SerializeToUtf8Bytes(
-            BuildResponse(release, asset), ManifestJson.SerializerOptions);
+            BuildResponse(release, asset, version), ManifestJson.SerializerOptions);
         byte[]? minisig = signer.IsConfigured ? signer.SignDetached(json) : null;
         return new CachedManifest(json, minisig);
     }
 
-    private UpdateResponse BuildResponse(Release release, ReleaseAsset asset)
+    /// <summary>
+    ///     Maps a <c>setup-v</c> GitHub tag onto the numeric version required by the updater manifest.
+    ///     SemVer pre-release and build suffixes are discarded, so <c>setup-v3.0.0-r6</c> becomes <c>3.0.0</c>.
+    /// </summary>
+    private static bool TryParseReleaseVersion(string tagName, [NotNullWhen(true)] out System.Version? version)
+    {
+        version = null;
+        const string prefix = "setup-v";
+        if (!tagName.StartsWith(prefix, StringComparison.Ordinal))
+            return false;
+
+        string numeric = tagName[prefix.Length..];
+        int suffixIndex = numeric.IndexOfAny(['-', '+']);
+        if (suffixIndex >= 0)
+            numeric = numeric[..suffixIndex];
+
+        string[] components = numeric.Split('.');
+        if (components.Length is not (3 or 4))
+            return false;
+
+        return System.Version.TryParse(numeric, out version);
+    }
+
+    private UpdateResponse BuildResponse(Release release, ReleaseAsset asset, System.Version version)
     {
         // strips out comment blocks and redundant newlines
         string summary = CommentRegex().Replace(release.Body, string.Empty).Trim('\r', '\n');
@@ -163,7 +196,7 @@ internal sealed partial class BthPS3UpdatesEndpoint(
                 {
                     Name = release.Name,
                     PublishedAt = release.CreatedAt,
-                    Version = System.Version.Parse(release.TagName.Replace("setup-v", string.Empty)),
+                    Version = version,
                     Summary = summary,
                     DownloadUrl = asset.BrowserDownloadUrl,
                     DownloadSize = asset.Size,

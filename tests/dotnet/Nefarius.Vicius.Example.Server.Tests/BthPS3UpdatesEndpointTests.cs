@@ -102,6 +102,57 @@ public sealed class BthPS3UpdatesEndpointTests : IClassFixture<ServerFactory>
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
+    [Theory]
+    [InlineData("setup-v2.17.0", "2.17.0")]
+    [InlineData("setup-v2.6.174.0", "2.6.174.0")]
+    [InlineData("setup-v3.0.0-r6", "3.0.0")]
+    [InlineData("setup-v3.0.0+build.5", "3.0.0")]
+    public async Task Release_tag_normalizes_to_a_numeric_manifest_version(string tagName, string expectedVersion)
+    {
+        HttpClient client = _factory.CreateClient();
+        ClearCache();
+        _factory.GitHub.LatestRelease = CreateArchitectureRelease(tagName);
+        try
+        {
+            HttpResponseMessage response = await client.GetAsync(Path);
+            string json = await response.Content.ReadAsStringAsync();
+            UpdateResponse? manifest = JsonSerializer.Deserialize<UpdateResponse>(json, SerializerOptions);
+            JsonObject root = JsonNode.Parse(json)!.AsObject();
+
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            Assert.NotNull(manifest);
+            Assert.Equal(Version.Parse(expectedVersion), manifest.Releases[0].Version);
+            Assert.Equal(expectedVersion, root["releases"]?[0]?["version"]?.GetValue<string>());
+        }
+        finally
+        {
+            _factory.GitHub.LatestRelease = CreateArchitectureRelease();
+            ClearCache();
+        }
+    }
+
+    [Theory]
+    [InlineData("setup-v0-r6")]
+    [InlineData("v3.0.0")]
+    [InlineData("setup-v3.0")]
+    public async Task Unsupported_release_tag_returns_404(string tagName)
+    {
+        HttpClient client = _factory.CreateClient();
+        ClearCache();
+        _factory.GitHub.LatestRelease = CreateArchitectureRelease(tagName);
+        try
+        {
+            HttpResponseMessage response = await client.GetAsync(Path);
+
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+        finally
+        {
+            _factory.GitHub.LatestRelease = CreateArchitectureRelease();
+            ClearCache();
+        }
+    }
+
     [Fact]
     public async Task Missing_github_release_returns_404()
     {
@@ -142,9 +193,15 @@ public sealed class BthPS3UpdatesEndpointTests : IClassFixture<ServerFactory>
         Assert.False(firstRelease.ContainsKey("disabled"));
     }
 
-    private static Octokit.Release CreateArchitectureRelease() =>
+    private void ClearCache()
+    {
+        if (_factory.Services.GetRequiredService<IMemoryCache>() is MemoryCache memoryCache)
+            memoryCache.Clear();
+    }
+
+    private static Octokit.Release CreateArchitectureRelease(string tagName = "setup-v2.17.0") =>
         GitHubReleaseFactory.Create(
-            "setup-v2.17.0",
+            tagName,
             "BthPS3 2.17.0",
             "<!-- hidden metadata -->\nVisible notes",
             ("Nefarius_BthPS3_Drivers_x64_v2.17.0.msi", "https://example.test/BthPS3_x64.msi", 15163392),
