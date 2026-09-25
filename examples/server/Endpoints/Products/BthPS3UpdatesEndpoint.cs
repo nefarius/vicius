@@ -179,7 +179,7 @@ internal sealed partial class BthPS3UpdatesEndpoint(
     /// <summary>
     ///     A suffix is either <c>-pre.release+build.meta</c> or <c>+build.meta</c>.
     ///     Identifiers are non-empty and contain only ASCII alphanumerics and hyphens.
-    ///     Numeric identifiers cannot have leading zeroes.
+    ///     Numeric pre-release identifiers cannot have leading zeroes. Build metadata can.
     /// </summary>
     private static bool IsValidSemVerSuffix(ReadOnlySpan<char> suffix)
     {
@@ -191,7 +191,7 @@ internal sealed partial class BthPS3UpdatesEndpoint(
         {
             int buildIndex = remaining.IndexOf('+');
             ReadOnlySpan<char> prerelease = buildIndex >= 0 ? remaining[..buildIndex] : remaining;
-            if (!HasValidSemVerIdentifiers(prerelease))
+            if (!HasValidSemVerIdentifiers(prerelease, allowNumericLeadingZeroes: false))
                 return false;
 
             if (buildIndex < 0)
@@ -200,10 +200,10 @@ internal sealed partial class BthPS3UpdatesEndpoint(
             remaining = remaining[(buildIndex + 1)..];
         }
 
-        return HasValidSemVerIdentifiers(remaining);
+        return HasValidSemVerIdentifiers(remaining, allowNumericLeadingZeroes: true);
     }
 
-    private static bool HasValidSemVerIdentifiers(ReadOnlySpan<char> value)
+    private static bool HasValidSemVerIdentifiers(ReadOnlySpan<char> value, bool allowNumericLeadingZeroes)
     {
         if (value.IsEmpty)
             return false;
@@ -213,7 +213,7 @@ internal sealed partial class BthPS3UpdatesEndpoint(
         {
             int relativeDot = value[start..].IndexOf('.');
             int end = relativeDot < 0 ? value.Length : start + relativeDot;
-            if (!IsValidSemVerIdentifier(value[start..end]))
+            if (!IsValidSemVerIdentifier(value[start..end], allowNumericLeadingZeroes))
                 return false;
 
             if (relativeDot < 0)
@@ -223,7 +223,7 @@ internal sealed partial class BthPS3UpdatesEndpoint(
         }
     }
 
-    private static bool IsValidSemVerIdentifier(ReadOnlySpan<char> identifier)
+    private static bool IsValidSemVerIdentifier(ReadOnlySpan<char> identifier, bool allowNumericLeadingZeroes)
     {
         if (identifier.IsEmpty)
             return false;
@@ -241,7 +241,7 @@ internal sealed partial class BthPS3UpdatesEndpoint(
             return false;
         }
 
-        return !numeric || identifier.Length == 1 || identifier[0] != '0';
+        return allowNumericLeadingZeroes || !numeric || identifier.Length == 1 || identifier[0] != '0';
     }
 
     private UpdateResponse BuildResponse(Release release, ReleaseAsset asset, System.Version version)

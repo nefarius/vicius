@@ -107,6 +107,7 @@ public sealed class BthPS3UpdatesEndpointTests : IClassFixture<ServerFactory>
     [InlineData("setup-v2.6.174.0", "2.6.174.0")]
     [InlineData("setup-v3.0.0-r6", "3.0.0")]
     [InlineData("setup-v3.0.0+build.5", "3.0.0")]
+    [InlineData("setup-v3.0.0+01", "3.0.0")]
     public async Task Release_tag_normalizes_to_a_numeric_manifest_version(string tagName, string expectedVersion)
     {
         HttpClient client = _factory.CreateClient();
@@ -138,6 +139,7 @@ public sealed class BthPS3UpdatesEndpointTests : IClassFixture<ServerFactory>
     [InlineData("setup-v3.0.0-")]
     [InlineData("setup-v3.0.0-rc..1")]
     [InlineData("setup-v03.0.0")]
+    [InlineData("setup-v3.0.0-01")]
     public async Task Unsupported_release_tag_returns_404(string tagName)
     {
         HttpClient client = _factory.CreateClient();
