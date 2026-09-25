@@ -137,6 +137,7 @@ public sealed class BthPS3UpdatesEndpointTests : IClassFixture<ServerFactory>
     [InlineData("setup-v3.0")]
     [InlineData("setup-v3.0.0-")]
     [InlineData("setup-v3.0.0-rc..1")]
+    [InlineData("setup-v03.0.0")]
     public async Task Unsupported_release_tag_returns_404(string tagName)
     {
         HttpClient client = _factory.CreateClient();

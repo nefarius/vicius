@@ -170,6 +170,9 @@ internal sealed partial class BthPS3UpdatesEndpoint(
         if (components.Length is not (3 or 4))
             return false;
 
+        if (components.Any(component => component.Length > 1 && component[0] == '0'))
+            return false;
+
         return System.Version.TryParse(numeric, out version);
     }
 
