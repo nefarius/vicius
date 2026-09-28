@@ -44,6 +44,15 @@ namespace single_instance
          */
         [[nodiscard]] bool ConsumeActivationRequest() const;
 
+        /**
+         * \brief Named auto-reset event signaled by a duplicate instance that wants
+         *        this window brought to the foreground. May be null.
+         *
+         * Safe to pass to \c MsgWaitForMultipleObjectsEx; a \c WAIT_OBJECT_0 on this
+         * handle already consumed the signal, so call \c ActivateWindow directly.
+         */
+        [[nodiscard]] HANDLE GetActivationEvent() const { return activateEvent_; }
+
         /** Restores and best-effort focuses \p hwnd (no-op if null / invalid). */
         static void ActivateWindow(HWND hwnd);
 

@@ -30,8 +30,14 @@ ID3D11Device* g_pd3dDevice = nullptr;
 static ID3D11DeviceContext* g_pd3dDeviceContext = nullptr;
 static IDXGISwapChain* g_pSwapChain = nullptr;
 static bool g_SwapChainOccluded = false;
+static bool g_Minimized = false;
 static UINT g_ResizeWidth = 0, g_ResizeHeight = 0;
 static ID3D11RenderTargetView* g_mainRenderTargetView = nullptr;
+
+// Set by ui::IndeterminateProgressBar / the download ProgressBar; cleared at frame start.
+bool g_AnimationActive = false;
+// Extra frames after input so ImGui hover/click state and the next wizard page settle.
+static int g_FramesToRender = 3;
 
 
 // Forward declarations of helper functions
@@ -39,6 +45,8 @@ bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
 void CreateRenderTarget();
 void CleanupRenderTarget();
+bool RecreateDeviceD3D(HWND hWnd);
+bool HandleDeviceLost(HWND hWnd, HRESULT hr);
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 //
@@ -729,19 +737,55 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 #endif
 
     // Main loop
+    using Clock = std::chrono::steady_clock;
+    auto lastPresent = Clock::now();
+    DWORD timeoutMs = 0;
     bool done = false;
     while (!done)
     {
+        HANDLE activationEvent = nullptr;
+        DWORD handleCount = 0;
+        if (instanceGuard)
+        {
+            activationEvent = instanceGuard->GetActivationEvent();
+            if (activationEvent)
+                handleCount = 1;
+        }
+
+        // MWMO_INPUTAVAILABLE is required because PeekMessage marks messages as seen;
+        // without it a leftover QS_* bit would make the next wait return immediately.
+        const DWORD waitResult = MsgWaitForMultipleObjectsEx(
+            handleCount,
+            handleCount ? &activationEvent : nullptr,
+            timeoutMs,
+            QS_ALLINPUT,
+            MWMO_INPUTAVAILABLE);
+
+        if (handleCount != 0 && waitResult == WAIT_OBJECT_0)
+        {
+            // Auto-reset event: WAIT_OBJECT_0 already consumed the signal.
+            single_instance::Guard::ActivateWindow(hwnd);
+            g_FramesToRender = 3;
+        }
+        else if (waitResult == WAIT_FAILED)
+        {
+            spdlog::warn("MsgWaitForMultipleObjectsEx failed: {}", winapi::GetLastErrorStdStr());
+        }
+
         // Poll and handle messages (inputs, window resize, etc.)
         // See the WndProc() function below for our to dispatch events to the Win32 backend.
         MSG msg;
+        bool dispatched = false;
         while (::PeekMessageW(&msg, nullptr, 0U, 0U, PM_REMOVE))
         {
             ::TranslateMessage(&msg);
             ::DispatchMessageW(&msg);
+            dispatched = true;
             if (msg.message == WM_QUIT)
                 done = true;
         }
+        if (dispatched)
+            g_FramesToRender = 3;
         if (done)
         {
             // Cooperatively cancel any in-progress setup (ExecuteSetup observes this token,
@@ -757,17 +801,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
             break;
         }
 
-        // A second launch of this updater asked us to come to the foreground.
-        if (instanceGuard && instanceGuard->ConsumeActivationRequest())
+        if (g_Minimized)
         {
-            single_instance::Guard::ActivateWindow(hwnd);
+            timeoutMs = 250;
+            continue;
         }
 
-        // Handle window being minimized or screen locked
-        if (g_SwapChainOccluded && g_pSwapChain->Present(0, DXGI_PRESENT_TEST) == DXGI_STATUS_OCCLUDED)
+        // Legacy blt-model swap chains report occlusion; flip-model uses g_Minimized instead.
+        if (g_SwapChainOccluded && g_pSwapChain)
         {
-            ::Sleep(10);
-            continue;
+            const HRESULT testHr = g_pSwapChain->Present(0, DXGI_PRESENT_TEST);
+            if (!HandleDeviceLost(hwnd, testHr))
+            {
+                status = NV_E_CREATE_D3D_DEVICE;
+                PostQuitMessage(static_cast<int>(status));
+                timeoutMs = 0;
+                continue;
+            }
+            if (testHr == DXGI_STATUS_OCCLUDED)
+            {
+                timeoutMs = 250;
+                continue;
+            }
         }
         g_SwapChainOccluded = false;
 
@@ -775,12 +830,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         if (g_ResizeWidth != 0 && g_ResizeHeight != 0)
         {
             CleanupRenderTarget();
-            g_pSwapChain->ResizeBuffers(0, g_ResizeWidth, g_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
+            const HRESULT resizeHr = g_pSwapChain->ResizeBuffers(
+                0, g_ResizeWidth, g_ResizeHeight, DXGI_FORMAT_UNKNOWN, 0);
             g_ResizeWidth = g_ResizeHeight = 0;
-            CreateRenderTarget();
+            if (!HandleDeviceLost(hwnd, resizeHr))
+            {
+                status = NV_E_CREATE_D3D_DEVICE;
+                PostQuitMessage(static_cast<int>(status));
+                timeoutMs = 0;
+                continue;
+            }
+            if (SUCCEEDED(resizeHr))
+                CreateRenderTarget();
         }
 
         // Start the Dear ImGui frame
+        g_AnimationActive = false;
         ImGui_ImplDX11_NewFrame();
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
@@ -1054,6 +1119,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                             {
                                 ImGui::Text("Downloading (%.2f MB of %.2f MB)", dlNow / AS_MB, dlTotal / AS_MB);
                                 ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(5));
+                                g_AnimationActive = true;
                                 ImGui::ProgressBar(static_cast<float>(dlNow / dlTotal),
                                                    ImVec2(ImGui::GetContentRegionAvail().x - leftBorderIndent, 0.0f));
                             }
@@ -1407,8 +1473,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
         // Present
         HRESULT hr = g_pSwapChain->Present(1, 0); // Present with vsync
-        //HRESULT hr = g_pSwapChain->Present(0, 0); // Present without vsync
+        lastPresent = Clock::now();
+        if (!HandleDeviceLost(hwnd, hr))
+        {
+            status = NV_E_CREATE_D3D_DEVICE;
+            PostQuitMessage(static_cast<int>(status));
+            timeoutMs = 0;
+            continue;
+        }
         g_SwapChainOccluded = (hr == DXGI_STATUS_OCCLUDED);
+
+        if (g_Minimized || g_SwapChainOccluded)
+        {
+            timeoutMs = 250;
+        }
+        else if (g_FramesToRender > 0 || g_AnimationActive)
+        {
+            if (g_FramesToRender > 0)
+                --g_FramesToRender;
+            const auto elapsedMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                Clock::now() - lastPresent).count();
+            timeoutMs = elapsedMs >= 16 ? 0 : static_cast<DWORD>(16 - elapsedMs);
+        }
+        else
+        {
+            timeoutMs = 100;
+        }
     }
 
     // Stop accepting new changelog image downloads and wait for any in-flight one to
@@ -1430,9 +1520,46 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
 
 // Helper functions
 
+namespace
+{
+    const char* SwapEffectName(DXGI_SWAP_EFFECT effect)
+    {
+        switch (effect)
+        {
+            case DXGI_SWAP_EFFECT_FLIP_DISCARD: return "FLIP_DISCARD";
+            case DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL: return "FLIP_SEQUENTIAL";
+            case DXGI_SWAP_EFFECT_DISCARD: return "DISCARD";
+            default: return "unknown";
+        }
+    }
+
+    bool IsDeviceLostHr(HRESULT hr)
+    {
+        return hr == DXGI_ERROR_DEVICE_REMOVED || hr == DXGI_ERROR_DEVICE_RESET;
+    }
+
+    void LogSwapChainStatus(HRESULT hr)
+    {
+        if (hr == S_OK)
+            return;
+
+        static HRESULT lastLogged = S_OK;
+        if (hr == lastLogged)
+            return;
+        lastLogged = hr;
+
+        if (FAILED(hr))
+            spdlog::warn("Swap chain Present/Resize failed: {:#010x}", static_cast<unsigned>(hr));
+        else
+            spdlog::debug("Swap chain Present status: {:#010x}", static_cast<unsigned>(hr));
+    }
+}
+
 bool CreateDeviceD3D(HWND hWnd)
 {
-    // Setup swap chain
+    // Setup swap chain. Flip model (Win8+/Win10+) is tried first; the legacy blt
+    // model (DISCARD) remains the Windows 7 fallback. ALLOW_MODE_SWITCH is omitted
+    // because we never go exclusive-fullscreen and ResizeBuffers passes flags 0.
     DXGI_SWAP_CHAIN_DESC sd;
     ZeroMemory(&sd, sizeof(sd));
     sd.BufferCount = 2;
@@ -1441,13 +1568,18 @@ bool CreateDeviceD3D(HWND hWnd)
     sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     sd.BufferDesc.RefreshRate.Numerator = 60;
     sd.BufferDesc.RefreshRate.Denominator = 1;
-    sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+    sd.Flags = 0;
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     sd.OutputWindow = hWnd;
     sd.SampleDesc.Count = 1;
     sd.SampleDesc.Quality = 0;
     sd.Windowed = TRUE;
-    sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+
+    constexpr DXGI_SWAP_EFFECT effects[] = {
+        DXGI_SWAP_EFFECT_FLIP_DISCARD,      // Windows 10+
+        DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL,   // Windows 8+
+        DXGI_SWAP_EFFECT_DISCARD,           // Windows 7
+    };
 
     UINT createDeviceFlags = 0;
     //createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
@@ -1456,24 +1588,15 @@ bool CreateDeviceD3D(HWND hWnd)
         D3D_FEATURE_LEVEL_11_0,
         D3D_FEATURE_LEVEL_10_0,
     };
-    HRESULT res = D3D11CreateDeviceAndSwapChain(
-        nullptr,
-        D3D_DRIVER_TYPE_HARDWARE,
-        nullptr,
-        createDeviceFlags,
-        featureLevelArray,
-        2,
-        D3D11_SDK_VERSION,
-        &sd,
-        &g_pSwapChain,
-        &g_pd3dDevice,
-        &featureLevel,
-        &g_pd3dDeviceContext
-        );
-    if (res == DXGI_ERROR_UNSUPPORTED) // Try high-performance WARP software driver if hardware is not available.
+
+    HRESULT res = E_FAIL;
+    DXGI_SWAP_EFFECT chosen = DXGI_SWAP_EFFECT_DISCARD;
+    for (const DXGI_SWAP_EFFECT effect : effects)
+    {
+        sd.SwapEffect = effect;
         res = D3D11CreateDeviceAndSwapChain(
             nullptr,
-            D3D_DRIVER_TYPE_WARP,
+            D3D_DRIVER_TYPE_HARDWARE,
             nullptr,
             createDeviceFlags,
             featureLevelArray,
@@ -1481,14 +1604,70 @@ bool CreateDeviceD3D(HWND hWnd)
             D3D11_SDK_VERSION,
             &sd,
             &g_pSwapChain,
-            &g_pd3dDevice, &featureLevel,
+            &g_pd3dDevice,
+            &featureLevel,
             &g_pd3dDeviceContext
             );
+        if (res == DXGI_ERROR_UNSUPPORTED) // Try high-performance WARP software driver if hardware is not available.
+            res = D3D11CreateDeviceAndSwapChain(
+                nullptr,
+                D3D_DRIVER_TYPE_WARP,
+                nullptr,
+                createDeviceFlags,
+                featureLevelArray,
+                2,
+                D3D11_SDK_VERSION,
+                &sd,
+                &g_pSwapChain,
+                &g_pd3dDevice, &featureLevel,
+                &g_pd3dDeviceContext
+                );
+        if (res == S_OK)
+        {
+            chosen = effect;
+            break;
+        }
+
+        // Failed call should already null the outputs; drop anything leftover before the next try.
+        CleanupDeviceD3D();
+    }
     if (res != S_OK)
         return false;
 
+    spdlog::debug("Created D3D11 swap chain with SwapEffect {}", SwapEffectName(chosen));
     CreateRenderTarget();
     return true;
+}
+
+bool RecreateDeviceD3D(HWND hWnd)
+{
+    const HRESULT reason = g_pd3dDevice ? g_pd3dDevice->GetDeviceRemovedReason() : E_FAIL;
+    spdlog::warn("D3D device lost (GetDeviceRemovedReason={:#010x}), recreating",
+                 static_cast<unsigned>(reason));
+
+    ImGui_ImplDX11_Shutdown();
+    markdown::InvalidateDeviceResources();
+    CleanupDeviceD3D();
+
+    if (!CreateDeviceD3D(hWnd))
+    {
+        spdlog::error("Failed to recreate D3D device after device loss");
+        return false;
+    }
+
+    ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
+    g_ResizeWidth = g_ResizeHeight = 0;
+    g_SwapChainOccluded = false;
+    g_FramesToRender = 3;
+    return true;
+}
+
+bool HandleDeviceLost(HWND hWnd, HRESULT hr)
+{
+    LogSwapChainStatus(hr);
+    if (!IsDeviceLostHr(hr))
+        return true;
+    return RecreateDeviceD3D(hWnd);
 }
 
 void CleanupDeviceD3D()
@@ -1545,7 +1724,11 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         case WM_SIZE:
             if (wParam == SIZE_MINIMIZED)
+            {
+                g_Minimized = true;
                 return 0;
+            }
+            g_Minimized = false;
             g_ResizeWidth = static_cast<UINT>(LOWORD(lParam)); // Queue resize
             g_ResizeHeight = static_cast<UINT>(HIWORD(lParam));
             ImGui::GetIO().DisplaySize = ImVec2(static_cast<float>(g_ResizeWidth), static_cast<float>(g_ResizeHeight));

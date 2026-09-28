@@ -350,12 +350,15 @@ float ui::RightAlignButtonX(const char* label)
     return ImGui::GetWindowWidth() - s.WindowPadding.x - buttonWidth;
 }
 
+extern bool g_AnimationActive;
+
 /**
  * \brief https://github.com/ocornut/imgui/issues/5370#issuecomment-1145917633
  */
 void ui::IndeterminateProgressBar(const ImVec2& size_arg)
 {
     using namespace ImGui;
+    g_AnimationActive = true;
 
     ImGuiContext& g = *GImGui;
     ImGuiWindow* window = GetCurrentWindow();
