@@ -3,7 +3,9 @@ name: Build
 on:
   push:
     branches: [master]
-    tags: ['v[0-9]+.[0-9]+.[0-9]+']
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-pre[0-9]+'
     # paths-ignore is not evaluated for tag pushes (GitHub behaviour), so tag
     # releases always build regardless of what files changed.
     paths-ignore:
@@ -86,17 +88,18 @@ jobs:
         id: version
         shell: pwsh
         run: |
+          $ErrorActionPreference = 'Stop'
           $ref = '${{ github.ref }}'
-          if ($ref -match '^refs/tags/v(.+)$') {
-            # Tag build: derive from vX.Y.Z → X.Y.Z.0
-            $ver = $Matches[1]
-            $parts = $ver.Split('.')
-            if ($parts.Count -eq 3) { $ver = "$ver.0" }
+          if ($ref.StartsWith('refs/tags/')) {
+            # Tag build: vX.Y.Z → X.Y.Z.0, vX.Y.Z-preNNN → X.Y.Z.NNN
+            . .\.github\scripts\Get-ReleaseBuildVersion.ps1
+            $ver = Get-ReleaseBuildVersion -Ref $ref
           } else {
             # Branch / PR build: mirror the old AppVeyor 1.15.{build} scheme
             $ver = "1.15.0.${{ github.run_number }}"
           }
           "BUILD_VERSION=$ver" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          Write-Output "BUILD_VERSION=$ver"
 
       - name: Stamp version into resource file
         shell: pwsh
@@ -693,3 +696,4 @@ jobs:
             release/vicius-ARM64.zip
           fail_on_unmatched_files: true
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-pre') }}
