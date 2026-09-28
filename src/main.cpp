@@ -1667,9 +1667,10 @@ bool RecreateDeviceD3D(HWND hWnd)
 bool HandleDeviceLost(HWND hWnd, HRESULT hr)
 {
     LogSwapChainStatus(hr);
-    if (!IsDeviceLostHr(hr))
-        return true;
-    return RecreateDeviceD3D(hWnd);
+    if (IsDeviceLostHr(hr))
+        return RecreateDeviceD3D(hWnd);
+    // S_OK and DXGI status codes (e.g. OCCLUDED) continue; other failures are fatal.
+    return SUCCEEDED(hr);
 }
 
 void CleanupDeviceD3D()
