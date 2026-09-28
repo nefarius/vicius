@@ -12,3 +12,11 @@ branch already is the requested work.
 - Otherwise, create a new branch from current `master` first (`feat/…` or `fix/…`), then make
   changes there.
 - Do not merge or push to `master` unless the user explicitly asks.
+
+## Plans
+
+Every implementation plan must list "create the feature branch" as its explicit step 0 / first
+todo, and must state the `feat/…` or `fix/…` branch name.
+
+That step is executed and confirmed (`git branch --show-current`) before any non-plan file is
+created or edited.

@@ -16,6 +16,15 @@ namespace markdown
      * after those globals are gone.
      */
     void Shutdown();
+
+    /**
+     * \brief Drops cached changelog image textures and waits for in-flight downloads.
+     *
+     * Used after a D3D device-lost recovery: the SRVs belong to the dead device.
+     * Unlike \c Shutdown, new downloads are allowed afterwards so images re-fetch
+     * lazily on the next render.
+     */
+    void InvalidateDeviceResources();
 }
 
 namespace ui

@@ -298,13 +298,11 @@ struct changelog : imgui_md
     }
 
     /**
-     * \brief Stops accepting new downloads and blocks until any in-flight ones finish.
-     *        Safe to call multiple times; safe to call even if nothing was ever downloaded.
+     * \brief Waits for in-flight image downloads and drops cached textures / tasks.
+     *        Does not set \c shuttingDown, so a later render can re-download.
      */
-    void Shutdown()
+    void InvalidateDeviceResources()
     {
-        shuttingDown.store(true, std::memory_order_release);
-
         // wait() never rethrows a stored exception (only get() does), so this is safe even
         // if DownloadImageTexture's WIC/curl call chain ever starts throwing.
         for (auto& entry : imageDownloadTasks)
@@ -316,6 +314,17 @@ struct changelog : imgui_md
         }
 
         imageDownloadTasks.clear();
+        _images.clear();
+    }
+
+    /**
+     * \brief Stops accepting new downloads and blocks until any in-flight ones finish.
+     *        Safe to call multiple times; safe to call even if nothing was ever downloaded.
+     */
+    void Shutdown()
+    {
+        shuttingDown.store(true, std::memory_order_release);
+        InvalidateDeviceResources();
     }
 
     /**
@@ -366,4 +375,9 @@ void markdown::RenderChangelog(const std::string& markdown)
 void markdown::Shutdown()
 {
     GetChangelogInstance().Shutdown();
+}
+
+void markdown::InvalidateDeviceResources()
+{
+    GetChangelogInstance().InvalidateDeviceResources();
 }
