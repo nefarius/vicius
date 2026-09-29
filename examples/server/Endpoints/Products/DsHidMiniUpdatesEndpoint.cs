@@ -39,7 +39,8 @@ internal class DsHidMiniUpdatesEndpointRequest
 internal sealed partial class DsHidMiniUpdatesEndpoint(
     IGitHubApiService githubApiService,
     MinisignManifestSigner signer,
-    IMemoryCache cache)
+    IMemoryCache cache,
+    ILogger<DsHidMiniUpdatesEndpoint> logger)
     : Endpoint<DsHidMiniUpdatesEndpointRequest>
 {
     private static readonly TimeSpan CacheDuration = TimeSpan.FromHours(1);
@@ -133,13 +134,22 @@ internal sealed partial class DsHidMiniUpdatesEndpoint(
         if (asset is null)
             return null;
 
+        if (!SetupReleaseTagParser.TryParse(release.TagName, out System.Version? version))
+        {
+            logger.LogWarning(
+                "Failed to parse version from tag {Tag} for release {Release}, skipping",
+                release.TagName,
+                release.Name);
+            return null;
+        }
+
         byte[] json = JsonSerializer.SerializeToUtf8Bytes(
-            BuildResponse(release, asset), ManifestJson.SerializerOptions);
+            BuildResponse(release, asset, version), ManifestJson.SerializerOptions);
         byte[]? minisig = signer.IsConfigured ? signer.SignDetached(json) : null;
         return new CachedManifest(json, minisig);
     }
 
-    private UpdateResponse BuildResponse(Release release, ReleaseAsset asset)
+    private UpdateResponse BuildResponse(Release release, ReleaseAsset asset, System.Version version)
     {
         // strips out comment blocks and redundant newlines
         string summary = CommentRegex().Replace(release.Body, string.Empty).Trim('\r', '\n');
@@ -164,7 +174,7 @@ internal sealed partial class DsHidMiniUpdatesEndpoint(
                 {
                     Name = release.Name,
                     PublishedAt = release.CreatedAt,
-                    Version = System.Version.Parse(release.TagName.Replace("setup-v", string.Empty)),
+                    Version = version,
                     Summary = summary,
                     DownloadUrl = asset.BrowserDownloadUrl,
                     DownloadSize = asset.Size,
