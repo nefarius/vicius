@@ -2,10 +2,13 @@
 
   <ItemGroup>
     <!--
-      Abstractions marks NJsonSchema as PrivateAssets=All; STJ still inspects
-      [JsonSchemaType] at runtime, so the test host must load the assembly.
+      Abstractions marks NJsonSchema as PrivateAssets=All and does not flow
+      Newtonsoft.Json. STJ still inspects [JsonSchemaType] and
+      [Newtonsoft.Json.JsonConverter] at runtime, so the test host must
+      load both assemblies.
     -->
     <PackageReference Include="NJsonSchema.Annotations" Version="11.6.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
   <ItemGroup>
