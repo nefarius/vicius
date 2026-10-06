@@ -132,6 +132,32 @@ public sealed class ManifestSerializationTests
     }
 
     [Fact]
+    public void InstanceConfig_omits_null_stateId_and_round_trips_when_set()
+    {
+        InstanceConfig omitted = new()
+        {
+            ServerUrlTemplate = "https://example.test/{{ product }}/updates.json",
+            FilenameRegex = @".+\.msi$"
+        };
+
+        JsonObject omittedRoot = JsonNode.Parse(JsonSerializer.Serialize(omitted, ManifestJson.Options))!.AsObject();
+        Assert.False(omittedRoot.ContainsKey("stateId"));
+
+        InstanceConfig original = new()
+        {
+            ServerUrlTemplate = omitted.ServerUrlTemplate,
+            FilenameRegex = omitted.FilenameRegex,
+            StateId = "hidhide"
+        };
+
+        string json = JsonSerializer.Serialize(original, ManifestJson.Options);
+        Assert.Equal("hidhide", JsonNode.Parse(json)!["stateId"]!.GetValue<string>());
+
+        InstanceConfig? roundTripped = JsonSerializer.Deserialize<InstanceConfig>(json, ManifestJson.Options);
+        Assert.Equal("hidhide", roundTripped?.StateId);
+    }
+
+    [Fact]
     public void SharedConfig_omits_null_allowUserToDisableUpdates()
     {
         string json = JsonSerializer.Serialize(new SharedConfig { ProductName = "Contoso" }, ManifestJson.Options);

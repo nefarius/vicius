@@ -16,6 +16,8 @@
         NV_S_SELF_UPDATER    = 201
         NV_S_INSTANCE_ALREADY_RUNNING = 210
         NV_S_UPDATES_DISABLED = 211
+        NV_S_POSTPONE_PERIOD = 205
+        NV_S_POSTPONE_PURGE = 206
         NV_E_SERVER_RESPONSE = 104
         NV_E_SIGNATURE_INVALID = 116
         NV_E_DOWNLOAD_FAILED = 107
@@ -131,6 +133,66 @@ function Start-E2EServer {
     return $job
 }
 
+function Get-ViciusStateIdentityHash {
+    param(
+        [string] $ExePath = '',
+        [string] $StateId = ''
+    )
+
+    if ($StateId) {
+        $typed = "id:$StateId"
+    } else {
+        $fullName = [System.IO.Path]::GetFullPath($ExePath)
+        $fullBuf = New-Object System.Text.StringBuilder 520
+        [void][ViciusNativePath]::GetFullPathName($fullName, [uint32]$fullBuf.Capacity, $fullBuf, [IntPtr]::Zero)
+        $full = if ($fullBuf.Length -gt 0) { $fullBuf.ToString() } else { $fullName }
+
+        $longBuf = New-Object System.Text.StringBuilder 520
+        $longLen = [ViciusNativePath]::GetLongPathName($full, $longBuf, [uint32]$longBuf.Capacity)
+        $normalized = if ($longLen -gt 0) { $longBuf.ToString() } else { $full }
+        $typed = 'path:' + $normalized.ToLowerInvariant()
+    }
+
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        ($sha.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($typed)) | ForEach-Object { $_.ToString('x2') }) -join ''
+    } finally {
+        $sha.Dispose()
+    }
+}
+
+function Get-ViciusIsolatedStateKey([string] $Hash) {
+    return "HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\Vicius\State\v1\$Hash"
+}
+
+function New-SystemTimeBytes([datetime] $Utc) {
+    $d = $Utc.ToUniversalTime()
+    $bytes = New-Object byte[] 16
+    [Buffer]::BlockCopy([BitConverter]::GetBytes([uint16]$d.Year), 0, $bytes, 0, 2)
+    [Buffer]::BlockCopy([BitConverter]::GetBytes([uint16]$d.Month), 0, $bytes, 2, 2)
+    [Buffer]::BlockCopy([BitConverter]::GetBytes([uint16][int]$d.DayOfWeek), 0, $bytes, 4, 2)
+    [Buffer]::BlockCopy([BitConverter]::GetBytes([uint16]$d.Day), 0, $bytes, 6, 2)
+    [Buffer]::BlockCopy([BitConverter]::GetBytes([uint16]$d.Hour), 0, $bytes, 8, 2)
+    [Buffer]::BlockCopy([BitConverter]::GetBytes([uint16]$d.Minute), 0, $bytes, 10, 2)
+    [Buffer]::BlockCopy([BitConverter]::GetBytes([uint16]$d.Second), 0, $bytes, 12, 2)
+    [Buffer]::BlockCopy([BitConverter]::GetBytes([uint16]$d.Millisecond), 0, $bytes, 14, 2)
+    return ,$bytes
+}
+
+if (-not ([System.Management.Automation.PSTypeName]'ViciusNativePath').Type) {
+    Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public static class ViciusNativePath {
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern uint GetFullPathName(string lpFileName, uint nBufferLength, StringBuilder lpBuffer, IntPtr lpFilePart);
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern uint GetLongPathName(string lpszShortPath, StringBuilder lpszLongPath, uint cchBuffer);
+}
+"@
+}
+
 function Stop-E2EServer([System.Diagnostics.Process] $job) {
     if ($job -and -not $job.HasExited) {
         Write-Host 'Stopping example server...'
@@ -175,7 +237,7 @@ function Invoke-Scenario {
     try {
         if ($null -ne $PreScenario) {
             Write-Host "  Running pre-scenario hook..."
-            & $PreScenario
+            & $PreScenario $exePath
         }
 
         # ── Optional install step (extracts DLL to Alternate Data Stream) ────
@@ -268,11 +330,11 @@ function Invoke-Scenario {
         return @{ Name = $Name; Passed = $passed; Expected = $ExpectedExit; Got = $got; LogFailures = $logFailures }
     }
     finally {
-        Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
         if ($null -ne $PostScenario) {
             Write-Host "  Running post-scenario hook..."
-            & $PostScenario
+            & $PostScenario $exePath
         }
+        Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -461,6 +523,90 @@ function Invoke-DuplicateInstanceScenario {
     }
 }
 
+function Invoke-SameNameIsolationScenario {
+    param([string] $SourceBin)
+
+    $Name = 'SameNamePathIsolation'
+    $ExpectedExitA = 211
+    $ExpectedExitB = 203
+    Write-Header "Scenario: $Name (expect A=$ExpectedExitA, B=$ExpectedExitB)"
+
+    $workRoot = Join-Path $env:TEMP "vicius-e2e-$Name-$(New-Guid)"
+    $dirA = Join-Path $workRoot 'productA'
+    $dirB = Join-Path $workRoot 'productB'
+    New-Item -ItemType Directory -Path $dirA | Out-Null
+    New-Item -ItemType Directory -Path $dirB | Out-Null
+
+    $exeA = Join-Path $dirA 'updater.exe'
+    $exeB = Join-Path $dirB 'updater.exe'
+    Copy-Item -Path $SourceBin -Destination $exeA
+    Copy-Item -Path $SourceBin -Destination $exeB
+
+    $sidecar = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/HappyZip/updates.json"}}'
+    Set-Content -Path (Join-Path $dirA 'updater.json') -Value $sidecar -Encoding utf8
+    Set-Content -Path (Join-Path $dirB 'updater.json') -Value $sidecar -Encoding utf8
+
+    $logA = Join-Path $LogDir "$Name-A.log"
+    $logB = Join-Path $LogDir "$Name-B.log"
+    $hashA = Get-ViciusStateIdentityHash -ExePath $exeA
+    $hashB = Get-ViciusStateIdentityHash -ExePath $exeB
+    $keyA = Get-ViciusIsolatedStateKey $hashA
+    $keyB = Get-ViciusIsolatedStateKey $hashB
+
+    try {
+        if ($hashA -eq $hashB) {
+            throw "Path-based state hashes collided for same-named updaters in different directories"
+        }
+
+        Write-Host "  Seeding isolated disable flag for product A only ($keyA)..."
+        $null = New-Item -Path $keyA -Force
+        Set-ItemProperty -Path $keyA -Name 'UpdatesDisabled' -Value 1 -Type DWord
+
+        $commonArgs = @(
+            '--silent-update', '--ignore-busy-state', '--skip-self-update',
+            '--force-local-version', '0.0.1', '--log-level', 'debug'
+        )
+
+        $procA = Start-Process -FilePath $exeA -ArgumentList ($commonArgs + @('--log-to-file', $logA)) -Wait -PassThru -NoNewWindow
+        $procB = Start-Process -FilePath $exeB -ArgumentList ($commonArgs + @('--log-to-file', $logB)) -Wait -PassThru -NoNewWindow
+
+        $logFailures = @()
+        $logAText = if (Test-Path $logA) { Get-Content $logA -Raw -ErrorAction SilentlyContinue } else { '' }
+        $logBText = if (Test-Path $logB) { Get-Content $logB -Raw -ErrorAction SilentlyContinue } else { '' }
+        if ($logAText -notlike '*Update notifications are disabled by user preference, skipping update check*') {
+            $logFailures += 'Product A did not honor its isolated disable flag'
+        }
+        if ($logBText -like '*Update notifications are disabled by user preference, skipping update check*') {
+            $logFailures += 'Product B incorrectly inherited product A disable state'
+        }
+        if ($logBText -notlike '*Requesting update info*') {
+            $logFailures += 'Product B did not contact the server'
+        }
+
+        $passed = ($procA.ExitCode -eq $ExpectedExitA) -and ($procB.ExitCode -eq $ExpectedExitB) -and ($logFailures.Count -eq 0)
+        $status = if ($passed) { 'PASS' } else { 'FAIL' }
+        Write-Host "  $status  A=$($procA.ExitCode) B=$($procB.ExitCode)"
+
+        return @{
+            Name = $Name
+            Passed = $passed
+            Expected = "$ExpectedExitA/$ExpectedExitB"
+            Got = "$($procA.ExitCode)/$($procB.ExitCode)"
+            LogFailures = $logFailures
+        }
+    }
+    catch {
+        Write-Host "  FAIL  $($_.Exception.Message)"
+        return @{ Name = $Name; Passed = $false; Expected = "$ExpectedExitA/$ExpectedExitB"; Got = $null;
+                  LogFailures = @($_.Exception.Message) }
+    }
+    finally {
+        Remove-Item -Path $keyA -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path $keyB -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path $workRoot -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
@@ -531,8 +677,7 @@ try {
         },
         @{
             # Persistent per-user opt-out must short-circuit before RequestUpdateInfo.
-            # The flag is seeded under the isolated Vicius\{filename} key (not the volatile
-            # Postpone key) so it survives reboot and stays out of postpone's REG_OPTION_VOLATILE.
+            # Seeds the isolated State\v1\<hash> key computed from the updater path.
             Name                 = 'UpdatesDisabled'
             SourceBin            = $MainBin
             ExeName              = 'e2e_UpdatesDisabled_Updater.exe'
@@ -540,18 +685,170 @@ try {
             ExpectedExit         = 211
             SkipSelfUpdate       = $true
             PreScenario          = {
-                $key = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\Vicius\e2e_UpdatesDisabled_Updater'
+                param($ExePath)
+                $hash = Get-ViciusStateIdentityHash -ExePath $ExePath
+                $key = Get-ViciusIsolatedStateKey $hash
                 Write-Host "  Seeding $key UpdatesDisabled=1..."
                 $null = New-Item -Path $key -Force
                 Set-ItemProperty -Path $key -Name 'UpdatesDisabled' -Value 1 -Type DWord
             }
             PostScenario         = {
-                $key = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\Vicius\e2e_UpdatesDisabled_Updater'
+                param($ExePath)
+                $hash = Get-ViciusStateIdentityHash -ExePath $ExePath
+                $key = Get-ViciusIsolatedStateKey $hash
                 Write-Host "  Cleaning up $key..."
                 Remove-Item -Path $key -Recurse -Force -ErrorAction SilentlyContinue
             }
             ExpectLogContains    = @('Update notifications are disabled by user preference, skipping update check')
             ExpectLogNotContains = @('Requesting update info')
+        },
+        @{
+            # Compatibility: a pre-isolation UpdatesDisabled DWORD under Vicius\{filename}
+            # must still be honored and copied onto the isolated key.
+            Name                 = 'UpdatesDisabledLegacyMigration'
+            SourceBin            = $MainBin
+            ExeName              = 'e2e_UpdatesDisabledLegacy_Updater.exe'
+            LocalVersion         = '0.0.1'
+            ExpectedExit         = 211
+            SkipSelfUpdate       = $true
+            PreScenario          = {
+                $key = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\Vicius\e2e_UpdatesDisabledLegacy_Updater'
+                Write-Host "  Seeding legacy $key UpdatesDisabled=1..."
+                $null = New-Item -Path $key -Force
+                Set-ItemProperty -Path $key -Name 'UpdatesDisabled' -Value 1 -Type DWord
+            }
+            PostScenario         = {
+                param($ExePath)
+                $legacy = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\Vicius\e2e_UpdatesDisabledLegacy_Updater'
+                $hash = Get-ViciusStateIdentityHash -ExePath $ExePath
+                $isolated = Get-ViciusIsolatedStateKey $hash
+                Write-Host "  Cleaning up legacy and isolated disable keys..."
+                Remove-Item -Path $legacy -Recurse -Force -ErrorAction SilentlyContinue
+                Remove-Item -Path $isolated -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            ExpectLogContains    = @(
+                'Migrated UpdatesDisabled from legacy filename key to isolated state',
+                'Update notifications are disabled by user preference, skipping update check'
+            )
+            ExpectLogNotContains = @('Requesting update info')
+        },
+        @{
+            # Explicit local stateId must hash independently of the install path.
+            Name                 = 'UpdatesDisabledStateId'
+            SourceBin            = $MainBin
+            ExeName              = 'e2e_UpdatesDisabledStateId_Updater.exe'
+            LocalVersion         = '0.0.1'
+            ExpectedExit         = 211
+            SkipSelfUpdate       = $true
+            Sidecar              = @{
+                Name    = 'e2e_UpdatesDisabledStateId_Updater.json'
+                Content = '{"instance":{"stateId":"e2e-stable-disable"}}'
+            }
+            PreScenario          = {
+                $hash = Get-ViciusStateIdentityHash -StateId 'e2e-stable-disable'
+                $key = Get-ViciusIsolatedStateKey $hash
+                Write-Host "  Seeding stateId key $key UpdatesDisabled=1..."
+                $null = New-Item -Path $key -Force
+                Set-ItemProperty -Path $key -Name 'UpdatesDisabled' -Value 1 -Type DWord
+            }
+            PostScenario         = {
+                $hash = Get-ViciusStateIdentityHash -StateId 'e2e-stable-disable'
+                $key = Get-ViciusIsolatedStateKey $hash
+                Remove-Item -Path $key -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            ExpectLogContains    = @(
+                'Using configured stateId for persisted user state',
+                'Update notifications are disabled by user preference, skipping update check'
+            )
+            ExpectLogNotContains = @('Requesting update info')
+        },
+        @{
+            # A still-valid legacy postpone timestamp must migrate and suppress the UI (205).
+            Name                 = 'PostponeLegacyMigration'
+            SourceBin            = $MainBin
+            ExeName              = 'e2e_PostponeLegacy_Updater.exe'
+            LocalVersion         = '0.0.1'
+            ExpectedExit         = 205
+            SkipSelfUpdate       = $true
+            Sidecar              = @{
+                Name    = 'e2e_PostponeLegacy_Updater.json'
+                Content = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/HappyZip/updates.json"}}'
+            }
+            PreScenario          = {
+                $key = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\e2e_PostponeLegacy_Updater\Postpone'
+                Write-Host "  Seeding legacy postpone timestamp under $key..."
+                $null = New-Item -Path $key -Force
+                Set-ItemProperty -Path $key -Name 'LastTimestamp' -Value (New-SystemTimeBytes ([datetime]::UtcNow)) -Type Binary
+            }
+            PostScenario         = {
+                param($ExePath)
+                $legacy = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\e2e_PostponeLegacy_Updater'
+                $hash = Get-ViciusStateIdentityHash -ExePath $ExePath
+                $isolated = Get-ViciusIsolatedStateKey $hash
+                Remove-Item -Path $legacy -Recurse -Force -ErrorAction SilentlyContinue
+                Remove-Item -Path $isolated -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            ExpectLogContains    = @('Migrated postpone timestamp from legacy filename key to isolated state')
+        },
+        @{
+            # Truncated legacy SYSTEMTIME must not be treated as a valid postpone window.
+            Name                 = 'PostponeMalformedLegacy'
+            SourceBin            = $MainBin
+            ExeName              = 'e2e_PostponeMalformed_Updater.exe'
+            LocalVersion         = '0.0.1'
+            ExpectedExit         = 203
+            SkipSelfUpdate       = $true
+            Sidecar              = @{
+                Name    = 'e2e_PostponeMalformed_Updater.json'
+                Content = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/HappyZip/updates.json"}}'
+            }
+            PreScenario          = {
+                $key = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\e2e_PostponeMalformed_Updater\Postpone'
+                Write-Host "  Seeding malformed legacy postpone timestamp under $key..."
+                $null = New-Item -Path $key -Force
+                Set-ItemProperty -Path $key -Name 'LastTimestamp' -Value ([byte[]](1, 2, 3)) -Type Binary
+            }
+            PostScenario         = {
+                Remove-Item -Path 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\e2e_PostponeMalformed_Updater' `
+                    -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            ExpectLogContains    = @('Ignoring malformed postpone timestamp')
+        },
+        @{
+            # --purge-postpone must clear both isolated and legacy postpone values.
+            Name                 = 'PurgePostponeBothLocations'
+            SourceBin            = $MainBin
+            ExeName              = 'e2e_PurgePostpone_Updater.exe'
+            LocalVersion         = '0.0.1'
+            ExpectedExit         = 206
+            SkipSelfUpdate       = $true
+            ExtraArgs            = @('--purge-postpone')
+            PreScenario          = {
+                param($ExePath)
+                $legacy = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\e2e_PurgePostpone_Updater\Postpone'
+                $hash = Get-ViciusStateIdentityHash -ExePath $ExePath
+                $isolated = "$(Get-ViciusIsolatedStateKey $hash)\Postpone"
+                Write-Host "  Seeding postpone values at legacy and isolated keys..."
+                $null = New-Item -Path $legacy -Force
+                $null = New-Item -Path $isolated -Force
+                $ts = New-SystemTimeBytes ([datetime]::UtcNow)
+                Set-ItemProperty -Path $legacy -Name 'LastTimestamp' -Value $ts -Type Binary
+                Set-ItemProperty -Path $isolated -Name 'LastTimestamp' -Value $ts -Type Binary
+            }
+            PostScenario         = {
+                param($ExePath)
+                $legacy = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\e2e_PurgePostpone_Updater'
+                $hash = Get-ViciusStateIdentityHash -ExePath $ExePath
+                $isolated = Get-ViciusIsolatedStateKey $hash
+                $legacyValue = Get-ItemProperty -Path "$legacy\Postpone" -Name 'LastTimestamp' -ErrorAction SilentlyContinue
+                $isolatedValue = Get-ItemProperty -Path "$isolated\Postpone" -Name 'LastTimestamp' -ErrorAction SilentlyContinue
+                if ($null -ne $legacyValue -or $null -ne $isolatedValue) {
+                    throw "Purge left postpone values behind (legacy=$([bool]$legacyValue) isolated=$([bool]$isolatedValue))"
+                }
+                Remove-Item -Path $legacy -Recurse -Force -ErrorAction SilentlyContinue
+                Remove-Item -Path $isolated -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            ExpectLogContains    = @('Purged postpone data from isolated and legacy locations')
         },
         @{
             Name           = 'ChecksumMismatch'
@@ -942,6 +1239,7 @@ try {
     # Concurrency regression: second launch of the same executable must exit with
     # NV_S_INSTANCE_ALREADY_RUNNING (210) after signaling the owner.
     $results.Add((Invoke-DuplicateInstanceScenario -SourceBin $MainBin))
+    $results.Add((Invoke-SameNameIsolationScenario -SourceBin $MainBin))
 
     # ── Win32 process-launch argument round trip ─────────────────────────────
     # The manifest's launchArguments for ProcessArgsRoundTrip is a raw command-line

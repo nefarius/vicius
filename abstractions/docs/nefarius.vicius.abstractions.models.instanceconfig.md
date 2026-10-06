@@ -67,6 +67,26 @@ public NetworkConfig Network { get; set; }
 
 [NetworkConfig](./nefarius.vicius.abstractions.models.networkconfig.md)<br>
 
+### <a id="properties-stateid"/>**StateId**
+
+Optional local-only stable identity for persisted user state (postpone window,
+ update-notification preference). When set, registry keys are scoped to this ID
+ instead of the updater's install path, so preferences survive the binary being moved.
+
+```csharp
+public string StateId { get; set; }
+```
+
+#### Property Value
+
+[String](https://learn.microsoft.com/dotnet/api/system.string)<br>
+
+**Remarks:**
+
+This field is never accepted from a remote manifest. Publishers should set a
+ product-specific value when state must outlive installation-path changes.
+ When omitted, the client hashes the normalized original updater path.
+
 ### <a id="properties-serverurltemplate"/>**ServerUrlTemplate**
 
 The URL template used to build the update manifest request (may contain inja placeholders).

@@ -952,9 +952,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(20));
                     if (ImGui::Button(ICON_FK_CLOCK_O " Remind me tomorrow"))
                     {
-                        cfg.SetPostponeData();
-                        status = cfg.GetSuccessExitCode(NV_S_USER_POSTPONED);
-                        PostQuitMessage((int)status);
+                        if (const auto r = cfg.SetPostponeData(); !r)
+                        {
+                            cfg.TryDisplayErrorDialog("Failed to postpone updates", r.error());
+                        }
+                        else
+                        {
+                            status = cfg.GetSuccessExitCode(NV_S_USER_POSTPONED);
+                            PostQuitMessage((int)status);
+                        }
                     }
                 }
 
