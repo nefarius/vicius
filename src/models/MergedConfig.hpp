@@ -40,6 +40,8 @@ namespace models
         std::optional<SignatureConfig> signatureConfig;
         /** True to hide the "Remind me tomorrow" button in the UI */
         bool hideRemindButton{false};
+        /** True to offer a "Disable update notifications" action in the UI */
+        bool allowUserToDisableUpdates{false};
         /** Base64-encoded Windows .ico data for the window and taskbar icon */
         std::optional<std::string> iconBase64;
         /** Configuration for deferring the update dialog while the product is running */
@@ -73,6 +75,7 @@ namespace models
                                                     signatureStrategy,
                                                     signatureConfig,
                                                     hideRemindButton,
+                                                    allowUserToDisableUpdates,
                                                     iconBase64,
                                                     productBusyDetection)
 }

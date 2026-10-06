@@ -106,6 +106,12 @@ public sealed class MergedConfig
     public bool HideRemindButton { get; set; } = false;
 
     /// <summary>
+    ///     When true, the update UI offers a "Disable update notifications" action. Default: false.
+    /// </summary>
+    [Required]
+    public bool AllowUserToDisableUpdates { get; set; } = false;
+
+    /// <summary>
     ///     Base64-encoded Windows .ico data used as the window and taskbar icon at runtime.
     /// </summary>
     /// <remarks>
