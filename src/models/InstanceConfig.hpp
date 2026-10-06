@@ -166,6 +166,13 @@ namespace models
          */
         std::optional<NetworkConfig> network;
 
+        /**
+         * Optional local-only stable identity for persisted user state. When set, registry
+         * keys are scoped to this ID instead of the updater's install path, so preferences
+         * survive the binary being moved. Never accepted from a remote manifest.
+         */
+        std::optional<std::string> stateId;
+
         InstanceConfig() : authority(Authority::Remote) { }
 
         InstanceConfig(const InstanceConfig&) = delete;
@@ -569,9 +576,9 @@ namespace models
         }
 
         /**
-         * \brief Stores the current timestamp in a volatile registry key.
+         * \brief Stores the current timestamp in a volatile isolated registry key.
          */
-        void SetPostponeData();
+        [[nodiscard]] std::expected<void, std::string> SetPostponeData();
 
         /**
          * \brief Removes the postpone data from the registry, if any.
@@ -604,6 +611,17 @@ namespace models
          * dialog reports that checks are already enabled. Does not contact the server.
          */
         [[nodiscard]] std::expected<void, std::string> ShowUserOptionsDialog();
+
+        /**
+         * \brief Original updater path used for path-scoped state (parent path for
+         *        trusted temporary copies).
+         */
+        [[nodiscard]] std::filesystem::path GetOriginalUpdaterPath() const;
+
+        /**
+         * \brief SHA-256 hex of the typed state identity (`id:` or `path:`).
+         */
+        [[nodiscard]] std::string GetStateIdentityHash() const;
 
         /**
          * \brief Uses the template engine to render a string consisting of inja syntax.
@@ -738,5 +756,5 @@ namespace models
     };
 
     NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(InstanceConfig, serverUrlTemplate, fallbackServerUrlTemplates, filenameRegex,
-                                                    authority, network)
+                                                    authority, network, stateId)
 }

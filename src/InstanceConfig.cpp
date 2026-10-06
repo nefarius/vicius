@@ -403,6 +403,23 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
             filenameRegex = data.value("/instance/filenameRegex"_json_pointer, filenameRegex);
             authority = data.value("/instance/authority"_json_pointer, authority);
 
+            if (data.contains("/instance/stateId"_json_pointer))
+            {
+                try
+                {
+                    auto parsed = data.at("/instance/stateId"_json_pointer).get<std::string>();
+                    if (!parsed.empty())
+                    {
+                        stateId = std::move(parsed);
+                        spdlog::info("Using configured stateId for persisted user state");
+                    }
+                }
+                catch (const std::exception& e)
+                {
+                    spdlog::error("Failed to parse instance.stateId: {}", e.what());
+                }
+            }
+
             // CLI arg takes priority
             if (channel.empty())
             {
@@ -445,6 +462,8 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
         spdlog::info("No local configuration found at {}", configFile);
     }
 #endif
+
+    spdlog::debug("state identity hash = {}", GetStateIdentityHash());
 
     this->forceLocalVersion = static_cast<bool>(cmdl({NV_CLI_PARAM_FORCE_LOCAL_VERSION}));
 

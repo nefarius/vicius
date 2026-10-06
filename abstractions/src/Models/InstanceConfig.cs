@@ -67,4 +67,16 @@ public sealed class InstanceConfig
     ///     system proxy auto-detect, standard DNS, no pinned hosts.
     /// </summary>
     public NetworkConfig? Network { get; set; }
+
+    /// <summary>
+    ///     Optional local-only stable identity for persisted user state (postpone window,
+    ///     update-notification preference). When set, registry keys are scoped to this ID
+    ///     instead of the updater's install path, so preferences survive the binary being moved.
+    /// </summary>
+    /// <remarks>
+    ///     This field is never accepted from a remote manifest. Publishers should set a
+    ///     product-specific value when state must outlive installation-path changes.
+    ///     When omitted, the client hashes the normalized original updater path.
+    /// </remarks>
+    public string? StateId { get; set; }
 }

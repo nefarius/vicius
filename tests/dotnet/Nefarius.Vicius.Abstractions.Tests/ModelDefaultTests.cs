@@ -58,6 +58,7 @@ public sealed class ModelDefaultTests
         Assert.Equal(Authority.Remote, config.Authority);
         Assert.Null(config.Network);
         Assert.Null(config.FallbackServerUrlTemplates);
+        Assert.Null(config.StateId);
     }
 
     [Fact]
