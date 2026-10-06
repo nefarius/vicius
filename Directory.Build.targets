@@ -5,7 +5,7 @@
     Bootstrap the local submodule only when it is checked out but has not yet
     been compiled (first local build after cloning with submodules).
   -->
-  <ItemDefinitionGroup Condition="Exists('$(VcpkgRoot)bootstrap-vcpkg.bat') And !Exists('$(VcpkgRoot)vcpkg.exe')">
+  <ItemDefinitionGroup Condition="'$(VcpkgEnabled)' != 'false' And Exists('$(VcpkgRoot)bootstrap-vcpkg.bat') And !Exists('$(VcpkgRoot)vcpkg.exe')">
     <PreBuildEvent>
       <Command>$(VcpkgRoot)bootstrap-vcpkg.bat</Command>
       <Message>Bootstrap vcpkg</Message>
