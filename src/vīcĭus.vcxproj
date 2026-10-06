@@ -379,6 +379,7 @@
     <ClInclude Include="ImGuiConfig.h" />
     <ClInclude Include="imgui_md.h" />
     <ClInclude Include="inipp.h" />
+    <ClInclude Include="MarkdownParserFlags.h" />
     <ClInclude Include="md4c.h" />
     <ClInclude Include="MimeTypes.h" />
     <ClInclude Include="models\CommonTypes.hpp" />

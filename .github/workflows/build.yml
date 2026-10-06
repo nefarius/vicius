@@ -125,6 +125,13 @@ jobs:
             /p:UpdaterName="$env:UPDATER_NAME" `
             /p:CI=true
 
+      - name: Run Markdown autolink tests
+        if: matrix.platform != 'ARM64'
+        shell: pwsh
+        run: |
+          $platformDir = if ('${{ matrix.platform }}' -eq 'x86') { 'Win32' } else { '${{ matrix.platform }}' }
+          & "tests\cpp\bin\$platformDir\Release\MarkdownAutolinkTests.exe"
+
       # ── Post-build ─────────────────────────────────────────────────────────
 
       - name: Pack with UPX

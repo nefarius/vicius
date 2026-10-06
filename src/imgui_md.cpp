@@ -24,6 +24,7 @@
  */
 
 #include "imgui_md.h"
+#include "MarkdownParserFlags.h"
 
 // DPI scale factor is owned by main.cpp (kept as a simple global for this app).
 extern float g_scaleFactor;
@@ -32,7 +33,7 @@ imgui_md::imgui_md()
 {
 	m_md.abi_version = 0;
 
-	m_md.flags = MD_FLAG_TABLES | MD_FLAG_UNDERLINE | MD_FLAG_STRIKETHROUGH;
+	m_md.flags = markdown::ParserFlags;
 
 	m_md.enter_block = [](MD_BLOCKTYPE t, void* d, void* u) {
 		return ((imgui_md*)u)->block(t, d, true);

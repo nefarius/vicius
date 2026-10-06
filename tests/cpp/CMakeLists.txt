@@ -1,0 +1,11 @@
+add_executable(
+  MarkdownAutolinkTests
+  MarkdownAutolinkTests.cpp
+  "${CMAKE_SOURCE_DIR}/src/md4c.c"
+  "${CMAKE_SOURCE_DIR}/src/MarkdownParserFlags.h"
+)
+target_include_directories(
+  MarkdownAutolinkTests
+  PRIVATE
+  "${CMAKE_SOURCE_DIR}/src"
+)
