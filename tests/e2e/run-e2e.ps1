@@ -234,6 +234,7 @@ function Invoke-Scenario {
 
     $logFile = Join-Path $LogDir "$Name.log"
 
+    $result = $null
     try {
         if ($null -ne $PreScenario) {
             Write-Host "  Running pre-scenario hook..."
@@ -252,90 +253,109 @@ function Invoke-Scenario {
             Write-Host "  Install step exit code: $installCode"
             if ($installCode -ne 200) {
                 Write-Warning "  Install step returned $installCode (expected 200); skipping test."
-                return @{ Name = $Name; Passed = $false; Expected = $ExpectedExit; Got = $installCode;
-                          LogFailures = @(); Note = "install step failed" }
+                $result = @{ Name = $Name; Passed = $false; Expected = $ExpectedExit; Got = $installCode;
+                             LogFailures = @(); Note = "install step failed" }
             }
         }
 
-        # ── Main test invocation ─────────────────────────────────────────────
-        $args = @(
-            '--silent-update',
-            '--ignore-busy-state',
-            '--log-to-file', $logFile,
-            '--log-level', 'debug'
-        )
-        # Only pass --force-local-version when the scenario uses FixedVersion detection.
-        # Server-driven detection scenarios (registry, file version) must omit it so the
-        # manifest's shared.detection block is honoured.
-        if ($UseLocalVersion -and $LocalVersion -ne '') {
-            $args = @('--force-local-version', $LocalVersion) + $args
-        }
-        if ($SkipSelfUpdate) { $args += '--skip-self-update' }
-        if ($ExtraArgs.Count -gt 0) { $args += $ExtraArgs }
-
-        Write-Host "  Running: $ExeName $args"
-        $proc = Start-Process `
-            -FilePath $exePath `
-            -ArgumentList $args `
-            -Wait -PassThru -NoNewWindow
-        $got = $proc.ExitCode
-
-        # ── For the SelfUpdate scenario: allow the self-updater DLL to finish ─
-        if ($Name -eq 'SelfUpdate') {
-            Write-Host "  Waiting 15s for self-updater DLL to complete..."
-            Start-Sleep -Seconds 15
-            # Verify the binary was restored by the DLL after Authenticode failure
-            if (-not (Test-Path $exePath)) {
-                Write-Host "  WARN: binary not found after DLL run; backup restoration may have failed."
-            } else {
-                Write-Host "  Binary present at $exePath (DLL restored it correctly)."
+        if ($null -eq $result) {
+            # ── Main test invocation ─────────────────────────────────────────────
+            $args = @(
+                '--silent-update',
+                '--ignore-busy-state',
+                '--log-to-file', $logFile,
+                '--log-level', 'debug'
+            )
+            # Only pass --force-local-version when the scenario uses FixedVersion detection.
+            # Server-driven detection scenarios (registry, file version) must omit it so the
+            # manifest's shared.detection block is honoured.
+            if ($UseLocalVersion -and $LocalVersion -ne '') {
+                $args = @('--force-local-version', $LocalVersion) + $args
             }
-        }
+            if ($SkipSelfUpdate) { $args += '--skip-self-update' }
+            if ($ExtraArgs.Count -gt 0) { $args += $ExtraArgs }
 
-        # ── Log assertions ────────────────────────────────────────────────────
-        $logPassed   = $true
-        $logFailures = @()
-        if ($ExpectLogContains.Count -gt 0 -or $ExpectLogNotContains.Count -gt 0) {
-            $logContent = if (Test-Path $logFile) {
-                Get-Content $logFile -Raw -ErrorAction SilentlyContinue
-            } else { '' }
-            foreach ($substr in $ExpectLogContains) {
-                if ($logContent -notlike "*$substr*") {
-                    $logPassed = $false
-                    $logFailures += "Expected in log: '$substr'"
+            Write-Host "  Running: $ExeName $args"
+            $proc = Start-Process `
+                -FilePath $exePath `
+                -ArgumentList $args `
+                -Wait -PassThru -NoNewWindow
+            $got = $proc.ExitCode
+
+            # ── For the SelfUpdate scenario: allow the self-updater DLL to finish ─
+            if ($Name -eq 'SelfUpdate') {
+                Write-Host "  Waiting 15s for self-updater DLL to complete..."
+                Start-Sleep -Seconds 15
+                # Verify the binary was restored by the DLL after Authenticode failure
+                if (-not (Test-Path $exePath)) {
+                    Write-Host "  WARN: binary not found after DLL run; backup restoration may have failed."
+                } else {
+                    Write-Host "  Binary present at $exePath (DLL restored it correctly)."
                 }
             }
-            foreach ($substr in $ExpectLogNotContains) {
-                if ($logContent -like "*$substr*") {
-                    $logPassed = $false
-                    $logFailures += "NOT expected in log: '$substr'"
+
+            # ── Log assertions ────────────────────────────────────────────────────
+            $logPassed   = $true
+            $logFailures = @()
+            if ($ExpectLogContains.Count -gt 0 -or $ExpectLogNotContains.Count -gt 0) {
+                $logContent = if (Test-Path $logFile) {
+                    Get-Content $logFile -Raw -ErrorAction SilentlyContinue
+                } else { '' }
+                foreach ($substr in $ExpectLogContains) {
+                    if ($logContent -notlike "*$substr*") {
+                        $logPassed = $false
+                        $logFailures += "Expected in log: '$substr'"
+                    }
+                }
+                foreach ($substr in $ExpectLogNotContains) {
+                    if ($logContent -like "*$substr*") {
+                        $logPassed = $false
+                        $logFailures += "NOT expected in log: '$substr'"
+                    }
                 }
             }
-        }
 
-        $passed = ($got -eq $ExpectedExit) -and $logPassed
-        $status = if ($passed) { 'PASS' } else { 'FAIL' }
-        Write-Host "  $status  exit=$got  expected=$ExpectedExit"
+            $passed = ($got -eq $ExpectedExit) -and $logPassed
+            $status = if ($passed) { 'PASS' } else { 'FAIL' }
+            Write-Host "  $status  exit=$got  expected=$ExpectedExit"
 
-        if (-not $passed) {
-            Write-Host "  Log tail:"
-            if (Test-Path $logFile) {
-                Get-Content $logFile -Tail 30 | ForEach-Object { Write-Host "    $_" }
+            if (-not $passed) {
+                Write-Host "  Log tail:"
+                if (Test-Path $logFile) {
+                    Get-Content $logFile -Tail 30 | ForEach-Object { Write-Host "    $_" }
+                }
+                foreach ($msg in $logFailures) {
+                    Write-Host "  LOG ASSERTION FAILED: $msg"
+                }
             }
-            foreach ($msg in $logFailures) {
-                Write-Host "  LOG ASSERTION FAILED: $msg"
-            }
-        }
 
-        return @{ Name = $Name; Passed = $passed; Expected = $ExpectedExit; Got = $got; LogFailures = $logFailures }
+            $result = @{ Name = $Name; Passed = $passed; Expected = $ExpectedExit; Got = $got; LogFailures = $logFailures }
+        }
+    }
+    catch {
+        Write-Host "  FAIL  $($_.Exception.Message)"
+        $result = @{ Name = $Name; Passed = $false; Expected = $ExpectedExit; Got = $null;
+                     LogFailures = @($_.Exception.Message) }
     }
     finally {
         if ($null -ne $PostScenario) {
             Write-Host "  Running post-scenario hook..."
-            & $PostScenario $exePath
+            try {
+                & $PostScenario $exePath
+            }
+            catch {
+                Write-Host "  FAIL  post-scenario: $($_.Exception.Message)"
+                if ($null -eq $result) {
+                    $result = @{ Name = $Name; Passed = $false; Expected = $ExpectedExit; Got = $null; LogFailures = @() }
+                }
+                $result.Passed = $false
+                $result.LogFailures += $_.Exception.Message
+            }
         }
         Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
     }
+
+    return $result
 }
 
 function Invoke-DuplicateInstanceScenario {
@@ -537,14 +557,18 @@ function Invoke-SameNameIsolationScenario {
     New-Item -ItemType Directory -Path $dirA | Out-Null
     New-Item -ItemType Directory -Path $dirB | Out-Null
 
-    $exeA = Join-Path $dirA 'updater.exe'
-    $exeB = Join-Path $dirB 'updater.exe'
+    # Shared filename (same stem) in two directories; avoid updater.exe so leftover
+    # HKCU legacy keys from a real product named "updater" cannot leak into this test.
+    $exeName = 'e2e_SameNameIsolation_Updater.exe'
+    $sidecarName = 'e2e_SameNameIsolation_Updater.json'
+    $exeA = Join-Path $dirA $exeName
+    $exeB = Join-Path $dirB $exeName
     Copy-Item -Path $SourceBin -Destination $exeA
     Copy-Item -Path $SourceBin -Destination $exeB
 
     $sidecar = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/HappyZip/updates.json"}}'
-    Set-Content -Path (Join-Path $dirA 'updater.json') -Value $sidecar -Encoding utf8
-    Set-Content -Path (Join-Path $dirB 'updater.json') -Value $sidecar -Encoding utf8
+    Set-Content -Path (Join-Path $dirA $sidecarName) -Value $sidecar -Encoding utf8
+    Set-Content -Path (Join-Path $dirB $sidecarName) -Value $sidecar -Encoding utf8
 
     $logA = Join-Path $LogDir "$Name-A.log"
     $logB = Join-Path $LogDir "$Name-B.log"
@@ -552,6 +576,16 @@ function Invoke-SameNameIsolationScenario {
     $hashB = Get-ViciusStateIdentityHash -ExePath $exeB
     $keyA = Get-ViciusIsolatedStateKey $hashA
     $keyB = Get-ViciusIsolatedStateKey $hashB
+
+    $legacyStem = [System.IO.Path]::GetFileNameWithoutExtension($exeName)
+    $legacyOpt = "HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\Vicius\$legacyStem"
+    $legacyApp = "HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\$legacyStem"
+    $legacyOptExisted = Test-Path -Path $legacyOpt
+    $legacyAppExisted = Test-Path -Path $legacyApp
+    $savedLegacyDisabled = $null
+    if ($legacyOptExisted) {
+        $savedLegacyDisabled = Get-ItemProperty -Path $legacyOpt -Name 'UpdatesDisabled' -ErrorAction SilentlyContinue
+    }
 
     try {
         if ($hashA -eq $hashB) {
@@ -603,6 +637,20 @@ function Invoke-SameNameIsolationScenario {
     finally {
         Remove-Item -Path $keyA -Recurse -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $keyB -Recurse -Force -ErrorAction SilentlyContinue
+        if ($legacyOptExisted) {
+            if ($null -ne $savedLegacyDisabled) {
+                $null = New-Item -Path $legacyOpt -Force
+                Set-ItemProperty -Path $legacyOpt -Name 'UpdatesDisabled' `
+                    -Value ([int]$savedLegacyDisabled.UpdatesDisabled) -Type DWord
+            } else {
+                Remove-ItemProperty -Path $legacyOpt -Name 'UpdatesDisabled' -ErrorAction SilentlyContinue
+            }
+        } else {
+            Remove-Item -Path $legacyOpt -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        if (-not $legacyAppExisted) {
+            Remove-Item -Path $legacyApp -Recurse -Force -ErrorAction SilentlyContinue
+        }
         Remove-Item -Path $workRoot -Recurse -Force -ErrorAction SilentlyContinue
     }
 }
@@ -842,20 +890,24 @@ try {
                 $legacy = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\e2e_PurgePostpone_Updater'
                 $hash = Get-ViciusStateIdentityHash -ExePath $ExePath
                 $isolated = Get-ViciusIsolatedStateKey $hash
-                $legacyValue = Get-ItemProperty -Path "$legacy\Postpone" -Name 'LastTimestamp' -ErrorAction SilentlyContinue
-                $isolatedValue = Get-ItemProperty -Path "$isolated\Postpone" -Name 'LastTimestamp' -ErrorAction SilentlyContinue
-                $purged = Get-ItemProperty -Path $isolated -Name 'PostponePurged' -ErrorAction SilentlyContinue
-                if ($null -eq $legacyValue) {
-                    throw "Purge deleted the shared legacy postpone timestamp"
+                try {
+                    $legacyValue = Get-ItemProperty -Path "$legacy\Postpone" -Name 'LastTimestamp' -ErrorAction SilentlyContinue
+                    $isolatedValue = Get-ItemProperty -Path "$isolated\Postpone" -Name 'LastTimestamp' -ErrorAction SilentlyContinue
+                    $purged = Get-ItemProperty -Path $isolated -Name 'PostponePurged' -ErrorAction SilentlyContinue
+                    if ($null -eq $legacyValue) {
+                        throw "Purge deleted the shared legacy postpone timestamp"
+                    }
+                    if ($null -ne $isolatedValue) {
+                        throw "Purge left isolated LastTimestamp behind"
+                    }
+                    if ($null -eq $purged -or [int]$purged.PostponePurged -ne 1) {
+                        throw "Purge did not record isolated PostponePurged=1"
+                    }
                 }
-                if ($null -ne $isolatedValue) {
-                    throw "Purge left isolated LastTimestamp behind"
+                finally {
+                    Remove-Item -Path $legacy -Recurse -Force -ErrorAction SilentlyContinue
+                    Remove-Item -Path $isolated -Recurse -Force -ErrorAction SilentlyContinue
                 }
-                if ($null -eq $purged -or [int]$purged.PostponePurged -ne 1) {
-                    throw "Purge did not record isolated PostponePurged=1"
-                }
-                Remove-Item -Path $legacy -Recurse -Force -ErrorAction SilentlyContinue
-                Remove-Item -Path $isolated -Recurse -Force -ErrorAction SilentlyContinue
             }
             ExpectLogContains    = @('Purged postpone data for isolated state; left shared legacy timestamp in place')
         },
