@@ -58,3 +58,4 @@ endif()
 
 add_subdirectory(dll)
 add_subdirectory(src)
+add_subdirectory(tests/cpp)

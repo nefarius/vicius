@@ -143,6 +143,9 @@
     <ClInclude Include="UI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="MarkdownParserFlags.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="UniUtil.h">
       <Filter>Header Files</Filter>
     </ClInclude>

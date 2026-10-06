@@ -38,6 +38,7 @@ add_executable(
   imgui_md.cpp imgui_md.h
   main.cpp
   markdown.cpp
+  MarkdownParserFlags.h
   md4c.c md4c.h
   models/CommonTypes.hpp
   models/DownloadLocationConfig.h

@@ -1,0 +1,7 @@
+<Project>
+  <!--
+    Do not import the repo-root Directory.Build.targets: this project has no
+    vcpkg dependencies, and running bootstrap-vcpkg.bat from a third parallel
+    MSBuild node races the updater/dll bootstrap (CreateFileW access denied).
+  -->
+</Project>
