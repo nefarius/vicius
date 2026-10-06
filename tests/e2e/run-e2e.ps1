@@ -815,7 +815,9 @@ try {
             ExpectLogContains    = @('Ignoring malformed postpone timestamp')
         },
         @{
-            # --purge-postpone must clear both isolated and legacy postpone values.
+            # --purge-postpone must clear this identity's postpone state and ignore
+            # the shared legacy timestamp, without deleting that timestamp for
+            # other same-named updaters that have not migrated yet.
             Name                 = 'PurgePostponeBothLocations'
             SourceBin            = $MainBin
             ExeName              = 'e2e_PurgePostpone_Updater.exe'
@@ -842,13 +844,20 @@ try {
                 $isolated = Get-ViciusIsolatedStateKey $hash
                 $legacyValue = Get-ItemProperty -Path "$legacy\Postpone" -Name 'LastTimestamp' -ErrorAction SilentlyContinue
                 $isolatedValue = Get-ItemProperty -Path "$isolated\Postpone" -Name 'LastTimestamp' -ErrorAction SilentlyContinue
-                if ($null -ne $legacyValue -or $null -ne $isolatedValue) {
-                    throw "Purge left postpone values behind (legacy=$([bool]$legacyValue) isolated=$([bool]$isolatedValue))"
+                $purged = Get-ItemProperty -Path $isolated -Name 'PostponePurged' -ErrorAction SilentlyContinue
+                if ($null -eq $legacyValue) {
+                    throw "Purge deleted the shared legacy postpone timestamp"
+                }
+                if ($null -ne $isolatedValue) {
+                    throw "Purge left isolated LastTimestamp behind"
+                }
+                if ($null -eq $purged -or [int]$purged.PostponePurged -ne 1) {
+                    throw "Purge did not record isolated PostponePurged=1"
                 }
                 Remove-Item -Path $legacy -Recurse -Force -ErrorAction SilentlyContinue
                 Remove-Item -Path $isolated -Recurse -Force -ErrorAction SilentlyContinue
             }
-            ExpectLogContains    = @('Purged postpone data from isolated and legacy locations')
+            ExpectLogContains    = @('Purged postpone data for isolated state; left shared legacy timestamp in place')
         },
         @{
             Name           = 'ChecksumMismatch'

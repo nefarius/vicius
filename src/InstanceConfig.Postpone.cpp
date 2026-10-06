@@ -6,6 +6,7 @@
 #define NV_ISOLATED_STATE_ROOT_TEMPLATE      "SOFTWARE\\Nefarius Software Solutions e.U.\\Vicius\\State\\v1\\{}"
 #define NV_POSTPONE_TS_VALUE_NAME            L"LastTimestamp"
 #define NV_UPDATES_DISABLED_VALUE_NAME       L"UpdatesDisabled"
+#define NV_POSTPONE_PURGED_VALUE_NAME        L"PostponePurged"
 
 namespace
 {
@@ -224,25 +225,48 @@ std::expected<void, std::string> models::InstanceConfig::SetPostponeData()
         return std::unexpected(std::format("Failed to set postpone timestamp: {}", RegError(result)));
     }
 
+    winreg::RegKey rootKey;
+    if (const winreg::RegResult opened = rootKey.TryOpen(HKEY_CURRENT_USER, root, KEY_READ | KEY_WRITE); opened)
+    {
+        if (const auto cleared = DeleteValueIfPresent(rootKey, NV_POSTPONE_PURGED_VALUE_NAME); !cleared)
+        {
+            spdlog::warn("Failed to clear isolated postpone-purged marker: {}", cleared.error());
+        }
+    }
+
     spdlog::debug("Wrote postpone timestamp under isolated state {}", GetStateIdentityHash());
     return {};
 }
 
 std::expected<void, std::string> models::InstanceConfig::PurgePostponeData()
 {
+    const auto root = IsolatedRoot(*this);
+    if (const auto ensured = EnsureNonVolatileRoot(root); !ensured)
+    {
+        spdlog::error("{}", ensured.error());
+        return std::unexpected(ensured.error());
+    }
+
     if (const auto isolated = PurgeValueAt(IsolatedPostpone(*this), NV_POSTPONE_TS_VALUE_NAME); !isolated)
     {
         spdlog::error("{}", isolated.error());
         return isolated;
     }
 
-    if (const auto legacy = PurgeValueAt(LegacyPostpone(appFilename), NV_POSTPONE_TS_VALUE_NAME); !legacy)
+    winreg::RegKey rootKey;
+    if (const winreg::RegResult result = rootKey.TryOpen(HKEY_CURRENT_USER, root, KEY_READ | KEY_WRITE); !result)
     {
-        spdlog::error("{}", legacy.error());
-        return legacy;
+        spdlog::error("Failed to open isolated state root, error {}", RegError(result));
+        return std::unexpected(std::format("Failed to open isolated state root: {}", RegError(result)));
     }
 
-    spdlog::debug("Purged postpone data from isolated and legacy locations");
+    if (const winreg::RegResult written = rootKey.TrySetDwordValue(NV_POSTPONE_PURGED_VALUE_NAME, 1); !written)
+    {
+        spdlog::error("Failed to record isolated postpone purge, error {}", RegError(written));
+        return std::unexpected(std::format("Failed to record isolated postpone purge: {}", RegError(written)));
+    }
+
+    spdlog::debug("Purged postpone data for isolated state; left shared legacy timestamp in place");
     return {};
 }
 
@@ -267,6 +291,19 @@ bool models::InstanceConfig::IsInPostponePeriod()
     if (const auto isolated = tryKey(IsolatedPostpone(*this)))
     {
         return IsTimestampInPostponeWindow(*isolated);
+    }
+
+    {
+        winreg::RegKey rootKey;
+        if (const winreg::RegResult opened = rootKey.TryOpen(HKEY_CURRENT_USER, IsolatedRoot(*this)); opened)
+        {
+            if (const auto purged = rootKey.TryGetDwordValue(NV_POSTPONE_PURGED_VALUE_NAME);
+                purged.IsValid() && purged.GetValue() != 0)
+            {
+                spdlog::debug("Isolated postpone purge marker present, ignoring shared legacy timestamp");
+                return false;
+            }
+        }
     }
 
     const auto legacy = tryKey(LegacyPostpone(appFilename));
@@ -414,16 +451,10 @@ std::expected<void, std::string> models::InstanceConfig::SetUpdatesDisabled(cons
         return {};
     }
 
-    if (const auto isolated = DeleteValueIfPresent(key, NV_UPDATES_DISABLED_VALUE_NAME); !isolated)
+    if (const winreg::RegResult result = key.TrySetDwordValue(NV_UPDATES_DISABLED_VALUE_NAME, 0); !result)
     {
-        spdlog::error("{}", isolated.error());
-        return isolated;
-    }
-
-    if (const auto legacy = PurgeValueAt(LegacyUserOptions(appFilename), NV_UPDATES_DISABLED_VALUE_NAME); !legacy)
-    {
-        spdlog::error("{}", legacy.error());
-        return legacy;
+        spdlog::error("Failed to clear UpdatesDisabled, error {}", RegError(result));
+        return std::unexpected(std::format("Failed to clear UpdatesDisabled: {}", RegError(result)));
     }
 
     spdlog::info("Update notifications re-enabled by user preference");
