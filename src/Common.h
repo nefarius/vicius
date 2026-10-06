@@ -26,6 +26,8 @@
 #define NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE "--terminate-process-before-update"
 #define NV_CLI_IGNORE_POSTPONE                       "--ignore-postpone"
 #define NV_CLI_PURGE_POSTPONE                        "--purge-postpone"
+/** Offline dialog to inspect or re-enable user update-notification preferences. */
+#define NV_CLI_SHOW_OPTIONS                          "--show-options"
 #define NV_CLI_IGNORE_PRODUCT_IN_USE                 "--ignore-product-in-use"
 #define NV_CLI_PARAM_LOCAL_VERSION                   "--local-version"
 #define NV_CLI_PARAM_FORCE_LOCAL_VERSION             "--force-local-version"
@@ -61,6 +63,9 @@
 #define NV_E_PUBLISHER_MISMATCH                      117
 #define NV_E_MANIFEST_SIGNATURE_INVALID              118
 #define NV_E_MANIFEST_DOWNGRADE                      119
+#define NV_E_UPDATES_DISABLED_QUERY_FAILED           120
+#define NV_E_UPDATES_DISABLED_WRITE_FAILED           121
+#define NV_E_SHOW_OPTIONS_FAILED                     122
 
 //
 // Success codes
@@ -78,6 +83,12 @@
 #define NV_S_PRODUCT_IN_USE_TIMEOUT                  209
 /** Another updater process for the same executable path is already running; activation was signaled and this process exited. */
 #define NV_S_INSTANCE_ALREADY_RUNNING                210
+/** User preference already disables update notifications; no server contact. */
+#define NV_S_UPDATES_DISABLED                        211
+/** Offline --show-options dialog completed. */
+#define NV_S_SHOW_OPTIONS                            212
+/** User just opted out of update notifications from the wizard. */
+#define NV_S_USER_DISABLED_UPDATES                   213
 
 /** Hard ceiling on the product-busy wait loop, in minutes. Configured values above this are clamped. */
 #define NV_PRODUCT_IN_USE_MAX_WAIT_MINUTES           180

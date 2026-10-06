@@ -41,7 +41,8 @@ public sealed class ManifestSerializationTests
                     Value = "Version"
                 },
                 SignatureVerificationMode = SignatureVerificationMode.Required,
-                SignaturePolicy = SignatureComparisonPolicy.Strict
+                SignaturePolicy = SignatureComparisonPolicy.Strict,
+                AllowUserToDisableUpdates = true
             },
             Releases =
             {
@@ -71,6 +72,7 @@ public sealed class ManifestSerializationTests
         Assert.Equal("HKLM", root["shared"]?["detection"]?["hive"]?.GetValue<string>());
         Assert.Equal("Required", root["shared"]?["signatureVerificationMode"]?.GetValue<string>());
         Assert.Equal("Strict", root["shared"]?["signaturePolicy"]?.GetValue<string>());
+        Assert.True(root["shared"]?["allowUserToDisableUpdates"]?.GetValue<bool>());
         Assert.Equal("2.0.0", root["releases"]?[0]?["version"]?.GetValue<string>());
         Assert.Equal("2024-06-01T12:00:00Z", root["releases"]?[0]?["publishedAt"]?.GetValue<string>());
         Assert.Equal("SHA256", root["releases"]?[0]?["checksum"]?["checksumAlg"]?.GetValue<string>());
@@ -127,6 +129,37 @@ public sealed class ManifestSerializationTests
         Assert.Equal(new DateTimeOffset(2024, 6, 1, 12, 0, 0, TimeSpan.Zero), release.PublishedAt);
         Assert.Equal([0, 3010], release.ExitCode?.SuccessCodes);
         Assert.True(release.ExitCode?.Messages?["3010"].IsSuccess);
+    }
+
+    [Fact]
+    public void SharedConfig_omits_null_allowUserToDisableUpdates()
+    {
+        string json = JsonSerializer.Serialize(new SharedConfig { ProductName = "Contoso" }, ManifestJson.Options);
+        JsonObject root = JsonNode.Parse(json)!.AsObject();
+
+        Assert.Equal("Contoso", root["productName"]?.GetValue<string>());
+        Assert.False(root.ContainsKey("allowUserToDisableUpdates"));
+    }
+
+    [Fact]
+    public void SharedConfig_allowUserToDisableUpdates_round_trips()
+    {
+        SharedConfig original = new() { AllowUserToDisableUpdates = true };
+        string json = JsonSerializer.Serialize(original, ManifestJson.Options);
+        SharedConfig? roundTripped = JsonSerializer.Deserialize<SharedConfig>(json, ManifestJson.Options);
+
+        Assert.True(JsonNode.Parse(json)!["allowUserToDisableUpdates"]!.GetValue<bool>());
+        Assert.True(roundTripped?.AllowUserToDisableUpdates);
+    }
+
+    [Fact]
+    public void SharedConfig_deserializes_omitted_allowUserToDisableUpdates_as_null()
+    {
+        SharedConfig? parsed = JsonSerializer.Deserialize<SharedConfig>("""{"productName":"Contoso"}""", ManifestJson.Options);
+
+        Assert.NotNull(parsed);
+        Assert.Equal("Contoso", parsed.ProductName);
+        Assert.Null(parsed.AllowUserToDisableUpdates);
     }
 
     [Theory]

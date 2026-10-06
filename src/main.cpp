@@ -346,6 +346,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         return cfg.GetSuccessExitCode(NV_S_POSTPONE_PURGE);
     }
 
+    // Offline recovery / inspection of the persistent user preference. Must run
+    // before RequestUpdateInfo so a disabled updater can still re-enable checks.
+    if (cmdl[ {NV_CLI_SHOW_OPTIONS} ])
+    {
+        if (const auto r = cfg.ShowUserOptionsDialog(); !r)
+        {
+            spdlog::error("Failed to show updater options: {}", r.error());
+            cfg.TryDisplayErrorDialog("Failed to show updater options", r.error());
+            return NV_E_SHOW_OPTIONS_FAILED;
+        }
+        return cfg.GetSuccessExitCode(NV_S_SHOW_OPTIONS);
+    }
+
+    if (const auto disabled = cfg.AreUpdatesDisabled(); !disabled)
+    {
+        spdlog::error("Failed to read update-notification preference: {}", disabled.error());
+        cfg.TryDisplayErrorDialog("Failed to read update-notification preference", disabled.error());
+        return NV_E_UPDATES_DISABLED_QUERY_FAILED;
+    }
+    else if (*disabled)
+    {
+        spdlog::info("Update notifications are disabled by user preference, skipping update check");
+        return cfg.GetSuccessExitCode(NV_S_UPDATES_DISABLED);
+    }
+
     // contact update server and get latest state and config
     if (const auto ret = cfg.RequestUpdateInfo(); !ret)
     {
@@ -948,9 +973,59 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
                     }
                 }
 
+                if (cfg.CanUserDisableUpdates())
+                {
+                    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + SCALED(20));
+                    if (ImGui::Button(ICON_FK_BELL_SLASH " Disable update notifications..."))
+                    {
+                        ImGui::OpenPopup("DisableUpdatesConfirm");
+                    }
+                }
+
                 ImGui::PopFont();
                 ImGui::Unindent(leftBorderIndent);
                 ImGui::Unindent(leftBorderIndent);
+
+                if (cfg.CanUserDisableUpdates())
+                {
+                    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+                    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+                    if (ImGui::BeginPopupModal("DisableUpdatesConfirm", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+                    {
+                        ImGui::PushTextWrapPos(ImGui::GetFontSize() * 28.0f);
+                        ImGui::TextWrapped(
+                            "If you disable update notifications, %s will no longer offer security or feature updates.\n\n"
+                            "You can turn notifications back on later by launching this updater with --show-options "
+                            "from the product it governs.",
+                            cfg.GetProductName().c_str());
+                        ImGui::PopTextWrapPos();
+                        ImGui::Dummy(ImVec2(0.0f, SCALED(12)));
+
+                        ImGui::PushStyleColor(ImGuiCol_Button,        ImVec4(0.75f, 0.20f, 0.20f, 1.0f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.85f, 0.28f, 0.28f, 1.0f));
+                        ImGui::PushStyleColor(ImGuiCol_ButtonActive,  ImVec4(0.65f, 0.15f, 0.15f, 1.0f));
+                        if (ImGui::Button("Disable update notifications"))
+                        {
+                            if (const auto r = cfg.SetUpdatesDisabled(true); !r)
+                            {
+                                cfg.TryDisplayErrorDialog("Failed to disable update notifications", r.error());
+                            }
+                            else
+                            {
+                                status = cfg.GetSuccessExitCode(NV_S_USER_DISABLED_UPDATES);
+                                PostQuitMessage(static_cast<int>(status));
+                            }
+                            ImGui::CloseCurrentPopup();
+                        }
+                        ImGui::PopStyleColor(3);
+                        ImGui::SameLine();
+                        if (ImGui::Button("Keep receiving updates"))
+                        {
+                            ImGui::CloseCurrentPopup();
+                        }
+                        ImGui::EndPopup();
+                    }
+                }
                 break;
             }
             case WizardPage::SingleVersionSummary:

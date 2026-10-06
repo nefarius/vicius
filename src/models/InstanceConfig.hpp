@@ -211,6 +211,7 @@ namespace models
         std::string GetWindowTitle() const { return merged.windowTitle; }
         std::string GetProductName() const { return merged.productName; }
         bool IsRemindButtonHidden() const { return merged.hideRemindButton; }
+        bool CanUserDisableUpdates() const { return merged.allowUserToDisableUpdates; }
 
         bool SetSelectedRelease(const int releaseIndex = 0)
         {
@@ -582,6 +583,27 @@ namespace models
          * \return True if we're still within a 24 hour window, false otherwise.
          */
         bool IsInPostponePeriod();
+
+        /**
+         * \brief Reads the persistent per-user update-notification preference.
+         * \return True if the user disabled notifications; false if absent/enabled.
+         *         Registry access failures are returned as unexpected.
+         */
+        [[nodiscard]] std::expected<bool, std::string> AreUpdatesDisabled() const;
+
+        /**
+         * \brief Persists or clears the per-user update-notification preference.
+         * \param disabled True to opt out, false to restore the default (enabled).
+         */
+        [[nodiscard]] std::expected<void, std::string> SetUpdatesDisabled(bool disabled);
+
+        /**
+         * \brief Shows the offline native options dialog (--show-options).
+         *
+         * When notifications are disabled the user can re-enable them. Otherwise the
+         * dialog reports that checks are already enabled. Does not contact the server.
+         */
+        [[nodiscard]] std::expected<void, std::string> ShowUserOptionsDialog();
 
         /**
          * \brief Uses the template engine to render a string consisting of inja syntax.

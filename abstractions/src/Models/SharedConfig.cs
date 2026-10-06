@@ -114,6 +114,16 @@ public sealed class SharedConfig
     public bool? HideRemindButton { get; set; }
 
     /// <summary>
+    ///     When true, the update UI offers a "Disable update notifications" action.
+    ///     The action is hidden unless this is explicitly enabled. Default when omitted: false.
+    /// </summary>
+    /// <remarks>
+    ///     Opting out is persisted per user and per updater filename. Recovery is offline via
+    ///     <c>--show-options</c> on the updater that governs the product.
+    /// </remarks>
+    public bool? AllowUserToDisableUpdates { get; set; }
+
+    /// <summary>
     ///     Base64-encoded Windows .ico data used as the window and taskbar icon at runtime.
     /// </summary>
     /// <remarks>

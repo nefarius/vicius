@@ -15,6 +15,7 @@
         NV_S_UP_TO_DATE      = 202
         NV_S_SELF_UPDATER    = 201
         NV_S_INSTANCE_ALREADY_RUNNING = 210
+        NV_S_UPDATES_DISABLED = 211
         NV_E_SERVER_RESPONSE = 104
         NV_E_SIGNATURE_INVALID = 116
         NV_E_DOWNLOAD_FAILED = 107
@@ -527,6 +528,30 @@ try {
             LocalVersion   = '2.0.0'
             ExpectedExit   = 202
             SkipSelfUpdate = $true
+        },
+        @{
+            # Persistent per-user opt-out must short-circuit before RequestUpdateInfo.
+            # The flag is seeded under the isolated Vicius\{filename} key (not the volatile
+            # Postpone key) so it survives reboot and stays out of postpone's REG_OPTION_VOLATILE.
+            Name                 = 'UpdatesDisabled'
+            SourceBin            = $MainBin
+            ExeName              = 'e2e_UpdatesDisabled_Updater.exe'
+            LocalVersion         = '0.0.1'
+            ExpectedExit         = 211
+            SkipSelfUpdate       = $true
+            PreScenario          = {
+                $key = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\Vicius\e2e_UpdatesDisabled_Updater'
+                Write-Host "  Seeding $key UpdatesDisabled=1..."
+                $null = New-Item -Path $key -Force
+                Set-ItemProperty -Path $key -Name 'UpdatesDisabled' -Value 1 -Type DWord
+            }
+            PostScenario         = {
+                $key = 'HKCU:\SOFTWARE\Nefarius Software Solutions e.U.\Vicius\e2e_UpdatesDisabled_Updater'
+                Write-Host "  Cleaning up $key..."
+                Remove-Item -Path $key -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            ExpectLogContains    = @('Update notifications are disabled by user preference, skipping update check')
+            ExpectLogNotContains = @('Requesting update info')
         },
         @{
             Name           = 'ChecksumMismatch'

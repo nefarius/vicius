@@ -1330,6 +1330,9 @@ namespace
 
                     if (shared.hideRemindButton.has_value()) merged.hideRemindButton = shared.hideRemindButton.value();
 
+                    if (shared.allowUserToDisableUpdates.has_value())
+                        merged.allowUserToDisableUpdates = shared.allowUserToDisableUpdates.value();
+
                     if (shared.iconBase64.has_value()) merged.iconBase64 = shared.iconBase64.value();
 
                     if (shared.productBusyDetection.has_value())

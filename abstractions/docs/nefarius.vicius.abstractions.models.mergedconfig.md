@@ -17,6 +17,18 @@ Keep in sync with [SharedConfig](./nefarius.vicius.abstractions.models.sharedcon
 
 ## Properties
 
+### <a id="properties-allowusertodisableupdates"/>**AllowUserToDisableUpdates**
+
+When true, the update UI offers a "Disable update notifications" action. Default: false.
+
+```csharp
+public bool AllowUserToDisableUpdates { get; set; }
+```
+
+#### Property Value
+
+[Boolean](https://learn.microsoft.com/dotnet/api/system.boolean)<br>
+
 ### <a id="properties-detection"/>**Detection**
 
 The details of the selected [MergedConfig.DetectionMethod](./nefarius.vicius.abstractions.models.mergedconfig.md#detectionmethod).

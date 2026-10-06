@@ -17,6 +17,24 @@ Keep in sync with [MergedConfig](./nefarius.vicius.abstractions.models.mergedcon
 
 ## Properties
 
+### <a id="properties-allowusertodisableupdates"/>**AllowUserToDisableUpdates**
+
+When true, the update UI offers a "Disable update notifications" action.
+ The action is hidden unless this is explicitly enabled. Default when omitted: false.
+
+```csharp
+public Nullable<Boolean> AllowUserToDisableUpdates { get; set; }
+```
+
+#### Property Value
+
+[Nullable](https://learn.microsoft.com/dotnet/api/system.nullable-1)<[Boolean](https://learn.microsoft.com/dotnet/api/system.boolean)><br>
+
+**Remarks:**
+
+Opting out is persisted per user and per updater filename. Recovery is offline via
+ `--show-options` on the updater that governs the product.
+
 ### <a id="properties-detection"/>**Detection**
 
 The details of the selected [SharedConfig.DetectionMethod](./nefarius.vicius.abstractions.models.sharedconfig.md#detectionmethod).
