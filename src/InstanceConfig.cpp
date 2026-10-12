@@ -4,6 +4,35 @@
 #include "InstanceConfig.hpp"
 #include "NAuthenticode.h"
 
+namespace
+{
+    constexpr DWORD kTemporaryReadyWaitMs = 30000;
+
+    std::expected<std::string, std::string> HashFileContents(const std::filesystem::path& path)
+    {
+        std::ifstream stream(path, std::ios::binary);
+        if (!stream.is_open())
+        {
+            return std::unexpected(std::format("Failed to open {}", path.string()));
+        }
+
+        SHA256 hash;
+        constexpr std::size_t chunkSize = 4 * 1024;
+        std::vector<char> buffer(chunkSize);
+        while (stream.read(buffer.data(), static_cast<std::streamsize>(buffer.size())) || stream.gcount() > 0)
+        {
+            hash.add(buffer.data(), static_cast<size_t>(stream.gcount()));
+        }
+
+        if (stream.bad())
+        {
+            return std::unexpected(std::format("Failed to read {}", path.string()));
+        }
+
+        return hash.getHash();
+    }
+}
+
 models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, PDWORD abortError)
     : appInstance(hInstance)
 {
@@ -30,7 +59,10 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
         if (cmdl({NV_CLI_PARAM_LOG_TO_FILE}))
         {
             const auto logFilename = cmdl({NV_CLI_PARAM_LOG_TO_FILE}).str();
-            auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilename, true);
+            this->logFilePath = logFilename;
+            // A temporary child inherits the parent's log path. Append so its startup does not erase the parent log.
+            const bool truncateLog = !cmdl[ {NV_CLI_TEMPORARY} ];
+            auto fileSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilename, truncateLog);
             fileSink->set_level(logLevel.has_value() ? logLevel.value() : spdlog::level::info);
 
             logger = std::make_shared<spdlog::logger>(spdlog::logger(NV_LOGGER_NAME, {debugSink, fileSink}));
@@ -168,17 +200,19 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
 
 #pragma region Temporary child process launch verification
 
-    const auto parentProcessId = nefarius::winapi::GetParentProcessID(GetCurrentProcessId());
-    spdlog::debug("parentProcessId = {}", parentProcessId.value_or(0));
-
-    const auto parentPath = nefarius::winapi::GetProcessFullPath<std::string>(parentProcessId.value_or(0));
-
-    //
-    // Make sure our parent is originating form the exact same file to not load configuration from an impostor *sus*
-    //
-    if (cmdl[ {NV_CLI_TEMPORARY} ] && parentPath)
+    // Authenticate against the live parent before loading configuration. A failed check must
+    // not fall back to the temp directory's sidecar or the compiled-in server URL.
+    if (cmdl[ {NV_CLI_TEMPORARY} ])
     {
-        // those can not be used together
+        const auto failHandoff = [&](const std::string& message)
+        {
+            spdlog::error("{}", message);
+            if (abortError)
+            {
+                *abortError = NV_E_TEMPORARY_HANDOFF;
+            }
+        };
+
         if (this->isSilent)
         {
             spdlog::error("Temporary and silent switches can not be used together");
@@ -189,81 +223,58 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
             return;
         }
 
-        parentAppPath = std::get<std::string>(parentPath.value());
-        spdlog::debug("parentAppPath = {}", parentAppPath.value());
-
-        std::ifstream parentAppFileStream(parentAppPath.value(), std::ios::binary);
-        std::ifstream currentAppFileStream(appPath, std::ios::binary);
-
-        if (parentAppFileStream.is_open() && currentAppFileStream.is_open())
+        if (!cmdl({NV_CLI_PARAM_TEMPORARY_READY_EVENT}))
         {
-            SHA256 parentSha256Alg, currentSha256Alg;
-            // improve hashing speed
-            constexpr std::size_t chunkSize = 4 * 1024; // 4 KB
-
-            std::vector<char> parentAppFileBuffer(chunkSize);
-            while (!parentAppFileStream.eof())
-            {
-                parentAppFileStream.read(parentAppFileBuffer.data(), parentAppFileBuffer.size());
-                std::streamsize bytesRead = parentAppFileStream.gcount();
-
-                parentSha256Alg.add(parentAppFileBuffer.data(), bytesRead);
-
-                if (bytesRead < chunkSize && !parentAppFileStream.eof())
-                {
-                    if (parentAppFileStream.fail())
-                    {
-                        spdlog::error("Failed to read file {} to the end for hashing, aborting", parentAppPath.value());
-                        break;
-                    }
-                }
-            }
-
-            std::vector<char> currentAppFileBuffer(chunkSize);
-            while (!currentAppFileStream.eof())
-            {
-                currentAppFileStream.read(currentAppFileBuffer.data(), currentAppFileBuffer.size());
-                std::streamsize bytesRead = currentAppFileStream.gcount();
-
-                currentSha256Alg.add(currentAppFileBuffer.data(), bytesRead);
-
-                if (bytesRead < chunkSize && !currentAppFileStream.eof())
-                {
-                    if (currentAppFileStream.fail())
-                    {
-                        spdlog::error("Failed to read file {} to the end for hashing, aborting", appPath);
-                        break;
-                    }
-                }
-            }
-
-            const auto hashLhs = parentSha256Alg.getHash();
-            const auto hashRhs = currentSha256Alg.getHash();
-
-            spdlog::debug("Hashes LHS {} vs. RHS {}", hashLhs, hashRhs);
-
-            // trusted parent, we can continue
-            this->isTemporaryCopy = util::icompare(hashLhs, hashRhs);
-
-            if (!this->isTemporaryCopy)
-            {
-                spdlog::error("Parent SHA256 {} didn't match current SHA256 {}, will not continue with temporary copy", hashLhs,
-                              hashRhs);
-
-                this->TryDisplayErrorDialog("Updater process module hash mismatch",
-                                            "The module integrity check has failed, "
-                                            "temporary child process will not be spawned for security reasons.");
-            }
-        }
-        else
-        {
-            spdlog::warn("Failed to open process module streams for comparison");
-            // prerequisites for running in this mode not met
-            this->isTemporaryCopy = false;
+            failHandoff(std::format("Temporary copy is missing {}", NV_CLI_PARAM_TEMPORARY_READY_EVENT));
+            return;
         }
 
-        parentAppFileStream.close();
-        currentAppFileStream.close();
+        HANDLE readyEvent{};
+        cmdl(NV_CLI_PARAM_TEMPORARY_READY_EVENT) >> reinterpret_cast<uintptr_t&>(readyEvent);
+        if (!readyEvent || WaitForSingleObject(readyEvent, 0) == WAIT_FAILED)
+        {
+            failHandoff(std::format("Value {} passed to {} is not a valid inherited event handle",
+                                    reinterpret_cast<uintptr_t>(readyEvent),
+                                    NV_CLI_PARAM_TEMPORARY_READY_EVENT));
+            return;
+        }
+        this->temporaryReadyEvent = readyEvent;
+
+        const auto parentProcessId = nefarius::winapi::GetParentProcessID(GetCurrentProcessId());
+        spdlog::debug("parentProcessId = {}", parentProcessId.value_or(0));
+
+        const auto parentPath = nefarius::winapi::GetProcessFullPath<std::string>(parentProcessId.value_or(0));
+        if (!parentPath)
+        {
+            failHandoff("Temporary copy could not resolve its live parent process");
+            return;
+        }
+
+        const auto parentImage = std::filesystem::path(std::get<std::string>(parentPath.value()));
+        const auto parentHash = HashFileContents(parentImage);
+        if (!parentHash)
+        {
+            failHandoff(parentHash.error());
+            return;
+        }
+
+        const auto currentHash = HashFileContents(appPath);
+        if (!currentHash)
+        {
+            failHandoff(currentHash.error());
+            return;
+        }
+
+        spdlog::debug("Hashes LHS {} vs. RHS {}", *parentHash, *currentHash);
+        if (!util::icompare(*parentHash, *currentHash))
+        {
+            failHandoff(std::format("Parent SHA256 {} did not match current SHA256 {}", *parentHash, *currentHash));
+            return;
+        }
+
+        this->parentAppPath = parentImage;
+        this->isTemporaryCopy = true;
+        spdlog::info("Temporary copy verified against parent {}", parentAppPath->string());
     }
 
     spdlog::debug("isTemporaryCopy = {}", this->isTemporaryCopy);
@@ -570,6 +581,12 @@ models::InstanceConfig::~InstanceConfig()
     if (isUpdaterSigned)
     {
         crypto::FreeSignatureInformation(&appCertInfo);
+    }
+
+    if (temporaryReadyEvent)
+    {
+        CloseHandle(temporaryReadyEvent);
+        temporaryReadyEvent = nullptr;
     }
 
     // Ensure no in-flight download uses libcurl while we tear down global state.
@@ -1127,71 +1144,199 @@ void models::InstanceConfig::LaunchEmergencySite() const
     ShellExecuteA(nullptr, "open", this->remote.instance.value().emergencyUrl.value().c_str(), nullptr, nullptr, SW_SHOWNORMAL);
 }
 
-bool models::InstanceConfig::TryRunTemporaryProcess() const
+std::expected<void, std::string> models::InstanceConfig::SignalTemporaryReadiness()
 {
-    if (!this->merged.runAsTemporaryCopy || this->isTemporaryCopy) return false;
+    if (!temporaryReadyEvent)
+    {
+        return std::unexpected("Temporary copy has no readiness event");
+    }
+
+    const HANDLE event = std::exchange(temporaryReadyEvent, nullptr);
+    const BOOL signaled = SetEvent(event);
+    CloseHandle(event);
+    if (!signaled)
+    {
+        return std::unexpected(std::format("SetEvent failed: {}", winapi::GetLastErrorStdStr()));
+    }
+
+    spdlog::info("Temporary copy signaled readiness");
+    return {};
+}
+
+std::expected<bool, std::string> models::InstanceConfig::TryRunTemporaryProcess() const
+{
+    if (!this->merged.runAsTemporaryCopy || this->isTemporaryCopy)
+    {
+        return false;
+    }
 
     const auto userTempPath = winapi::GetUserTemporaryDirectory();
-    if (!userTempPath) return false;
+    if (!userTempPath)
+    {
+        return std::unexpected("Failed to resolve the user temporary directory");
+    }
 
-    std::filesystem::path temporaryUpdaterPath =
+    const std::filesystem::path temporaryUpdaterPath =
         std::filesystem::path(*userTempPath) / std::filesystem::path(std::format("{}.exe", this->appFilename));
 
-    if (CopyFileA(this->appPath.string().c_str(), temporaryUpdaterPath.string().c_str(), FALSE) == FALSE) return false;
+    if (CopyFileA(this->appPath.string().c_str(), temporaryUpdaterPath.string().c_str(), FALSE) == FALSE)
+    {
+        return std::unexpected(std::format("Failed to copy updater to {}: {}",
+                                           temporaryUpdaterPath.string(),
+                                           winapi::GetLastErrorStdStr()));
+    }
 
     // ensure cleanup at least on next reboot
     MoveFileExA(temporaryUpdaterPath.string().c_str(), nullptr, MOVEFILE_DELAY_UNTIL_REBOOT);
 
-    std::vector<std::string> narrow;
-
-    narrow.reserve(__argc);
-    for (int i = 0; i < __argc; i++)
+    SECURITY_ATTRIBUTES eventSecurity{};
+    eventSecurity.nLength = sizeof(eventSecurity);
+    eventSecurity.bInheritHandle = TRUE;
+    HANDLE readyEvent = CreateEventW(&eventSecurity, TRUE, FALSE, nullptr);
+    if (!readyEvent)
     {
-        narrow.push_back(__argv[ i ]); // NOLINT(modernize-use-emplace)
+        return std::unexpected(std::format("CreateEventW failed: {}", winapi::GetLastErrorStdStr()));
+    }
+    auto readyEventGuard = sg::make_scope_guard([&]() noexcept
+    {
+        if (readyEvent)
+        {
+            CloseHandle(readyEvent);
+            readyEvent = nullptr;
+        }
+    });
+
+    SIZE_T attributeSize = 0;
+    InitializeProcThreadAttributeList(nullptr, 1, 0, &attributeSize);
+    if (attributeSize == 0)
+    {
+        return std::unexpected(std::format("InitializeProcThreadAttributeList failed: {}", winapi::GetLastErrorStdStr()));
     }
 
-    // throw away process path
-    narrow.erase(narrow.begin());
+    auto* attributeList = static_cast<LPPROC_THREAD_ATTRIBUTE_LIST>(
+        _aligned_malloc(attributeSize, MEMORY_ALLOCATION_ALIGNMENT));
+    if (!attributeList)
+    {
+        return std::unexpected("Failed to allocate the process attribute list");
+    }
+    auto attributeGuard = sg::make_scope_guard([&]() noexcept
+    {
+        if (attributeList)
+        {
+            _aligned_free(attributeList);
+            attributeList = nullptr;
+        }
+    });
 
-    // slice together new launch arguments
-    const std::string cliLine = narrow.empty()
-                                    ? "--temporary {}"
-                                    : std::format("--temporary {}",
-                                                  std::accumulate(std::next(narrow.begin()),
-                                                                  narrow.end(),
-                                                                  narrow[ 0 ],
-                                                                  [](const std::string& lhs, const std::string& rhs)
-                                                                  {
-                                                                      return std::format("{} {}", lhs, rhs);
-                                                                  }));
+    if (!InitializeProcThreadAttributeList(attributeList, 1, 0, &attributeSize))
+    {
+        return std::unexpected(std::format("InitializeProcThreadAttributeList failed: {}", winapi::GetLastErrorStdStr()));
+    }
+    auto initializedGuard = sg::make_scope_guard([&]() noexcept
+    {
+        DeleteProcThreadAttributeList(attributeList);
+    });
 
-    STARTUPINFOA info = {};
-    info.cb = sizeof(STARTUPINFOA);
-    PROCESS_INFORMATION updateProcessInfo = {};
+    HANDLE inheritedHandles[] = {readyEvent};
+    if (!UpdateProcThreadAttribute(attributeList,
+                                   0,
+                                   PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
+                                   inheritedHandles,
+                                   sizeof(inheritedHandles),
+                                   nullptr,
+                                   nullptr))
+    {
+        return std::unexpected(std::format("UpdateProcThreadAttribute failed: {}", winapi::GetLastErrorStdStr()));
+    }
 
-    // CreateProcess may write into the command-line buffer; never pass string::c_str().
-    std::vector<char> cmdLineBuf(cliLine.begin(), cliLine.end());
-    cmdLineBuf.push_back('\0');
+    std::string commandLine = std::format("{} {} {} {}",
+                                          winapi::QuoteArg(temporaryUpdaterPath.string()),
+                                          NV_CLI_TEMPORARY,
+                                          NV_CLI_PARAM_TEMPORARY_READY_EVENT,
+                                          reinterpret_cast<uintptr_t>(readyEvent));
+    for (int i = 1; i < __argc; ++i)
+    {
+        commandLine += ' ';
+        commandLine += winapi::QuoteArg(__argv[i]);
+    }
 
-    // re-launch temporary copy with additional "--temporary" flag
+    STARTUPINFOEXA startup{};
+    startup.StartupInfo.cb = sizeof(startup);
+    startup.lpAttributeList = attributeList;
+    PROCESS_INFORMATION process{};
+    auto commandLineBuffer = winapi::MakeWritableCommandLine(commandLine);
+
+    // Switch the parent log to append mode before the child opens the same file.
+    // Otherwise the parent's existing write offset overwrites the child's prefix.
+    if (logFilePath.has_value())
+    {
+        auto logger = spdlog::default_logger();
+        logger->flush();
+        std::vector<spdlog::sink_ptr> sinks;
+        for (const auto& sink : logger->sinks())
+        {
+            if (!std::dynamic_pointer_cast<spdlog::sinks::basic_file_sink_mt>(sink))
+            {
+                sinks.push_back(sink);
+            }
+        }
+        auto appendSink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(*logFilePath, false);
+        appendSink->set_level(logger->level());
+        sinks.push_back(appendSink);
+        logger->sinks() = std::move(sinks);
+    }
+
     if (!CreateProcessA(temporaryUpdaterPath.string().c_str(),
-                        cmdLineBuf.data(),
+                        commandLineBuffer.data(),
                         nullptr,
                         nullptr,
                         TRUE,
-                        0,
+                        EXTENDED_STARTUPINFO_PRESENT,
                         nullptr,
                         nullptr,
-                        &info,
-                        &updateProcessInfo))
+                        &startup.StartupInfo,
+                        &process))
     {
-        DWORD win32Error = GetLastError();
-
-        spdlog::error("Failed to launch {}, error {:#x}, message {}", temporaryUpdaterPath, win32Error,
-                      winapi::GetLastErrorStdStr());
-
-        return false;
+        return std::unexpected(std::format("Failed to launch {}: {}",
+                                           temporaryUpdaterPath.string(),
+                                           winapi::GetLastErrorStdStr()));
     }
 
-    return true;
+    auto processGuard = sg::make_scope_guard([&]() noexcept
+    {
+        if (process.hThread)
+        {
+            CloseHandle(process.hThread);
+        }
+        if (process.hProcess)
+        {
+            CloseHandle(process.hProcess);
+        }
+    });
+
+    spdlog::info("Waiting up to {} ms for temporary copy readiness", kTemporaryReadyWaitMs);
+    HANDLE waits[] = {readyEvent, process.hProcess};
+    const DWORD wait = WaitForMultipleObjects(static_cast<DWORD>(std::size(waits)), waits, FALSE, kTemporaryReadyWaitMs);
+    if (wait == WAIT_OBJECT_0)
+    {
+        spdlog::info("Temporary copy reported ready");
+        return true;
+    }
+
+    if (wait == WAIT_OBJECT_0 + 1)
+    {
+        DWORD childExit = 0;
+        GetExitCodeProcess(process.hProcess, &childExit);
+        return std::unexpected(std::format("Temporary copy exited before signaling readiness (exit code {})", childExit));
+    }
+
+    if (wait == WAIT_TIMEOUT)
+    {
+        spdlog::error("Temporary copy did not signal readiness within {} ms; terminating it", kTemporaryReadyWaitMs);
+        TerminateProcess(process.hProcess, NV_E_TEMPORARY_HANDOFF);
+        WaitForSingleObject(process.hProcess, 5000);
+        return std::unexpected("Temporary copy did not become ready before the deadline");
+    }
+
+    return std::unexpected(std::format("Waiting for temporary copy failed: {}", winapi::GetLastErrorStdStr()));
 }
