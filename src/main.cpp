@@ -419,18 +419,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         }
     }
 
-    // restart ourselves from a temporary location, if requested
-    if (const auto handoff = cfg.TryRunTemporaryProcess(); !handoff)
-    {
-        spdlog::critical("Failed to launch temporary updater copy: {}", handoff.error());
-        cfg.TryDisplayErrorDialog("Failed to launch temporary updater copy", handoff.error());
-        return NV_E_TEMPORARY_HANDOFF;
-    }
-    else if (*handoff)
-    {
-        return cfg.GetSuccessExitCode(NV_S_LAUNCHED_TEMPORARY);
-    }
-
     // run local product detection
     const auto outdated = cfg.IsInstalledVersionOutdated();
     if (!outdated)
@@ -455,6 +443,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     {
         spdlog::info("Postpone period active, exiting");
         return cfg.GetSuccessExitCode(NV_S_POSTPONE_PERIOD);
+    }
+
+    // Install a pending update from a temporary copy so replacing this executable cannot
+    // fail because the file is in use. Up-to-date and postponed runs stay in this process.
+    if (const auto handoff = cfg.TryRunTemporaryProcess(); !handoff)
+    {
+        spdlog::critical("Failed to launch temporary updater copy: {}", handoff.error());
+        cfg.TryDisplayErrorDialog("Failed to launch temporary updater copy", handoff.error());
+        return NV_E_TEMPORARY_HANDOFF;
+    }
+    else if (*handoff)
+    {
+        return cfg.GetSuccessExitCode(NV_S_LAUNCHED_TEMPORARY);
     }
 
 #pragma region Product-in-use gate
