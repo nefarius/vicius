@@ -213,16 +213,6 @@ models::InstanceConfig::InstanceConfig(HINSTANCE hInstance, argh::parser& cmdl, 
             }
         };
 
-        if (this->isSilent)
-        {
-            spdlog::error("Temporary and silent switches can not be used together");
-            if (abortError)
-            {
-                *abortError = NV_E_INVALID_PARAMETERS;
-            }
-            return;
-        }
-
         if (!cmdl({NV_CLI_PARAM_TEMPORARY_READY_EVENT}))
         {
             failHandoff(std::format("Temporary copy is missing {}", NV_CLI_PARAM_TEMPORARY_READY_EVENT));
@@ -1237,12 +1227,28 @@ std::expected<bool, std::string> models::InstanceConfig::TryRunTemporaryProcess(
         DeleteProcThreadAttributeList(attributeList);
     });
 
-    HANDLE inheritedHandles[] = {readyEvent};
+    // The readiness event is the only handle the child needs by default. A caller-supplied
+    // --terminate-process-before-update handle must be listed too, or the restricted
+    // inheritance list drops it and the child cannot close the product before setup.
+    std::vector<HANDLE> inheritedHandles;
+    inheritedHandles.push_back(readyEvent);
+    if (this->terminateProcessBeforeUpdate.has_value())
+    {
+        const HANDLE terminateHandle = this->terminateProcessBeforeUpdate.value();
+        if (!SetHandleInformation(terminateHandle, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT))
+        {
+            return std::unexpected(std::format("Failed to mark the {} handle inheritable: {}",
+                                               NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE,
+                                               winapi::GetLastErrorStdStr()));
+        }
+        inheritedHandles.push_back(terminateHandle);
+    }
+
     if (!UpdateProcThreadAttribute(attributeList,
                                    0,
                                    PROC_THREAD_ATTRIBUTE_HANDLE_LIST,
-                                   inheritedHandles,
-                                   sizeof(inheritedHandles),
+                                   inheritedHandles.data(),
+                                   inheritedHandles.size() * sizeof(HANDLE),
                                    nullptr,
                                    nullptr))
     {

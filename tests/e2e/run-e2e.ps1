@@ -19,6 +19,7 @@
         NV_S_POSTPONE_PERIOD = 205
         NV_S_POSTPONE_PURGE = 206
         NV_S_LAUNCHED_TEMPORARY = 207
+        NV_E_TEMPORARY_HANDOFF = 123
         NV_E_SERVER_RESPONSE = 104
         NV_E_SIGNATURE_INVALID = 116
         NV_E_DOWNLOAD_FAILED = 107
@@ -361,70 +362,107 @@ function Invoke-Scenario {
 
 function Invoke-TempCopyHandoffScenario {
     param(
-        [string] $SourceBin
+        [Parameter(Mandatory)]
+        [string] $SourceBin,
+
+        [Parameter(Mandatory)]
+        [ValidateSet('SilentUpdate', 'Background', 'Interactive', 'TerminateHandle')]
+        [string] $Mode
     )
 
-    $Name = 'TempCopyHandoff'
+    $Name = "TempCopy$Mode"
     $ParentExit = 207  # NV_S_LAUNCHED_TEMPORARY
-    $ChildExit = 202   # NV_S_UP_TO_DATE
+    $ChildExit = 203   # NV_S_UPDATE_FINISHED
     Write-Header "Scenario: $Name (expect parent $ParentExit, child $ChildExit)"
 
-    if (-not ('TempCopyHandoffNative' -as [type])) {
+    if (-not ('TempCopyInheritedLaunch' -as [type])) {
         Add-Type -TypeDefinition @'
 using System;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
-public static class TempCopyHandoffNative {
-    const uint WM_CLOSE = 0x0010;
-    const uint WM_COMMAND = 0x0111;
-    const uint WM_SYSCOMMAND = 0x0112;
-    const uint SC_CLOSE = 0xF060;
-    const uint BM_CLICK = 0x00F5;
-    const int IDCLOSE = 8;
-    const int IDCANCEL = 2;
 
-    delegate bool EnumProc(IntPtr hWnd, IntPtr lParam);
+public static class TempCopyInheritedLaunch {
+    const uint PROCESS_TERMINATE = 0x0001;
+    const uint PROCESS_QUERY_LIMITED_INFORMATION = 0x1000;
 
-    [DllImport("user32.dll")]
-    static extern bool EnumWindows(EnumProc lpEnumFunc, IntPtr lParam);
-    [DllImport("user32.dll")]
-    static extern bool EnumChildWindows(IntPtr hWnd, EnumProc lpEnumFunc, IntPtr lParam);
-    [DllImport("user32.dll")]
-    static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
-    static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
-    [DllImport("user32.dll")]
-    static extern bool PostMessageW(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
-    [DllImport("user32.dll")]
-    static extern bool SetForegroundWindow(IntPtr hWnd);
-    [DllImport("user32.dll")]
-    static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, System.UIntPtr dwExtraInfo);
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    struct STARTUPINFOW {
+        public int cb;
+        public IntPtr lpReserved;
+        public IntPtr lpDesktop;
+        public IntPtr lpTitle;
+        public int dwX;
+        public int dwY;
+        public int dwXSize;
+        public int dwYSize;
+        public int dwXCountChars;
+        public int dwYCountChars;
+        public int dwFillAttribute;
+        public int dwFlags;
+        public short wShowWindow;
+        public short cbReserved2;
+        public IntPtr lpReserved2;
+        public IntPtr hStdInput;
+        public IntPtr hStdOutput;
+        public IntPtr hStdError;
+    }
 
-    public static int DismissProcessDialogs(uint processId) {
-        int dismissed = 0;
-        EnumWindows((hWnd, _) => {
-            GetWindowThreadProcessId(hWnd, out uint owner);
-            if (owner != processId) return true;
-            dismissed++;
-            PostMessageW(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
-            PostMessageW(hWnd, WM_SYSCOMMAND, (IntPtr)SC_CLOSE, IntPtr.Zero);
-            PostMessageW(hWnd, WM_COMMAND, (IntPtr)IDCLOSE, IntPtr.Zero);
-            PostMessageW(hWnd, WM_COMMAND, (IntPtr)IDCANCEL, IntPtr.Zero);
-            SetForegroundWindow(hWnd);
-            keybd_event(0x1B, 0, 0, System.UIntPtr.Zero);
-            keybd_event(0x1B, 0, 2, System.UIntPtr.Zero);
-            EnumChildWindows(hWnd, (child, _) => {
-                var text = new StringBuilder(256);
-                GetWindowText(child, text, text.Capacity);
-                string label = text.ToString();
-                if (label.Contains("Close") || label.Contains("OK")) {
-                    PostMessageW(child, BM_CLICK, IntPtr.Zero, IntPtr.Zero);
-                }
-                return true;
-            }, IntPtr.Zero);
-            return true;
-        }, IntPtr.Zero);
-        return dismissed;
+    [StructLayout(LayoutKind.Sequential)]
+    struct PROCESS_INFORMATION {
+        public IntPtr hProcess;
+        public IntPtr hThread;
+        public uint dwProcessId;
+        public uint dwThreadId;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern IntPtr OpenProcess(uint dwDesiredAccess, bool bInheritHandle, uint dwProcessId);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    static extern bool CreateProcessW(
+        string lpApplicationName,
+        StringBuilder lpCommandLine,
+        IntPtr lpProcessAttributes,
+        IntPtr lpThreadAttributes,
+        bool bInheritHandles,
+        uint dwCreationFlags,
+        IntPtr lpEnvironment,
+        string lpCurrentDirectory,
+        ref STARTUPINFOW lpStartupInfo,
+        out PROCESS_INFORMATION lpProcessInformation);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    static extern bool CloseHandle(IntPtr hObject);
+
+    public static long OpenInheritableTerminateHandle(uint processId) {
+        IntPtr handle = OpenProcess(PROCESS_TERMINATE | PROCESS_QUERY_LIMITED_INFORMATION, true, processId);
+        if (handle == IntPtr.Zero) {
+            throw new Win32Exception(Marshal.GetLastWin32Error());
+        }
+        return handle.ToInt64();
+    }
+
+    public static uint StartInherited(string application, string commandLine, long terminateHandle) {
+        IntPtr inherited = new IntPtr(terminateHandle);
+        try {
+            STARTUPINFOW startup = new STARTUPINFOW();
+            startup.cb = Marshal.SizeOf(typeof(STARTUPINFOW));
+            StringBuilder command = new StringBuilder(commandLine, 32768);
+            PROCESS_INFORMATION process;
+            if (!CreateProcessW(application, command, IntPtr.Zero, IntPtr.Zero, true, 0,
+                                IntPtr.Zero, null, ref startup, out process)) {
+                throw new Win32Exception(Marshal.GetLastWin32Error());
+            }
+            CloseHandle(process.hThread);
+            CloseHandle(process.hProcess);
+            return process.dwProcessId;
+        }
+        finally {
+            if (inherited != IntPtr.Zero) {
+                CloseHandle(inherited);
+            }
+        }
     }
 }
 '@
@@ -433,48 +471,81 @@ public static class TempCopyHandoffNative {
     $workDir = Join-Path $env:TEMP "vicius-e2e-$Name-$(New-Guid)"
     New-Item -ItemType Directory -Path $workDir | Out-Null
 
-    $exeName = 'e2e_TempCopyMissing_Updater.exe'
+    $exeName = "e2e_${Name}_Updater.exe"
     $exePath = Join-Path $workDir $exeName
     Copy-Item -Path $SourceBin -Destination $exePath
 
     $logPath = Join-Path $LogDir "$Name.log"
     Remove-Item -Path $logPath -Force -ErrorAction SilentlyContinue
 
-    $upToDateUrl = 'http://localhost:5200/api/e2e/UpToDate/updates.json'
+    $feedUrl = 'http://localhost:5200/api/e2e/HappyExe/updates.json'
     $sidecar = @{
         instance = @{
-            serverUrlTemplate = $upToDateUrl
+            serverUrlTemplate = $feedUrl
             authority         = 'Local'
-            stateId           = 'e2e-tempcopy-inherit'
+            stateId           = "e2e-tempcopy-$($Mode.ToLowerInvariant())"
         }
         shared = @{
             runAsTemporaryCopy = $true
-            windowTitle        = 'E2E TempCopy Handoff'
+            windowTitle        = "E2E $Name"
         }
     } | ConvertTo-Json -Depth 6
-    $sidecarPath = Join-Path $workDir 'e2e_TempCopyMissing_Updater.json'
-    Set-Content -Path $sidecarPath -Value $sidecar -Encoding utf8
+    Set-Content -Path (Join-Path $workDir "$([System.IO.Path]::GetFileNameWithoutExtension($exeName)).json") -Value $sidecar -Encoding utf8
 
     $tempCopy = Join-Path $env:TEMP $exeName
     $parentProc = $null
     $childProc = $null
+    $victim = $null
+    $autoAdvance = $Mode -in @('Background', 'Interactive')
 
     try {
+        if ($autoAdvance) {
+            $env:NV_E2E_AUTO_ADVANCE = '1'
+        }
+        else {
+            Remove-Item Env:\NV_E2E_AUTO_ADVANCE -ErrorAction SilentlyContinue
+        }
+
         $parentArgs = @(
-            '--force-local-version', '2.0.0',
+            '--force-local-version', '0.0.1',
             '--ignore-busy-state',
             '--skip-self-update',
             '--log-to-file', $logPath,
             '--log-level', 'debug'
         )
+        if ($Mode -eq 'SilentUpdate' -or $Mode -eq 'TerminateHandle') {
+            $parentArgs = @('--silent-update') + $parentArgs
+        }
+        elseif ($Mode -eq 'Background') {
+            $parentArgs = @('--background') + $parentArgs
+        }
 
-        Write-Host "  Starting parent: $exeName $($parentArgs -join ' ')"
-        $parentProc = Start-Process -FilePath $exePath -ArgumentList $parentArgs -PassThru -NoNewWindow
+        if ($Mode -eq 'TerminateHandle') {
+            $victim = Start-Process -FilePath "$env:SystemRoot\System32\ping.exe" `
+                -ArgumentList '-n', '180', '127.0.0.1' -WindowStyle Hidden -PassThru
+            $handle = [TempCopyInheritedLaunch]::OpenInheritableTerminateHandle([uint32]$victim.Id)
+            $quoted = {
+                param([string] $Value)
+                if ($Value -match '[\s"]') { return '"' + ($Value -replace '"', '\"') + '"' }
+                return $Value
+            }
+            $commandLine = (& $quoted $exePath) + ' ' + (($parentArgs | ForEach-Object { & $quoted $_ }) -join ' ') +
+                " --terminate-process-before-update $handle"
+            Write-Host "  Starting parent with inherited terminate handle: $commandLine"
+            $parentPid = [TempCopyInheritedLaunch]::StartInherited($exePath, $commandLine, [int64]$handle)
+            $parentProc = Get-Process -Id $parentPid -ErrorAction Stop
+            $null = $parentProc.Handle
+        }
+        else {
+            Write-Host "  Starting parent: $exeName $($parentArgs -join ' ')"
+            $parentProc = Start-Process -FilePath $exePath -ArgumentList $parentArgs -PassThru -NoNewWindow
+            $null = $parentProc.Handle
+        }
 
-        $deadline = (Get-Date).AddSeconds(60)
+        $deadline = (Get-Date).AddSeconds(120)
         while ((Get-Date) -lt $deadline) {
             if (-not $childProc) {
-                $child = Get-CimInstance Win32_Process -Filter "Name = 'e2e_TempCopyMissing_Updater.exe'" |
+                $child = Get-CimInstance Win32_Process -Filter "Name = '$exeName'" |
                     Where-Object { $_.ProcessId -ne $parentProc.Id -and $_.CommandLine -like '*--temporary*' } |
                     Select-Object -First 1
                 if ($null -ne $child) {
@@ -491,19 +562,12 @@ public static class TempCopyHandoffNative {
                 }
             }
 
-            if ($null -ne $childProc) {
-                [void][TempCopyHandoffNative]::DismissProcessDialogs([uint32]$childProc.Id)
-            }
-
             $parentDone = $parentProc.HasExited
-            $childDone = $true
-            if ($null -ne $childProc) {
-                $childDone = $childProc.HasExited
-            }
-            if ($parentDone -and $null -ne $childProc -and $childDone) {
+            $childDone = $null -ne $childProc -and $childProc.HasExited
+            if ($parentDone -and $childDone) {
                 break
             }
-            if ($parentDone -and $null -eq $childProc -and ((Get-Date) -gt $parentProc.StartTime.AddSeconds(15))) {
+            if ($parentDone -and $null -eq $childProc -and ((Get-Date) -gt $parentProc.StartTime.AddSeconds(20))) {
                 break
             }
             Start-Sleep -Milliseconds 100
@@ -512,20 +576,15 @@ public static class TempCopyHandoffNative {
         if (-not $parentProc.HasExited) {
             Stop-Process -Id $parentProc.Id -Force -ErrorAction SilentlyContinue
             $parentProc.WaitForExit(5000) | Out-Null
-            throw 'Parent did not finish the temporary-copy handoff within 60 seconds.'
+            throw 'Parent did not finish the temporary-copy handoff within 120 seconds.'
         }
         if ($null -eq $childProc) {
             throw 'Temporary copy did not start.'
         }
         if (-not $childProc.HasExited) {
-            $exitDeadline = (Get-Date).AddSeconds(15)
-            while (-not $childProc.HasExited -and (Get-Date) -lt $exitDeadline) {
-                [void][TempCopyHandoffNative]::DismissProcessDialogs([uint32]$childProc.Id)
-                Start-Sleep -Milliseconds 200
-            }
-            if (-not $childProc.HasExited) {
+            if (-not $childProc.WaitForExit(30000)) {
                 Stop-Process -Id $childProc.Id -Force -ErrorAction SilentlyContinue
-                throw 'Temporary copy did not exit after the up-to-date dialog was dismissed.'
+                throw 'Temporary copy did not exit within 30 seconds after the parent handoff.'
             }
         }
 
@@ -546,9 +605,18 @@ public static class TempCopyHandoffNative {
             'Temporary copy signaled readiness',
             'Temporary copy reported ready',
             "Acquired single-instance lock for $exePath",
-            "Requesting update info from $upToDateUrl",
-            'Installed software is up-to-date'
+            "Requesting update info from $feedUrl"
         )
+        if ($Mode -eq 'SilentUpdate' -or $Mode -eq 'TerminateHandle') {
+            $required += 'Silent update: setup finished successfully'
+        }
+        else {
+            $required += 'Setup finished successfully'
+        }
+        if ($Mode -eq 'TerminateHandle') {
+            $required += "Terminated PID $($victim.Id)"
+        }
+
         foreach ($needle in $required) {
             $count = ([regex]::Matches($logText, [regex]::Escape($needle))).Count
             $minimum = if ($needle -like 'Using configured stateId*' -or $needle -like 'Requesting update info*' -or $needle -like 'Acquired single-instance lock*') { 2 } else { 1 }
@@ -557,15 +625,24 @@ public static class TempCopyHandoffNative {
             }
         }
 
+        $product = ($exeName -replace '^(\w+)_(\w+)_Updater\.exe$', '$2')
         foreach ($forbidden in @(
             'No local configuration found',
-            'api/e2e/TempCopyMissing',
+            "api/e2e/$product",
             'GET request failed',
             'Another updater instance is already running',
-            'Temporary and silent switches can not be used together'
+            'Temporary and silent switches can not be used together',
+            'not a valid HANDLE'
         )) {
             if ($logText.Contains($forbidden)) {
                 $logFailures += "Unexpected log text: '$forbidden'"
+            }
+        }
+
+        if ($null -ne $victim) {
+            $victim.Refresh()
+            if (-not $victim.HasExited) {
+                $logFailures += "Victim PID $($victim.Id) was still running after setup"
             }
         }
 
@@ -605,11 +682,15 @@ public static class TempCopyHandoffNative {
         }
     }
     finally {
+        Remove-Item Env:\NV_E2E_AUTO_ADVANCE -ErrorAction SilentlyContinue
         if ($null -ne $childProc -and -not $childProc.HasExited) {
             Stop-Process -Id $childProc.Id -Force -ErrorAction SilentlyContinue
         }
         if ($null -ne $parentProc -and -not $parentProc.HasExited) {
             Stop-Process -Id $parentProc.Id -Force -ErrorAction SilentlyContinue
+        }
+        if ($null -ne $victim -and -not $victim.HasExited) {
+            Stop-Process -Id $victim.Id -Force -ErrorAction SilentlyContinue
         }
         Remove-Item -Path $tempCopy -Force -ErrorAction SilentlyContinue
         Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
@@ -1559,7 +1640,30 @@ try {
     # NV_S_INSTANCE_ALREADY_RUNNING (210) after signaling the owner.
     $results.Add((Invoke-DuplicateInstanceScenario -SourceBin $MainBin))
     $results.Add((Invoke-SameNameIsolationScenario -SourceBin $MainBin))
-    $results.Add((Invoke-TempCopyHandoffScenario -SourceBin $MainBin))
+    foreach ($mode in 'SilentUpdate', 'Background', 'Interactive', 'TerminateHandle') {
+        $results.Add((Invoke-TempCopyHandoffScenario -SourceBin $MainBin -Mode $mode))
+    }
+
+    $notNeededTemp = Join-Path $env:TEMP 'e2e_TempCopyNotNeeded_Updater.exe'
+    $results.Add((Invoke-Scenario -Name 'TempCopyNotNeeded' `
+        -SourceBin $MainBin -ExeName 'e2e_TempCopyNotNeeded_Updater.exe' `
+        -LocalVersion '2.0.0' -ExpectedExit 202 -SkipSelfUpdate $true `
+        -Sidecar @{
+            Name    = 'e2e_TempCopyNotNeeded_Updater.json'
+            Content = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/UpToDate/updates.json","authority":"Local","stateId":"e2e-tempcopy-not-needed"},"shared":{"runAsTemporaryCopy":true}}'
+        } `
+        -PreScenario { Remove-Item -LiteralPath $notNeededTemp -Force -ErrorAction SilentlyContinue } `
+        -PostScenario { if (Test-Path -LiteralPath $notNeededTemp) { throw "Temporary copy was created at $notNeededTemp" } } `
+        -ExpectLogContains @('Installed software is up-to-date') `
+        -ExpectLogNotContains @('Waiting up to', 'Temporary copy')))
+
+    $results.Add((Invoke-Scenario -Name 'TempCopyDirectLaunchRejected' `
+        -SourceBin $MainBin -ExeName 'e2e_TempCopyDirect_Updater.exe' `
+        -LocalVersion '0.0.1' -ExpectedExit 123 -SkipSelfUpdate $true `
+        -ExtraArgs @('--temporary') `
+        -PreScenario { Remove-Item -LiteralPath (Join-Path $LogDir 'TempCopyDirectLaunchRejected.log') -Force -ErrorAction SilentlyContinue } `
+        -ExpectLogContains @('Temporary copy is missing --temporary-ready-event') `
+        -ExpectLogNotContains @('Requesting update info')))
 
     # ── Win32 process-launch argument round trip ─────────────────────────────
     # The manifest's launchArguments for ProcessArgsRoundTrip is a raw command-line
