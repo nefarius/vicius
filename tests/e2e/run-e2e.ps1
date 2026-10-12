@@ -18,6 +18,7 @@
         NV_S_UPDATES_DISABLED = 211
         NV_S_POSTPONE_PERIOD = 205
         NV_S_POSTPONE_PURGE = 206
+        NV_S_LAUNCHED_TEMPORARY = 207
         NV_E_SERVER_RESPONSE = 104
         NV_E_SIGNATURE_INVALID = 116
         NV_E_DOWNLOAD_FAILED = 107
@@ -356,6 +357,263 @@ function Invoke-Scenario {
     }
 
     return $result
+}
+
+function Invoke-TempCopyHandoffScenario {
+    param(
+        [string] $SourceBin
+    )
+
+    $Name = 'TempCopyHandoff'
+    $ParentExit = 207  # NV_S_LAUNCHED_TEMPORARY
+    $ChildExit = 202   # NV_S_UP_TO_DATE
+    Write-Header "Scenario: $Name (expect parent $ParentExit, child $ChildExit)"
+
+    if (-not ('TempCopyHandoffNative' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public static class TempCopyHandoffNative {
+    const uint WM_CLOSE = 0x0010;
+    const uint WM_COMMAND = 0x0111;
+    const uint WM_SYSCOMMAND = 0x0112;
+    const uint SC_CLOSE = 0xF060;
+    const uint BM_CLICK = 0x00F5;
+    const int IDCLOSE = 8;
+    const int IDCANCEL = 2;
+
+    delegate bool EnumProc(IntPtr hWnd, IntPtr lParam);
+
+    [DllImport("user32.dll")]
+    static extern bool EnumWindows(EnumProc lpEnumFunc, IntPtr lParam);
+    [DllImport("user32.dll")]
+    static extern bool EnumChildWindows(IntPtr hWnd, EnumProc lpEnumFunc, IntPtr lParam);
+    [DllImport("user32.dll")]
+    static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+    [DllImport("user32.dll")]
+    static extern bool PostMessageW(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+    [DllImport("user32.dll")]
+    static extern bool SetForegroundWindow(IntPtr hWnd);
+    [DllImport("user32.dll")]
+    static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, System.UIntPtr dwExtraInfo);
+
+    public static int DismissProcessDialogs(uint processId) {
+        int dismissed = 0;
+        EnumWindows((hWnd, _) => {
+            GetWindowThreadProcessId(hWnd, out uint owner);
+            if (owner != processId) return true;
+            dismissed++;
+            PostMessageW(hWnd, WM_CLOSE, IntPtr.Zero, IntPtr.Zero);
+            PostMessageW(hWnd, WM_SYSCOMMAND, (IntPtr)SC_CLOSE, IntPtr.Zero);
+            PostMessageW(hWnd, WM_COMMAND, (IntPtr)IDCLOSE, IntPtr.Zero);
+            PostMessageW(hWnd, WM_COMMAND, (IntPtr)IDCANCEL, IntPtr.Zero);
+            SetForegroundWindow(hWnd);
+            keybd_event(0x1B, 0, 0, System.UIntPtr.Zero);
+            keybd_event(0x1B, 0, 2, System.UIntPtr.Zero);
+            EnumChildWindows(hWnd, (child, _) => {
+                var text = new StringBuilder(256);
+                GetWindowText(child, text, text.Capacity);
+                string label = text.ToString();
+                if (label.Contains("Close") || label.Contains("OK")) {
+                    PostMessageW(child, BM_CLICK, IntPtr.Zero, IntPtr.Zero);
+                }
+                return true;
+            }, IntPtr.Zero);
+            return true;
+        }, IntPtr.Zero);
+        return dismissed;
+    }
+}
+'@
+    }
+
+    $workDir = Join-Path $env:TEMP "vicius-e2e-$Name-$(New-Guid)"
+    New-Item -ItemType Directory -Path $workDir | Out-Null
+
+    $exeName = 'e2e_TempCopyMissing_Updater.exe'
+    $exePath = Join-Path $workDir $exeName
+    Copy-Item -Path $SourceBin -Destination $exePath
+
+    $logPath = Join-Path $LogDir "$Name.log"
+    Remove-Item -Path $logPath -Force -ErrorAction SilentlyContinue
+
+    $upToDateUrl = 'http://localhost:5200/api/e2e/UpToDate/updates.json'
+    $sidecar = @{
+        instance = @{
+            serverUrlTemplate = $upToDateUrl
+            authority         = 'Local'
+            stateId           = 'e2e-tempcopy-inherit'
+        }
+        shared = @{
+            runAsTemporaryCopy = $true
+            windowTitle        = 'E2E TempCopy Handoff'
+        }
+    } | ConvertTo-Json -Depth 6
+    $sidecarPath = Join-Path $workDir 'e2e_TempCopyMissing_Updater.json'
+    Set-Content -Path $sidecarPath -Value $sidecar -Encoding utf8
+
+    $tempCopy = Join-Path $env:TEMP $exeName
+    $parentProc = $null
+    $childProc = $null
+
+    try {
+        $parentArgs = @(
+            '--force-local-version', '2.0.0',
+            '--ignore-busy-state',
+            '--skip-self-update',
+            '--log-to-file', $logPath,
+            '--log-level', 'debug'
+        )
+
+        Write-Host "  Starting parent: $exeName $($parentArgs -join ' ')"
+        $parentProc = Start-Process -FilePath $exePath -ArgumentList $parentArgs -PassThru -NoNewWindow
+
+        $deadline = (Get-Date).AddSeconds(60)
+        while ((Get-Date) -lt $deadline) {
+            if (-not $childProc) {
+                $child = Get-CimInstance Win32_Process -Filter "Name = 'e2e_TempCopyMissing_Updater.exe'" |
+                    Where-Object { $_.ProcessId -ne $parentProc.Id -and $_.CommandLine -like '*--temporary*' } |
+                    Select-Object -First 1
+                if ($null -ne $child) {
+                    try {
+                        $childProc = Get-Process -Id $child.ProcessId -ErrorAction Stop
+                        # Open the process handle while it is still running. ExitCode stays empty
+                        # if the handle is opened only after the process has already exited.
+                        $null = $childProc.Handle
+                        Write-Host "  Temporary copy started (PID $($childProc.Id))"
+                    }
+                    catch {
+                        Write-Host "  Temporary copy PID $($child.ProcessId) exited before it could be tracked"
+                    }
+                }
+            }
+
+            if ($null -ne $childProc) {
+                [void][TempCopyHandoffNative]::DismissProcessDialogs([uint32]$childProc.Id)
+            }
+
+            $parentDone = $parentProc.HasExited
+            $childDone = $true
+            if ($null -ne $childProc) {
+                $childDone = $childProc.HasExited
+            }
+            if ($parentDone -and $null -ne $childProc -and $childDone) {
+                break
+            }
+            if ($parentDone -and $null -eq $childProc -and ((Get-Date) -gt $parentProc.StartTime.AddSeconds(15))) {
+                break
+            }
+            Start-Sleep -Milliseconds 100
+        }
+
+        if (-not $parentProc.HasExited) {
+            Stop-Process -Id $parentProc.Id -Force -ErrorAction SilentlyContinue
+            $parentProc.WaitForExit(5000) | Out-Null
+            throw 'Parent did not finish the temporary-copy handoff within 60 seconds.'
+        }
+        if ($null -eq $childProc) {
+            throw 'Temporary copy did not start.'
+        }
+        if (-not $childProc.HasExited) {
+            $exitDeadline = (Get-Date).AddSeconds(15)
+            while (-not $childProc.HasExited -and (Get-Date) -lt $exitDeadline) {
+                [void][TempCopyHandoffNative]::DismissProcessDialogs([uint32]$childProc.Id)
+                Start-Sleep -Milliseconds 200
+            }
+            if (-not $childProc.HasExited) {
+                Stop-Process -Id $childProc.Id -Force -ErrorAction SilentlyContinue
+                throw 'Temporary copy did not exit after the up-to-date dialog was dismissed.'
+            }
+        }
+
+        [void]$parentProc.WaitForExit()
+        [void]$childProc.WaitForExit()
+        $parentCode = $parentProc.ExitCode
+        $childCode = $childProc.ExitCode
+        $logFailures = @()
+        $logText = if (Test-Path $logPath) { Get-Content $logPath -Raw -ErrorAction SilentlyContinue } else { '' }
+        if ([string]::IsNullOrEmpty($logText)) {
+            $logFailures += "Missing handoff log at $logPath"
+            $logText = ''
+        }
+
+        $required = @(
+            "Temporary copy verified against parent $exePath",
+            'Using configured stateId for persisted user state',
+            'Temporary copy signaled readiness',
+            'Temporary copy reported ready',
+            "Acquired single-instance lock for $exePath",
+            "Requesting update info from $upToDateUrl",
+            'Installed software is up-to-date'
+        )
+        foreach ($needle in $required) {
+            $count = ([regex]::Matches($logText, [regex]::Escape($needle))).Count
+            $minimum = if ($needle -like 'Using configured stateId*' -or $needle -like 'Requesting update info*' -or $needle -like 'Acquired single-instance lock*') { 2 } else { 1 }
+            if ($count -lt $minimum) {
+                $logFailures += "Expected '$needle' at least $minimum time(s), found $count"
+            }
+        }
+
+        foreach ($forbidden in @(
+            'No local configuration found',
+            'api/e2e/TempCopyMissing',
+            'GET request failed',
+            'Another updater instance is already running',
+            'Temporary and silent switches can not be used together'
+        )) {
+            if ($logText.Contains($forbidden)) {
+                $logFailures += "Unexpected log text: '$forbidden'"
+            }
+        }
+
+        $passed = ($parentCode -eq $ParentExit) -and ($childCode -eq $ChildExit) -and ($logFailures.Count -eq 0)
+        $status = if ($passed) { 'PASS' } else { 'FAIL' }
+        Write-Host "  $status  parent=$parentCode child=$childCode  expected=$ParentExit/$ChildExit"
+        if (-not $passed) {
+            Write-Host "  Handoff log tail:"
+            if (Test-Path $logPath) {
+                Get-Content $logPath -Tail 40 | ForEach-Object { Write-Host "    $_" }
+            }
+            foreach ($msg in $logFailures) {
+                Write-Host "  LOG ASSERTION FAILED: $msg"
+            }
+        }
+
+        return @{
+            Name = $Name
+            Passed = $passed
+            Expected = "$ParentExit/$ChildExit"
+            Got = "$parentCode/$childCode"
+            LogFailures = $logFailures
+        }
+    }
+    catch {
+        Write-Host "  FAIL  $($_.Exception.Message)"
+        if (Test-Path $logPath) {
+            Write-Host "  Handoff log tail:"
+            Get-Content $logPath -Tail 40 | ForEach-Object { Write-Host "    $_" }
+        }
+        return @{
+            Name = $Name
+            Passed = $false
+            Expected = "$ParentExit/$ChildExit"
+            Got = $null
+            LogFailures = @($_.Exception.Message)
+        }
+    }
+    finally {
+        if ($null -ne $childProc -and -not $childProc.HasExited) {
+            Stop-Process -Id $childProc.Id -Force -ErrorAction SilentlyContinue
+        }
+        if ($null -ne $parentProc -and -not $parentProc.HasExited) {
+            Stop-Process -Id $parentProc.Id -Force -ErrorAction SilentlyContinue
+        }
+        Remove-Item -Path $tempCopy -Force -ErrorAction SilentlyContinue
+        Remove-Item -Path $workDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
 }
 
 function Invoke-DuplicateInstanceScenario {
@@ -1301,6 +1559,7 @@ try {
     # NV_S_INSTANCE_ALREADY_RUNNING (210) after signaling the owner.
     $results.Add((Invoke-DuplicateInstanceScenario -SourceBin $MainBin))
     $results.Add((Invoke-SameNameIsolationScenario -SourceBin $MainBin))
+    $results.Add((Invoke-TempCopyHandoffScenario -SourceBin $MainBin))
 
     # ── Win32 process-launch argument round trip ─────────────────────────────
     # The manifest's launchArguments for ProcessArgsRoundTrip is a raw command-line

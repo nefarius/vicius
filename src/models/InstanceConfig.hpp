@@ -106,6 +106,13 @@ namespace models
         bool ignorePostponePeriod{false};
         /** True if this process is a temporary copy, false if not */
         bool isTemporaryCopy{false};
+        /**
+         * Inherited readiness event for a temporary child. The parent creates it and waits;
+         * the child signals it after parent authentication and configuration loading, then closes it.
+         */
+        HANDLE temporaryReadyEvent{};
+        /** Log file inherited across the temporary-copy handoff, when --log-to-file was supplied. */
+        std::optional<std::string> logFilePath;
         /** True if NV_CLI_PARAM_FORCE_LOCAL_VERSION was specified, false if not */
         bool forceLocalVersion{false};
         /** Whether NV_CLI_PARAM_OVERRIDE_OK was supplied */
@@ -667,7 +674,18 @@ namespace models
          */
         void WaitForSetupToFinish();
 
-        bool TryRunTemporaryProcess() const;
+        /**
+         * \brief Signals the inherited readiness event after this temporary child is authenticated.
+         * \return Empty on success; unexpected when the event is missing or SetEvent fails.
+         */
+        [[nodiscard]] std::expected<void, std::string> SignalTemporaryReadiness();
+
+        /**
+         * \brief Copies this executable to the user temp directory and waits until that child is ready.
+         * \return false when a temporary relaunch was not requested; true when the child signaled readiness.
+         *         unexpected with the failure reason when the copy, launch, or handshake fails.
+         */
+        [[nodiscard]] std::expected<bool, std::string> TryRunTemporaryProcess() const;
 
         int GetSuccessExitCode(int exitCode) const
         {

@@ -33,6 +33,8 @@
 #define NV_CLI_PARAM_FORCE_LOCAL_VERSION             "--force-local-version"
 // internal
 #define NV_CLI_TEMPORARY                             "--temporary"
+// internal inherited manual-reset event signaled once the temporary child is authenticated
+#define NV_CLI_PARAM_TEMPORARY_READY_EVENT           "--temporary-ready-event"
 /** Enable strict verification: checksum required, Authenticode required, pin must match */
 #define NV_CLI_STRICT_VERIFICATION                   "--strict-verification"
 
@@ -66,6 +68,8 @@
 #define NV_E_UPDATES_DISABLED_QUERY_FAILED           120
 #define NV_E_UPDATES_DISABLED_WRITE_FAILED           121
 #define NV_E_SHOW_OPTIONS_FAILED                     122
+/** Temporary-copy launch, parent authentication, or readiness handshake failed. */
+#define NV_E_TEMPORARY_HANDOFF                       123
 
 //
 // Success codes

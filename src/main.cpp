@@ -166,7 +166,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
         NV_CLI_PARAM_OVERRIDE_OK,
         NV_CLI_PARAM_TERMINATE_PROCESS_BEFORE_UPDATE,
         NV_CLI_PARAM_LOCAL_VERSION,
-        NV_CLI_PARAM_FORCE_LOCAL_VERSION
+        NV_CLI_PARAM_FORCE_LOCAL_VERSION,
+        NV_CLI_PARAM_TEMPORARY_READY_EVENT
     });
 
 #if !defined(NDEBUG)
@@ -208,11 +209,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     if (earlyAbortCode)
     {
         spdlog::critical("Instance initialization failed");
-        cfg.TryDisplayErrorDialog(
-            "Instance initialization failed",
-            std::format("Booting the updater failed with error code {}", earlyAbortCode)
-            );
+        // The parent is waiting for readiness and reports the handoff failure. A modal dialog
+        // here would keep the child alive until that wait times out.
+        if (earlyAbortCode != NV_E_TEMPORARY_HANDOFF)
+        {
+            cfg.TryDisplayErrorDialog(
+                "Instance initialization failed",
+                std::format("Booting the updater failed with error code {}", earlyAbortCode)
+                );
+        }
         return (int)earlyAbortCode;
+    }
+
+    // The parent is still alive here and still owns the original-path instance lock.
+    // Signal only after configuration initialization so it can exit and hand off that lock.
+    if (cfg.IsTemporaryCopy())
+    {
+        if (const auto ready = cfg.SignalTemporaryReadiness(); !ready)
+        {
+            spdlog::critical("Failed to signal temporary-copy readiness: {}", ready.error());
+            return NV_E_TEMPORARY_HANDOFF;
+        }
     }
 
 #pragma region Single-instance guard
@@ -403,7 +420,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR szCmdLine,
     }
 
     // restart ourselves from a temporary location, if requested
-    if (cfg.TryRunTemporaryProcess())
+    if (const auto handoff = cfg.TryRunTemporaryProcess(); !handoff)
+    {
+        spdlog::critical("Failed to launch temporary updater copy: {}", handoff.error());
+        cfg.TryDisplayErrorDialog("Failed to launch temporary updater copy", handoff.error());
+        return NV_E_TEMPORARY_HANDOFF;
+    }
+    else if (*handoff)
     {
         return cfg.GetSuccessExitCode(NV_S_LAUNCHED_TEMPORARY);
     }
