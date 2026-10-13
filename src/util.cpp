@@ -4,6 +4,7 @@
 #include <wintrust.h>
 #include <Shlobj.h>
 #include <Msi.h>
+#pragma comment(lib, "msi.lib")
 #include <tlhelp32.h>
 
 
@@ -506,7 +507,8 @@ namespace winapi
         return tempPath;
     }
 
-    std::expected<std::string, std::string> GetNewTemporaryFile(_In_opt_ const std::string& parent)
+    std::expected<std::string, std::string> GetNewTemporaryFile(_In_opt_ const std::string& parent,
+                                                                _In_opt_ const std::string& desiredExtension)
     {
         std::string tempDir = parent;
 
@@ -528,6 +530,32 @@ namespace winapi
         }
 
         util::stripNulls(tempFile);
+
+        // GetTempFileNameA always reserves a .tmp name. Keep that unique stem and only
+        // swap the extension, so a later shell or installer launch sees the real type.
+        const bool safeExtension = !desiredExtension.empty() && desiredExtension.size() <= 8 &&
+                                   std::all_of(desiredExtension.begin(), desiredExtension.end(), [](unsigned char c) {
+                                       return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+                                   });
+        if (!desiredExtension.empty() && !safeExtension)
+        {
+            spdlog::warn("Ignoring unsafe temporary file extension '{}'", desiredExtension);
+        }
+        else if (safeExtension && _stricmp(desiredExtension.c_str(), "tmp") != 0)
+        {
+            std::filesystem::path renamed(tempFile);
+            renamed.replace_extension(std::string(".") + desiredExtension);
+            if (!MoveFileExA(tempFile.c_str(), renamed.string().c_str(), MOVEFILE_REPLACE_EXISTING))
+            {
+                spdlog::warn("Failed to rename temporary file {} to {}, error {:#x}; keeping .tmp", tempFile,
+                             renamed.string(), GetLastError());
+            }
+            else
+            {
+                tempFile = renamed.string();
+            }
+        }
+
         return tempFile;
     }
 

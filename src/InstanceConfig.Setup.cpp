@@ -1,11 +1,15 @@
 #include "pch.h"
 #include "InstanceConfig.hpp"
 #include "Util.h"
+#include "SetupPayload.h"
 
+#include <Msi.h>
 
 #include <fstream>
 #include <functional>
 #include <memory>
+#include <span>
+#include <vector>
 
 #include <zip.h>
 
@@ -64,6 +68,63 @@ namespace
         }
 
         return WaitResult::Cancelled;
+    }
+
+    std::expected<std::vector<std::byte>, std::string> ReadPayloadPrefix(const std::filesystem::path& path)
+    {
+        std::ifstream stream(path, std::ios::binary);
+        if (!stream)
+        {
+            return std::unexpected(std::format("Failed to open payload {}", path.string()));
+        }
+
+        std::vector<std::byte> bytes(512);
+        stream.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+        bytes.resize(static_cast<std::size_t>((std::max)(stream.gcount(), std::streamsize{0})));
+        if (stream.bad())
+        {
+            return std::unexpected(std::format("Failed to read payload {}", path.string()));
+        }
+
+        return bytes;
+    }
+
+    std::string SanitizePrintablePrefix(std::span<const std::byte> bytes)
+    {
+        constexpr std::size_t kMaxChars = 48;
+        std::string out;
+        const auto count = (std::min)(bytes.size(), kMaxChars);
+        out.reserve(count);
+        for (std::size_t i = 0; i < count; ++i)
+        {
+            const auto c = std::to_integer<unsigned char>(bytes[i]);
+            out.push_back((c >= 0x20 && c <= 0x7E) ? static_cast<char>(c) : '.');
+        }
+        return out;
+    }
+
+    bool HasExtension(const std::filesystem::path& path, std::string_view extensionWithDot)
+    {
+        const auto actual = path.extension().string();
+        if (actual.size() != extensionWithDot.size())
+        {
+            return false;
+        }
+
+        for (std::size_t i = 0; i < actual.size(); ++i)
+        {
+            auto c = static_cast<unsigned char>(actual[i]);
+            if (c >= 'A' && c <= 'Z')
+            {
+                c = static_cast<unsigned char>(c - 'A' + 'a');
+            }
+            if (c != static_cast<unsigned char>(extensionWithDot[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
 
@@ -416,40 +477,145 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
             }
         }
         //
-        // Most probably an MSI or similar, offload execution to the default shell launch action
+        // Not a PE and not a zip. An MSI is launched through msiexec, but only after the
+        // bytes are shown to be a real Windows Installer package. Text, HTML, and JSON
+        // (a captive portal or an error page) are refused. Anything else keeps the shell
+        // association launch, without the shell's own error dialog.
         //
         else
         {
-            std::string args = release.launchArguments.has_value() ? release.launchArguments.value() : std::string{};
+            const auto captureExitCode = [&](HANDLE process) {
+                if (CancellableWait(process, stopToken) == WaitResult::Success)
+                {
+                    GetExitCodeProcess(process, &exitCode);
+                }
+                else
+                {
+                    exitCode = this->GetSuccessExitCode(NV_S_CLOSED_WHILE_UPDATER_RUNNING);
+                }
+                CloseHandle(process);
+            };
 
-            SHELLEXECUTEINFOA execInfo = {};
-            execInfo.cbSize = sizeof(SHELLEXECUTEINFO);
-            execInfo.fMask = SEE_MASK_NOCLOSEPROCESS;
-            execInfo.hwnd = this->windowHandle;
-            execInfo.lpVerb = runAsAdmin ? "runas" : NULL;
-            execInfo.lpFile = openFile.c_str();
-            execInfo.lpParameters = args.c_str();
-            execInfo.lpDirectory = NULL;
-            execInfo.nShow = SW_SHOW;
-            execInfo.hInstApp = NULL;
-
-            if (!ShellExecuteExA(&execInfo))
+            const auto prefix = ReadPayloadPrefix(tempFile);
+            if (!prefix)
             {
-                win32Error = GetLastError();
-
-                spdlog::error("Failed to launch {}, error {:#x}, message {}", tempFile, win32Error,
-                              winapi::GetLastErrorStdStr());
-
-                goto exit;
+                return std::unexpected(prefix.error());
             }
 
+            const bool compound = setuppayload::LooksLikeCompoundFile(*prefix);
+            const bool msiExtension = HasExtension(tempFile, ".msi");
+            const bool textPayload = setuppayload::LooksLikeText(*prefix);
+            spdlog::debug("Payload probe compound={} msiExtension={} text={}", compound, msiExtension, textPayload);
 
-            if (CancellableWait(execInfo.hProcess, stopToken) == WaitResult::Success) {
-                GetExitCodeProcess(execInfo.hProcess, &exitCode);
-            } else {
-                exitCode = this->GetSuccessExitCode(NV_S_CLOSED_WHILE_UPDATER_RUNNING);
+            if (compound || msiExtension)
+            {
+                const auto widePath = tempFile.wstring();
+                const UINT verify = MsiVerifyPackageW(widePath.c_str());
+                if (verify != ERROR_SUCCESS)
+                {
+                    const auto kind = compound ? "compound-file header is not a Windows Installer package"
+                                               : "file is not a Windows Installer package";
+                    const auto reason = std::format(
+                        "Refusing to launch payload ({}): MsiVerifyPackage returned {} ({:#x}), prefix '{}'", kind, verify,
+                        verify, SanitizePrintablePrefix(*prefix));
+                    spdlog::error("{}", reason);
+                    return std::unexpected(reason);
+                }
+
+                const auto msiexec = winapi::GetSystemExecutablePath("msiexec.exe");
+                if (!msiexec)
+                {
+                    return std::unexpected(std::format("Failed to resolve msiexec.exe: {}", msiexec.error()));
+                }
+
+                // launchArguments stays a raw manifest fragment, same as the executable path.
+                std::string installerArgs = "/i " + winapi::QuoteArg(tempFile.string());
+                if (release.launchArguments.has_value() && !release.launchArguments->empty())
+                {
+                    installerArgs += " " + release.launchArguments.value();
+                }
+
+                spdlog::info("Launching Windows Installer: {} {}", *msiexec, installerArgs);
+
+                if (runAsAdmin)
+                {
+                    // Elevate msiexec itself. The .msi file type has no "runas" verb.
+                    SHELLEXECUTEINFOA execInfo = {};
+                    execInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+                    execInfo.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_NO_UI;
+                    execInfo.hwnd = this->windowHandle;
+                    execInfo.lpVerb = "runas";
+                    execInfo.lpFile = msiexec->c_str();
+                    execInfo.lpParameters = installerArgs.c_str();
+                    execInfo.nShow = SW_SHOW;
+
+                    if (!ShellExecuteExA(&execInfo))
+                    {
+                        win32Error = GetLastError();
+                        spdlog::error("Failed to launch elevated {}, error {:#x}, message {}", *msiexec, win32Error,
+                                      winapi::GetLastErrorStdStr());
+                        goto exit;
+                    }
+
+                    captureExitCode(execInfo.hProcess);
+                }
+                else
+                {
+                    STARTUPINFOA info = {};
+                    info.cb = sizeof(STARTUPINFOA);
+                    PROCESS_INFORMATION processInfo = {};
+
+                    const std::string commandLine = winapi::QuoteArg(*msiexec) + " " + installerArgs;
+                    std::vector<char> cmdLine(commandLine.begin(), commandLine.end());
+                    cmdLine.push_back('\0');
+
+                    if (!CreateProcessA(msiexec->c_str(), cmdLine.data(), nullptr, nullptr, TRUE, 0, nullptr, nullptr,
+                                        &info, &processInfo))
+                    {
+                        win32Error = GetLastError();
+                        spdlog::error("Failed to launch {}, error {:#x}, message {}", *msiexec, win32Error,
+                                      winapi::GetLastErrorStdStr());
+                        goto exit;
+                    }
+
+                    CloseHandle(processInfo.hThread);
+                    captureExitCode(processInfo.hProcess);
+                }
             }
-            CloseHandle(execInfo.hProcess);
+            else if (textPayload)
+            {
+                const auto reason = std::format("Refusing to launch a text or HTML payload, prefix '{}'",
+                                                SanitizePrintablePrefix(*prefix));
+                spdlog::error("{}", reason);
+                return std::unexpected(reason);
+            }
+            else
+            {
+                std::string args = release.launchArguments.has_value() ? release.launchArguments.value() : std::string{};
+
+                SHELLEXECUTEINFOA execInfo = {};
+                execInfo.cbSize = sizeof(SHELLEXECUTEINFO);
+                execInfo.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_FLAG_NO_UI;
+                execInfo.hwnd = this->windowHandle;
+                execInfo.lpVerb = runAsAdmin ? "runas" : NULL;
+                execInfo.lpFile = openFile.c_str();
+                execInfo.lpParameters = args.c_str();
+                execInfo.lpDirectory = NULL;
+                execInfo.nShow = SW_SHOW;
+                execInfo.hInstApp = NULL;
+
+                if (!ShellExecuteExA(&execInfo))
+                {
+                    win32Error = GetLastError();
+
+                    spdlog::error("Failed to launch {}, error {:#x}, message {}", tempFile, win32Error,
+                                  winapi::GetLastErrorStdStr());
+
+                    goto exit;
+                }
+
+                captureExitCode(execInfo.hProcess);
+            }
         }
     }
     //
