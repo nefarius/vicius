@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Http.h"
 #include "Util.h"
+#include "SetupPayload.h"
 #include "InstanceConfig.hpp"
 
 #include <curlpp/Easy.hpp>
@@ -178,7 +179,8 @@ std::expected<int, std::string> models::InstanceConfig::DownloadRelease(curl_pro
     // Reuse existing temp file if present (allows resuming across user retries)
     if (release.localTempFilePath.empty())
     {
-        const auto newTempFile = winapi::GetNewTemporaryFile(downloadLocation);
+        const auto extension = setuppayload::ExtensionFromUrl(release.downloadUrl).value_or(std::string{});
+        const auto newTempFile = winapi::GetNewTemporaryFile(downloadLocation, extension);
         if (!newTempFile)
         {
             spdlog::error("Failed to get temporary file name: {}", newTempFile.error());

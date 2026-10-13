@@ -39,6 +39,8 @@
 .PARAMETER ArtifactsDir
     E2E_ARTIFACTS_DIR: directory pre-populated by CI with payload.zip, payload_edge.zip,
     setup.exe, updater_selfupdate.exe, SignedManifest/, and TamperedManifest/ subdirectories.
+    The MSI scenario fixtures (error-page.msi, compound-stub.msi, payload.msi) are generated
+    into this directory when the script starts.
 
 .PARAMETER ServerDir
     Path to the examples/server project directory (for 'dotnet run').
@@ -218,6 +220,7 @@ function Invoke-Scenario {
         [scriptblock] $PostScenario       = $null,   # runs in finally, even on failure
         [string[]]    $ExpectLogContains    = @(),   # each substring must appear in the log file
         [string[]]    $ExpectLogNotContains = @(),   # none of these substrings may appear in the log file
+        [string[]]    $ExpectLogMatches     = @(),   # each regex must match the log file
         [string[]]    $ExtraArgs            = @()    # additional CLI args appended verbatim (e.g. --strict-verification)
     )
 
@@ -299,7 +302,7 @@ function Invoke-Scenario {
             # ── Log assertions ────────────────────────────────────────────────────
             $logPassed   = $true
             $logFailures = @()
-            if ($ExpectLogContains.Count -gt 0 -or $ExpectLogNotContains.Count -gt 0) {
+            if ($ExpectLogContains.Count -gt 0 -or $ExpectLogNotContains.Count -gt 0 -or $ExpectLogMatches.Count -gt 0) {
                 $logContent = if (Test-Path $logFile) {
                     Get-Content $logFile -Raw -ErrorAction SilentlyContinue
                 } else { '' }
@@ -313,6 +316,12 @@ function Invoke-Scenario {
                     if ($logContent -like "*$substr*") {
                         $logPassed = $false
                         $logFailures += "NOT expected in log: '$substr'"
+                    }
+                }
+                foreach ($pattern in $ExpectLogMatches) {
+                    if ($logContent -notmatch $pattern) {
+                        $logPassed = $false
+                        $logFailures += "Expected log to match: '$pattern'"
                     }
                 }
             }
@@ -1009,6 +1018,16 @@ $serverJob = $null
 $results   = [System.Collections.Generic.List[hashtable]]::new()
 
 try {
+    # Payloads the MSI scenarios download. Generated here so no installer binary is committed.
+    # error-page.msi is an HTML document; compound-stub.msi has only the OLE signature.
+    $htmlPayload = "<!DOCTYPE html>`r`n<html><body>Not an installer</body></html>"
+    [System.IO.File]::WriteAllText((Join-Path $ArtifactsDir 'error-page.msi'), $htmlPayload)
+    [System.IO.File]::WriteAllBytes(
+        (Join-Path $ArtifactsDir 'compound-stub.msi'),
+        [byte[]](0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1, 0, 0, 0, 0, 0, 0, 0, 0))
+    . (Join-Path $PSScriptRoot 'New-E2EMinimalMsi.ps1')
+    New-E2EMinimalMsi -Path (Join-Path $ArtifactsDir 'payload.msi') | Out-Null
+
     # Build the server first so 'dotnet run --no-build' is fast
     Write-Host 'Building example server...'
     & dotnet build $ServerDir -c Release --nologo -v quiet
@@ -1033,6 +1052,7 @@ try {
             LocalVersion   = '0.0.1'
             ExpectedExit   = 203
             SkipSelfUpdate = $true
+            ExpectLogMatches = @('tempFile = .+\.zip')
         },
         @{
             # Archive-extraction edge cases: empty directory entry, a DeleteIfPresent
@@ -1053,6 +1073,7 @@ try {
             LocalVersion   = '0.0.1'
             ExpectedExit   = 203
             SkipSelfUpdate = $true
+            ExpectLogMatches = @('tempFile = .+\.exe')
         },
         @{
             Name           = 'UpToDate'
@@ -1583,6 +1604,8 @@ try {
                 Content = '{"instance":{"serverUrlTemplate":"http://localhost:5200/api/e2e/MaliciousContentDisposition/updates.json"}}'
             }
             ExpectLogContains = @('Rejecting Content-Disposition filename')
+            # The artifact URL has no extension, so the download must stay a .tmp name.
+            ExpectLogMatches  = @('tempFile = .+\.tmp')
         },
         @{
             # Regression for exact (not substring) pinned-host matching: the manifest host
@@ -1607,6 +1630,60 @@ try {
                 Content = '{"instance":{"serverUrlTemplate":"http://localhostpinnedx.invalid:5200/api/e2e/HappyZip/updates.json","network":{"proxyMode":"None","pinnedHosts":[{"host":"localhostpinned","port":5200,"address":"127.0.0.1"}]}}}'
             }
             ExpectLogNotContains = @('retrying with DoH/pinned-IP recovery')
+        },
+
+        # ── MSI payload launch ───────────────────────────────────────────────
+        # The artifact route sends no Content-Disposition. The updater names the temp
+        # file from the URL and must prove the bytes are a Windows Installer package
+        # before it will run msiexec.
+
+        @{
+            Name                 = 'MsiPayloadRejectedHtml'
+            SourceBin            = $MainBin
+            ExeName              = 'e2e_MsiHtmlRejected_Updater.exe'
+            LocalVersion         = '0.0.1'
+            ExpectedExit         = 109  # NV_E_SETUP_FAILED
+            SkipSelfUpdate       = $true
+            ExpectLogContains    = @(
+                'file is not a Windows Installer package',
+                '<!DOCTYPE'
+            )
+            ExpectLogNotContains = @('Launching Windows Installer:')
+            ExpectLogMatches     = @('tempFile = .+\.msi')
+        },
+        @{
+            Name                 = 'MsiPayloadRejectedCompound'
+            SourceBin            = $MainBin
+            ExeName              = 'e2e_MsiStubRejected_Updater.exe'
+            LocalVersion         = '0.0.1'
+            ExpectedExit         = 109  # NV_E_SETUP_FAILED
+            SkipSelfUpdate       = $true
+            ExpectLogContains    = @('compound-file header is not a Windows Installer package')
+            ExpectLogNotContains = @('Launching Windows Installer:')
+            ExpectLogMatches     = @('tempFile = .+\.msi')
+        },
+        @{
+            Name              = 'MsiPayloadLaunch'
+            SourceBin         = $MainBin
+            ExeName           = 'e2e_MsiPayload_Updater.exe'
+            LocalVersion      = '0.0.1'
+            ExpectedExit      = 203
+            SkipSelfUpdate    = $true
+            ExpectLogContains = @(
+                'Launching Windows Installer:',
+                'msiexec.exe /i'
+            )
+            ExpectLogMatches  = @('tempFile = .+\.msi')
+            PostScenario      = {
+                $proc = Start-Process -FilePath "$env:SystemRoot\System32\msiexec.exe" `
+                    -ArgumentList @('/x', '{7E2A9C4B-1D55-4E8F-9A31-6C0B5F2E8D17}', '/qn', '/norestart') `
+                    -Wait -PassThru
+                # 1605 = ERROR_UNKNOWN_PRODUCT, which is fine when launch never installed it.
+                if ($proc.ExitCode -ne 0 -and $proc.ExitCode -ne 1605) {
+                    throw "Failed to remove the E2E MSI (msiexec /x exit $($proc.ExitCode))"
+                }
+                Remove-Item -Path 'HKCU:\Software\ViciusE2E' -Recurse -Force -ErrorAction SilentlyContinue
+            }
         }
     )
 
@@ -1631,6 +1708,7 @@ try {
             PostScenario         = $s.ContainsKey('PostScenario')         ? $s.PostScenario         : $null
             ExpectLogContains    = $s.ContainsKey('ExpectLogContains')    ? $s.ExpectLogContains    : @()
             ExpectLogNotContains = $s.ContainsKey('ExpectLogNotContains') ? $s.ExpectLogNotContains : @()
+            ExpectLogMatches     = $s.ContainsKey('ExpectLogMatches')     ? $s.ExpectLogMatches     : @()
             ExtraArgs            = $s.ContainsKey('ExtraArgs')            ? $s.ExtraArgs            : @()
         }
         $results.Add((Invoke-Scenario @invokeParams))

@@ -55,7 +55,16 @@ namespace winapi
      */
     [[nodiscard]] std::expected<std::string, std::string> GetUserTemporaryDirectory();
 
-    [[nodiscard]] std::expected<std::string, std::string> GetNewTemporaryFile(_In_opt_ const std::string& parent = std::string());
+    /**
+     * \brief Creates a unique temporary file, optionally renaming it off the .tmp extension.
+     *
+     * \param parent Directory to create the file in. Empty uses the user temp directory.
+     * \param desiredExtension Extension without a dot, such as "msi". Applied only when it
+     *        is 1 to 8 ASCII letters or digits. A failed rename keeps the .tmp path.
+     */
+    [[nodiscard]] std::expected<std::string, std::string> GetNewTemporaryFile(
+        _In_opt_ const std::string& parent = std::string(),
+        _In_opt_ const std::string& desiredExtension = std::string());
 
     /**
      * \brief Attempts to retrieve the %ProgramData% directory.
