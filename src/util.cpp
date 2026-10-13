@@ -545,7 +545,7 @@ namespace winapi
         {
             std::filesystem::path renamed(tempFile);
             renamed.replace_extension(std::string(".") + desiredExtension);
-            if (!MoveFileExA(tempFile.c_str(), renamed.string().c_str(), MOVEFILE_REPLACE_EXISTING))
+            if (!MoveFileExA(tempFile.c_str(), renamed.string().c_str(), 0))
             {
                 spdlog::warn("Failed to rename temporary file {} to {}, error {:#x}; keeping .tmp", tempFile,
                              renamed.string(), GetLastError());

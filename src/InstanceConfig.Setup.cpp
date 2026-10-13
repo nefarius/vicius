@@ -479,8 +479,9 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
         //
         // Not a PE and not a zip. An MSI is launched through msiexec, but only after the
         // bytes are shown to be a real Windows Installer package. Text, HTML, and JSON
-        // (a captive portal or an error page) are refused. Anything else keeps the shell
-        // association launch, without the shell's own error dialog.
+        // (a captive portal or an error page) are refused unless the extension is a known
+        // script type. Anything else keeps the shell association launch, without the
+        // shell's own error dialog.
         //
         else
         {
@@ -582,7 +583,9 @@ std::expected<models::SetupResult, std::string> models::InstanceConfig::ExecuteS
                     captureExitCode(processInfo.hProcess);
                 }
             }
-            else if (textPayload)
+            else if (textPayload && !HasExtension(tempFile, ".bat") && !HasExtension(tempFile, ".cmd") &&
+                     !HasExtension(tempFile, ".vbs") && !HasExtension(tempFile, ".ps1") &&
+                     !HasExtension(tempFile, ".reg"))
             {
                 const auto reason = std::format("Refusing to launch a text or HTML payload, prefix '{}'",
                                                 SanitizePrintablePrefix(*prefix));
