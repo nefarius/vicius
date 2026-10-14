@@ -23,7 +23,11 @@ function New-E2EMinimalMsi {
         param([string] $Sql)
         $view = $db.OpenView($Sql)
         $view.Execute() | Out-Null
-        $view.Close() | Out-Null
+        try {
+            $view.Close() | Out-Null
+        } finally {
+            [void][System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($view)
+        }
     }
 
     Invoke-MsiSql 'CREATE TABLE `Property` (`Property` CHAR(72) NOT NULL, `Value` LONGCHAR NOT NULL PRIMARY KEY `Property`)'
@@ -87,6 +91,14 @@ function New-E2EMinimalMsi {
     $summary.GetType().InvokeMember('Persist', 'InvokeMethod', $null, $summary, $null) | Out-Null
 
     $db.GetType().InvokeMember('Commit', 'InvokeMethod', $null, $db, $null) | Out-Null
+
+    # The E2E server hashes and serves this MSI from a separate process. Windows
+    # Installer COM database handles can otherwise remain open until a nondeterministic
+    # GC/finalizer pass, intermittently making that endpoint fail with HTTP 500.
+    # Release in dependency order before returning control to the test harness.
+    [void][System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($summary)
+    [void][System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($db)
+    [void][System.Runtime.InteropServices.Marshal]::FinalReleaseComObject($installer)
 
     return [pscustomobject]@{
         Path         = $Path

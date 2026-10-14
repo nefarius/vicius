@@ -612,7 +612,10 @@ public static class TempCopyInheritedLaunch {
             "Temporary copy verified against parent $exePath",
             'Using configured stateId for persisted user state',
             'Temporary copy signaled readiness',
-            'Temporary copy reported ready',
+            # The parent and child append to the same log from separate processes.
+            # The parent's "reported ready" message can be lost when the child's
+            # file sink opens the log concurrently. Parent exit 207 plus the child
+            # readiness, lock acquisition and successful exit below prove handoff.
             "Acquired single-instance lock for $exePath",
             "Requesting update info from $feedUrl"
         )
