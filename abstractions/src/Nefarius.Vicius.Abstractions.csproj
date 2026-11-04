@@ -18,6 +18,9 @@
 
     <ItemGroup>
         <PackageReference Include="NJsonSchema.CodeGeneration" Version="11.6.1" PrivateAssets="All"/>
+        <!-- Public models carry [JsonSchemaType] and Newtonsoft attributes, so consumers need both at runtime. -->
+        <PackageReference Include="NJsonSchema.Annotations" Version="11.6.1"/>
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
         <PackageReference Include="System.ComponentModel.Annotations" Version="5.0.0"/>
         <PackageReference Include="MinVer" Version="8.0.0">
             <PrivateAssets>all</PrivateAssets>
