@@ -160,6 +160,7 @@ internal sealed partial class DsHidMiniUpdatesEndpoint(
             {
                 ProductName = "DsHidMini",
                 WindowTitle = "DsHidMini Updater",
+                AllowUserToDisableUpdates = true,
                 Detection =
                     new RegistryValueConfig
                     {
