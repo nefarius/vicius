@@ -159,6 +159,7 @@ internal sealed partial class BthPS3UpdatesEndpoint(
             {
                 ProductName = "BthPS3",
                 WindowTitle = "BthPS3 Updater",
+                AllowUserToDisableUpdates = true,
                 Detection =
                     new RegistryValueConfig
                     {
